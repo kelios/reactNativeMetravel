@@ -1,21 +1,21 @@
-import TravelsListItem from '@/components/TravelListItem';
-import { fetchTravel } from '@/src/api/travels';
-import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
-import { Travel } from '@/types';
+import TravelsListItem from '@/components/TravelListItem'
+import { fetchTravel } from '@/src/api/travels'
+import { useLocalSearchParams } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { Text, ActivityIndicator, ScrollView } from 'react-native'
+import { Travel } from '@/types'
 
 const TravelDetails = () => {
-  const { id } = useLocalSearchParams(); // prev: useSearchParams()
+  const { id } = useLocalSearchParams()
 
-  const [travel, setTravel] = useState<Travel>();
+  const [travel, setTravel] = useState<Travel>()
 
   useEffect(() => {
-    fetchTravel(id).then(setTravel);
-  }, [id]);
+    fetchTravel(id).then(setTravel)
+  }, [id])
 
   if (!travel) {
-    return <ActivityIndicator />;
+    return <ActivityIndicator />
   }
 
   return (
@@ -35,7 +35,7 @@ const TravelDetails = () => {
         {travel.description}
       </Text>
     </ScrollView>
-  );
-};
+  )
+}
 
-export default TravelDetails;
+export default TravelDetails

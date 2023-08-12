@@ -1,29 +1,24 @@
-import { Text, View } from '@/components/Themed';
+import { Text, View } from '@/components/Themed'
 
-import { StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, FlatList, ActivityIndicator } from 'react-native'
 //import apodsJson from '../data/apods.json';
-import TravelListItem from '@/components/TravelListItem';
-import { useEffect, useState } from 'react';
+import TravelListItem from '@/components/TravelListItem'
+import { useEffect, useState } from 'react'
 //import FullScreenImage from '../components/FullScreenImage';
-import { Travel } from '@/types';
-import { fetchTravelsby } from '@/src/api/travels';
-
+import { Travel } from '@/types'
+import { fetchTravelsby } from '@/src/api/travels'
 
 export default function TravelsBycreen() {
-
-  const [travels, setTravels] = useState<Travel[]>([]);
+  const [travels, setTravels] = useState<Travel[]>([])
   //const [activePicture, setActivePicture] = useState<string>(null);
 
   useEffect(() => {
-    fetchTravelsby().then(
-      setTravels
-      );
-  }, []);
+    fetchTravelsby().then(setTravels)
+  }, [])
 
   if (!travels) {
-    return <ActivityIndicator />;
+    return <ActivityIndicator />
   }
-
 
   return (
     <View style={styles.container}>
@@ -32,13 +27,12 @@ export default function TravelsBycreen() {
         renderItem={({ item }) => (
           <TravelListItem
             travel={item}
-           // onImagePress={() => setActivePicture(item.travel_image_thumb_url)}
+            // onImagePress={() => setActivePicture(item.travel_image_thumb_url)}
           />
         )}
       />
-      
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -56,4 +50,4 @@ const styles = StyleSheet.create({
     height: 1,
     width: '80%',
   },
-});
+})

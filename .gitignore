@@ -5,3 +5,5 @@
 
 expo-env.d.ts
 # @end expo-cli
+settings.json
+.prettierrc

@@ -1,5 +1,5 @@
-import { Link, Stack } from 'expo-router';
-import { Image, Text, View } from 'react-native';
+import { Link, Stack } from 'expo-router'
+import { Image, Text, View } from 'react-native'
 
 function LogoTitle() {
   return (
@@ -7,7 +7,7 @@ function LogoTitle() {
       style={{ width: 50, height: 50 }}
       source={{ uri: 'https://reactnative.dev/img/tiny_logo.png' }}
     />
-  );
+  )
 }
 
 export default function Home() {
@@ -24,9 +24,9 @@ export default function Home() {
             fontWeight: 'bold',
           },
           // https://reactnavigation.org/docs/headers#replacing-the-title-with-a-custom-component
-          headerTitle: props => <LogoTitle {...props} />,
+          headerTitle: (props) => <LogoTitle {...props} />,
         }}
       />
     </View>
-  );
+  )
 }

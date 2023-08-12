@@ -1,15 +1,29 @@
-import { View, Text, Pressable, Image, StyleSheet } from 'react-native';
-import React from 'react';
-import { Travel } from '@/types';
-import { Link } from 'expo-router';
+import { View, Text, Pressable, Image, StyleSheet } from 'react-native'
+import React from 'react'
+import { Travel } from '@/types'
+import { Link } from 'expo-router'
+import { StackActions } from '@react-navigation/native';
 
 type TravelListItemProps = {
-  travel: Travel;
-  onImagePress?: () => void;
-};
+  travel: Travel
+  onImagePress?: () => void
+}
 
-const TravelListItem = ({ travel, onImagePress = () => {} }: TravelListItemProps) => {
-  const { name, url, travel_image_thumb_url,id} = travel;
+const TravelListItem = ({
+  travel,
+  onImagePress = () => {},
+}: TravelListItemProps) => {
+  const {
+    name,
+    url,
+    slug,
+    travel_image_thumb_url,
+    id,
+    cityName,
+    countryName,
+    userName,
+    countUnicIpView,
+  } = travel
 
   return (
     <View style={styles.item}>
@@ -21,11 +35,22 @@ const TravelListItem = ({ travel, onImagePress = () => {} }: TravelListItemProps
       <Link href={`/travels/${id}`} asChild>
         <Pressable style={styles.content}>
           <Text style={styles.title}>{name}</Text>
+          <Text>
+            {countryName}
+            {cityName && -{ cityName }}
+          </Text>
+          <Text style={{ alignSelf: 'flex-end' }}> Автор - {userName} </Text>
+
+          <Link
+           href={`/travels/${id}`}
+          >
+            Читать далее {'>'} ({countUnicIpView})
+          </Link>
         </Pressable>
       </Link>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   item: {
@@ -66,6 +91,6 @@ const styles = StyleSheet.create({
   copyright: {
     color: 'gray',
   },
-});
+})
 
-export default TravelListItem;
+export default TravelListItem

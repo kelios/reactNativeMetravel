@@ -1,24 +1,22 @@
-import { StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, FlatList, ActivityIndicator } from 'react-native'
 
-import TravelListItem from '@/components/TravelListItem';
-import { useEffect, useState } from 'react';
+import TravelListItem from '@/components/TravelListItem'
+import { useEffect, useState } from 'react'
 //import FullScreenImage from '../components/FullScreenImage';
-import { Travel } from '@/types';
-import { fetchTravels } from '@/src/api/travels';
-import { Text, View } from '@/components/Themed';
+import { Travel } from '@/types'
+import { fetchTravels } from '@/src/api/travels'
+import { Text, View } from '@/components/Themed'
 
 export default function TabOneScreen() {
-  const [travels, setTravels] = useState<Travel[]>([]);
+  const [travels, setTravels] = useState<Travel[]>([])
   //const [activePicture, setActivePicture] = useState<string>(null);
 
   useEffect(() => {
-    fetchTravels().then(
-      setTravels
-      );
-  }, []);
+    fetchTravels().then(setTravels)
+  }, [])
 
   if (!travels) {
-    return <ActivityIndicator />;
+    return <ActivityIndicator />
   }
 
   return (
@@ -28,12 +26,12 @@ export default function TabOneScreen() {
         renderItem={({ item }) => (
           <TravelListItem
             travel={item}
-           // onImagePress={() => setActivePicture(item.travel_image_thumb_url)}
+            // onImagePress={() => setActivePicture(item.travel_image_thumb_url)}
           />
         )}
       />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -51,4 +49,4 @@ const styles = StyleSheet.create({
     height: 1,
     width: '80%',
   },
-});
+})

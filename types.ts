@@ -1,10 +1,14 @@
 export type Travel = {
-  name: string;
-  id:string;
-  travel_image_thumb_url: string;
-  url: string;
+  id: string
+  slug: string
+  
+  name: string
+  travel_image_thumb_url: string
+  url: string
 
-  userName: string;
-  slug: string;
-  description:string;
-};
+  userName: string
+  description: string
+  cityName: string
+  countryName: string
+  countUnicIpView: string
+}
