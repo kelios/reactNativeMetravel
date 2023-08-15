@@ -1,11 +1,10 @@
 import { Travel } from '@/src/types/types'
 import queryString from 'query-string'
 import { useEffect, useState } from 'react'
+import {API_URL} from '@env'
 
-const API_KEY = ''
-
-const BASE_URL = 'https://metravel.by/api/travels'
-const BASE_URL2 = 'https://metravel.by/api/travel'
+const BASE_URL = `${API_URL}/api/travels`
+const BASE_URL2 = `${API_URL}+ '${API_URL}/api/travel`
 
 const travelDef = {
   name: 'test',
