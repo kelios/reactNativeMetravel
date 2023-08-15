@@ -1,8 +1,7 @@
 import { View, Text, Pressable, Image, StyleSheet } from 'react-native'
 import React from 'react'
-import { Travel } from '@/types'
+import { Travel } from '@/src/types/types'
 import { Link } from 'expo-router'
-import { StackActions } from '@react-navigation/native';
 
 type TravelListItemProps = {
   travel: Travel
@@ -39,13 +38,29 @@ const TravelListItem = ({
             {countryName}
             {cityName && -{ cityName }}
           </Text>
-          <Text style={{ alignSelf: 'flex-end' }}> Автор - {userName} </Text>
-
-          <Link
-           href={`/travels/${id}`}
-          >
-            Читать далее {'>'} ({countUnicIpView})
-          </Link>
+          <View style={{ flexDirection: 'row' }}>
+            <Text style={{ fontSize: 12, lineHeight: 30, color: '#9394B3' }}>
+              Автор - {userName}
+            </Text>
+            <Text
+              style={{
+                flex: 1,
+                fontSize: 16,
+                lineHeight: 30,
+                color: '#1D2359',
+                textAlign: 'right',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                }}
+              >
+                {countUnicIpView}{' '}
+              </Text>
+              👀
+            </Text>
+          </View>
         </Pressable>
       </Link>
     </View>
@@ -79,6 +94,10 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     aspectRatio: 16 / 9,
+  },
+  link: {
+    cursor: 'pointer',
+    color: '#4b7c6f',
   },
   content: {
     padding: 10,

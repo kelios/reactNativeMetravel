@@ -3,7 +3,7 @@ import { fetchTravel } from '@/src/api/travels'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Text, ActivityIndicator, ScrollView } from 'react-native'
-import { Travel } from '@/types'
+import { Travel } from '@/src/types/types'
 
 const TravelDetails = () => {
   const { id } = useLocalSearchParams()

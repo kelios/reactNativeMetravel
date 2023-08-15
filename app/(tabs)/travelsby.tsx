@@ -5,7 +5,7 @@ import { StyleSheet, FlatList, ActivityIndicator } from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
 import { useEffect, useState } from 'react'
 //import FullScreenImage from '../components/FullScreenImage';
-import { Travel } from '@/types'
+import { Travel } from '@/src/types/types'
 import { fetchTravelsby } from '@/src/api/travels'
 
 export default function TravelsBycreen() {

@@ -1,4 +1,4 @@
-import { Travel } from '@/types'
+import { Travel } from '@/src/types/types'
 import queryString from 'query-string'
 import { useEffect, useState } from 'react'
 
@@ -17,11 +17,11 @@ const travelDef = {
   slug: '',
 }
 
-export const fetchTravels = async (): Promise<Travel[]> => {
+export const fetchTravels = async (page: number, itemsPerPage: number) => {
   try {
     const params = {
-      page: 1,
-      perPage: 20,
+      page: page,
+      perPage: itemsPerPage,
       where: JSON.stringify({ publish: 1, moderation: 1 }),
     }
     const urlTravel = queryString.stringifyUrl({
@@ -30,7 +30,8 @@ export const fetchTravels = async (): Promise<Travel[]> => {
     })
     const res = await fetch(urlTravel)
     const resData = await res.json()
-    return resData.data
+    return resData
+    // return resData.data+resData.total
   } catch (e) {
     console.log('Error fetching Travels: ' + e)
     return []
