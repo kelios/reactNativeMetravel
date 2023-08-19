@@ -4,7 +4,7 @@ import { PROD_API_URL, LOCAL_API_URL, IS_LOCAL_API } from '@env'
 
 let URLAPI = ''
 
-if (IS_LOCAL_API === false) {
+if (IS_LOCAL_API == 'true') {
   URLAPI = LOCAL_API_URL
 } else {
   URLAPI = PROD_API_URL
@@ -96,7 +96,7 @@ export const fetchTravelsby = async (): Promise<Travel[]> => {
 
 export const fetchTravel = async (id: number): Promise<Travel> => {
   try {
-    if (IS_LOCAL_API === false) {
+    if (IS_LOCAL_API == 'true') {
       const res = await fetch(`${GET_TRAVELS}/${id}`)
       const resData = await res.json()
       return resData

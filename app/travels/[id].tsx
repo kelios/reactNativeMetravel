@@ -8,6 +8,7 @@ import { Travel } from '@/src/types/types'
 import HTML from 'react-native-render-html'
 import { Card,Title } from 'react-native-paper'
 import Carousel from 'react-native-reanimated-carousel'
+import { IS_LOCAL_API } from '@env'
 
 
 const TravelDetails = () => {
@@ -24,7 +25,6 @@ const TravelDetails = () => {
   if (!travel) {
     return <ActivityIndicator />
   }
-  const galleryUrls = travel.gallery.map((item) => item.url)
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -34,7 +34,7 @@ const TravelDetails = () => {
           width={width}
           height={500}
         //  autoPlay={true}
-          data={galleryUrls}
+          data={IS_LOCAL_API == 'true' ? travel.gallery : travel.gallery.map((item) => item.url)}
           scrollAnimationDuration={10000}
           pagingEnabled={true}
           onSnapToItem={index => console.log('current index:', index)}
