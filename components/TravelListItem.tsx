@@ -2,16 +2,14 @@ import {
   View,
   Pressable,
   Image,
-  StyleSheet,
-  TouchableOpacity,
-  Linking,
-
-} from 'react-native'
+  StyleSheet} from 'react-native'
 import React from 'react'
 import { Travel } from '@/src/types/types'
 import { Link } from 'expo-router'
+import * as Linking from 'expo-linking';
 import { Card, Title, Paragraph,Text } from 'react-native-paper'
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+
 
 type TravelListItemProps = {
   travel: Travel
@@ -31,14 +29,13 @@ const TravelListItem = ({ travel }: TravelListItemProps) => {
     countUnicIpView,
   } = travel
 
+  const Urltravel = Linking.createURL(`travels/${slug}`, {
+    queryParams: { id: id}
+  });
+
   return (
     <View style={styles.container}>
-    <Link
-    href={{
-      pathname: '/travels/[slug]',
-      params: { id: id, slug: slug },
-    }}
-  >
+    <Pressable onPress={() => Linking.openURL(Urltravel)}>
    <Card style={styles.card}>
           <View style={styles.imageWrapper}>
             <Card.Cover
@@ -55,7 +52,7 @@ const TravelListItem = ({ travel }: TravelListItemProps) => {
             </Paragraph>
           </Card.Content>
         </Card>
-  </Link>
+  </Pressable>
   </View>
   )
 }
