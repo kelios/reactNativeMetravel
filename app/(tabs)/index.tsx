@@ -1,25 +1,33 @@
-import { StyleSheet, FlatList, ActivityIndicator, Button } from 'react-native'
-
+import {
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
 import { useEffect, useState } from 'react'
 import { Travels } from '@/src/types/types'
 import { fetchTravels } from '@/src/api/travels'
-import { Text, View } from '@/components/Themed'
-import Paginator from '@/components/Paginator'
+import { View } from '@/components/Themed'
+import { DataTable } from 'react-native-paper'
 
 export default function TabOneScreen() {
   const initialItemsPerPage = 20
-  const initialPage = 1
+  const initialPage = 0
 
   const [travels, setTravels] = useState<Travels[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
+  const itemsPerPageOptions = [10, 20, 30, 50, 100]
   const [currentPage, setCurrentPage] = useState(initialPage)
-  const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage)
+  const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2])
 
   useEffect(() => {
     fetchMore()
   }, [currentPage, itemsPerPage])
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [itemsPerPage])
 
   const fetchMore = async () => {
     if (isLoading) return
@@ -35,7 +43,6 @@ export default function TabOneScreen() {
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage)
-    setCurrentPage(1)
   }
 
   if (!travels) {
@@ -49,14 +56,22 @@ export default function TabOneScreen() {
         renderItem={({ item }) => <TravelListItem travel={item} />}
         keyExtractor={(item) => item.id.toString()}
       />
-
-      <Paginator
-        totalItems={travels?.total ?? 20}
-        itemsPerPage={itemsPerPage}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-        onItemsPerPageChange={handleItemsPerPageChange}
-      />
+      <View style={styles.containerPaginator}>
+        <DataTable>
+          <DataTable.Pagination
+            page={currentPage}
+            numberOfPages={Math.ceil(travels?.total / itemsPerPage) ?? 20}
+            onPageChange={(page) => handlePageChange(page)}
+            label={`${currentPage + 1} of ${Math.ceil(
+              travels?.total / itemsPerPage,
+            )}`}
+            showFastPaginationControls
+            numberOfItemsPerPageList={itemsPerPageOptions}
+            numberOfItemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        </DataTable>
+      </View>
     </View>
   )
 }
@@ -66,6 +81,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  containerPaginator: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
   },
   title: {
     fontSize: 20,

@@ -1,12 +1,11 @@
 module.exports = function (api) {
-  api.cache(true)
+  api.cache(false)
   return {
     presets: ['babel-preset-expo'],
     plugins: [
       // Required for expo-router
       'expo-router/babel',
       ['module:react-native-dotenv'],
-    
     ],
   }
 }

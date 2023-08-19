@@ -14,5 +14,3 @@ API_URL=https://metravel.by
 
 - npx expo start
 - Press w │ open web
-
-

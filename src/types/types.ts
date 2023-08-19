@@ -1,5 +1,5 @@
 export type Travel = {
-  id: string
+  id: number
   slug: string
 
   name: string
@@ -11,11 +11,16 @@ export type Travel = {
   cityName: string
   countryName: string
   countUnicIpView: string
+  gallery: [
+    {
+      url: string
+    },
+  ]
 }
 
 export type Travels = {
   data: {
-    id: string
+    id: number
     slug: string
 
     name: string

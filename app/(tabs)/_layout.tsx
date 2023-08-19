@@ -61,11 +61,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="[travels]"
+        name="[id]"
         options={{
-          href: '/travels/',
-          title: 'Аккаунты в instagram о путешествиях по Беларуси',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Путешествуем по Беларуси',
         }}
       />
     </Tabs>
