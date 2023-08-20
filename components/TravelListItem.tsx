@@ -1,20 +1,18 @@
-import {
-  View,
-  Pressable,
-  Image,
-  StyleSheet} from 'react-native'
-import React from 'react'
+import { View, Pressable, Dimensions, StyleSheet } from 'react-native'
 import { Travel } from '@/src/types/types'
-import { Link } from 'expo-router'
-import * as Linking from 'expo-linking';
-import { Card, Title, Paragraph,Text } from 'react-native-paper'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
-
+import * as Linking from 'expo-linking'
+import { Card, Title, Paragraph, Text } from 'react-native-paper'
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
+import {
+  useFonts,
+  PlayfairDisplay_400Regular,
+} from '@expo-google-fonts/playfair-display'
 
 type TravelListItemProps = {
   travel: Travel
   onImagePress?: () => void
 }
+const { width, height } = Dimensions.get('window')
 
 const TravelListItem = ({ travel }: TravelListItemProps) => {
   const {
@@ -30,13 +28,13 @@ const TravelListItem = ({ travel }: TravelListItemProps) => {
   } = travel
 
   const Urltravel = Linking.createURL(`travels/${slug}`, {
-    queryParams: { id: id}
-  });
+    queryParams: { id: id },
+  })
 
   return (
     <View style={styles.container}>
-    <Pressable onPress={() => Linking.openURL(Urltravel)}>
-   <Card style={styles.card}>
+      <Pressable onPress={() => Linking.openURL(Urltravel)}>
+        <Card style={styles.card}>
           <View style={styles.imageWrapper}>
             <Card.Cover
               source={{ uri: travel_image_thumb_url }}
@@ -52,32 +50,38 @@ const TravelListItem = ({ travel }: TravelListItemProps) => {
             </Paragraph>
           </Card.Content>
         </Card>
-  </Pressable>
-  </View>
+      </Pressable>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
+    width: '100%',
+    fontFamily: 'PlayfairDisplay_400Regular',
+    fontSize: 40,
   },
   card: {
     borderRadius: 10,
-    elevation: 4, // Shadow
-    width:500,
+    elevation: 2,
+    padding: wp(1.5),
+    marginHorizontal: wp(1.5),
   },
   imageWrapper: {
-    aspectRatio: 1 / 1, // Set your desired aspect ratio here
+    flex: width < 600 ? 0 : 1,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
-    overflow: 'hidden', // To clip the image to the aspect ratio
-
+    overflow: 'hidden',
+    alignItems: 'center',
   },
   image: {
-    flex: 1,
+    aspectRatio: 1 / 1,
+    width: '100%',
+    height: width < 600 ? 340 : 600,
   },
   paragraphLeft: {
-    marginLeft: 10,
+    marginLeft: wp(1.5),
   },
 })
 

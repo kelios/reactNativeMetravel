@@ -1,8 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome'
-import {
-  DarkTheme,
-  ThemeProvider,
-} from '@react-navigation/native'
+import { DarkTheme, ThemeProvider } from '@react-navigation/native'
 import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
 import { useEffect } from 'react'
@@ -11,6 +8,7 @@ import {
   MD3LightTheme as DefaultTheme,
   PaperProvider,
 } from 'react-native-paper'
+import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -36,7 +34,7 @@ SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    PlayfairDisplay_400Regular,
     ...FontAwesome.font,
   })
 
@@ -63,10 +61,10 @@ function RootLayoutNav() {
 
   return (
     <PaperProvider theme={theme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      </Stack>
     </PaperProvider>
   )
 }

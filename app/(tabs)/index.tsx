@@ -1,14 +1,11 @@
-import {
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native'
+import { StyleSheet, FlatList, ActivityIndicator } from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
 import { useEffect, useState } from 'react'
 import { Travels } from '@/src/types/types'
 import { fetchTravels } from '@/src/api/travels'
 import { View } from '@/components/Themed'
 import { DataTable } from 'react-native-paper'
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
 
 export default function TabOneScreen() {
   const initialItemsPerPage = 20
@@ -69,6 +66,7 @@ export default function TabOneScreen() {
             numberOfItemsPerPageList={itemsPerPageOptions}
             numberOfItemsPerPage={itemsPerPage}
             onItemsPerPageChange={setItemsPerPage}
+            style={{ flexWrap: 'nowrap' }}
           />
         </DataTable>
       </View>
@@ -79,26 +77,17 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  contentContainer: {
+    flex: 1,
+    width: '100%',
   },
   containerPaginator: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-  pageInfo: {
-    marginTop: 20,
-    fontSize: 18,
+    marginTop: 10,
+    paddingHorizontal: 10,
+    backgroundColor: 'white',
+    color: 'black',
   },
 })

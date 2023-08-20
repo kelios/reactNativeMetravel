@@ -11,11 +11,7 @@ export type Travel = {
   cityName: string
   countryName: string
   countUnicIpView: string
-  gallery: [
-    {
-      url: string
-    },
-  ]
+  gallery: String[]
 }
 
 export type Travels = {
