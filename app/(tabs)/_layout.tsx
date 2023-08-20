@@ -60,12 +60,9 @@ export default function TabLayout() {
           title: 'Путешествуем по Беларуси',
         }}
       />
-      <Tabs.Screen
-        name="[id]"
-        options={{
-          title: 'Путешествуем по Беларуси',
-        }}
-      />
+
+             
+
     </Tabs>
   )
 }

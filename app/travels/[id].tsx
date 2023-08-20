@@ -1,5 +1,5 @@
 import { fetchTravel } from '@/src/api/travels'
-import { useLocalSearchParams, useGlobalSearchParams } from 'expo-router'
+import { Stack,useLocalSearchParams, useGlobalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
   View,
@@ -8,10 +8,11 @@ import {
   ActivityIndicator,
   useWindowDimensions,
   StyleSheet,
+  
 } from 'react-native'
 import { Travel } from '@/src/types/types'
 import HTML from 'react-native-render-html'
-import { Card, Title } from 'react-native-paper'
+import { Card, Title,Text } from 'react-native-paper'
 import Slider from '@/components/Slider'
 import { IS_LOCAL_API } from '@env'
 
@@ -29,6 +30,8 @@ const TravelDetails = () => {
   if (!travel) {
     return <ActivityIndicator />
   }
+  
+
   const gallery =
     IS_LOCAL_API == 'true'
       ? travel.gallery
@@ -39,6 +42,7 @@ const TravelDetails = () => {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
+      <Stack.Screen options={{ headerTitle: travel.name }} />
       <View>
         <Slider images={gallery} />
       </View>
