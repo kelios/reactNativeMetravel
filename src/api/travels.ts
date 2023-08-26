@@ -53,11 +53,12 @@ const TravelApi = ({
   } = travel
 }
 */
-export const fetchTravels = async (page: number, itemsPerPage: number) => {
+export const fetchTravels = async (page: number, itemsPerPage: number, search: string) => {
   try {
     const params = {
       page: page + 1,
       perPage: itemsPerPage,
+      query: search,
       where: JSON.stringify({ publish: 1, moderation: 1 }),
     }
     const urlTravel = queryString.stringifyUrl({
