@@ -74,11 +74,11 @@ export const fetchTravels = async (page: number, itemsPerPage: number) => {
   }
 }
 
-export const fetchTravelsby = async (): Promise<Travel[]> => {
+export const fetchTravelsby = async (page: number, itemsPerPage: number) => {
   try {
     const params = {
-      page: 1,
-      perPage: 20,
+      page: page + 1,
+      perPage: itemsPerPage,
       where: JSON.stringify({ publish: 1, moderation: 1, countries: [3] }),
     }
     const urlTravel = queryString.stringifyUrl({
@@ -87,7 +87,7 @@ export const fetchTravelsby = async (): Promise<Travel[]> => {
     })
     const res = await fetch(urlTravel)
     const resData = await res.json()
-    return resData.data
+    return resData
   } catch (e) {
     console.log('Error fetching Travels: ')
     return []

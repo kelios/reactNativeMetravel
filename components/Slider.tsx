@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  useWindowDimensions
+  useWindowDimensions,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome'
 
@@ -16,7 +16,7 @@ interface SliderProps {
 const Slider: React.FC<SliderProps> = ({ images }) => {
   const imageKeys = Object.keys(images)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const windowDimensions = useWindowDimensions();
+  const windowDimensions = useWindowDimensions()
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
@@ -32,7 +32,15 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.imageContainer,{ width: windowDimensions.width, height: windowDimensions.height - 100 }]}>
+      <View
+        style={[
+          styles.imageContainer,
+          {
+            width: windowDimensions.width,
+            height: windowDimensions.height - 100,
+          },
+        ]}
+      >
         <Image
           source={{ uri: images[imageKeys[currentIndex]] }}
           style={styles.image}
@@ -54,13 +62,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    maxWidth: 800,
   },
   imageContainer: {
     position: 'relative',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    maxWidth: 1000,
   },
   image: {
     width: '100%',
     height: '100%',
+    flex: 1,
+    maxWidth: 800,
   },
   leftArrow: {
     position: 'absolute',

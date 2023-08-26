@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     padding: wp(1.5),
     marginHorizontal: wp(1.5),
+    maxWidth: 600,
   },
   imageWrapper: {
     flex: width < 600 ? 0 : 1,

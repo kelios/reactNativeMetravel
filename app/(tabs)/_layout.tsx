@@ -60,9 +60,6 @@ export default function TabLayout() {
           title: 'Путешествуем по Беларуси',
         }}
       />
-
-             
-
     </Tabs>
   )
 }

@@ -5,10 +5,8 @@ import { Travels } from '@/src/types/types'
 import { fetchTravels } from '@/src/api/travels'
 import { View } from '@/components/Themed'
 import { DataTable } from 'react-native-paper'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
 
 export default function TabOneScreen() {
-  const initialItemsPerPage = 20
   const initialPage = 0
 
   const [travels, setTravels] = useState<Travels[]>([])
