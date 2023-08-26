@@ -205,7 +205,7 @@ export default function TabOneScreen() {
             selectText="Выберите страны..."
             searchInputPlaceholderText="Выберите страны..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+          //  altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -228,7 +228,7 @@ export default function TabOneScreen() {
             selectText="Категории..."
             searchInputPlaceholderText="Категории..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+         //   altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -243,17 +243,40 @@ export default function TabOneScreen() {
 
           <MultiSelect
             hideTags
-            items={filters?.categoryTravelAddress}
+            items={filters?.categoryTravelAddress || []}
+            uniqueKey="id"
+            onSelectedItemsChange={onSelectedItemsChange('categoryTravelAddress')}
+            selectedItems={filterValue?.categoryTravelAddress}
+            isLoading={isLoadingFilters}
+            selectText="Обьекты..."
+            searchInputPlaceholderText="Обьекты..."
+            onChangeInput={(text) => console.log(text)}
+         //   altFontFamily="ProximaNova-Light"
+            tagRemoveIconColor="#CCC"
+            tagBorderColor="#CCC"
+            tagTextColor="#CCC"
+            selectedItemTextColor="#CCC"
+            selectedItemIconColor="#CCC"
+            itemTextColor="#000"
+            displayKey="name"
+            searchInputStyle={{ color: '#CCC' }}
+            submitButtonColor="#CCC"
+            submitButtonText="Submit"
+          />
+
+          <MultiSelect
+            hideTags
+            items={filters?.transports}
             uniqueKey="id"
             onSelectedItemsChange={onSelectedItemsChange(
-              'categoryTravelAddress',
+              'transports',
             )}
-            selectedItems={filterValue?.categoryTravelAddress}
+            selectedItems={filterValue?.transports}
             isLoading={isLoadingFilters}
             selectText="Транспорт..."
             searchInputPlaceholderText="Транспорт..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+            //altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -276,7 +299,7 @@ export default function TabOneScreen() {
             selectText="Уровень физической подготовки..."
             searchInputPlaceholderText="Уровень физической подготовки..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+           // altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -299,7 +322,7 @@ export default function TabOneScreen() {
             selectText="Варианты отдыха с..."
             searchInputPlaceholderText="Варианты отдыха с..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+         //   altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -322,7 +345,7 @@ export default function TabOneScreen() {
             selectText="Варианты ночлега..."
             searchInputPlaceholderText="Варианты ночлега..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+           // altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -345,7 +368,7 @@ export default function TabOneScreen() {
             selectText="Месяц..."
             searchInputPlaceholderText="Месяц..."
             onChangeInput={(text) => console.log(text)}
-            altFontFamily="ProximaNova-Light"
+          //  altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -496,7 +519,8 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     backgroundColor: 'white',
     flexDirection: 'row',
-    flex: 1,
+  //  flex: 1,
+   // height:200,
     justifyContent: 'center',
     alignItems: 'center',
     alignContent: 'center',

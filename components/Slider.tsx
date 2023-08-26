@@ -1,34 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   View,
   Image,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   useWindowDimensions,
-} from 'react-native'
-import Icon from 'react-native-vector-icons/FontAwesome'
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface SliderProps {
-  images: Record<string, string>
+  images: Record<string, string>;
 }
 
 const Slider: React.FC<SliderProps> = ({ images }) => {
-  const imageKeys = Object.keys(images)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const windowDimensions = useWindowDimensions()
+  const imageKeys = Object.keys(images);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const windowDimensions = useWindowDimensions();
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1)
+      setCurrentIndex(currentIndex - 1);
     }
-  }
+  };
 
   const handleNext = () => {
     if (currentIndex < imageKeys.length - 1) {
-      setCurrentIndex(currentIndex + 1)
+      setCurrentIndex(currentIndex + 1);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -37,7 +36,7 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
           styles.imageContainer,
           {
             width: windowDimensions.width,
-            height: windowDimensions.height - 100,
+            height: windowDimensions.height * 0.6,
           },
         ]}
       >
@@ -54,15 +53,16 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
         </TouchableOpacity>
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    maxWidth: 800,
+    backgroundColor: '#f5f5f5',
+    //maxWidth: 800,
   },
   imageContainer: {
     position: 'relative',
@@ -79,16 +79,16 @@ const styles = StyleSheet.create({
   },
   leftArrow: {
     position: 'absolute',
-    left: 20,
+    left: '5%',
     top: '50%',
     transform: [{ translateY: -15 }],
   },
   rightArrow: {
     position: 'absolute',
-    right: 20,
+    right: '5%',
     top: '50%',
     transform: [{ translateY: -15 }],
   },
-})
+});
 
-export default Slider
+export default Slider;

@@ -1,57 +1,62 @@
-import { fetchTravel } from '@/src/api/travels'
-import { Stack, useLocalSearchParams, useGlobalSearchParams } from 'expo-router'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
   ActivityIndicator,
   useWindowDimensions,
   StyleSheet,
-} from 'react-native'
-import { Travel } from '@/src/types/types'
-import RenderHtml from 'react-native-render-html'
-import { Card, Title, Text } from 'react-native-paper'
-import Slider from '@/components/Slider'
-import { IS_LOCAL_API } from '@env'
+} from 'react-native';
+import { Stack, useLocalSearchParams, useGlobalSearchParams } from 'expo-router'
+import { Travel } from '@/src/types/types';
+import RenderHtml from 'react-native-render-html';
+import { Card, Title } from 'react-native-paper';
+import Slider from '@/components/Slider';
+import { IS_LOCAL_API } from '@env';
+import {
+  fetchTravel
+} from '@/src/api/travels'
 
-const TravelDetails = () => {
+interface TravelDetailsProps {
+  id: number;
+}
+
+const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const { id } = useLocalSearchParams()
-  const [travel, setTravel] = useState<Travel>()
-  const { width } = useWindowDimensions()
+  const [travel, setTravel] = useState<Travel | null>(null);
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
     fetchTravel(Number(id)).then((travelData) => {
-      setTravel(travelData)
-    })
-  }, [id])
+      setTravel(travelData);
+    });
+  }, [id]);
 
   if (!travel) {
-    return <ActivityIndicator />
+    return <ActivityIndicator />;
   }
 
   const gallery =
-    IS_LOCAL_API == 'true'
+    IS_LOCAL_API === 'true'
       ? travel.gallery
-      : travel.gallery.map((item) => item.url)
-
+      : travel.gallery.map((item) => item?.url);
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <Stack.Screen options={{ headerTitle: travel.name }} />
-      <View>
-        <Slider images={gallery} />
-      </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <Stack.Screen options={{ headerTitle: travel.name }} />
+    <View style={styles.centeredContainer}>
+      <Slider images={gallery} />
       <Card style={styles.card}>
         <Card.Content>
           <Title>{travel.name}</Title>
           {travel?.description && (
-            <RenderHtml source={{ html: travel.description }} />
+            <RenderHtml
+              source={{ html: travel.description }}
+              contentWidth={width - 50}
+            />
           )}
         </Card.Content>
       </Card>
-    </ScrollView>
+    </View>
+  </ScrollView>
   )
 }
 
@@ -59,18 +64,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-    //maxWidth: 800
-    //justifyContent: 'center',
-    //alignItems: 'center',
   },
   contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  centeredContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  img: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+    maxWidth: 800,
+    marginHorizontal: 'auto', // Horizontally center the content
   },
   card: {
     margin: 20,
@@ -79,5 +83,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     maxWidth: 800,
   },
-})
+});
+
 export default TravelDetails
