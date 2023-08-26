@@ -1,4 +1,4 @@
-import { Travel } from '@/src/types/types'
+import { Travel, Filters } from '@/src/types/types'
 import queryString from 'query-string'
 import { PROD_API_URL, LOCAL_API_URL, IS_LOCAL_API } from '@env'
 
@@ -11,6 +11,10 @@ if (IS_LOCAL_API == 'true') {
 }
 const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
+const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`
+
+const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
+const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
 
 const travelDef = {
   name: 'test',
@@ -53,7 +57,11 @@ const TravelApi = ({
   } = travel
 }
 */
-export const fetchTravels = async (page: number, itemsPerPage: number, search: string) => {
+export const fetchTravels = async (
+  page: number,
+  itemsPerPage: number,
+  search: string,
+) => {
   try {
     const params = {
       page: page + 1,
@@ -109,5 +117,76 @@ export const fetchTravel = async (id: number): Promise<Travel> => {
   } catch (e) {
     console.log('Error fetching Travel: ' + e)
     return travelDef
+  }
+}
+
+export const fetchFilters = async (): Promise<Filters> => {
+  try {
+    const res = await fetch(`${GET_FILTERS}`)
+    const resData = await res.json()
+    return resData
+  } catch (e) {
+    console.log('Error fetching filters: ' + e)
+    return []
+  }
+}
+
+export const fetchFiltersCountry = async (): Promise<Filters> => {
+  try {
+    if (IS_LOCAL_API == 'true') {
+      const res = await fetch(`${GET_FILTERS_COUNTRY}`)
+      const resData = await res.json()
+      return resData
+    } else {
+      const res = [{ country_id: '3', title_ru: 'Belarus' }]
+      //const resData = await res.json()
+    }
+    // const res = await fetch(`${GET_FILTERS_COUNTRY}`)
+    // const resData = await res.json()
+    const res = [{ country_id: '3', title_ru: 'Belarus' }]
+    //const resData = await res.json()
+    return res
+  } catch (e) {
+    console.log('Error fetching filters: ' + e)
+    return []
+  }
+}
+
+export const fetchFiltersTravel = async (
+  page: number,
+  itemsPerPage: number,
+  search: string,
+  filter: {},
+) => {
+  try {
+    const params = {
+      page: page + 1,
+      perPage: itemsPerPage,
+      query: search,
+      where: JSON.stringify({
+        publish: 1,
+        moderation: 1,
+        countries: filter?.countries,
+        categories: filter?.categories,
+        categoryTravelAddress: filter?.categoryTravelAddress,
+        companion: filter?.companion,
+        complexity: filter?.complexity,
+        month: filter?.month,
+        overNightStay: filter?.overNightStay,
+        transports: filter?.transports,
+        year: filter?.year,
+      }),
+    }
+    const urlTravel = queryString.stringifyUrl({
+      url: GET_FILTERS_TRAVEL,
+      query: params,
+    })
+    const res = await fetch(urlTravel)
+    const resData = await res.json()
+
+    return resData
+  } catch (e) {
+    console.log('Error fetching Travels: ')
+    return []
   }
 }

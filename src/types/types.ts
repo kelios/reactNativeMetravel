@@ -31,3 +31,13 @@ export type Travels = {
   }
   total: number
 }
+
+export type Filters = {
+  categories: string[]
+  categoryTravelAddress: string[]
+  companion: string[]
+  complexity: string[]
+  month: string[]
+  overNightStay: string[]
+  transports: string[]
+}
