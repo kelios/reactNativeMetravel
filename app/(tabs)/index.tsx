@@ -10,7 +10,7 @@ import {
   Pressable,
 } from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
-import { useEffect, useState } from 'react'
+import { useEffect, useState,useCallback } from 'react'
 import { Travels } from '@/src/types/types'
 import {
   fetchTravels,
@@ -115,12 +115,12 @@ export default function TabOneScreen() {
     setIsLoading(false)
   }
 
-  const getFilters = async () => {
+  const getFilters = useCallback(async () => {
     if (isLoadingFilters) return
     setIsLoadingFilters(true)
     const newData = await fetchFilters()
-    setFilters({
-      ...filters,
+    setFilters((prevFilters) => ({
+      ...prevFilters,
       categories: newData?.categories,
       categoryTravelAddress: newData?.categoryTravelAddress,
       companion: newData?.companion,
@@ -128,20 +128,20 @@ export default function TabOneScreen() {
       month: newData?.month,
       overNightStay: newData?.overNightStay,
       transports: newData?.transports,
-    })
+    }));
     setIsLoadingFilters(false)
-  }
+  }, [isLoadingFilters, filters]);
 
-  const getFiltersCountry = async () => {
+  const getFiltersCountry = useCallback(async () => {
     if (isLoadingFilters) return
     setIsLoadingFilters(true)
     const country = await fetchFiltersCountry()
-    setFilters({
-      ...filters,
+    setFilters((prevFilters) => ({
+      ...prevFilters,
       countries: country,
-    })
+    }));
     setIsLoadingFilters(false)
-  }
+  }, [isLoadingFilters, filters]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
@@ -194,7 +194,7 @@ export default function TabOneScreen() {
   const renderFilters = () => {
     if (menuVisible) {
       return (
-        <View>
+        <View style={{backgroundColor: 'white'}}>
           <MultiSelect
             hideTags
             items={filters?.countries || []}
@@ -483,25 +483,18 @@ export default function TabOneScreen() {
 }
 
 const styles = StyleSheet.create({
-  /* container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contentContainer: {
-    flex: 1,
-    width: '100%',
-  },*/
   container: {
     flex: 1,
     flexDirection: 'row',
     width: '100%',
+    backgroundColor: 'white',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    backgroundColor: 'white',
   },
   containerPaginator: {
     marginTop: 10,
@@ -531,7 +524,7 @@ const styles = StyleSheet.create({
   //боковое меню
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'white',
     position: 'absolute',
     top: 0,
     left: 0,
@@ -541,6 +534,7 @@ const styles = StyleSheet.create({
   },
   sideMenu: {
     padding: 20,
+    backgroundColor: 'white',
   },
   mobileSideMenu: {
     width: '100%',
@@ -563,12 +557,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    backgroundColor: 'white',
   },
   input: {
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 8,
+    backgroundColor: 'white',
   },
   applyButton: {
     backgroundColor: '#6aaaaa',

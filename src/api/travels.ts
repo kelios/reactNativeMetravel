@@ -131,21 +131,17 @@ export const fetchFilters = async (): Promise<Filters> => {
   }
 }
 
-export const fetchFiltersCountry = async (): Promise<Filters> => {
+export const fetchFiltersCountry = async () => {
   try {
+    let resData = [];
     if (IS_LOCAL_API == 'true') {
       const res = await fetch(`${GET_FILTERS_COUNTRY}`)
-      const resData = await res.json()
+      resData = await res.json()
       return resData
     } else {
-      const res = [{ country_id: '3', title_ru: 'Belarus' }]
-      //const resData = await res.json()
+      resData = [{ country_id: '3', title_ru: 'Belarus' }]
+      return resData
     }
-    // const res = await fetch(`${GET_FILTERS_COUNTRY}`)
-    // const resData = await res.json()
-    const res = [{ country_id: '3', title_ru: 'Belarus' }]
-    //const resData = await res.json()
-    return res
   } catch (e) {
     console.log('Error fetching filters: ' + e)
     return []
