@@ -158,6 +158,7 @@ export default function TabOneScreen() {
     )
     setTravels(newData)
     setIsLoading(false)
+    closeMenu();
   }
 
   const updateSearch = (search: string) => {
