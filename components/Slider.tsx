@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Image,
   TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+} from 'react-native'
+import Icon from 'react-native-vector-icons/FontAwesome'
 
 interface SliderProps {
-  images: Record<string, string>;
+  images: Record<string, string>
 }
 
 const Slider: React.FC<SliderProps> = ({ images }) => {
-  const imageKeys = Object.keys(images);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const windowDimensions = useWindowDimensions();
+  const imageKeys = Object.keys(images)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const windowDimensions = useWindowDimensions()
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      setCurrentIndex(currentIndex - 1)
     }
-  };
+  }
 
   const handleNext = () => {
     if (currentIndex < imageKeys.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      setCurrentIndex(currentIndex + 1)
     }
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -53,8 +53,8 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
         </TouchableOpacity>
       </View>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -89,6 +89,6 @@ const styles = StyleSheet.create({
     top: '50%',
     transform: [{ translateY: -15 }],
   },
-});
+})
 
-export default Slider;
+export default Slider

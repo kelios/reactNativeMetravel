@@ -10,7 +10,7 @@ import {
   Pressable,
 } from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
-import { useEffect, useState,useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Travels } from '@/src/types/types'
 import {
   fetchTravels,
@@ -128,9 +128,9 @@ export default function TabOneScreen() {
       month: newData?.month,
       overNightStay: newData?.overNightStay,
       transports: newData?.transports,
-    }));
+    }))
     setIsLoadingFilters(false)
-  }, [isLoadingFilters, filters]);
+  }, [isLoadingFilters, filters])
 
   const getFiltersCountry = useCallback(async () => {
     if (isLoadingFilters) return
@@ -139,9 +139,9 @@ export default function TabOneScreen() {
     setFilters((prevFilters) => ({
       ...prevFilters,
       countries: country,
-    }));
+    }))
     setIsLoadingFilters(false)
-  }, [isLoadingFilters, filters]);
+  }, [isLoadingFilters, filters])
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
@@ -158,7 +158,9 @@ export default function TabOneScreen() {
     )
     setTravels(newData)
     setIsLoading(false)
-    closeMenu();
+    if (isMobile) {
+      closeMenu()
+    }
   }
 
   const updateSearch = (search: string) => {
@@ -195,7 +197,7 @@ export default function TabOneScreen() {
   const renderFilters = () => {
     if (menuVisible) {
       return (
-        <View style={{backgroundColor: 'white'}}>
+        <View style={{ backgroundColor: 'white' }}>
           <MultiSelect
             hideTags
             items={filters?.countries || []}
@@ -206,7 +208,7 @@ export default function TabOneScreen() {
             selectText="Выберите страны..."
             searchInputPlaceholderText="Выберите страны..."
             onChangeInput={(text) => console.log(text)}
-          //  altFontFamily="ProximaNova-Light"
+            //  altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -229,7 +231,7 @@ export default function TabOneScreen() {
             selectText="Категории..."
             searchInputPlaceholderText="Категории..."
             onChangeInput={(text) => console.log(text)}
-         //   altFontFamily="ProximaNova-Light"
+            //   altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -246,13 +248,15 @@ export default function TabOneScreen() {
             hideTags
             items={filters?.categoryTravelAddress || []}
             uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('categoryTravelAddress')}
+            onSelectedItemsChange={onSelectedItemsChange(
+              'categoryTravelAddress',
+            )}
             selectedItems={filterValue?.categoryTravelAddress}
             isLoading={isLoadingFilters}
             selectText="Обьекты..."
             searchInputPlaceholderText="Обьекты..."
             onChangeInput={(text) => console.log(text)}
-         //   altFontFamily="ProximaNova-Light"
+            //   altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -269,9 +273,7 @@ export default function TabOneScreen() {
             hideTags
             items={filters?.transports}
             uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange(
-              'transports',
-            )}
+            onSelectedItemsChange={onSelectedItemsChange('transports')}
             selectedItems={filterValue?.transports}
             isLoading={isLoadingFilters}
             selectText="Транспорт..."
@@ -300,7 +302,7 @@ export default function TabOneScreen() {
             selectText="Уровень физической подготовки..."
             searchInputPlaceholderText="Уровень физической подготовки..."
             onChangeInput={(text) => console.log(text)}
-           // altFontFamily="ProximaNova-Light"
+            // altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -323,7 +325,7 @@ export default function TabOneScreen() {
             selectText="Варианты отдыха с..."
             searchInputPlaceholderText="Варианты отдыха с..."
             onChangeInput={(text) => console.log(text)}
-         //   altFontFamily="ProximaNova-Light"
+            //   altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -346,7 +348,7 @@ export default function TabOneScreen() {
             selectText="Варианты ночлега..."
             searchInputPlaceholderText="Варианты ночлега..."
             onChangeInput={(text) => console.log(text)}
-           // altFontFamily="ProximaNova-Light"
+            // altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -369,7 +371,7 @@ export default function TabOneScreen() {
             selectText="Месяц..."
             searchInputPlaceholderText="Месяц..."
             onChangeInput={(text) => console.log(text)}
-          //  altFontFamily="ProximaNova-Light"
+            //  altFontFamily="ProximaNova-Light"
             tagRemoveIconColor="#CCC"
             tagBorderColor="#CCC"
             tagTextColor="#CCC"
@@ -513,8 +515,8 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     backgroundColor: 'white',
     flexDirection: 'row',
-  //  flex: 1,
-   // height:200,
+    //  flex: 1,
+    // height:200,
     justifyContent: 'center',
     alignItems: 'center',
     alignContent: 'center',
@@ -593,15 +595,15 @@ const styles = StyleSheet.create({
     //alignSelf: 'flex-start', // Позиционирование кнопки
     //flex:1,
     width: 600,
-   // marginLeft: 20, // Отступ слева
-   // marginTop: 20, // Отступ сверху
+    // marginLeft: 20, // Отступ слева
+    // marginTop: 20, // Отступ сверху
   },
   menuButton: {
-   // flex: 1,
+    // flex: 1,
     backgroundColor: '#6aaaaa',
-   // paddingHorizontal: 20,
-  //  paddingVertical: 10,
-  //  borderRadius: 5,
+    // paddingHorizontal: 20,
+    //  paddingVertical: 10,
+    //  borderRadius: 5,
   },
   menuButtonText: {
     color: 'white',

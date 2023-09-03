@@ -133,7 +133,7 @@ export const fetchFilters = async (): Promise<Filters> => {
 
 export const fetchFiltersCountry = async () => {
   try {
-    let resData = [];
+    let resData = []
     if (IS_LOCAL_API == 'true') {
       const res = await fetch(`${GET_FILTERS_COUNTRY}`)
       resData = await res.json()
