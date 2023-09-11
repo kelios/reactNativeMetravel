@@ -12,6 +12,7 @@ if (IS_LOCAL_API == 'true') {
 const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
 const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`
+const GET_TRAVELS_NEAR = `${URLAPI}/api/travelsNear`
 
 const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
@@ -183,6 +184,24 @@ export const fetchFiltersTravel = async (
     return resData
   } catch (e) {
     console.log('Error fetching Travels: ')
+    return []
+  }
+}
+
+export const fetchTravelsNear = async (travel_id: number) => {
+  try {
+    const params = {
+      travel_id: travel_id,
+    }
+    const urlTravel = queryString.stringifyUrl({
+      url: GET_TRAVELS_NEAR,
+      query: params,
+    })
+    const res = await fetch(urlTravel)
+    const resData = await res.json()
+    return resData
+  } catch (e) {
+    console.log('Error fetching TravelsNear: ' + e)
     return []
   }
 }

@@ -4,6 +4,7 @@ export type Travel = {
 
   name: string
   travel_image_thumb_url: string
+  travel_image_thumb_small_url: string
   url: string
 
   userName: string
@@ -22,6 +23,7 @@ export type Travels = {
 
     name: string
     travel_image_thumb_url: string
+    travel_image_thumb_small_url: string
     url: string
 
     userName: string

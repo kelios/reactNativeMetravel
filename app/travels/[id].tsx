@@ -23,6 +23,7 @@ import PointList from '@/components/PointList'
 import { IS_LOCAL_API } from '@env'
 import { fetchTravel } from '@/src/api/travels'
 import SideBarTravel from '@/components/SideBarTravel'
+import NearTravelList from '@/components/NearTravelList'
 
 interface TravelDetailsProps {
   id: number
@@ -157,6 +158,8 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                 points={travel?.travelAddress}
                 onLayout={handleLayout('map')}
               />
+
+              <NearTravelList travel={travel} onLayout={handleLayout('near')} />
             </View>
           </ScrollView>
         </View>

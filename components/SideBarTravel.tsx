@@ -39,7 +39,9 @@ const styles = StyleSheet.create({
 })
 
 interface SideBarTravelProps {
-  handlePress: (section: 'gallery' | 'description' | 'map') => () => void
+  handlePress: (
+    section: 'gallery' | 'description' | 'map' | 'near',
+  ) => () => void
   closeMenu: () => void
   isMobile: boolean
 }
@@ -60,7 +62,6 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
       >
         <Text style={styles.linkText}>Галерея</Text>
       </TouchableOpacity>
-
       <TouchableOpacity
         style={styles.linkButton}
         onPress={() => {
@@ -70,7 +71,6 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
       >
         <Text style={styles.linkText}>Описание</Text>
       </TouchableOpacity>
-
       <TouchableOpacity
         style={styles.linkButton}
         onPress={() => {
@@ -80,7 +80,17 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
       >
         <Text style={styles.linkText}>Координаты мест</Text>
       </TouchableOpacity>
-
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => {
+          handlePress('near')()
+          isMobile && closeMenu()
+        }}
+      >
+        <Text style={styles.linkText}>
+          Рядом (~60км) можно еще посмотреть...
+        </Text>
+      </TouchableOpacity>
       {isMobile && (
         <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
           <Text style={styles.closeButtonText}>Закрыть</Text>
