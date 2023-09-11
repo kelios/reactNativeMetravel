@@ -30,16 +30,18 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   }
-  const mapRef = React.useRef<MapView | null>(null);
+  const mapRef = React.useRef<MapView | null>(null)
   React.useEffect(() => {
     if (mapRef.current && travel?.travelAddress.length) {
-      const coordinates = travel.travelAddress.map(point => getLatLng(point.coord));
+      const coordinates = travel.travelAddress.map((point) =>
+        getLatLng(point.coord),
+      )
       mapRef.current.fitToCoordinates(coordinates, {
         edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
         animated: true,
-      });
+      })
     }
-  }, [travel]);
+  }, [travel])
 
   return (
     <MapView style={styles.map} ref={mapRef} initialRegion={region}>
@@ -79,7 +81,7 @@ const styles = StyleSheet.create({
   },
   map: {
     width: '100%',
-    height: 300, 
+    height: 300,
   },
   label: {
     fontWeight: 'bold',

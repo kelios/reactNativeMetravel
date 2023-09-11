@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState,useRef } from 'react'
 import {
   View,
   Image,
@@ -10,12 +10,15 @@ import Icon from 'react-native-vector-icons/FontAwesome'
 
 interface SliderProps {
   images: Record<string, string>
+  onLayout?: (event: any) => void
 }
 
-const Slider: React.FC<SliderProps> = ({ images }) => {
+const Slider: React.FC<SliderProps> = ({ images, onLayout }) => {
   const imageKeys = Object.keys(images)
+  const countOfImages = imageKeys.length-1;
   const [currentIndex, setCurrentIndex] = useState(0)
   const windowDimensions = useWindowDimensions()
+  const swipeableRef = useRef(null);
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
@@ -24,13 +27,13 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
   }
 
   const handleNext = () => {
-    if (currentIndex < imageKeys.length - 1) {
+    if (currentIndex < countOfImages) {
       setCurrentIndex(currentIndex + 1)
     }
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayout}>
       <View
         style={[
           styles.imageContainer,
@@ -45,10 +48,17 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
           style={styles.image}
           resizeMode="cover"
         />
-        <TouchableOpacity onPress={handlePrevious} style={styles.leftArrow}>
+        <TouchableOpacity
+          onPress={handlePrevious}
+          style={[styles.leftArrow, currentIndex === 0 && { opacity: 0.5 }]}
+          disabled={currentIndex === 0}
+        >
           <Icon name="chevron-left" size={30} color="black" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleNext} style={styles.rightArrow}>
+        <TouchableOpacity onPress={handleNext} 
+        style={[styles.rightArrow, currentIndex === countOfImages  && { opacity: 0.5 }]}
+        disabled={currentIndex === countOfImages}
+        >
           <Icon name="chevron-right" size={30} color="black" />
         </TouchableOpacity>
       </View>
@@ -61,8 +71,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    //maxWidth: 800,
+    backgroundColor: 'white',
   },
   imageContainer: {
     position: 'relative',
@@ -89,6 +98,6 @@ const styles = StyleSheet.create({
     top: '50%',
     transform: [{ translateY: -15 }],
   },
-})
+});
 
-export default Slider
+export default Slider;

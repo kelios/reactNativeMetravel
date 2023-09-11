@@ -125,10 +125,10 @@ const SetViewToBounds: React.FC<SetViewToBoundsProps> = ({ travel }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    // flex: 1,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    /// backgroundColor: '#f5f5f5',
   },
   imageContainer: {
     position: 'relative',

@@ -18,9 +18,10 @@ type Point = {
 
 type PointListProps = {
   points: Point[]
+  onLayout?: (event: any) => void
 }
 
-const PointList: React.FC<PointListProps> = ({ points }) => {
+const PointList: React.FC<PointListProps> = ({ points, onLayout }) => {
   const windowDimensions = useWindowDimensions()
   const isLargeScreen = useMemo(
     () => windowDimensions.width > 768,
@@ -34,18 +35,18 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
 
   const pointImageStyle = isLargeScreen
     ? styles.pointImageLarge
-    : styles.pointImage;
+    : styles.pointImage
 
-    const pointContentStyle = isLargeScreen
+  const pointContentStyle = isLargeScreen
     ? styles.pointContentLarge
-    : styles.pointContent;
+    : styles.pointContent
 
-const descriptionStyle = isLargeScreen
+  const descriptionStyle = isLargeScreen
     ? styles.descriptionLarge
-    : styles.description;
+    : styles.description
 
   return (
-    <View style={containerStyle}>
+    <View style={containerStyle} onLayout={onLayout}>
       {points.map((point) => (
         <Card key={point.id} style={itemStyle}>
           <View style={pointContentStyle}>
@@ -88,14 +89,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   pointContent: {
-   // flexDirection: 'row',
+    // flexDirection: 'row',
     alignItems: 'center',
     maxWidth: 800,
     flexShrink: 1,
   },
   pointContentLarge: {
     flexDirection: 'row',
-   alignItems: 'center',
+    alignItems: 'center',
     maxWidth: 800,
     flexShrink: 1,
   },
@@ -115,20 +116,20 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 10,
-},
-pointImageLarge: {
+  },
+  pointImageLarge: {
     width: 200,
     height: 200,
     borderRadius: 10,
-},
-description: {
+  },
+  description: {
     marginLeft: 5,
     flexShrink: 1,
-},
-descriptionLarge: {
+  },
+  descriptionLarge: {
     marginLeft: 10,
     flexShrink: 1,
-},
+  },
 })
 
 export default PointList
