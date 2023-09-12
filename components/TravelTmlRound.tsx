@@ -1,4 +1,11 @@
-import { View, Pressable, Dimensions, StyleSheet } from 'react-native'
+import React, { useMemo } from 'react'
+import {
+  View,
+  Pressable,
+  Dimensions,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native'
 import { Travel } from '@/src/types/types'
 import * as Linking from 'expo-linking'
 import { Card, Title, Paragraph, Text } from 'react-native-paper'
@@ -31,17 +38,29 @@ const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
     queryParams: { id: id },
   })
 
+  const windowDimensions = useWindowDimensions()
+  const isLargeScreen = useMemo(
+    () => windowDimensions.width > 768,
+    [windowDimensions],
+  )
+
+  const pointContentStyle = isLargeScreen
+    ? styles.pointContentLarge
+    : styles.pointContent
+
   return (
     <View style={styles.container}>
       <Pressable onPress={() => Linking.openURL(Urltravel)}>
-        <View style={styles.imageWrapper}>
-          <Card.Cover
-            source={{ uri: travel_image_thumb_small_url }}
-            style={styles.image}
-          />
+        <View style={pointContentStyle}>
+          <View style={styles.imageWrapper}>
+            <Card.Cover
+              source={{ uri: travel_image_thumb_small_url }}
+              style={styles.image}
+            />
+          </View>
+          <Text style={styles.text}>{name}</Text>
+          <Paragraph style={styles.paragraph}>{countryName}</Paragraph>
         </View>
-        <Text style={styles.text}>{name}</Text>
-        <Paragraph style={styles.paragraph}>{countryName}</Paragraph>
       </Pressable>
     </View>
   )
@@ -52,25 +71,29 @@ const styles = StyleSheet.create({
     flex: 1, // make sure the container takes the full width given by FlatList for each item
     padding: 5, // optional: some space around each card
   },
-  text:{
+  text: {
+    paddingTop: 10,
     color: '#4b7c6f',
-    fontSize: 14
+    fontSize: 16,
+    textAlign: 'center',
   },
-  paragraph:{
-    fontSize: 12
+  paragraph: {
+    fontSize: 14,
   },
-  card: {
-    width: '100%', // fill the available width, given the container padding
-    borderRadius: 10,
-    elevation: 2,
+  pointContent: {
+    alignItems: 'center',
+    maxWidth: 800,
+    flexShrink: 1,
+  },
+  pointContentLarge: {
+    alignItems: 'center',
+    flexShrink: 1,
   },
   imageWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center', // to ensure the image stays centered
-    width: 150, // e.g., 100
-    height: 150, // e.g., 100
-    borderRadius: 150 / 2, // this makes it circular
-    overflow: 'hidden', // this makes sure the image doesn't go outside the circle
+    width: 200,
+    height: 200,
+    borderRadius: 200 / 2,
+    overflow: 'hidden',
   },
   image: {
     width: '100%',

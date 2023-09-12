@@ -24,6 +24,7 @@ import { IS_LOCAL_API } from '@env'
 import { fetchTravel } from '@/src/api/travels'
 import SideBarTravel from '@/components/SideBarTravel'
 import NearTravelList from '@/components/NearTravelList'
+import PopularTravelList from '@/components/PopularTravelList'
 
 interface TravelDetailsProps {
   id: number
@@ -70,8 +71,6 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   }
 
   const handlePress = (key: keyof typeof anchors) => () => {
-    console.log(anchors[key])
-    console.log(scrollRef.current)
     if (scrollRef.current && anchors[key] !== undefined) {
       scrollRef.current.scrollTo({ y: anchors[key], animated: true })
     }
@@ -160,6 +159,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
               />
 
               <NearTravelList travel={travel} onLayout={handleLayout('near')} />
+              <PopularTravelList onLayout={handleLayout('popular')} />
             </View>
           </ScrollView>
         </View>

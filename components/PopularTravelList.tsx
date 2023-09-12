@@ -1,46 +1,54 @@
-import React, { useEffect, useState, useRef } from 'react'
-import { View, FlatList, Dimensions, StyleSheet, Text } from 'react-native'
-import { Travels, Travel } from '@/src/types/types'
+import React, { useEffect, useState, useCallback } from 'react'
+import {
+  View,
+  FlatList,
+  Dimensions,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native'
+import { TravelInfo, TravelsMap } from '@/src/types/types'
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
 import {
   useFonts,
   PlayfairDisplay_400Regular,
 } from '@expo-google-fonts/playfair-display'
-import { fetchTravelsNear } from '@/src/api/travels'
+import { fetchTravelsPopular } from '@/src/api/travels'
 import TravelTmlRound from '@/components/TravelTmlRound'
 import { Title } from 'react-native-paper'
 
-type NearTravelListProps = {
-  travel: Travel
+type PopularTravelListProps = {
   onLayout?: (event: any) => void
 }
 const { width, height } = Dimensions.get('window')
 
-const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
-  const [travelsNear, setTravelsNear] = useState<Travel[]>([])
+const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
+  const [travelsPopular, setTravelsPopular] = useState<TravelsMap>({})
   const windowWidth = Dimensions.get('window').width
   const isMobile = windowWidth <= 768
   const numCol = isMobile ? 1 : 3
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    fetchTravelsNear(Number(travel.id))
+    fetchTravelsPopular()
       .then((travelData) => {
-        setTravelsNear(travelData)
+        setTravelsPopular(travelData)
+        setIsLoading(false)
       })
       .catch((error) => {
         console.error('Failed to fetch travel data:', error)
       })
-  }, [travel])
+  }, [])
 
+  if (isLoading) {
+    return <ActivityIndicator />
+  }
   return (
     <View style={styles.container} onLayout={onLayout}>
-      <Title style={styles.linkText}>
-        Рядом (~60км) можно еще посмотреть...
-      </Title>
+      <Title style={styles.linkText}>Популярные маршруты</Title>
       <FlatList
         scrollEnabled={false}
         showsHorizontalScrollIndicator={false}
-        data={travelsNear}
+        data={Object.values(travelsPopular)}
         renderItem={({ item }) => <TravelTmlRound travel={item} />}
         keyExtractor={(item) => item.id.toString()}
         horizontal={false}
@@ -52,9 +60,6 @@ const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
-    // justifyContent: 'center',
-    // alignItems: 'center',
     margin: 5,
     width: '100%',
   },
@@ -66,4 +71,4 @@ const styles = StyleSheet.create({
   },
 })
 
-export default NearTravelList
+export default PopularTravelList

@@ -1,4 +1,4 @@
-import { Travel, Filters } from '@/src/types/types'
+import { Travel, Filters, TravelsMap } from '@/src/types/types'
 import queryString from 'query-string'
 import { PROD_API_URL, LOCAL_API_URL, IS_LOCAL_API } from '@env'
 
@@ -13,6 +13,7 @@ const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
 const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`
 const GET_TRAVELS_NEAR = `${URLAPI}/api/travelsNear`
+const GET_TRAVELS_POPULAR = `${URLAPI}/api/travelsPopular`
 
 const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
@@ -201,7 +202,20 @@ export const fetchTravelsNear = async (travel_id: number) => {
     const resData = await res.json()
     return resData
   } catch (e) {
-    console.log('Error fetching TravelsNear: ' + e)
+    console.log('Error fetching fetchTravelsNear: ')
     return []
+  }
+}
+
+export const fetchTravelsPopular = async (): Promise<TravelsMap> => {
+  try {
+    const urlTravel = queryString.stringifyUrl({
+      url: GET_TRAVELS_POPULAR,
+    })
+    const res = await fetch(urlTravel)
+    const resData = await res.json()
+    return resData
+  } catch (e) {
+    console.log('Error fetching fetchTravelsNear: ')
   }
 }

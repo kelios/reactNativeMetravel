@@ -91,6 +91,17 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
           Рядом (~60км) можно еще посмотреть...
         </Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.linkButton}
+        onPress={() => {
+          handlePress('popular')()
+          isMobile && closeMenu()
+        }}
+      >
+        <Text style={styles.linkText}>Популярные маршруты</Text>
+      </TouchableOpacity>
+
       {isMobile && (
         <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
           <Text style={styles.closeButtonText}>Закрыть</Text>

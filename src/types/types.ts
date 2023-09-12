@@ -16,6 +16,22 @@ export type Travel = {
   travelAddress: String[]
 }
 
+export type TravelInfo = {
+  name: string
+  url: string
+  publish: boolean
+  moderation: boolean
+  countryName: string
+  travel_image_thumb_url: string
+  travel_image_thumb_small_url: string
+  slug: string
+  id: number
+}
+
+export type TravelsMap = {
+  [key: string]: TravelInfo
+}
+
 export type Travels = {
   data: {
     id: number
