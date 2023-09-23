@@ -15,6 +15,8 @@ export type Travel = {
   gallery: String[]
   travelAddress: String[]
   userIds: string
+  year: string
+  monthName:string
 }
 
 export type TravelInfo = {
