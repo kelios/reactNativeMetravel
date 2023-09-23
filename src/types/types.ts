@@ -17,6 +17,7 @@ export type Travel = {
   userIds: string
   year: string
   monthName:string
+  number_days:number
 }
 
 export type TravelInfo = {

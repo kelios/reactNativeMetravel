@@ -1,7 +1,7 @@
 import { Travel } from '@/src/types/types'
 import React from 'react'
 import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native'
-import { Card, Title, Paragraph, Text } from 'react-native-paper'
+import { Card, Text } from 'react-native-paper'
 
 const styles = StyleSheet.create({
   linkButton: {
@@ -126,14 +126,13 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
         <Text style={styles.linkText}>Популярные маршруты</Text>
       </TouchableOpacity>
 
+      <View style={styles.menu}>
       <View style={styles.imageWrapper}>
         <Card.Cover
           source={{ uri: travel.travel_image_thumb_small_url }}
           style={styles.image}
         />
       </View>
-
-      <View style={styles.menu}>
         <Text>{travel.countUnicIpView} 👀</Text>
         <TouchableOpacity onPress={handlePressUserTavel}>
           <Text style={styles.linkText}>Все путешествия {travel?.userName}</Text>
@@ -142,8 +141,9 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
         <Text>{ travel?.year } { travel?.monthName }</Text>
         <Text>{travel?.countryName}</Text>
         <Text>{travel?.cityName}</Text>
-        <Text> Количество дней - { travel.number_days }</Text>
-
+        {travel?.number_days && (
+        <Text> Количество дней - { travel?.number_days }</Text>
+        )}
       </View>
 
       {isMobile && (
