@@ -59,12 +59,21 @@ const TravelApi = ({
   } = travel
 }
 */
+
 export const fetchTravels = async (
   page: number,
   itemsPerPage: number,
   search: string,
 ) => {
   try {
+   // const route = useRoute();
+  //  console.log(route.params);
+   // const { user_id } = route.params;
+   // console.log(user_id);
+  //  const user_id = urlParams.get('user_id');
+  //  if (user_id){
+  //    const where = {}
+  //  }
     const params = {
       page: page + 1,
       perPage: itemsPerPage,

@@ -87,6 +87,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
           handlePress={handlePress}
           closeMenu={closeMenu}
           isMobile={isMobile}
+          travel={travel}
         ></SideBarTravel>
       )
     }

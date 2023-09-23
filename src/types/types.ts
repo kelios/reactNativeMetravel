@@ -14,6 +14,7 @@ export type Travel = {
   countUnicIpView: string
   gallery: String[]
   travelAddress: String[]
+  userIds:string
 }
 
 export type TravelInfo = {

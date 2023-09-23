@@ -1,5 +1,7 @@
+import { Travel } from '@/src/types/types'
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native'
+import { Card, Title, Paragraph, Text } from 'react-native-paper'
 
 const styles = StyleSheet.create({
   linkButton: {
@@ -36,6 +38,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     position: 'relative', // This is required to position the child Image component
   },
+  imageWrapper: {
+    width: 200,
+    height: 200,
+    borderRadius: 200 / 2,
+    overflow: 'hidden',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  menu: {
+    alignItems: 'center',
+  },
 })
 
 interface SideBarTravelProps {
@@ -44,13 +61,20 @@ interface SideBarTravelProps {
   ) => () => void
   closeMenu: () => void
   isMobile: boolean
+  travel: Travel
 }
 
 const SideBarTravel: React.FC<SideBarTravelProps> = ({
   handlePress,
   closeMenu,
   isMobile,
+  travel,
 }) => {
+  const handlePressUserTavel = () => {
+    const url = `?user_id=`+travel.userIds
+    Linking.openURL(url)
+  }
+
   return (
     <View style={styles.sideMenu}>
       <TouchableOpacity
@@ -101,6 +125,20 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
       >
         <Text style={styles.linkText}>Популярные маршруты</Text>
       </TouchableOpacity>
+
+      <View style={styles.imageWrapper}>
+        <Card.Cover
+          source={{ uri: travel.travel_image_thumb_small_url }}
+          style={styles.image}
+        />
+      </View>
+
+      <View style={styles.menu}>
+        <Text>{travel.countUnicIpView} 👀</Text>
+        <TouchableOpacity onPress={handlePressUserTavel}>
+          <Text>Все путешествия {travel.userName}</Text>
+        </TouchableOpacity>
+      </View>
 
       {isMobile && (
         <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
