@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, Suspense } from 'react'
 import {
   View,
   ScrollView,
@@ -26,11 +26,14 @@ import SideBarTravel from '@/components/SideBarTravel'
 import NearTravelList from '@/components/NearTravelList'
 import PopularTravelList from '@/components/PopularTravelList'
 
+const MapClientSideComponent = React.lazy(() => import('@/components/Map'))
+
 interface TravelDetailsProps {
   id: number
 }
 
 const TravelDetails: React.FC<TravelDetailsProps> = () => {
+  const [isMounted, setIsMounted] = useState(false)
   const { id } = useLocalSearchParams()
   const [travel, setTravel] = useState<Travel | null>(null)
   const { width } = useWindowDimensions()
@@ -51,6 +54,10 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const closeMenu = () => {
     setMenuVisible(false)
   }
+
+  useEffect(() => {
+    setIsMounted(true) // установка состояния при монтировании
+  }, [])
 
   useEffect(() => {
     fetchTravel(Number(id))
@@ -101,70 +108,81 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.mainContainer}>
-        {isMobile && menuVisible && (
-          <Pressable onPress={closeMenu} style={styles.overlay} />
-        )}
-        {isMobile ? (
-          <View
-            style={[
-              styles.sideMenu,
-              styles.mobileSideMenu,
-              menuVisible && styles.visibleMobileSideMenu,
-            ]}
-          >
-            {rendersideBar()}
-          </View>
-        ) : (
-          <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-            {rendersideBar()}
-          </View>
-        )}
-        <View style={styles.content}>
-          {isMobile && !menuVisible && (
-            <TouchableOpacity
-              title="Меню"
-              style={styles.menuButtonContainer}
-              onPress={toggleMenu}
-            >
-              <Text style={styles.linkText}>Меню</Text>
-            </TouchableOpacity>
-            //  containerStyle={styles.menuButtonContainer} // Стили контейнера
-            // buttonStyle={styles.menuButton} // Стили кнопки
-            //  titleStyle={styles.menuButtonText} // Стили текста на кнопке
+      {isMounted && (
+        <View style={styles.mainContainer}>
+          {isMobile && menuVisible && (
+            <Pressable onPress={closeMenu} style={styles.overlay} />
           )}
-
-          <ScrollView
-            style={styles.container}
-            ref={scrollRef}
-            contentContainerStyle={styles.contentContainer}
-          >
-            <Stack.Screen options={{ headerTitle: travel.name }} />
-            <View style={styles.centeredContainer}>
-              <Slider images={gallery} onLayout={handleLayout('gallery')} />
-              <Card style={styles.card} onLayout={handleLayout('description')}>
-                <Card.Content>
-                  <Title>{travel.name}</Title>
-                  {travel?.description && (
-                    <RenderHtml
-                      source={{ html: travel.description }}
-                      contentWidth={width - 50}
-                    />
-                  )}
-                </Card.Content>
-              </Card>
-              <Map travel={travel} />
-              <PointList
-                points={travel?.travelAddress}
-                onLayout={handleLayout('map')}
-              />
-
-              <NearTravelList travel={travel} onLayout={handleLayout('near')} />
-              <PopularTravelList onLayout={handleLayout('popular')} />
+          {isMobile ? (
+            <View
+              style={[
+                styles.sideMenu,
+                styles.mobileSideMenu,
+                menuVisible && styles.visibleMobileSideMenu,
+              ]}
+            >
+              {rendersideBar()}
             </View>
-          </ScrollView>
+          ) : (
+            <View style={[styles.sideMenu, styles.desktopSideMenu]}>
+              {rendersideBar()}
+            </View>
+          )}
+          <View style={styles.content}>
+            {isMobile && !menuVisible && (
+              <TouchableOpacity
+                title="Меню"
+                style={styles.menuButtonContainer}
+                onPress={toggleMenu}
+              >
+                <Text style={styles.linkText}>Меню</Text>
+              </TouchableOpacity>
+              //  containerStyle={styles.menuButtonContainer} // Стили контейнера
+              // buttonStyle={styles.menuButton} // Стили кнопки
+              //  titleStyle={styles.menuButtonText} // Стили текста на кнопке
+            )}
+
+            <ScrollView
+              style={styles.container}
+              ref={scrollRef}
+              contentContainerStyle={styles.contentContainer}
+            >
+              <Stack.Screen options={{ headerTitle: travel.name }} />
+              <View style={styles.centeredContainer}>
+                <Slider images={gallery} onLayout={handleLayout('gallery')} />
+                <Card
+                  style={styles.card}
+                  onLayout={handleLayout('description')}
+                >
+                  <Card.Content>
+                    <Title>{travel.name}</Title>
+                    {travel?.description && (
+                      <RenderHtml
+                        source={{ html: travel.description }}
+                        contentWidth={width - 50}
+                      />
+                    )}
+                  </Card.Content>
+                </Card>
+                <Suspense fallback={<div>Loading...</div>}>
+                  <MapClientSideComponent travel={travel} />
+                </Suspense>
+
+                <PointList
+                  points={travel?.travelAddress}
+                  onLayout={handleLayout('map')}
+                />
+
+                <NearTravelList
+                  travel={travel}
+                  onLayout={handleLayout('near')}
+                />
+                <PopularTravelList onLayout={handleLayout('popular')} />
+              </View>
+            </ScrollView>
+          </View>
         </View>
-      </View>
+      )}
     </SafeAreaView>
   )
 }

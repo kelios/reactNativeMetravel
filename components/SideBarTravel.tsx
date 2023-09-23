@@ -71,7 +71,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
   travel,
 }) => {
   const handlePressUserTavel = () => {
-    const url = `?user_id=`+travel.userIds
+    const url = `/?user_id=` + travel.userIds
     Linking.openURL(url)
   }
 

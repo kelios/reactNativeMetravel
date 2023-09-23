@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
   Popup,
   useMapEvents,
 } from 'react-leaflet'
-import { Icon } from 'leaflet'
+import L, { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 type Point = {
@@ -23,6 +23,7 @@ type Point = {
   coord: string
   address: string
   travelImageThumbUrl: string
+  categoryName: string
 }
 
 type TravelPropsType = {
@@ -50,28 +51,6 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
     iconAnchor: [27, 15],
     popupAnchor: [0, -15],
   })
-
-  const imageStyle = useMemo(() => {
-    if (windowDimensions.width <= 600) {
-      return {
-        width: '100%',
-        maxHeight: '100px',
-        objectFit: 'cover',
-      }
-    } else if (windowDimensions.width <= 1024) {
-      return {
-        width: '100%',
-        maxHeight: '120px',
-        objectFit: 'cover',
-      }
-    } else {
-      return {
-        width: '100%',
-        maxHeight: '150px',
-        objectFit: 'cover',
-      }
-    }
-  }, [windowDimensions])
 
   return (
     <MapContainer
