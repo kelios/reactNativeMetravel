@@ -22,6 +22,7 @@ import { View } from '@/components/Themed'
 import { DataTable } from 'react-native-paper'
 import { SearchBar, Button } from 'react-native-elements'
 import MultiSelect from 'react-native-multiple-select'
+import { useLocalSearchParams } from 'expo-router'
 
 interface Category {
   id: string
@@ -93,6 +94,7 @@ export default function TabOneScreen() {
   const itemsPerPageOptions = [10, 20, 30, 50, 100]
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2])
+  const { user_id } = useLocalSearchParams()
 
   useEffect(() => {
     getFilters()
@@ -105,12 +107,14 @@ export default function TabOneScreen() {
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [itemsPerPage, search])
+  }, [itemsPerPage, search, user_id])
 
   const fetchMore = async () => {
     if (isLoading) return
     setIsLoading(true)
-    const newData = await fetchTravels(currentPage, itemsPerPage, search)
+    const newData = await fetchTravels(currentPage, itemsPerPage, search, {
+      user_id: user_id,
+    })
     setTravels(newData)
     setIsLoading(false)
   }

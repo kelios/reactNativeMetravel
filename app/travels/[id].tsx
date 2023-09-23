@@ -104,7 +104,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const gallery =
     IS_LOCAL_API === 'true'
       ? travel.gallery
-      : travel.gallery.map((item) => item?.url)
+      : (travel.gallery || []).map((item) => item?.url)
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

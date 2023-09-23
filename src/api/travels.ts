@@ -64,21 +64,15 @@ export const fetchTravels = async (
   page: number,
   itemsPerPage: number,
   search: string,
+  urlParams: Record<string, any>,
 ) => {
   try {
-    // const route = useRoute();
-    //  console.log(route.params);
-    // const { user_id } = route.params;
-    // console.log(user_id);
-    //  const user_id = urlParams.get('user_id');
-    //  if (user_id){
-    //    const where = {}
-    //  }
+    const whereObject = { publish: 1, moderation: 1, ...urlParams }
     const params = {
       page: page + 1,
       perPage: itemsPerPage,
       query: search,
-      where: JSON.stringify({ publish: 1, moderation: 1 }),
+      where: JSON.stringify(whereObject),
     }
     const urlTravel = queryString.stringifyUrl({
       url: GET_TRAVELS,
@@ -203,13 +197,24 @@ export const fetchTravelsNear = async (travel_id: number) => {
     const params = {
       travel_id: travel_id,
     }
-    const urlTravel = queryString.stringifyUrl({
-      url: GET_TRAVELS_NEAR,
-      query: params,
-    })
-    const res = await fetch(urlTravel)
-    const resData = await res.json()
-    return resData
+    if (IS_LOCAL_API == 'true') {
+      //${URLAPI}/api/travels/${travel_id}/near/
+      const urlTravel = queryString.stringifyUrl({
+        url: GET_TRAVELS + '/' + travel_id + '/near',
+        query: params,
+      })
+      const res = await fetch(urlTravel)
+      const resData = await res.json()
+      return resData
+    } else {
+      const urlTravel = queryString.stringifyUrl({
+        url: GET_TRAVELS_NEAR,
+        query: params,
+      })
+      const res = await fetch(urlTravel)
+      const resData = await res.json()
+      return resData
+    }
   } catch (e) {
     console.log('Error fetching fetchTravelsNear: ')
     return []
@@ -218,12 +223,22 @@ export const fetchTravelsNear = async (travel_id: number) => {
 
 export const fetchTravelsPopular = async (): Promise<TravelsMap> => {
   try {
-    const urlTravel = queryString.stringifyUrl({
-      url: GET_TRAVELS_POPULAR,
-    })
-    const res = await fetch(urlTravel)
-    const resData = await res.json()
-    return resData
+    if (IS_LOCAL_API == 'true') {
+      //${URLAPI}/api/travels/${travel_id}/near/
+      const urlTravel = queryString.stringifyUrl({
+        url: GET_TRAVELS + '/popular',
+      })
+      const res = await fetch(urlTravel)
+      const resData = await res.json()
+      return resData
+    } else {
+      const urlTravel = queryString.stringifyUrl({
+        url: GET_TRAVELS_POPULAR,
+      })
+      const res = await fetch(urlTravel)
+      const resData = await res.json()
+      return resData
+    }
   } catch (e) {
     console.log('Error fetching fetchTravelsNear: ')
   }
