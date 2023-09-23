@@ -65,7 +65,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
         setTravel(travelData)
       })
       .catch((error) => {
-        console.error('Failed to fetch travel data:', error)
+        console.log('Failed to fetch travel data:')
       })
   }, [id])
 
@@ -137,9 +137,6 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
               >
                 <Text style={styles.linkText}>Меню</Text>
               </TouchableOpacity>
-              //  containerStyle={styles.menuButtonContainer} // Стили контейнера
-              // buttonStyle={styles.menuButton} // Стили кнопки
-              //  titleStyle={styles.menuButtonText} // Стили текста на кнопке
             )}
 
             <ScrollView
@@ -164,7 +161,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                     )}
                   </Card.Content>
                 </Card>
-                <Suspense fallback={<div>Loading...</div>}>
+                <Suspense fallback={<Text>Loading...</Text>}>
                   <MapClientSideComponent travel={travel} />
                 </Suspense>
 
