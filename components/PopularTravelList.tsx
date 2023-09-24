@@ -5,6 +5,7 @@ import {
   Dimensions,
   StyleSheet,
   ActivityIndicator,
+  useWindowDimensions
 } from 'react-native'
 import { TravelInfo, TravelsMap } from '@/src/types/types'
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
@@ -23,9 +24,9 @@ const { width, height } = Dimensions.get('window')
 
 const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
   const [travelsPopular, setTravelsPopular] = useState<TravelsMap>({})
-  const windowWidth = Dimensions.get('window').width
-  const isMobile = windowWidth <= 768
-  const numCol = isMobile ? 1 : 3
+  const { width }  = useWindowDimensions();
+  const isMobile = width <= 768;
+  const numCol = isMobile ? 1 : 3;
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -53,6 +54,7 @@ const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
         keyExtractor={(item) => item.id.toString()}
         horizontal={false}
         numColumns={numCol}
+        key={numCol}
       />
     </View>
   )

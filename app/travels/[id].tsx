@@ -37,11 +37,18 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const { id } = useLocalSearchParams()
   const [travel, setTravel] = useState<Travel | null>(null)
   const { width } = useWindowDimensions()
-  const isWeb = Platform.OS === 'web'
-  const windowWidth = Dimensions.get('window').width
-  const isMobile = windowWidth <= 768
-  const initMenuVisible = !isMobile
+  const isMobile = width <= 768
 
+  useEffect(() => {
+    if (isMobile){
+    setMenuVisible(false)
+    }
+    else{
+      setMenuVisible(true)
+    }
+  }, [isMobile])
+
+  const initMenuVisible = !isMobile
   const scrollRef = useRef<ScrollView>(null)
 
   const [menuVisible, setMenuVisible] = useState(initMenuVisible) // Состояние видимости меню
@@ -54,6 +61,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const closeMenu = () => {
     setMenuVisible(false)
   }
+
 
   useEffect(() => {
     setIsMounted(true) // установка состояния при монтировании
