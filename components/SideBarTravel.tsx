@@ -127,22 +127,26 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
       </TouchableOpacity>
 
       <View style={styles.menu}>
-      <View style={styles.imageWrapper}>
-        <Card.Cover
-          source={{ uri: travel.travel_image_thumb_small_url }}
-          style={styles.image}
-        />
-      </View>
+        <View style={styles.imageWrapper}>
+          <Card.Cover
+            source={{ uri: travel.travel_image_thumb_small_url }}
+            style={styles.image}
+          />
+        </View>
         <Text>{travel.countUnicIpView} 👀</Text>
         <TouchableOpacity onPress={handlePressUserTavel}>
-          <Text style={styles.linkText}>Все путешествия {travel?.userName}</Text>
+          <Text style={styles.linkText}>
+            Все путешествия {travel?.userName}
+          </Text>
         </TouchableOpacity>
 
-        <Text>{ travel?.year } { travel?.monthName }</Text>
+        <Text>
+          {travel?.year} {travel?.monthName}
+        </Text>
         <Text>{travel?.countryName}</Text>
         <Text>{travel?.cityName}</Text>
         {travel?.number_days && (
-        <Text> Количество дней - { travel?.number_days }</Text>
+          <Text> Количество дней - {travel?.number_days}</Text>
         )}
       </View>
 

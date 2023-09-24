@@ -3,6 +3,7 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react",
+    "module": "commonjs",
     "lib": ["ES2015", "dom"],
     "paths": {
       "@/*": ["./*"]

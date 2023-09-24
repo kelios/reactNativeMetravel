@@ -5,20 +5,16 @@ import {
   ActivityIndicator,
   useWindowDimensions,
   StyleSheet,
-  Platform,
   SafeAreaView,
-  Dimensions,
   Pressable,
   TouchableOpacity,
   Text,
 } from 'react-native'
-import { Button } from 'react-native-elements'
-import { Stack, useLocalSearchParams, useGlobalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 import { Travel } from '@/src/types/types'
 import RenderHtml from 'react-native-render-html'
 import { Card, Title } from 'react-native-paper'
 import Slider from '@/components/Slider'
-import Map from '@/components/Map'
 import PointList from '@/components/PointList'
 import { IS_LOCAL_API } from '@env'
 import { fetchTravel } from '@/src/api/travels'
@@ -40,10 +36,9 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const isMobile = width <= 768
 
   useEffect(() => {
-    if (isMobile){
-    setMenuVisible(false)
-    }
-    else{
+    if (isMobile) {
+      setMenuVisible(false)
+    } else {
       setMenuVisible(true)
     }
   }, [isMobile])
@@ -61,7 +56,6 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const closeMenu = () => {
     setMenuVisible(false)
   }
-
 
   useEffect(() => {
     setIsMounted(true) // установка состояния при монтировании

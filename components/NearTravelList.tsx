@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { View, FlatList, Dimensions, StyleSheet, useWindowDimensions,ActivityIndicator } from 'react-native'
+import {
+  View,
+  FlatList,
+  Dimensions,
+  StyleSheet,
+  useWindowDimensions,
+  ActivityIndicator,
+} from 'react-native'
 import { Travels, Travel } from '@/src/types/types'
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
 import {
@@ -18,14 +25,12 @@ const { width, height } = Dimensions.get('window')
 
 const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
   const [travelsNear, setTravelsNear] = useState<Travel[]>([])
-  const { width }  = useWindowDimensions();
-  const isMobile = width <= 768;
-  const numCol = isMobile ? 1 : 3;
+  const { width } = useWindowDimensions()
+  const isMobile = width <= 768
+  const numCol = isMobile ? 1 : 3
   const [isLoading, setIsLoading] = useState(false)
-  
 
   useEffect(() => {
-    
     fetchTravelsNear(Number(travel.id))
       .then((travelData) => {
         setTravelsNear(travelData)

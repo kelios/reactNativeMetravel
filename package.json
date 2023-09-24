@@ -16,6 +16,7 @@
   "dependencies": {
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",
     "@expo-google-fonts/playfair-display": "^0.2.3",
+    "@expo/metro-runtime": "^2.2.10",
     "@expo/vector-icons": "^13.0.0",
     "@react-navigation/material-top-tabs": "^6.6.3",
     "@react-navigation/native": "^6.1.7",
