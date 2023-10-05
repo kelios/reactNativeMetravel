@@ -2,6 +2,7 @@ import { Travel } from '@/src/types/types'
 import React from 'react'
 import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native'
 import { Card, Text } from 'react-native-paper'
+import { IS_LOCAL_API } from '@env'
 
 const styles = StyleSheet.create({
   linkButton: {
@@ -74,27 +75,36 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
     const url = `/?user_id=` + travel.userIds
     Linking.openURL(url)
   }
+  const gallery =
+    IS_LOCAL_API === 'true'
+      ? travel.gallery
+      : (travel.gallery || []).map((item) => item?.url)
 
   return (
     <View style={styles.sideMenu}>
-      <TouchableOpacity
-        style={styles.linkButton}
-        onPress={() => {
-          handlePress('gallery')()
-          isMobile && closeMenu()
-        }}
-      >
-        <Text style={styles.linkText}>Галерея</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.linkButton}
-        onPress={() => {
-          handlePress('description')()
-          isMobile && closeMenu()
-        }}
-      >
-        <Text style={styles.linkText}>Описание</Text>
-      </TouchableOpacity>
+      {gallery.length > 0 && (
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={() => {
+            handlePress('gallery')()
+            isMobile && closeMenu()
+          }}
+        >
+          <Text style={styles.linkText}>Галерея</Text>
+        </TouchableOpacity>
+      )}
+
+      {travel?.description && (
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={() => {
+            handlePress('description')()
+            isMobile && closeMenu()
+          }}
+        >
+          <Text style={styles.linkText}>Описание</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         style={styles.linkButton}
         onPress={() => {
@@ -104,6 +114,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = ({
       >
         <Text style={styles.linkText}>Координаты мест</Text>
       </TouchableOpacity>
+
       <TouchableOpacity
         style={styles.linkButton}
         onPress={() => {

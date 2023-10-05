@@ -1,3 +1,4 @@
+import React from 'react'
 import '@expo/metro-runtime'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { DarkTheme, ThemeProvider } from '@react-navigation/native'

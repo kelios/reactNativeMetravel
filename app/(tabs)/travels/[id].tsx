@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef, Suspense } from 'react'
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  Suspense,
+  FunctionComponent,
+} from 'react'
 import {
   View,
   ScrollView,
@@ -9,10 +15,13 @@ import {
   Pressable,
   TouchableOpacity,
   Text,
+  Platform,
 } from 'react-native'
 import { Stack, useLocalSearchParams } from 'expo-router'
 import { Travel } from '@/src/types/types'
-import RenderHtml from 'react-native-render-html'
+import IframeRenderer, { iframeModel } from '@native-html/iframe-plugin'
+import RenderHTML from 'react-native-render-html'
+import { WebView } from 'react-native-webview'
 import { Card, Title } from 'react-native-paper'
 import Slider from '@/components/Slider'
 import PointList from '@/components/PointList'
@@ -103,6 +112,14 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
     return null
   }
 
+  const renderers = {
+    iframe: IframeRenderer,
+  }
+
+  const customHTMLElementModels = {
+    iframe: iframeModel,
+  }
+
   const gallery =
     IS_LOCAL_API === 'true'
       ? travel.gallery
@@ -148,34 +165,65 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
             >
               <Stack.Screen options={{ headerTitle: travel.name }} />
               <View style={styles.centeredContainer}>
-                <Slider images={gallery} onLayout={handleLayout('gallery')} />
-                <Card
-                  style={styles.card}
-                  onLayout={handleLayout('description')}
-                >
-                  <Card.Content>
-                    <Title>{travel.name}</Title>
-                    {travel?.description && (
-                      <RenderHtml
+                {gallery.length > 0 && (
+                  <Slider images={gallery} onLayout={handleLayout('gallery')} />
+                )}
+                {travel?.description && (
+                  <Card
+                    style={styles.card}
+                    onLayout={handleLayout('description')}
+                  >
+                    <Card.Content>
+                      <Title>{travel.name}</Title>
+
+                      <RenderHTML
                         source={{ html: travel.description }}
                         contentWidth={width - 50}
+                        renderers={renderers}
+                        customHTMLElementModels={customHTMLElementModels}
+                        WebView={WebView}
+                        defaultWebViewProps={{}}
+                        renderersProps={{
+                          iframe: {
+                            scalesPageToFit: true,
+                            webViewProps: {
+                              allowsFullScreen: true,
+                            },
+                          },
+                        }}
+                        tagsStyles={{
+                          p: { marginTop: 15, marginBottom: 0 },
+                          iframe: {
+                            height: 1500,
+                            width: 680,
+                            overflow: 'hidden',
+                            marginTop: 15,
+                            borderRadius: 5,
+                            marginHorizontal: 0,
+                          },
+                        }}
                       />
-                    )}
-                  </Card.Content>
-                </Card>
+                    </Card.Content>
+                  </Card>
+                )}
                 <Suspense fallback={<Text>Loading...</Text>}>
                   <MapClientSideComponent travel={travel} />
                 </Suspense>
 
-                <PointList
-                  points={travel?.travelAddress}
-                  onLayout={handleLayout('map')}
-                />
+                {travel?.travelAddress && (
+                  <PointList
+                    points={travel?.travelAddress}
+                    onLayout={handleLayout('map')}
+                  />
+                )}
 
-                <NearTravelList
-                  travel={travel}
-                  onLayout={handleLayout('near')}
-                />
+                {travel?.travelAddress && (
+                  <NearTravelList
+                    travel={travel}
+                    onLayout={handleLayout('near')}
+                  />
+                )}
+
                 <PopularTravelList onLayout={handleLayout('popular')} />
               </View>
             </ScrollView>
