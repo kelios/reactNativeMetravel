@@ -88,12 +88,17 @@ export const fetchTravels = async (
   }
 }
 
-export const fetchTravelsby = async (page: number, itemsPerPage: number) => {
+export const fetchTravelsby = async (
+  page: number,
+  itemsPerPage: number,
+  search: string,
+  urlParams: Record<string, any>) => {
   try {
+    const whereObject = { publish: 1, moderation: 1, countries: [3], ...urlParams }
     const params = {
       page: page + 1,
       perPage: itemsPerPage,
-      where: JSON.stringify({ publish: 1, moderation: 1, countries: [3] }),
+      where: JSON.stringify(whereObject),
     }
     const urlTravel = queryString.stringifyUrl({
       url: GET_TRAVELS,
