@@ -1,16 +1,14 @@
 import React from 'react'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
-import { Link, Tabs } from 'expo-router'
+import { Tabs } from 'expo-router'
 import {
-  Pressable,
   useColorScheme,
   Image,
   Text,
   View,
-  ViewStyle,
+  useWindowDimensions,
 } from 'react-native'
 import Footer from '@/components/Footer'
-import Colors from '@/constants/Colors'
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -38,17 +36,17 @@ function renderRightMenu() {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme()
-
+  const width = useWindowDimensions().width
   return (
     <>
       <Tabs
         screenOptions={{
           tabBarStyle: {
             width: '100%',
-            padding: 10,
+            padding: width > 500 ? 10 : 0,
             position: 'absolute',
-            bottom: 30,
-            height: 50,
+            bottom: width > 500 ? 30 : 20,
+            height: width > 500 ? 50 : 80,
           },
         }}
       >

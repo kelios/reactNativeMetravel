@@ -1,7 +1,9 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity,useWindowDimensions } from 'react-native'
 
 const Footer: React.FC = () => {
+  const windowsWidth = useWindowDimensions().width
+  const styles = getStyles(windowsWidth); 
   return (
     <View style={styles.footerContainer}>
       <View style={styles.linkContainer}>
@@ -34,16 +36,15 @@ const Footer: React.FC = () => {
   )
 }
 
-const styles = StyleSheet.create({
+const getStyles = (windowsWidth: number) => {
+  return StyleSheet.create({
   footerContainer: {
     width: '100%',
     backgroundColor: '#333',
-    // alignItems: 'flex-start',
-    // justifyContent: 'flex-start',
-    padding: 5,
+    padding: windowsWidth > 500 ? 10 : 5,
     position: 'absolute',
     bottom: 0,
-    height: 30,
+    height: windowsWidth > 500 ? 30 : 40,
     borderColor: 'black',
   },
   linkContainer: {
@@ -57,10 +58,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: '#6c757d',
-    fontSize: 10,
+    fontSize: windowsWidth > 500 ? 12 : 1,
     alignItems: 'flex-end',
     justifyContent: 'flex-end',
   },
-})
+});
+};
 
 export default Footer

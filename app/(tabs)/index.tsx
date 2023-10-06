@@ -55,7 +55,8 @@ interface FilterValue {
 
 export default function TabOneScreen() {
   const initialPage = 0
-
+  const windowWidth = Dimensions.get('window').width
+  const styles = getStyles(windowWidth); 
   const [search, setSearch] = useState('')
 
   const [filters, setFilters] = useState<Filters>({
@@ -82,7 +83,6 @@ export default function TabOneScreen() {
   })
   const [isLoadingFilters, setIsLoadingFilters] = useState(false)
 
-  const windowWidth = Dimensions.get('window').width
   const isMobile = windowWidth <= 768
   const initMenuVisible = !isMobile
 
@@ -489,7 +489,8 @@ export default function TabOneScreen() {
   )
 }
 
-const styles = StyleSheet.create({
+const getStyles = (windowWidth: number) => {
+  return StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: 'white',
     color: 'black',
-    paddingBottom: 100,
+    paddingBottom: windowWidth > 500 ? '7%': '20%',
   },
   containerSearch: {
     marginTop: 10,
@@ -614,4 +615,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-})
+});
+};

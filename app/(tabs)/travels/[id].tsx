@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useState,
-  useRef,
-  Suspense,
-  FunctionComponent,
-} from 'react'
+import React, { useEffect, useState, useRef, Suspense } from 'react'
 import {
   View,
   ScrollView,
@@ -112,6 +106,8 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
     return null
   }
 
+  const isWeb = Platform.OS === 'web'
+  /*
   const renderers = {
     iframe: IframeRenderer,
   }
@@ -119,6 +115,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const customHTMLElementModels = {
     iframe: iframeModel,
   }
+*/
 
   const gallery =
     IS_LOCAL_API === 'true'
@@ -176,33 +173,48 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                     <Card.Content>
                       <Title>{travel.name}</Title>
 
-                      <RenderHTML
-                        source={{ html: travel.description }}
-                        contentWidth={width - 50}
-                        renderers={renderers}
-                        customHTMLElementModels={customHTMLElementModels}
-                        WebView={WebView}
-                        defaultWebViewProps={{}}
-                        renderersProps={{
-                          iframe: {
-                            scalesPageToFit: true,
-                            webViewProps: {
-                              allowsFullScreen: true,
-                            },
-                          },
-                        }}
-                        tagsStyles={{
-                          p: { marginTop: 15, marginBottom: 0 },
-                          iframe: {
-                            height: 1500,
-                            width: 680,
-                            overflow: 'hidden',
-                            marginTop: 15,
-                            borderRadius: 5,
-                            marginHorizontal: 0,
-                          },
-                        }}
-                      />
+                      {Platform.select({
+                        web: (
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: travel.description,
+                            }}
+                          />
+                        ),
+                        default: (
+                          <RenderHTML
+                            source={{ html: travel.description }}
+                            contentWidth={width - 50}
+                            renderers={{
+                              iframe: IframeRenderer,
+                            }}
+                            customHTMLElementModels={{
+                              iframe: iframeModel,
+                            }}
+                            WebView={WebView}
+                            defaultWebViewProps={{}}
+                            renderersProps={{
+                              iframe: {
+                                scalesPageToFit: true,
+                                webViewProps: {
+                                  allowsFullScreen: true,
+                                },
+                              },
+                            }}
+                            tagsStyles={{
+                              p: { marginTop: 15, marginBottom: 0 },
+                              iframe: {
+                                height: 1500,
+                                width: 680,
+                                overflow: 'hidden',
+                                marginTop: 15,
+                                borderRadius: 5,
+                                marginHorizontal: 0,
+                              },
+                            }}
+                          />
+                        ),
+                      })}
                     </Card.Content>
                   </Card>
                 )}
