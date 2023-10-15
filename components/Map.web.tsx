@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  useWindowDimensions,
-  Platform,
-} from 'react-native'
+import { View, Text, Image, StyleSheet } from 'react-native'
 import {
   MapContainer,
   TileLayer,
@@ -44,7 +37,7 @@ const getLatLng = (latlng: string): [number, number] => {
 }
 
 const Map: React.FC<TravelProps> = ({ travel }) => {
-  const windowDimensions = useWindowDimensions()
+  const travelAddress = travel?.travelAddress || travel || []
   const meTravelIcon = new Icon({
     iconUrl: '/assets/icons/logo_yellow.ico',
     iconSize: [27, 30],
@@ -56,15 +49,15 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
     <MapContainer
       center={[53.8828449, 27.7273595]}
       zoom={7}
-      style={{ height: '500px', width: '100%' }}
+      style={{ height: '100%', width: '100%' }}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-      {travel?.travelAddress.map((point) => (
+      {travelAddress.map((point, index) => (
         <Marker
-          key={point.id}
+          key={index}
           position={getLatLng(point.coord)}
           icon={meTravelIcon}
         >
@@ -90,11 +83,12 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
 }
 
 const SetViewToBounds: React.FC<SetViewToBoundsProps> = ({ travel }) => {
+  const travelAddress = travel?.travelAddress || travel || []
   const map = useMapEvents({})
-  React.useEffect(() => {
-    if (travel?.travelAddress.length) {
+  useEffect(() => {
+    if (travelAddress.length) {
       const bounds = L.latLngBounds(
-        travel.travelAddress.map((point) => getLatLng(point.coord)),
+        travelAddress.map((point) => getLatLng(point.coord)),
       )
       map.fitBounds(bounds)
     }
@@ -117,15 +111,15 @@ const styles = StyleSheet.create({
     maxWidth: 1000,
   },
   webMap: {
-    height: 400,
-    width: 400,
+    height: '100%',
+    width: '100%',
     border: '1px solid #ccc',
     borderRadius: 10,
     overflow: 'hidden',
   },
   map: {
     width: '100%',
-    height: 400,
+    height: '100%',
     borderRadius: 10,
     overflow: 'hidden',
     shadowColor: '#000',

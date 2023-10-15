@@ -20,6 +20,16 @@ export type Travel = {
   number_days: number
 }
 
+export type TravelCoords = {
+  address: string
+  categoryName: string
+  coord: string
+  lat: string
+  lng: string
+  travelImageThumbUrl: string
+  urlTravel: string
+}
+
 export type TravelInfo = {
   name: string
   url: string
@@ -34,6 +44,10 @@ export type TravelInfo = {
 
 export type TravelsMap = {
   [key: string]: TravelInfo
+}
+
+export type TravelsForMap = {
+  [key: number]: TravelCoords
 }
 
 export type Travels = {

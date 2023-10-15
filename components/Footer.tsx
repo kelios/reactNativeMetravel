@@ -1,9 +1,15 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity,useWindowDimensions } from 'react-native'
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  useWindowDimensions,
+} from 'react-native'
 
 const Footer: React.FC = () => {
   const windowsWidth = useWindowDimensions().width
-  const styles = getStyles(windowsWidth); 
+  const styles = getStyles(windowsWidth)
   return (
     <View style={styles.footerContainer}>
       <View style={styles.linkContainer}>
@@ -38,31 +44,31 @@ const Footer: React.FC = () => {
 
 const getStyles = (windowsWidth: number) => {
   return StyleSheet.create({
-  footerContainer: {
-    width: '100%',
-    backgroundColor: '#333',
-    padding: windowsWidth > 500 ? 10 : 5,
-    position: 'absolute',
-    bottom: 0,
-    height: windowsWidth > 500 ? 30 : 40,
-    borderColor: 'black',
-  },
-  linkContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  linkText: {
-    color: '#fff',
-    textDecorationLine: 'underline',
-  },
-  footerText: {
-    color: '#6c757d',
-    fontSize: windowsWidth > 500 ? 12 : 1,
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
-  },
-});
-};
+    footerContainer: {
+      width: '100%',
+      backgroundColor: '#333',
+      padding: windowsWidth > 500 ? 10 : 5,
+      position: 'absolute',
+      bottom: 0,
+      height: windowsWidth > 500 ? 30 : 40,
+      borderColor: 'black',
+    },
+    linkContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      width: '100%',
+    },
+    linkText: {
+      color: '#fff',
+      textDecorationLine: 'underline',
+    },
+    footerText: {
+      color: '#6c757d',
+      fontSize: windowsWidth > 500 ? 12 : 1,
+      alignItems: 'flex-end',
+      justifyContent: 'flex-end',
+    },
+  })
+}
 
 export default Footer

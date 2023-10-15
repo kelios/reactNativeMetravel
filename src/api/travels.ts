@@ -1,4 +1,4 @@
-import { Travel, Filters, TravelsMap } from '@/src/types/types'
+import { Travel, Filters, TravelsMap, TravelsForMap } from '@/src/types/types'
 import queryString from 'query-string'
 import { PROD_API_URL, LOCAL_API_URL, IS_LOCAL_API } from '@env'
 
@@ -17,6 +17,9 @@ const GET_TRAVELS_POPULAR = `${URLAPI}/api/travelsPopular`
 
 const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
+
+const GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
+const SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
 
 const travelDef = {
   name: 'test',
@@ -92,9 +95,15 @@ export const fetchTravelsby = async (
   page: number,
   itemsPerPage: number,
   search: string,
-  urlParams: Record<string, any>) => {
+  urlParams: Record<string, any>,
+) => {
   try {
-    const whereObject = { publish: 1, moderation: 1, countries: [3], ...urlParams }
+    const whereObject = {
+      publish: 1,
+      moderation: 1,
+      countries: [3],
+      ...urlParams,
+    }
     const params = {
       page: page + 1,
       perPage: itemsPerPage,
@@ -246,5 +255,78 @@ export const fetchTravelsPopular = async (): Promise<TravelsMap> => {
     }
   } catch (e) {
     console.log('Error fetching fetchTravelsNear: ')
+  }
+}
+
+/*filter: {},
+) => {
+  try {
+    const params = {
+      page: page + 1,
+      perPage: itemsPerPage,
+      query: search,
+      where: JSON.stringify({
+        publish: 1,
+        moderation: 1,
+        countries: filter?.countries,
+        categories: filter?.categories,
+        categoryTravelAddress: filter?.categoryTravelAddress,
+        companion: filter?.companion,
+        complexity: filter?.complexity,
+        month: filter?.month,
+        overNightStay: filter?.overNightStay,
+        transports: filter?.transports,
+        year: filter?.year,
+      }),
+    }
+    const urlTravel = queryString.stringifyUrl({
+      url: GET_FILTERS_TRAVEL,
+      query: params,
+    }) */
+
+export const fetchTravelsForMap = async (
+  page: number,
+  itemsPerPage: number,
+  filter: {},
+): Promise<TravelsForMap> => {
+  try {
+    const radius = (filter && filter.radius.length !== 0) || 60
+    console.log(radius)
+    const whereObject = {
+      publish: 1,
+      moderation: 1,
+      lat: 50.0170649,
+      lng: 19.8933367,
+      radius: { id: radius, name: radius },
+    }
+
+    // {"lat":50.0170649,"lng":19.8933367,"radius":{"id":60,"name":60}}
+    const params = {
+      page: page + 1,
+      perPage: itemsPerPage,
+      query: filter,
+      where: JSON.stringify(whereObject),
+    }
+    const urlTravel = queryString.stringifyUrl({
+      url: SEARCH_TRAVELS_FOR_MAP,
+      query: params,
+    })
+    const res = await fetch(urlTravel)
+    const resData = await res.json()
+    return resData
+  } catch (e) {
+    console.log('Error fetching fetchTravelsNear: ')
+    return []
+  }
+}
+
+export const fetchFiltersMap = async (): Promise<Filters> => {
+  try {
+    const res = await fetch(`${GET_FILTER_FOR_MAP}`)
+    const resData = await res.json()
+    return resData
+  } catch (e) {
+    console.log('Error fetching filters: ' + e)
+    return []
   }
 }

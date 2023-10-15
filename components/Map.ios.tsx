@@ -24,6 +24,7 @@ const getLatLng = (coord: string) => {
 }
 
 const Map: React.FC<TravelProps> = ({ travel }) => {
+  const travelAddress = travel?.travelAddress || travel || []
   const region = {
     latitude: 53.8828449,
     longitude: 27.7273595,
@@ -32,10 +33,8 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
   }
   const mapRef = React.useRef<MapView | null>(null)
   React.useEffect(() => {
-    if (mapRef.current && travel?.travelAddress.length) {
-      const coordinates = travel.travelAddress.map((point) =>
-        getLatLng(point.coord),
-      )
+    if (mapRef.current && travelAddress.length) {
+      const coordinates = travelAddress.map((point) => getLatLng(point?.coord))
       mapRef.current.fitToCoordinates(coordinates, {
         edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
         animated: true,
@@ -45,19 +44,21 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
 
   return (
     <MapView style={styles.map} ref={mapRef} initialRegion={region}>
-      {travel?.travelAddress.map((point) => (
+      {travelAddress.map((point, index) => (
         <Marker
-          key={point.id}
-          coordinate={getLatLng(point.coord)}
-          title={point.address}
+          key={index}
+          coordinate={getLatLng(point?.coord)}
+          title={point?.address}
         >
           <Callout>
             <View>
-              <Image
-                source={{ uri: point.travelImageThumbUrl }}
-                style={styles.pointImage}
-              />
-              <Text>{point.coord}</Text>
+              {point?.travelImageThumbUrl && (
+                <Image
+                  source={{ uri: point?.travelImageThumbUrl }}
+                  style={styles.pointImage}
+                />
+              )}
+              <Text>{point?.coord}</Text>
             </View>
           </Callout>
         </Marker>

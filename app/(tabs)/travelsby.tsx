@@ -56,7 +56,7 @@ interface FilterValue {
 export default function TravelsBycreen() {
   const initialPage = 0
   const windowWidth = Dimensions.get('window').width
-  const styles = getStyles(windowWidth); 
+  const styles = getStyles(windowWidth)
   const [search, setSearch] = useState('')
 
   const [filters, setFilters] = useState<Filters>({
@@ -491,129 +491,129 @@ export default function TravelsBycreen() {
 
 const getStyles = (windowWidth: number) => {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'row',
-    width: '100%',
-    backgroundColor: 'white',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: 'white',
-  },
-  containerPaginator: {
-    marginTop: 10,
-    paddingHorizontal: 10,
-    backgroundColor: 'white',
-    color: 'black',
-    paddingBottom: windowWidth > 500 ? '7%': '20%',
-  },
-  containerSearch: {
-    marginTop: 10,
-    paddingHorizontal: 10,
-    backgroundColor: 'white',
-    color: 'black',
-    width: '100%',
-  },
-  searchBarContainer: {
-    backgroundColor: 'white',
-    flexDirection: 'row',
-    //  flex: 1,
-    // height:200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignContent: 'center',
-    borderBottomColor: 'transparent',
-    borderTopColor: 'transparent',
-  },
+    container: {
+      flex: 1,
+      flexDirection: 'row',
+      width: '100%',
+      backgroundColor: 'white',
+    },
+    content: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: 'white',
+    },
+    containerPaginator: {
+      marginTop: 10,
+      paddingHorizontal: 10,
+      backgroundColor: 'white',
+      color: 'black',
+      paddingBottom: windowWidth > 500 ? '7%' : '20%',
+    },
+    containerSearch: {
+      marginTop: 10,
+      paddingHorizontal: 10,
+      backgroundColor: 'white',
+      color: 'black',
+      width: '100%',
+    },
+    searchBarContainer: {
+      backgroundColor: 'white',
+      flexDirection: 'row',
+      //  flex: 1,
+      // height:200,
+      justifyContent: 'center',
+      alignItems: 'center',
+      alignContent: 'center',
+      borderBottomColor: 'transparent',
+      borderTopColor: 'transparent',
+    },
 
-  //боковое меню
-  overlay: {
-    flex: 1,
-    backgroundColor: 'white',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1,
-  },
-  sideMenu: {
-    padding: 20,
-    backgroundColor: 'white',
-  },
-  mobileSideMenu: {
-    width: '100%',
-    position: 'absolute',
-    backgroundColor: 'white',
-    zIndex: 999,
-    elevation: 2,
-    top: 0,
-    left: 0,
-    transform: [{ translateX: -1000 }],
-  },
-  visibleMobileSideMenu: {
-    transform: [{ translateX: 0 }],
-  },
-  desktopSideMenu: {
-    width: 300,
-    backgroundColor: 'white',
-  },
-  filterHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    backgroundColor: 'white',
-  },
-  input: {
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 8,
-    backgroundColor: 'white',
-  },
-  applyButton: {
-    backgroundColor: '#6aaaaa',
-    padding: 10,
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  applyButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    backgroundColor: 'gray',
-    padding: 10,
-    alignItems: 'center',
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
+    //боковое меню
+    overlay: {
+      flex: 1,
+      backgroundColor: 'white',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1,
+    },
+    sideMenu: {
+      padding: 20,
+      backgroundColor: 'white',
+    },
+    mobileSideMenu: {
+      width: '100%',
+      position: 'absolute',
+      backgroundColor: 'white',
+      zIndex: 999,
+      elevation: 2,
+      top: 0,
+      left: 0,
+      transform: [{ translateX: -1000 }],
+    },
+    visibleMobileSideMenu: {
+      transform: [{ translateX: 0 }],
+    },
+    desktopSideMenu: {
+      width: 300,
+      backgroundColor: 'white',
+    },
+    filterHeader: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 10,
+      backgroundColor: 'white',
+    },
+    input: {
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: '#ccc',
+      padding: 8,
+      backgroundColor: 'white',
+    },
+    applyButton: {
+      backgroundColor: '#6aaaaa',
+      padding: 10,
+      alignItems: 'center',
+      borderRadius: 5,
+    },
+    applyButtonText: {
+      color: 'white',
+      fontWeight: 'bold',
+    },
+    closeButton: {
+      backgroundColor: 'gray',
+      padding: 10,
+      alignItems: 'center',
+      borderRadius: 5,
+      marginTop: 10,
+    },
+    closeButtonText: {
+      color: 'white',
+      fontWeight: 'bold',
+    },
 
-  menuButtonContainer: {
-    //alignSelf: 'flex-start', // Позиционирование кнопки
-    //flex:1,
-    width: 600,
-    // marginLeft: 20, // Отступ слева
-    // marginTop: 20, // Отступ сверху
-  },
-  menuButton: {
-    // flex: 1,
-    backgroundColor: '#6aaaaa',
-    // paddingHorizontal: 20,
-    //  paddingVertical: 10,
-    //  borderRadius: 5,
-  },
-  menuButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-});
-};
+    menuButtonContainer: {
+      //alignSelf: 'flex-start', // Позиционирование кнопки
+      //flex:1,
+      width: 600,
+      // marginLeft: 20, // Отступ слева
+      // marginTop: 20, // Отступ сверху
+    },
+    menuButton: {
+      // flex: 1,
+      backgroundColor: '#6aaaaa',
+      // paddingHorizontal: 20,
+      //  paddingVertical: 10,
+      //  borderRadius: 5,
+    },
+    menuButtonText: {
+      color: 'white',
+      fontWeight: 'bold',
+    },
+  })
+}

@@ -218,9 +218,11 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                     </Card.Content>
                   </Card>
                 )}
-                <Suspense fallback={<Text>Loading...</Text>}>
-                  <MapClientSideComponent travel={travel} />
-                </Suspense>
+                <View style={styles.mapBlock}>
+                  <Suspense fallback={<Text>Loading...</Text>}>
+                    <MapClientSideComponent travel={travel} />
+                  </Suspense>
+                </View>
 
                 {travel?.travelAddress && (
                   <PointList
@@ -252,6 +254,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     backgroundColor: 'white',
+  },
+  mapBlock: {
+    //  flex: 1,
+    width: 800,
+    height: 800,
   },
   container: {
     flex: 1,
