@@ -290,14 +290,28 @@ export const fetchTravelsForMap = async (
   filter: {},
 ): Promise<TravelsForMap> => {
   try {
-    const radius = (filter && filter.radius.length !== 0) || 60
-    console.log(radius)
+    console.log(filter)
+    const radius = filter?.radius[0] ?? 60;
     const whereObject = {
       publish: 1,
       moderation: 1,
       lat: 50.0170649,
       lng: 19.8933367,
       radius: { id: radius, name: radius },
+      categories:[],
+      address:null,
+    }
+    console.log(radius)
+    if (filter?.categories?.length>0) {
+      filter?.categories.forEach((category, index) => {
+        whereObject.categories[index] = { id: category, name: category };
+      });
+    }
+
+    if (filter?.address.length) {
+     
+        whereObject.address = filter?.address;
+     
     }
 
     // {"lat":50.0170649,"lng":19.8933367,"radius":{"id":60,"name":60}}

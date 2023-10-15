@@ -23,11 +23,11 @@ const getLatLng = (coord: string) => {
   return { latitude, longitude }
 }
 
-const Map: React.FC<TravelProps> = ({ travel }) => {
+const Map: React.FC<TravelProps> = ({ travel,coordinates }) => {
   const travelAddress = travel?.travelAddress || travel || []
   const region = {
-    latitude: 53.8828449,
-    longitude: 27.7273595,
+    latitude: coordinates.latitude,
+    longitude: coordinates.longitude,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   }

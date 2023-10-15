@@ -18,17 +18,18 @@ import { TravelCoords, TravelsForMap } from '@/src/types/types'
 import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels'
 import { DataTable } from 'react-native-paper'
 import AddressListItem from '@/components/AddressListItem'
+import Geolocation from 'react-native-geolocation-service';
 
 interface FiltersMap {
   radius: string[]
   categories: string[]
-  addres: string
+  address: string
 }
 
 interface FilterMapValue {
   radius: string[]
   categories: string[]
-  addres: string
+  address: string
 }
 
 export default function MapScreen() {
@@ -52,13 +53,30 @@ export default function MapScreen() {
   const [filters, setFilters] = useState<FiltersMap>({
     radius: [],
     categories: [],
-    addres: '',
+    address: '',
   })
   const [filterValue, setFilterValue] = useState<FilterMapValue>({
     radius: [],
     categories: [],
-    addres: '',
+    address: '',
   })
+
+  const [coordinates, setCoordinates] = useState({ latitude: 53.8828449, longitude: 27.7273595 });  // Используйте начальные значения ваших координат
+
+
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      position => {
+        const { latitude, longitude } = position.coords;
+        setCoordinates({ latitude, longitude });
+       console.log(latitude,longitude);
+      },
+      error => {
+        console.error(error);  // Логируйте ошибку в консоль, если возникнет проблема с получением координат
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  }, []);
 
   useEffect(() => {
     getFiltersMap()
@@ -97,7 +115,7 @@ export default function MapScreen() {
   const handleTextFilterChange = (value: string) => {
     setFilterValue({
       ...filterValue,
-      addres: value,
+      address: value,
     })
   }
   const toggleMenu = () => {
@@ -207,7 +225,7 @@ export default function MapScreen() {
       {/* Компонент карты */}
       <View style={styles.map}>
         <Suspense fallback={<Text>Loading...</Text>}>
-          <MapClientSideComponent travel={travel} />
+          <MapClientSideComponent travel={travel} coordinates={coordinates} />
         </Suspense>
       </View>
 
@@ -279,7 +297,7 @@ const getStyles = (isMobile: boolean) => {
     containerPaginator: {
       backgroundColor: 'white',
       color: 'black',
-      paddingBottom: isMobile ? '40%' : 70,
+      paddingBottom: isMobile ? 100 : 70,
     },
     mobileSideMenu: {
       width: '100%',

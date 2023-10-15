@@ -11,6 +11,7 @@ import {
 import L, { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
+
 type Point = {
   id: number
   coord: string
@@ -36,7 +37,7 @@ const getLatLng = (latlng: string): [number, number] => {
   return [lat, lng]
 }
 
-const Map: React.FC<TravelProps> = ({ travel }) => {
+const Map: React.FC<TravelProps> = ({ travel,coordinates }) => {
   const travelAddress = travel?.travelAddress || travel || []
   const meTravelIcon = new Icon({
     iconUrl: '/assets/icons/logo_yellow.ico',
@@ -44,10 +45,12 @@ const Map: React.FC<TravelProps> = ({ travel }) => {
     iconAnchor: [27, 15],
     popupAnchor: [0, -15],
   })
+ 
 
   return (
     <MapContainer
-      center={[53.8828449, 27.7273595]}
+     // center={[53.8828449, 27.7273595]}
+     center={[coordinates.latitude, coordinates.longitude]}
       zoom={7}
       style={{ height: '100%', width: '100%' }}
     >
