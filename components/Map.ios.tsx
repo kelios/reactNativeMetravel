@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { View, Text, Image, StyleSheet } from 'react-native'
 import MapView, { Marker, Callout } from 'react-native-maps'
 
@@ -39,11 +39,13 @@ const Map: React.FC<TravelProps> = ({
     latitude: number
     longitude: number
   } | null>(propCoordinates)
+
   useEffect(() => {
     if (!localCoordinates) {
       setLocalCoordinates({ latitude: 53.8828449, longitude: 27.7273595 })
     }
   }, [localCoordinates])
+
   const region = {
     latitude: localCoordinates ? localCoordinates.latitude : '53.8828449',
     longitude: localCoordinates ? localCoordinates.longitude : '53.8828449',

@@ -9,6 +9,7 @@ import {
   TextInput,
   Pressable,
   TouchableOpacity,
+  Platform,
 } from 'react-native'
 import { Button } from 'react-native-elements'
 import MultiSelect from 'react-native-multiple-select'
@@ -18,7 +19,7 @@ import { TravelCoords, TravelsForMap } from '@/src/types/types'
 import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels'
 import { DataTable } from 'react-native-paper'
 import AddressListItem from '@/components/AddressListItem'
-import Geolocation from 'react-native-geolocation-service'
+import * as Location from 'expo-location';
 
 interface FiltersMap {
   radius: string[]
@@ -66,18 +67,20 @@ export default function MapScreen() {
     longitude: 27.7273595,
   }) // Используйте начальные значения ваших координат
 
+
   useEffect(() => {
-    Geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location
         setCoordinates({ latitude, longitude })
-      },
-      (error) => {
-        console.error(error) // Логируйте ошибку в консоль, если возникнет проблема с получением координат
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-    )
-  }, [])
+    })();
+  }, []);
 
   useEffect(() => {
     getFiltersMap()
