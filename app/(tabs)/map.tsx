@@ -18,7 +18,7 @@ import { TravelCoords, TravelsForMap } from '@/src/types/types'
 import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels'
 import { DataTable } from 'react-native-paper'
 import AddressListItem from '@/components/AddressListItem'
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from 'react-native-geolocation-service'
 
 interface FiltersMap {
   radius: string[]
@@ -61,22 +61,23 @@ export default function MapScreen() {
     address: '',
   })
 
-  const [coordinates, setCoordinates] = useState({ latitude: 53.8828449, longitude: 27.7273595 });  // Используйте начальные значения ваших координат
-
+  const [coordinates, setCoordinates] = useState({
+    latitude: 53.8828449,
+    longitude: 27.7273595,
+  }) // Используйте начальные значения ваших координат
 
   useEffect(() => {
     Geolocation.getCurrentPosition(
-      position => {
-        const { latitude, longitude } = position.coords;
-        setCoordinates({ latitude, longitude });
-       console.log(latitude,longitude);
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setCoordinates({ latitude, longitude })
       },
-      error => {
-        console.error(error);  // Логируйте ошибку в консоль, если возникнет проблема с получением координат
+      (error) => {
+        console.error(error) // Логируйте ошибку в консоль, если возникнет проблема с получением координат
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
-  }, []);
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
+    )
+  }, [])
 
   useEffect(() => {
     getFiltersMap()

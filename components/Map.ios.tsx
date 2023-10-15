@@ -10,8 +10,14 @@ type Point = {
   categoryName?: string
 }
 
+interface Coordinates {
+  latitude: number
+  longitude: number
+}
+
 interface TravelProps {
   travel: TravelPropsType
+  coordinates: Coordinates | null
 }
 
 type TravelPropsType = {
@@ -23,11 +29,24 @@ const getLatLng = (coord: string) => {
   return { latitude, longitude }
 }
 
-const Map: React.FC<TravelProps> = ({ travel,coordinates }) => {
+const Map: React.FC<TravelProps> = ({
+  travel,
+  coordinates: propCoordinates,
+}) => {
   const travelAddress = travel?.travelAddress || travel || []
+
+  const [localCoordinates, setLocalCoordinates] = useState<{
+    latitude: number
+    longitude: number
+  } | null>(propCoordinates)
+  useEffect(() => {
+    if (!localCoordinates) {
+      setLocalCoordinates({ latitude: 53.8828449, longitude: 27.7273595 })
+    }
+  }, [localCoordinates])
   const region = {
-    latitude: coordinates.latitude,
-    longitude: coordinates.longitude,
+    latitude: localCoordinates ? localCoordinates.latitude : '53.8828449',
+    longitude: localCoordinates ? localCoordinates.longitude : '53.8828449',
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   }

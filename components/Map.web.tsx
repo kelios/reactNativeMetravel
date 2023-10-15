@@ -11,7 +11,6 @@ import {
 import L, { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-
 type Point = {
   id: number
   coord: string
@@ -24,8 +23,14 @@ type TravelPropsType = {
   travelAddress: Point[]
 }
 
+interface Coordinates {
+  latitude: number
+  longitude: number
+}
+
 interface TravelProps {
   travel: TravelPropsType
+  coordinates: Coordinates | null
 }
 
 type SetViewToBoundsProps = {
@@ -37,20 +42,36 @@ const getLatLng = (latlng: string): [number, number] => {
   return [lat, lng]
 }
 
-const Map: React.FC<TravelProps> = ({ travel,coordinates }) => {
+const Map: React.FC<TravelProps> = ({
+  travel,
+  coordinates: propCoordinates,
+}) => {
   const travelAddress = travel?.travelAddress || travel || []
+  const [localCoordinates, setLocalCoordinates] = useState<{
+    latitude: number
+    longitude: number
+  } | null>(propCoordinates)
+  useEffect(() => {
+    if (!localCoordinates) {
+      setLocalCoordinates({ latitude: 53.8828449, longitude: 27.7273595 })
+    }
+  }, [localCoordinates])
+
   const meTravelIcon = new Icon({
     iconUrl: '/assets/icons/logo_yellow.ico',
     iconSize: [27, 30],
     iconAnchor: [27, 15],
     popupAnchor: [0, -15],
   })
- 
 
   return (
     <MapContainer
-     // center={[53.8828449, 27.7273595]}
-     center={[coordinates.latitude, coordinates.longitude]}
+      // center={[53.8828449, 27.7273595]}
+      center={
+        localCoordinates
+          ? [localCoordinates.latitude, localCoordinates.longitude]
+          : [53.8828449, 27.7273595]
+      }
       zoom={7}
       style={{ height: '100%', width: '100%' }}
     >
