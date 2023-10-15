@@ -301,7 +301,7 @@ const getStyles = (isMobile: boolean) => {
     containerPaginator: {
       backgroundColor: 'white',
       color: 'black',
-      paddingBottom: isMobile ? 100 : 70,
+      paddingBottom: isMobile ? 140 : 70,
     },
     mobileSideMenu: {
       width: '100%',

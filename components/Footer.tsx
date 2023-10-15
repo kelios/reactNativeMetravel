@@ -6,16 +6,18 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native';
 
 const Footer: React.FC = () => {
   const windowsWidth = useWindowDimensions().width
   const styles = getStyles(windowsWidth)
+  const navigation = useNavigation();
   return (
     <View style={styles.footerContainer}>
       <View style={styles.linkContainer}>
         <TouchableOpacity
           onPress={() => {
-            /* Navigate to About page */
+            navigation.navigate('about')
           }}
         >
           <Text style={styles.linkText}>О сайте</Text>

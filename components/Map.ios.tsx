@@ -79,7 +79,12 @@ const Map: React.FC<TravelProps> = ({
                   style={styles.pointImage}
                 />
               )}
-              <Text>{point?.coord}</Text>
+              <Text style={styles.label}>Адрес места :</Text>
+              <Text>{point.address}</Text>
+              <Text style={styles.label}>Координаты :</Text>
+              <Text>{point.coord}</Text>
+              <Text style={styles.label}>Категория обьекта :</Text>
+              <Text>{point.categoryName}</Text>
             </View>
           </Callout>
         </Marker>
