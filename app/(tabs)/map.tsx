@@ -19,7 +19,7 @@ import { TravelCoords, TravelsForMap } from '@/src/types/types'
 import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels'
 import { DataTable } from 'react-native-paper'
 import AddressListItem from '@/components/AddressListItem'
-import * as Location from 'expo-location';
+import * as Location from 'expo-location'
 
 interface FiltersMap {
   radius: string[]
@@ -67,20 +67,19 @@ export default function MapScreen() {
     longitude: 27.7273595,
   }) // Используйте начальные значения ваших координат
 
-
   useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+    ;(async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        return;
+        setErrorMsg('Permission to access location was denied')
+        return
       }
 
-      let location = await Location.getCurrentPositionAsync({});
+      let location = await Location.getCurrentPositionAsync({})
       const { latitude, longitude } = location
-        setCoordinates({ latitude, longitude })
-    })();
-  }, []);
+      setCoordinates({ latitude, longitude })
+    })()
+  }, [])
 
   useEffect(() => {
     getFiltersMap()
@@ -184,6 +183,7 @@ export default function MapScreen() {
           onChangeText={handleTextFilterChange}
           keyboardType="default"
         />
+
         {isMobile && (
           <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
             <Text style={styles.closeButtonText}>Закрыть</Text>

@@ -1,4 +1,11 @@
-import { Travel, Filters, TravelsMap, TravelsForMap } from '@/src/types/types'
+import {
+  Travel,
+  Filters,
+  TravelsMap,
+  TravelsForMap,
+  FeedbackData,
+  Article,
+} from '@/src/types/types'
 import queryString from 'query-string'
 import { PROD_API_URL, LOCAL_API_URL, IS_LOCAL_API } from '@env'
 
@@ -19,7 +26,15 @@ const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
 
 const GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
-const SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
+
+if (IS_LOCAL_API == 'true') {
+  const SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/travels/search_travels_for_map`
+} else {
+  const SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
+}
+
+const SEND_FEEDBACK = `${URLAPI}/api/feedback`
+const GET_ARTICLES = `${URLAPI}/api/articles`
 
 const travelDef = {
   name: 'test',
@@ -91,6 +106,32 @@ export const fetchTravels = async (
   }
 }
 
+export const fetchArticles = async (
+  page: number,
+  itemsPerPage: number,
+  urlParams: Record<string, any>,
+) => {
+  try {
+    const whereObject = { publish: 1, moderation: 1, ...urlParams }
+    const params = {
+      page: page + 1,
+      perPage: itemsPerPage,
+      where: JSON.stringify(whereObject),
+    }
+    const urlTravel = queryString.stringifyUrl({
+      url: GET_ARTICLES,
+      query: params,
+    })
+    const res = await fetch(urlTravel)
+    const resData = await res.json()
+    return resData
+    // return resData.data+resData.total
+  } catch (e) {
+    console.log('Error fetching Travels: ' + e)
+    return []
+  }
+}
+
 export const fetchTravelsby = async (
   page: number,
   itemsPerPage: number,
@@ -135,6 +176,17 @@ export const fetchTravel = async (id: number): Promise<Travel> => {
     }
   } catch (e) {
     console.log('Error fetching Travel: ' + e)
+    return travelDef
+  }
+}
+
+export const fetchArticle = async (id: number): Promise<Article> => {
+  try {
+    const res = await fetch(`${GET_ARTICLES}/${id}`)
+    const resData = await res.json()
+    return resData
+  } catch (e) {
+    console.log('Error fetching Article: ' + e)
     return travelDef
   }
 }
@@ -340,5 +392,26 @@ export const fetchFiltersMap = async (): Promise<Filters> => {
   } catch (e) {
     console.log('Error fetching filters: ' + e)
     return []
+  }
+}
+
+export const sendFeedback = async (
+  name: string,
+  email: string,
+  message: string,
+) => {
+  try {
+    const res = await fetch(SEND_FEEDBACK, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, message } as FeedbackData),
+    })
+    if (!res.ok) {
+      throw new Error(`Server responded with status: ${res.status}`)
+    }
+  } catch (e) {
+    console.log('Error fetching filters: ' + e)
   }
 }

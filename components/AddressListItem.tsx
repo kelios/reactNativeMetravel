@@ -58,7 +58,7 @@ const AddressListItem = ({ travel }: AddressListItemProps) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex:1,
+    flex: 1,
     borderRadius: 10,
     elevation: 2,
     padding: wp(1.5), // Используем wp для ширины и высоты в процентах от ширины экрана
@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     height: 250,
-   // maxWidth: 280,
-  //  overflow: 'hidden',
+    // maxWidth: 280,
+    //  overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
-   // resizeMode: 'contain', // Изменено на 'contain'
+    // resizeMode: 'contain', // Изменено на 'contain'
   },
   paragraphLeft: {
     marginLeft: wp(1.5),

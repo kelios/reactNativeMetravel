@@ -69,6 +69,35 @@ export type Travels = {
   total: number
 }
 
+export type Articles = {
+  data: {
+    id?: number
+    name: string
+    description: string
+    article_image_thumb_url: string
+    article_image_thumb_small_url: string
+    article_type: ArticleType
+  }
+  total: number
+}
+
+export type Article = {
+  id?: number
+  name: string
+  description: string
+  article_image_thumb_url: string
+  article_image_thumb_small_url: string
+  article_type: ArticleType
+}
+
+export type ArticleType = {
+  id: number
+  name: string
+  status: number
+  created_at: number
+  updated_at: number
+}
+
 export type Filters = {
   categories: string[]
   categoryTravelAddress: string[]
@@ -77,4 +106,10 @@ export type Filters = {
   month: string[]
   overNightStay: string[]
   transports: string[]
+}
+
+export type FeedbackData = {
+  name: string
+  email: string
+  message: string
 }

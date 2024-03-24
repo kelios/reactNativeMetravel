@@ -10,7 +10,7 @@ import {
   Pressable,
 } from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Travels } from '@/src/types/types'
 import {
   fetchTravels,

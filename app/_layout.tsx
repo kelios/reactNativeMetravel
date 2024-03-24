@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font'
 import { SplashScreen, Stack } from 'expo-router'
 import { useEffect } from 'react'
 import { useColorScheme } from 'react-native'
+import CookiePopup from '@/components/CookiePopup'
 import {
   MD3LightTheme as DefaultTheme,
   PaperProvider,
@@ -66,6 +67,7 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
+      <CookiePopup />
     </PaperProvider>
   )
 }

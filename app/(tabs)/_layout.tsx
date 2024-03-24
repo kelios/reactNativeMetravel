@@ -9,6 +9,9 @@ import {
   useWindowDimensions,
 } from 'react-native'
 import Footer from '@/components/Footer'
+import { Menu, Button } from 'react-native-paper'
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import { useNavigation } from '@react-navigation/native'
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -21,6 +24,11 @@ function TabBarIcon(props: {
 }
 
 function renderRightMenu() {
+  const navigation = useNavigation()
+  const [visible, setVisible] = React.useState(false)
+  const openMenu = () => setVisible(true)
+  const closeMenu = () => setVisible(false)
+
   return (
     <View
       style={{
@@ -29,7 +37,51 @@ function renderRightMenu() {
         paddingRight: 10,
       }}
     >
-      <Text>Войти</Text>
+      <Menu
+        visible={visible}
+        onDismiss={closeMenu}
+        anchor={
+          <Button onPress={openMenu}>
+            <Icon name="menu" size={24} color="#000" />
+          </Button>
+        }
+      >
+        <Menu.Item
+          onPress={() => {
+            navigation.navigate('login')
+            closeMenu()
+          }}
+          title="Войти"
+        />
+        <Menu.Item
+          onPress={() => {
+            navigation.navigate('registration')
+            closeMenu()
+          }}
+          title="Зарегестрироваться"
+        />
+        <Menu.Item
+          onPress={() => {
+            navigation.navigate('mytravelslist')
+            closeMenu()
+          }}
+          title="Мои путешествия"
+        />
+        <Menu.Item
+          onPress={() => {
+            navigation.navigate('addtravel')
+            closeMenu()
+          }}
+          title="Добавить путешествие"
+        />
+        <Menu.Item
+          onPress={() => {
+            //unlog function
+            closeMenu()
+          }}
+          title="Выход"
+        />
+      </Menu>
     </View>
   )
 }
@@ -71,6 +123,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="travelsby"
           options={{
+            tabBarIconStyle: { display: 'none' },
             title: 'Путешествуем по Беларуси',
             headerRight: () => renderRightMenu(),
           }}
@@ -78,13 +131,15 @@ export default function TabLayout() {
         <Tabs.Screen
           name="map"
           options={{
+            tabBarIconStyle: { display: 'none' },
             title: 'Карта путешествий',
             headerRight: () => renderRightMenu(),
           }}
         />
         <Tabs.Screen
-          name="travels/[id]"
+          name="travels/439"
           options={{
+            tabBarIconStyle: { display: 'none' },
             title: 'Аккаунты в instagram о путешествиях по Беларуси',
             headerRight: () => renderRightMenu(),
             href: {
@@ -92,9 +147,69 @@ export default function TabLayout() {
             },
           }}
         />
+
+        <Tabs.Screen
+          name="travels/[id]"
+          options={{
+            tabBarIconStyle: { display: 'none' },
+            title: 'Аккаунты в instagram о путешествиях по Беларуси',
+            headerRight: () => renderRightMenu(),
+            href: {
+              pathname: '/travels/439',
+            },
+          }}
+        />
+
+        <Tabs.Screen
+          name="about"
+          options={{
+            tabBarIconStyle: { display: 'none' },
+            href: null,
+            title: 'О сайте',
+            headerRight: () => renderRightMenu(),
+          }}
+        />
+
+        <Tabs.Screen
+          name="articles"
+          options={{
+            tabBarIconStyle: { display: 'none' },
+            href: null,
+            title: 'Новости/Розогрыши',
+            headerRight: () => renderRightMenu(),
+          }}
+        />
+
+        <Tabs.Screen
+          name="contact"
+          options={{
+            tabBarIconStyle: { display: 'none' },
+            href: null,
+            title: 'Обратная связь',
+            headerRight: () => renderRightMenu(),
+          }}
+        />
+        <Tabs.Screen
+          name="article/[id]"
+          options={{
+            tabBarIconStyle: { display: 'none' },
+            href: null,
+            title: 'Новость',
+            headerRight: () => renderRightMenu(),
+          }}
+        />
+
+        <Tabs.Screen
+          name="login"
+          options={{
+            tabBarIconStyle: { display: 'none' },
+            href: null,
+            title: 'Войти',
+            headerRight: () => renderRightMenu(),
+          }}
+        />
       </Tabs>
 
-    
       <Footer />
     </>
   )

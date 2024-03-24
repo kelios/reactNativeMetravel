@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native'
 
 const Footer: React.FC = () => {
   const windowsWidth = useWindowDimensions().width
   const styles = getStyles(windowsWidth)
-  const navigation = useNavigation();
+  const navigation = useNavigation()
   return (
     <View style={styles.footerContainer}>
       <View style={styles.linkContainer}>
@@ -22,16 +22,18 @@ const Footer: React.FC = () => {
         >
           <Text style={styles.linkText}>О сайте</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() => {
-            /* Navigate to News/Giveaways page */
+            navigation.navigate('articles')
           }}
         >
           <Text style={styles.linkText}>Новости/Розыгрыши</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() => {
-            /* Navigate to Feedback page */
+            navigation.navigate('contact')
           }}
         >
           <Text style={styles.linkText}>Обратная связь</Text>
@@ -52,7 +54,7 @@ const getStyles = (windowsWidth: number) => {
       padding: windowsWidth > 500 ? 10 : 5,
       position: 'absolute',
       bottom: 0,
-      height: windowsWidth > 500 ? 30 : 40,
+      height: windowsWidth > 500 ? 35 : 40,
       borderColor: 'black',
     },
     linkContainer: {
