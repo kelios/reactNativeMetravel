@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
 
 interface SideBarTravelProps {
   handlePress: (
-    section: 'gallery' | 'description' | 'map' | 'near',
+    section: 'gallery' | 'description' | 'map' | 'near' | 'popular',
   ) => () => void
   closeMenu: () => void
   isMobile: boolean

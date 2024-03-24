@@ -12,6 +12,7 @@ import Footer from '@/components/Footer'
 import { Menu, Button } from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useNavigation } from '@react-navigation/native'
+import { useFilters} from "@/providers/FiltersProvider";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -28,6 +29,7 @@ function renderRightMenu() {
   const [visible, setVisible] = React.useState(false)
   const openMenu = () => setVisible(true)
   const closeMenu = () => setVisible(false)
+  const { updateFilters,filters } = useFilters();
 
   return (
     <View
@@ -62,7 +64,9 @@ function renderRightMenu() {
         />
         <Menu.Item
           onPress={() => {
-            navigation.navigate('mytravelslist')
+              updateFilters({ user_id: 1 });
+              navigation.navigate('index')
+           // navigation.navigate('mytravelslist')
             closeMenu()
           }}
           title="Мои путешествия"

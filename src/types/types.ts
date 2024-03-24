@@ -21,9 +21,9 @@ export type Travel = {
 }
 
 export type TravelCoords = {
-  address: string
+  address?: string
   categoryName: string
-  coord: string
+  coord?: string
   lat: string
   lng: string
   travelImageThumbUrl: string
@@ -99,6 +99,15 @@ export type ArticleType = {
 }
 
 export type Filters = {
+ /* categories: string[]
+  categoryTravelAddress: string[]
+  companion: string[]
+  complexity: string[]
+  month: string[]
+  overNightStay: string[]
+  transports: string[]
+  user_id?:number*/
+  countries: string[]
   categories: string[]
   categoryTravelAddress: string[]
   companion: string[]
@@ -106,6 +115,8 @@ export type Filters = {
   month: string[]
   overNightStay: string[]
   transports: string[]
+  year: string
+  user_id?: number
 }
 
 export type FeedbackData = {
@@ -113,3 +124,10 @@ export type FeedbackData = {
   email: string
   message: string
 }
+
+export type FiltersContextType = {
+  filters: Filters;
+  updateFilters: (newFilters: Partial<Filters>) => void;
+}
+
+

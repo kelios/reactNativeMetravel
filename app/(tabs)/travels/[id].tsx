@@ -107,20 +107,29 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   }
 
   const isWeb = Platform.OS === 'web'
-  /*
-  const renderers = {
-    iframe: IframeRenderer,
-  }
-
-  const customHTMLElementModels = {
-    iframe: iframeModel,
-  }
-*/
-
   const gallery =
     IS_LOCAL_API === 'true'
       ? travel.gallery
       : (travel.gallery || []).map((item) => item?.url)
+
+  const styleHtml = `
+    <style>
+    p{
+        margin-top: 0;
+    margin-bottom: 1rem;
+    }
+    p img {
+          vertical-align: middle;
+          padding: .25rem;
+          border: 1px solid #dee2e6;
+          border-radius: .25rem;
+          max-width: 100%;
+          height: auto;
+          max-height: 800px;
+          margin: 10px auto 20px;
+          display: block;
+      }
+    </style>`;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -177,7 +186,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                         web: (
                           <div
                             dangerouslySetInnerHTML={{
-                              __html: travel.description,
+                              __html: styleHtml+travel.description,
                             }}
                           />
                         ),

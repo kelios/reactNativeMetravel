@@ -12,6 +12,7 @@ import {
   PaperProvider,
 } from 'react-native-paper'
 import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display'
+import {FiltersProvider} from "@/providers/FiltersProvider";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -64,10 +65,12 @@ function RootLayoutNav() {
 
   return (
     <PaperProvider theme={theme}>
+      <FiltersProvider>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
       <CookiePopup />
+      </FiltersProvider>
     </PaperProvider>
   )
 }

@@ -8,14 +8,26 @@ import {
 } from '@/src/types/types'
 import queryString from 'query-string'
 import { PROD_API_URL, LOCAL_API_URL, IS_LOCAL_API } from '@env'
+import {Alert} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 let URLAPI = ''
+let SEARCH_TRAVELS_FOR_MAP= ''
+let LOGIN= ''
+let GET_FILTER_FOR_MAP = ''
 
 if (IS_LOCAL_API == 'true') {
-  URLAPI = LOCAL_API_URL
+   URLAPI = LOCAL_API_URL
+   SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/travels/search_travels_for_map`
+   LOGIN = `${URLAPI}/api/login/`
+   GET_FILTER_FOR_MAP = `${URLAPI}/api/filterformap`
 } else {
   URLAPI = PROD_API_URL
+  SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
+  LOGIN = `${URLAPI}/login`
+  GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
 }
+
 const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
 const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`
@@ -24,15 +36,6 @@ const GET_TRAVELS_POPULAR = `${URLAPI}/api/travelsPopular`
 
 const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
-
-const GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
-
-if (IS_LOCAL_API == 'true') {
-  const SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/travels/search_travels_for_map`
-} else {
-  const SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
-}
-
 const SEND_FEEDBACK = `${URLAPI}/api/feedback`
 const GET_ARTICLES = `${URLAPI}/api/articles`
 
@@ -46,37 +49,35 @@ const travelDef = {
   slug: '',
 }
 
-/*
-type TravelListItemProps = {
-  travel: Travel
-}
+export const auth = async (
+    username:string,
+    password:string
+) => {
+  try {
+    const response = await fetch(`${LOGIN}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: username,
+        password: password,
+      }),
+    });
+    const json = await response.json();
+    if (json.token) {
+      // Сохраняем токен в AsyncStorage
+      await AsyncStorage.setItem('userToken', json.token);
+      Alert.alert("Успех", "Вы вошли в систему!");
+    } else {
+      Alert.alert("Ошибка", "Неверные учетные данные");
+    }
+  } catch (error) {
+    console.error(error);
+    Alert.alert("Ошибка", "Не удалось выполнить вход");
+  }
+};
 
-const travelDef = {
-  name: 'test',
-  id: '498',
-  travel_image_thumb_url:
-    'https://metravelprod.s3.eu-north-1.amazonaws.com/6880/conversions/p9edKtQrl2wM0xC1yRrkzVJEi4B4qxkxWqSADDLM-webpTravelMainImage_400.webp',
-  url: '',
-  userName: '',
-  slug: '',
-}
-
-const TravelApi = ({
-  travel,
-}: TravelListItemProps) => {
-  const {
-    name,
-    url,
-    slug,
-    travel_image_thumb_url,
-    id,
-    cityName,
-    countryName,
-    userName,
-    countUnicIpView,
-  } = travel
-}
-*/
 
 export const fetchTravels = async (
   page: number,

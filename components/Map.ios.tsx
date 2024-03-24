@@ -3,11 +3,28 @@ import { View, Text, Image, StyleSheet } from 'react-native'
 import MapView, { Marker, Callout } from 'react-native-maps'
 
 type Point = {
-  id: number
-  coord: string
-  address: string
-  travelImageThumbUrl: string
-  categoryName?: string
+  id: number;
+  lat: string;
+  lng: string;
+  coord: string;
+  address: string;
+  travelImageThumbUrl: string;
+  categoryName: string;
+}
+
+type PaginatedResponse = {
+  current_page: number;
+  data: Point[];
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number;
+  total: number;
+}
+
+type TravelPropsType = {
+  travelAddress: PaginatedResponse;
 }
 
 interface Coordinates {
@@ -20,9 +37,6 @@ interface TravelProps {
   coordinates: Coordinates | null
 }
 
-type TravelPropsType = {
-  travelAddress: Point[]
-}
 
 const getLatLng = (coord: string) => {
   const [latitude, longitude] = coord.split(',').map(Number)
@@ -33,7 +47,7 @@ const Map: React.FC<TravelProps> = ({
   travel,
   coordinates: propCoordinates,
 }) => {
-  const travelAddress = travel?.travelAddress || travel || []
+  const travelAddress = travel?.travelAddress || travel?.data || []
 
   const [localCoordinates, setLocalCoordinates] = useState<{
     latitude: number

@@ -62,6 +62,10 @@ export default function MapScreen() {
     address: '',
   })
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+  }
+
   const [coordinates, setCoordinates] = useState({
     latitude: 53.8828449,
     longitude: 27.7273595,
@@ -93,7 +97,11 @@ export default function MapScreen() {
       .catch((error) => {
         console.log('Failed to fetch travel data:')
       })
-  }, [filterValue])
+  }, [filterValue,currentPage, itemsPerPage, filters])
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [itemsPerPage, filters])
 
   const getFiltersMap = useCallback(async () => {
     if (isLoadingFilters) return
@@ -233,14 +241,12 @@ export default function MapScreen() {
         </Suspense>
       </View>
 
-      {/* Список адресов */}
-      {Object.values(travel) && (
         <View style={styles.listMenu}>
           {/* Ваш список адресов */}
           <FlatList
             style={{ flex: 1 }}
             showsHorizontalScrollIndicator={false}
-            data={Object.values(travel)}
+            data={travel?.data}
             renderItem={({ item }) => <AddressListItem travel={item} />}
             keyExtractor={(item, index) => index.toString()}
             horizontal={false}

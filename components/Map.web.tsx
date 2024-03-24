@@ -12,15 +12,28 @@ import L, { Icon } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 type Point = {
-  id: number
-  coord: string
-  address: string
-  travelImageThumbUrl: string
-  categoryName: string
+  id: number;
+  lat: string;
+  coord: string;
+  lng: string;
+  address: string;
+  travelImageThumbUrl: string;
+  categoryName: string;
+}
+
+type PaginatedResponse = {
+  current_page: number;
+  data: Point[];
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number;
+  total: number;
 }
 
 type TravelPropsType = {
-  travelAddress: Point[]
+  travelAddress: PaginatedResponse;
 }
 
 interface Coordinates {
@@ -46,7 +59,7 @@ const Map: React.FC<TravelProps> = ({
   travel,
   coordinates: propCoordinates,
 }) => {
-  const travelAddress = travel?.travelAddress || travel || []
+  const travelAddress = travel?.travelAddress || travel?.data || []
   const [localCoordinates, setLocalCoordinates] = useState<{
     latitude: number
     longitude: number
@@ -107,7 +120,7 @@ const Map: React.FC<TravelProps> = ({
 }
 
 const SetViewToBounds: React.FC<SetViewToBoundsProps> = ({ travel }) => {
-  const travelAddress = travel?.travelAddress || travel || []
+  const travelAddress = travel?.travelAddress || travel?.data || []
   const map = useMapEvents({})
   useEffect(() => {
     if (travelAddress.length) {
