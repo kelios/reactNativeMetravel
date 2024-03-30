@@ -130,4 +130,11 @@ export type FiltersContextType = {
   updateFilters: (newFilters: Partial<Filters>) => void;
 }
 
+export interface FormValues {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 
