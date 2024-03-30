@@ -54,11 +54,13 @@
     "react-native-reanimated": "~3.3.0",
     "react-native-render-html": "^6.3.4",
     "react-native-responsive-screen": "^1.4.2",
+    "react-native-rich-editor": "^0.1.1",
     "react-native-safe-area-context": "4.6.3",
     "react-native-screens": "~3.22.0",
     "react-native-vector-icons": "^10.0.0",
     "react-native-web": "~0.19.6",
     "react-native-webview": "13.2.2",
+    "react-quill": "^2.0.0",
     "yup": "^1.4.0"
   },
   "devDependencies": {

@@ -14,15 +14,15 @@ let LOGOUT= ''
 if (IS_LOCAL_API == 'true') {
    URLAPI = LOCAL_API_URL
    SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/travels/search_travels_for_map`
-   LOGIN = `${URLAPI}/api/login/`
-   LOGOUT = `${URLAPI}/api/logout/`
-   REGISTER = `${URLAPI}/api/registration/`
+   LOGIN = `${URLAPI}/api/user/login/`
+   LOGOUT = `${URLAPI}/api/user/logout/`
+   REGISTER = `${URLAPI}/api/user/registration/`
    GET_FILTER_FOR_MAP = `${URLAPI}/api/filterformap`
 } else {
   URLAPI = PROD_API_URL
   SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
-  LOGIN = `${URLAPI}/login`
-  LOGOUT = `${URLAPI}/api/logout/`
+  LOGIN = `${URLAPI}/api/user/login/`
+  LOGOUT = `${URLAPI}/api/user/logout/`
   REGISTER = `${URLAPI}/api/registration/`
   GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
 }
@@ -49,8 +49,9 @@ const travelDef = {
 }
 
 export const auth = async (
-    username:string,
-    password:string
+    email:string,
+    password:string,
+    navigation
 ) => {
   try {
     const response = await fetch(`${LOGIN}`, {
@@ -59,7 +60,7 @@ export const auth = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: username,
+        email: email,
         password: password,
       }),
     });
@@ -67,7 +68,8 @@ export const auth = async (
     if (json.token) {
       // Сохраняем токен в AsyncStorage
       await AsyncStorage.setItem('userToken', json.token);
-      await AsyncStorage.setItem('username', json.username);
+      await AsyncStorage.setItem('userName', json.name);
+      navigation.navigate('index');
       //Alert.alert("Успех", "Вы вошли в систему!");
     } else {
       //Alert.alert("Ошибка", "Неверные учетные данные");
@@ -78,32 +80,30 @@ export const auth = async (
   }
 };
 
-export const logout = async (
-    username:string,
-    password:string
-) => {
+export const logout = async () => {
   try {
+    const token = await AsyncStorage.getItem('userToken');
     const response = await fetch(`${LOGOUT}`, {
       method: 'POST',
       headers: {
+        'Authorization': 'Token '+token,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        email: username,
-        password: password,
-      }),
+      /*body: JSON.stringify({
+        token: token,
+      }),*/
     });
-    const json = await response.json();
-    if (json.token) {
-      // Сохраняем токен в AsyncStorage
-      await AsyncStorage.setItem('userToken', json.token);
-      Alert.alert("Успех", "Вы вошли в систему!");
-    } else {
-      Alert.alert("Ошибка", "Неверные учетные данные");
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok.');
     }
+
+    const json = await response.json();
+    // Handle logout success response, e.g., clearing user data, navigating to login screen
+    await AsyncStorage.removeItem('userToken');  // Remove the token from storage on successful logout
   } catch (error) {
     console.error(error);
-    Alert.alert("Ошибка", "Не удалось выполнить вход");
+    Alert.alert("Ошибка", "Не удалось выполнить выход");
   }
 };
 

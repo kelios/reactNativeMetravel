@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import {Tabs} from 'expo-router'
-import {Image, useColorScheme, useWindowDimensions, View,} from 'react-native'
+import {Image, useColorScheme, useWindowDimensions, View,Text} from 'react-native'
 import Footer from '@/components/Footer'
 import {Button, Menu} from 'react-native-paper'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -39,7 +39,7 @@ function renderRightMenu() {
 
     useEffect(() => {
         const getUsername = async () => {
-            const storedUsername = await AsyncStorage.getItem('username');
+            const storedUsername = await AsyncStorage.getItem('userName');
             setUsername(storedUsername);
         };
 
@@ -96,7 +96,7 @@ function renderRightMenu() {
                         />
                         <Menu.Item
                             onPress={() => {
-                                navigation.navigate('addtravel')
+                                navigation.navigate('newtravel')
                                 closeMenu()
                             }}
                             title="Добавить путешествие"
@@ -249,6 +249,15 @@ export default function TabLayout() {
                     }}
                 />
 
+                <Tabs.Screen
+                    name="newtravel"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: 'Новое путешествие',
+                        headerRight: () => renderRightMenu(),
+                    }}
+                />
 
             </Tabs>
 
