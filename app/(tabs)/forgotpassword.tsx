@@ -6,38 +6,31 @@ import {
     Image,
     TextInput, TouchableOpacity, Text,
 } from 'react-native'
-import {auth,sendPassword} from '@/src/api/travels'
+import {sendPassword} from '@/src/api/travels'
 import {Card} from 'react-native-paper'
 import {Button} from 'react-native-elements'
 import {useNavigation} from '@react-navigation/native'
+import {useRoute} from "@react-navigation/core";
 
 
 const {width, height} = Dimensions.get('window')
 
 export default function login() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const navigation = useNavigation();
+    const route = useRoute();
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
-    const isValidEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-        return emailRegex.test(email);
-    };
+    const { hash } = route.params || {};
 
-    const handleForgotPassword = () => {
-        if (isValidEmail(email)) {
-            let error = sendPassword(email);
-        } else {
-            alert('Введите корректный email адрес.');
+    const handleResetPassword = async () => {
+        if (newPassword !== confirmPassword) {
+            alert('Пароли не совпадают');
+            return;
         }
-    };
-
-    const ForgotPasswordLink = ({onPress}) => {
-        return (
-            <TouchableOpacity onPress={onPress}>
-                <Text style={{color: '#0066ff', textDecorationLine: 'underline'}}>Забыли пароль?</Text>
-            </TouchableOpacity>
-        );
+        sendPassword(hash,newPassword,confirmPassword);
+        // После успешного сброса пароля, возможно, стоит перенаправить пользователя на экран входа
+         navigation.navigate('Login');
     };
 
     return (
@@ -49,25 +42,26 @@ export default function login() {
             <Card style={styles.card}>
                 <Card.Content>
                     <TextInput
-                        placeholder="Email"
-                        value={email}
-                        onChangeText={setEmail}
                         style={styles.input}
+                        placeholder="Новый пароль"
+                        secureTextEntry
+                        value={newPassword}
+                        onChangeText={setNewPassword}
                     />
                     <TextInput
-                        placeholder="Пароль"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
                         style={styles.input}
+                        placeholder="Подтвердите пароль"
+                        secureTextEntry
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
                     />
                     <Button
-                        title="Войти"
+                        title="Сменить пароль"
                         buttonStyle={styles.applyButton}
-                        onPress={() => auth(email, password, navigation)}>
+                        onPress={() => handleResetPassword()}>
 
                     </Button>
-                    <ForgotPasswordLink onPress={() => handleForgotPassword()} />
+
                 </Card.Content>
             </Card>
         </View>

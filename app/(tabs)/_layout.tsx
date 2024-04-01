@@ -259,6 +259,16 @@ export default function TabLayout() {
                     }}
                 />
 
+                <Tabs.Screen
+                    name="forgotpassword"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: 'Изменить пароль',
+                        headerRight: () => renderRightMenu(),
+                    }}
+                />
+
             </Tabs>
 
             <Footer/>
