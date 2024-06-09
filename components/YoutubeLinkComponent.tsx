@@ -1,23 +1,67 @@
-// YoutubeLinkComponent.tsx
-import React from 'react';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 
-interface YoutubeLinkProps {
+interface YoutubeLinkComponentProps {
     label: string;
+    value: string;
+    onChange: (value: string) => void;
 }
 
-const YoutubeLinkComponent: React.FC<YoutubeLinkProps> = ({ label }) => {
-    const [link, setLink] = React.useState('');
+const YoutubeLinkComponent: React.FC<YoutubeLinkComponentProps> = ({ label, value, onChange }) => {
+    const [inputValue, setInputValue] = useState(value);
+    const [isValid, setIsValid] = useState(true);
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setLink(event.target.value);
+    const validateYoutubeUrl = (url: string) => {
+        const regex = /^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/;
+        return regex.test(url);
+    };
+
+    const handleBlur = () => {
+        const valid = validateYoutubeUrl(inputValue);
+        setIsValid(valid);
+        if (valid) {
+            onChange(inputValue);
+        }
     };
 
     return (
-        <div>
-            <label>{label}</label>
-            <input type="text" value={link} onChange={handleChange} />
-        </div>
+        <View style={styles.container}>
+            <Text style={styles.label}>{label}</Text>
+            <TextInput
+                style={[styles.input, !isValid && styles.invalidInput]}
+                value={inputValue}
+                onChangeText={setInputValue}
+                onBlur={handleBlur}
+                placeholder="Введите ссылку на YouTube"
+            />
+            {!isValid && <Text style={styles.errorText}>Неверная ссылка на YouTube</Text>}
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        marginBottom: 20,
+    },
+    label: {
+        marginBottom: 5,
+        fontSize: 16,
+        color: '#333',
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 10,
+        fontSize: 16,
+    },
+    invalidInput: {
+        borderColor: 'red',
+    },
+    errorText: {
+        color: 'red',
+        marginTop: 5,
+    },
+});
 
 export default YoutubeLinkComponent;

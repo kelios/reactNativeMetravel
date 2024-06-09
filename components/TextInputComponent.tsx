@@ -1,34 +1,42 @@
-// TextInputComponent.tsx
 import React from 'react';
-import {StyleSheet} from "react-native";
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-interface TextInputProps {
+interface TextInputComponentProps {
     label: string;
+    value: string;
+    onChange: (value: string) => void;
 }
 
-const TextInputComponent: React.FC<TextInputProps> = ({ label }) => {
-    const [value, setValue] = React.useState('');
-
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setValue(event.target.value);
-    };
-
+const TextInputComponent: React.FC<TextInputComponentProps> = ({ label, value, onChange }) => {
     return (
-        <div>
-            <label>{label}</label>
-            <input style={styles.textInput} type="text" value={value} onChange={handleChange} />
-        </div>
+        <View style={styles.container}>
+            <Text style={styles.label}>{label}</Text>
+            <TextInput
+                style={styles.input}
+                value={value}
+                onChangeText={onChange}
+                placeholder={`Введите ${label.toLowerCase()}`}
+            />
+        </View>
     );
 };
 
-export default TextInputComponent;
-
 const styles = StyleSheet.create({
-textInput: {
-    borderColor: '#ccc',
-        borderWidth: 1,
-        padding: 10,
-        borderRadius: 5,
+    container: {
         marginBottom: 20,
-},
-})
+    },
+    label: {
+        marginBottom: 5,
+        fontSize: 16,
+        color: '#333',
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 10,
+        fontSize: 16,
+    },
+});
+
+export default TextInputComponent;

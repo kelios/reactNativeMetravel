@@ -1,34 +1,53 @@
-// MultiSelectComponent.tsx
 import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import MultiSelect from 'react-native-multiple-select';
 
-interface Option {
-    value: string;
+interface MultiSelectComponentProps {
     label: string;
+    options: Array<{ id: string; name: string }>;
+    selectedValues: string[];
+    onChange: (selectedItems: string[]) => void;
 }
 
-interface MultiSelectProps {
-    label: string;
-    options: Option[];
-}
-
-const MultiSelectComponent: React.FC<MultiSelectProps> = ({ label, options }) => {
-    const [selectedOptions, setSelectedOptions] = React.useState<string[]>([]);
-
-    const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selected = Array.from(event.target.selectedOptions, (option) => option.value);
-        setSelectedOptions(selected);
-    };
-
+const MultiSelectComponent: React.FC<MultiSelectComponentProps> = ({
+                                                                       label,
+                                                                       options,
+                                                                       selectedValues,
+                                                                       onChange,
+                                                                   }) => {
     return (
-        <div>
-            <label>{label}</label>
-            <select multiple value={selectedOptions} onChange={handleChange}>
-                {options.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-            </select>
-        </div>
+        <View style={styles.container}>
+            <Text style={styles.label}>{label}</Text>
+            <MultiSelect
+                items={options}
+                uniqueKey="id"
+                onSelectedItemsChange={onChange}
+                selectedItems={selectedValues}
+                selectText="Выберите опции"
+                searchInputPlaceholderText="Поиск опций..."
+                tagRemoveIconColor="#CCC"
+                tagBorderColor="#CCC"
+                tagTextColor="#CCC"
+                selectedItemTextColor="#CCC"
+                selectedItemIconColor="#CCC"
+                itemTextColor="#000"
+                displayKey="name"
+                searchInputStyle={{ color: '#CCC' }}
+                submitButtonColor="#CCC"
+                submitButtonText="Применить"
+            />
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        marginBottom: 20,
+    },
+    label: {
+        marginBottom: 5,
+        fontSize: 16,
+    },
+});
 
 export default MultiSelectComponent;

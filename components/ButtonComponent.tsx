@@ -1,26 +1,37 @@
 import React from 'react';
-import {StyleSheet} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-interface ButtonProps {
-    onClick: () => void;
+interface ButtonComponentProps {
     label: string;
+    onPress: () => void;
 }
 
-const ButtonComponent: React.FC<ButtonProps> = ({ onClick, label }) => {
+const ButtonComponent: React.FC<ButtonComponentProps> = ({ label, onPress }) => {
     return (
-        <button style={styles.applyButton} onClick={onClick}>{label}</button>
+        <View style={styles.container}>
+            <TouchableOpacity style={styles.button} onPress={onPress}>
+                <Text style={styles.buttonText}>{label}</Text>
+            </TouchableOpacity>
+        </View>
     );
 };
 
-export default ButtonComponent;
-
 const styles = StyleSheet.create({
-    applyButton: {
-        backgroundColor: '#6aaaaa',
-        padding: 10,
+    container: {
+        marginVertical: 10,
         alignItems: 'center',
+    },
+    button: {
+        backgroundColor: '#4b7c6f',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
         borderRadius: 5,
-        marginTop: 10,
-    }
-})
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        textAlign: 'center',
+    },
+});
 
+export default ButtonComponent;

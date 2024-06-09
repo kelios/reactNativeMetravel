@@ -1,25 +1,35 @@
-// CheckboxComponent.tsx
 import React from 'react';
+import { View, Text, Switch, StyleSheet } from 'react-native';
 
-interface CheckboxProps {
+interface CheckboxComponentProps {
     label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
 }
 
-const CheckboxComponent: React.FC<CheckboxProps> = ({ label }) => {
-    const [checked, setChecked] = React.useState(false);
-
-    const handleChange = () => {
-        setChecked(!checked);
-    };
-
+const CheckboxComponent: React.FC<CheckboxComponentProps> = ({ label, value, onChange }) => {
     return (
-        <div>
-            <label>
-                <input type="checkbox" checked={checked} onChange={handleChange} />
-                {label}
-            </label>
-        </div>
+        <View style={styles.container}>
+            <Text style={styles.label}>{label}</Text>
+            <Switch
+                value={value}
+                onValueChange={onChange}
+            />
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    label: {
+        flex: 1,
+        fontSize: 16,
+        color: '#333',
+    },
+});
 
 export default CheckboxComponent;
