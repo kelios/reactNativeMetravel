@@ -12,6 +12,7 @@ let REGISTER = ''
 let LOGOUT = ''
 let SENDPASSWORD = ''
 let SETNEWDPASSWORD = ''
+let GET_LIST_COUNTRIES = ''
 
 if (IS_LOCAL_API == 'true') {
     URLAPI = LOCAL_API_URL
@@ -22,6 +23,7 @@ if (IS_LOCAL_API == 'true') {
     GET_FILTER_FOR_MAP = `${URLAPI}/api/filterformap`
     SENDPASSWORD = `${URLAPI}/api/sendpassword`
     SETNEWDPASSWORD = `${URLAPI}/api/setpassword`
+    GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
 } else {
     URLAPI = PROD_API_URL
     SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
@@ -29,6 +31,7 @@ if (IS_LOCAL_API == 'true') {
     LOGOUT = `${URLAPI}/api/user/logout/`
     REGISTER = `${URLAPI}/api/registration/`
     GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
+    GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
 }
 
 const GET_TRAVELS = `${URLAPI}/api/travels`
@@ -41,6 +44,7 @@ const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`
 const SEND_FEEDBACK = `${URLAPI}/api/feedback`
 const GET_ARTICLES = `${URLAPI}/api/articles`
+
 
 const travelDef = {
     name: 'test',
@@ -487,6 +491,17 @@ export const fetchTravelsForMap = async (
 export const fetchFiltersMap = async (): Promise<Filters> => {
     try {
         const res = await fetch(`${GET_FILTER_FOR_MAP}`)
+        const resData = await res.json()
+        return resData
+    } catch (e) {
+        console.log('Error fetching filters: ' + e)
+        return []
+    }
+}
+
+export const fetchCounties = async (): Promise<Filters> => {
+    try {
+        const res = await fetch(`${GET_LIST_COUNTRIES}`)
         const resData = await res.json()
         return resData
     } catch (e) {

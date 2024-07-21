@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import TextInputComponent from '@/components/TextInputComponent';
 import MultiSelectComponent from '@/components/MultiSelectComponent';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -6,21 +6,53 @@ import CheckboxComponent from '@/components/CheckboxComponent';
 import NumberInputComponent from '@/components/NumberInputComponent';
 import YoutubeLinkComponent from '@/components/YoutubeLinkComponent';
 import ButtonComponent from '@/components/ButtonComponent';
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import {
+    ScrollView,
+    StyleSheet,
+    View,
+    Text,
+    Dimensions,
+    TextInput,
+    TouchableOpacity,
+    ActivityIndicator
+} from 'react-native';
+import {fetchCounties, fetchFilters, fetchFiltersCountry, fetchTravelsby} from "@/src/api/travels";
+import MultiSelect from "react-native-multiple-select";
+
+interface Category {
+    id: string
+    name: string
+}
+
+interface Filters {
+    countries: string[]
+    categories: string[]
+    categoryTravelAddress: string[]
+    companion: string[]
+    complexity: string[]
+    month: string[]
+    overNightStay: string[]
+    transports: string[]
+    year: string
+}
 
 
 interface FormData {
     name: string;
-    countries: Array<{ id: string; name: string }>;
-    cities: Array<{ id: string; name: string }>;
+    countries: string[]
+    cities: string[]
+    overNightStay: string[]
+    complexity: string[]
+    companion: string[]
     description: string;
     plus: string;
     minus: string;
     recommendation: string;
     youtubeLink: string;
-    categories: Array<{ id: string; name: string }>;
-    transports: Array<{ id: string; name: string }>;
-    month: Array<{ id: string; name: string }>;
+    categories: string[]
+    transports: string[]
+    categoryTravelAddress: string[]
+    month: string[]
     year: string;
     physicalCondition: Array<{ id: string; name: string }>;
     hasChild: boolean;
@@ -34,10 +66,36 @@ interface FormData {
 }
 
 export default function NewTravelScreen() {
+    const windowWidth = Dimensions.get('window').width
+    const styles = getStyles(windowWidth)
+    const [search, setSearch] = useState('')
+    const isMobile = windowWidth <= 768
+    const initMenuVisible = !isMobile
+
+    const [menuVisible, setMenuVisible] = useState(initMenuVisible)
+    const [isLoading, setIsLoading] = useState(false)
+    const [isLoadingFilters, setIsLoadingFilters] = useState(false)
+
+    const [filters, setFilters] = useState<Filters>({
+        countries: [],
+        categories: [],
+        categoryTravelAddress: [],
+        companion: [],
+        complexity: [],
+        month: [],
+        overNightStay: [],
+        transports: [],
+        year: '',
+    })
+
     const [formData, setFormData] = useState<FormData>({
         name: '',
         countries: [],
         cities: [],
+        categoryTravelAddress: [],
+        overNightStay: [],
+        complexity: [],
+        companion: [],
         description: '',
         plus: '',
         minus: '',
@@ -58,6 +116,56 @@ export default function NewTravelScreen() {
         isDraft: false,
     });
 
+    useEffect(() => {
+        getFilters()
+        getFiltersCountry()
+    }, [])
+
+    const getFilters = useCallback(async () => {
+        if (isLoadingFilters) return
+        setIsLoadingFilters(true)
+        const newData = await fetchFilters()
+        setFilters((prevFilters) => ({
+            ...prevFilters,
+            categories: newData?.categories,
+            categoryTravelAddress: newData?.categoryTravelAddress,
+            companion: newData?.companion,
+            complexity: newData?.complexity,
+            month: newData?.month,
+            overNightStay: newData?.overNightStay,
+            transports: newData?.transports,
+        }))
+        setIsLoadingFilters(false)
+    }, [isLoadingFilters, filters])
+
+    const getFiltersCountry = useCallback(async () => {
+        if (isLoadingFilters) return
+        setIsLoadingFilters(true)
+        const country = await fetchFiltersCountry()
+        setFilters((prevFilters) => ({
+            ...prevFilters,
+            countries: country,
+        }))
+        setIsLoadingFilters(false)
+    }, [isLoadingFilters, filters])
+
+
+    const onSelectedItemsChange =
+        (field: keyof FormData) => (selectedItems: string[]) => {
+            setFormData({
+                ...formData,
+                [field]: selectedItems,
+            })
+        }
+
+    const handleTextFilterChange = (value: string) => {
+        setFormData({
+            ...formData,
+            year: value,
+        })
+    }
+
+
     const handleSubmit = async () => {
         try {
             // Отправка данных на сервер
@@ -73,39 +181,257 @@ export default function NewTravelScreen() {
         // Например, использование fetch или axios для отправки POST запроса на сервер
     };
 
+
+
     const handleChange = (name: keyof FormData, value: any) => {
         setFormData((prevData) => ({
             ...prevData,
             [name]: value,
         }));
     };
+    const toggleMenu = () => {
+        setMenuVisible(!menuVisible)
+    }
+
+    const closeMenu = () => {
+        setMenuVisible(false)
+    }
+
+    if (!filters) {
+        return <ActivityIndicator />
+    }
+
+    const renderFilters = () => {
+        if (menuVisible) {
+            return (
+                <View style={{ backgroundColor: 'white' }}>
+                    <CheckboxComponent
+                        label="Черновик"
+                        value={formData.isDraft}
+                        onChange={(value) => handleChange('isDraft', value)}
+                    />
+
+                    <ButtonComponent label="Загрузить главное фото вашего путешествия" onPress={() => console.log('Upload main photo')} />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.countries || []}
+                        uniqueKey="country_id"
+                        onSelectedItemsChange={onSelectedItemsChange('countries')}
+                        selectedItems={formData?.countries}
+                        isLoading={isLoadingFilters}
+                        selectText="Выберите страны..."
+                        searchInputPlaceholderText="Выберите страны..."
+                        onChangeInput={(text) => console.log(text)}
+                        //  altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="title_ru"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.categories || []}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('categories')}
+                        selectedItems={formData?.categories}
+                        isLoading={isLoadingFilters}
+                        selectText="Категории..."
+                        searchInputPlaceholderText="Категории..."
+                        onChangeInput={(text) => console.log(text)}
+                        //   altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.categoryTravelAddress || []}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange(
+                            'categoryTravelAddress',
+                        )}
+                        selectedItems={formData?.categoryTravelAddress}
+                        isLoading={isLoadingFilters}
+                        selectText="Обьекты..."
+                        searchInputPlaceholderText="Обьекты..."
+                        onChangeInput={(text) => console.log(text)}
+                        //   altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.transports}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('transports')}
+                        selectedItems={formData?.transports}
+                        isLoading={isLoadingFilters}
+                        selectText="Транспорт..."
+                        searchInputPlaceholderText="Транспорт..."
+                        onChangeInput={(text) => console.log(text)}
+                        //altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.complexity}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('complexity')}
+                        selectedItems={formData?.complexity}
+                        isLoading={isLoadingFilters}
+                        selectText="Уровень физической подготовки..."
+                        searchInputPlaceholderText="Уровень физической подготовки..."
+                        onChangeInput={(text) => console.log(text)}
+                        // altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.companion}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('companion')}
+                        selectedItems={formData?.companion}
+                        isLoading={isLoadingFilters}
+                        selectText="Варианты отдыха с..."
+                        searchInputPlaceholderText="Варианты отдыха с..."
+                        onChangeInput={(text) => console.log(text)}
+                        //   altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.overNightStay}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('overNightStay')}
+                        selectedItems={formData?.overNightStay}
+                        isLoading={isLoadingFilters}
+                        selectText="Варианты ночлега..."
+                        searchInputPlaceholderText="Варианты ночлега..."
+                        onChangeInput={(text) => console.log(text)}
+                        // altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <MultiSelect
+                        hideTags
+                        items={filters?.month}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('month')}
+                        selectedItems={formData?.month}
+                        isLoading={isLoadingFilters}
+                        selectText="Месяц..."
+                        searchInputPlaceholderText="Месяц..."
+                        onChangeInput={(text) => console.log(text)}
+                        //  altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{ color: '#CCC' }}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
+
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Год"
+                        value={formData?.year}
+                        onChangeText={handleTextFilterChange}
+                        keyboardType="numeric"
+                    />
+
+                    <TouchableOpacity
+                        style={styles.applyButton}
+                        onPress={handleSubmit}
+                    >
+                        <Text style={styles.applyButtonText}>Сохранить</Text>
+                    </TouchableOpacity>
+                    {isMobile && (
+                        <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
+                            <Text style={styles.closeButtonText}>Закрыть</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            )
+        }
+        return null
+    }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.formSection}>
-                <Text style={styles.sectionTitle}>Новое путешествие</Text>
                 <View style={styles.formRow}>
                     <View style={styles.leftColumn}>
                         <TextInputComponent
                             label="Название"
                             value={formData.name}
                             onChange={(value) => handleChange('name', value)}
-                        />
-                        <MultiSelectComponent
-                            label="Страны"
-                            options={[{ id: '1', name: 'Страна 1' }, { id: '2', name: 'Страна 2' }]}
-                            selectedValues={formData.countries.map(country => country.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('countries', selectedItems.map(id => formData.countries.find(country => country.id === id) || { id, name: '' }));
-                            }}
-                        />
-                        <MultiSelectComponent
-                            label="Города"
-                            options={[{ id: '1', name: 'Город 1' }, { id: '2', name: 'Город 2' }]}
-                            selectedValues={formData.cities.map(city => city.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('cities', selectedItems.map(id => formData.cities.find(city => city.id === id) || { id, name: '' }));
-                            }}
                         />
 
                         <RichTextEditor
@@ -135,83 +461,23 @@ export default function NewTravelScreen() {
                         />
                     </View>
                     <View style={styles.rightColumn}>
-                        <CheckboxComponent
-                            label="Черновик"
-                            value={formData.isDraft}
-                            onChange={(value) => handleChange('isDraft', value)}
-                        />
-                        <ButtonComponent label="Загрузить главное фото вашего путешествия" onPress={() => console.log('Upload main photo')} />
-                        <MultiSelectComponent
-                            label="Категории путешествия"
-                            options={[{ id: '1', name: 'Категория 1' }, { id: '2', name: 'Категория 2' }]}
-                            selectedValues={formData.categories.map(category => category.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('categories', selectedItems.map(id => formData.categories.find(category => category.id === id) || { id, name: '' }));
-                            }}
-                        />
-                        <MultiSelectComponent
-                            label="Транспорт"
-                            options={[{ id: '1', name: 'Транспорт 1' }, { id: '2', name: 'Транспорт 2' }]}
-                            selectedValues={formData.transports.map(transport => transport.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('transports', selectedItems.map(id => formData.transports.find(transport => transport.id === id) || { id, name: '' }));
-                            }}
-                        />
-                        <MultiSelectComponent
-                            label="Месяц"
-                            options={[{ id: '1', name: 'Январь' }, { id: '2', name: 'Февраль' }]}
-                            selectedValues={formData.month.map(month => month.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('month', selectedItems.map(id => formData.month.find(month => month.id === id) || { id, name: '' }));
-                            }}
-                        />
-                        <NumberInputComponent
-                            label="Год"
-                            value={formData.year}
-                            onChange={(value) => handleChange('year', value)}
-                        />
-                        <MultiSelectComponent
-                            label="Уровень физической подготовки"
-                            options={[{ id: '1', name: 'Легкий' }, { id: '2', name: 'Средний' }]}
-                            selectedValues={formData.physicalCondition.map(condition => condition.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('physicalCondition', selectedItems.map(id => formData.physicalCondition.find(condition => condition.id === id) || { id, name: '' }));
-                            }}
-                        />
-                        <CheckboxComponent
-                            label="Вы брали с собой животное"
-                            value={formData.hasPet}
-                            onChange={(value) => handleChange('hasPet', value)}
-                        />
-                        <MultiSelectComponent
-                            label="Где останавливались на ночлег"
-                            options={[{ id: '1', name: 'Отель' }, { id: '2', name: 'Кемпинг' }]}
-                            selectedValues={formData.accommodation.map(accommodation => accommodation.id)}
-                            onChange={(selectedItems) => {
-                                handleChange('accommodation', selectedItems.map(id => formData.accommodation.find(accommodation => accommodation.id === id) || { id, name: '' }));
-                            }}
-                        />
-                        <TextInputComponent
-                            label="Количество потраченных средств"
-                            value={formData.spentAmount}
-                            onChange={(value) => handleChange('spentAmount', value)}
-                        />
-                        <NumberInputComponent
-                            label="Количество человек"
-                            value={formData.numberOfPeople}
-                            onChange={(value) => handleChange('numberOfPeople', value)}
-                        />
-                        <NumberInputComponent
-                            label="Количество дней"
-                            value={formData.numberOfDays}
-                            onChange={(value) => handleChange('numberOfDays', value)}
-                        />
-                        <CheckboxComponent
-                            label="Нужна виза"
-                            value={formData.needVisa}
-                            onChange={(value) => handleChange('needVisa', value)}
-                        />
-                        <ButtonComponent label="Сохранить" onPress={handleSubmit} />
+
+                        {isMobile ? (
+                            <View
+                                style={[
+                                    styles.sideMenu,
+                                    styles.mobileSideMenu,
+                                    menuVisible && styles.visibleMobileSideMenu,
+                                ]}
+                            >
+                                {renderFilters()}
+                            </View>
+                        ) : (
+                            <View style={[styles.sideMenu, styles.desktopSideMenu]}>
+                                {renderFilters()}
+                            </View>
+                        )}
+
                     </View>
                 </View>
             </View>
@@ -219,12 +485,14 @@ export default function NewTravelScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (windowWidth: number) => {
+    return StyleSheet.create({
     container: {
         flexGrow: 1,
         padding: 20,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingBottom: windowWidth > 500 ? '7%' : '20%',
     },
     formSection: {
         width: '100%',
@@ -255,4 +523,54 @@ const styles = StyleSheet.create({
         flex: 0.3,
         marginLeft: 10,
     },
+
+
+        input: {
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            padding: 8,
+            backgroundColor: 'white',
+        },
+        applyButton: {
+            backgroundColor: '#6aaaaa',
+            padding: 10,
+            alignItems: 'center',
+            borderRadius: 5,
+        },
+        applyButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+        closeButton: {
+            backgroundColor: 'gray',
+            padding: 10,
+            alignItems: 'center',
+            borderRadius: 5,
+            marginTop: 10,
+        },
+        closeButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
+
+        menuButtonContainer: {
+            //alignSelf: 'flex-start', // Позиционирование кнопки
+            //flex:1,
+            width: 600,
+            // marginLeft: 20, // Отступ слева
+            // marginTop: 20, // Отступ сверху
+        },
+        menuButton: {
+            // flex: 1,
+            backgroundColor: '#6aaaaa',
+            // paddingHorizontal: 20,
+            //  paddingVertical: 10,
+            //  borderRadius: 5,
+        },
+        menuButtonText: {
+            color: 'white',
+            fontWeight: 'bold',
+        },
 });
+}
