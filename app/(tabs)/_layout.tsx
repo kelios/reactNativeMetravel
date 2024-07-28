@@ -1,14 +1,9 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import {Tabs} from 'expo-router'
-import {Image, useColorScheme, useWindowDimensions, View,Text} from 'react-native'
+import {Image, useColorScheme, useWindowDimensions} from 'react-native'
 import Footer from '@/components/Footer'
-import {Button, Menu} from 'react-native-paper'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import {useNavigation} from '@react-navigation/native'
-import {useFilters} from "@/providers/FiltersProvider";
-import {logout} from '@/src/api/travels'
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import RenderRightMenu from '@/components/RenderRightMenu';
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -19,103 +14,6 @@ function TabBarIcon(props: {
 }) {
     return <FontAwesome size={28} style={{marginBottom: -3}} {...props} />
 }
-
-function renderRightMenu() {
-    const navigation = useNavigation()
-    const [visible, setVisible] = React.useState(false)
-    const openMenu = () => setVisible(true)
-    const closeMenu = () => setVisible(false)
-    const {updateFilters, filters} = useFilters();
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [username, setUsername] = useState('');
-    useEffect(() => {
-        const checkAuthentication = async () => {
-            const token = await AsyncStorage.getItem('userToken');
-            setIsAuthenticated(!!token);
-        };
-        checkAuthentication();
-    }, []);
-
-
-    useEffect(() => {
-        const getUsername = async () => {
-            const storedUsername = await AsyncStorage.getItem('userName');
-            setUsername(storedUsername);
-        };
-
-        getUsername();
-    }, []);
-
-    return (
-        <View
-            style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                paddingRight: 10,
-            }}
-        >
-            {username && <Text> {username}</Text>}
-            <Menu
-                visible={visible}
-                onDismiss={closeMenu}
-                anchor={
-                    <Button onPress={openMenu}>
-                        <Icon name="menu" size={24} color="#000"/>
-                    </Button>
-                }
-            >
-                {!isAuthenticated && (
-                    <>
-                        <Menu.Item
-                            onPress={() => {
-                                navigation.navigate('login')
-                                closeMenu()
-                            }}
-                            title="Войти"
-                        />
-
-                        <Menu.Item
-                            onPress={() => {
-                                navigation.navigate('registration')
-                                closeMenu()
-                            }}
-                            title="Зарегестрироваться"
-                        />
-                    </>
-                )}
-                {isAuthenticated && (
-                    <>
-                        <Menu.Item
-                            onPress={() => {
-                                updateFilters({user_id: 1});
-                                navigation.navigate('index')
-                                // navigation.navigate('mytravelslist')
-                                closeMenu()
-                            }}
-                            title="Мои путешествия"
-                        />
-                        <Menu.Item
-                            onPress={() => {
-                                navigation.navigate('newtravel')
-                                closeMenu()
-                            }}
-                            title="Добавить путешествие"
-                        />
-                        <Menu.Item
-                            onPress={() => {
-                                logout()
-                                closeMenu()
-                                navigation.navigate('index');
-                            }}
-                            title="Выход"
-                        />
-                    </>
-                )}
-            </Menu>
-        </View>
-    )
-}
-
 export default function TabLayout() {
     const colorScheme = useColorScheme()
     const width = useWindowDimensions().width
@@ -147,7 +45,7 @@ export default function TabLayout() {
                                 />
                             )
                         },
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
                 <Tabs.Screen
@@ -155,7 +53,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         title: 'Путешествуем по Беларуси',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
                 <Tabs.Screen
@@ -163,7 +61,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         title: 'Карта путешествий',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
                 <Tabs.Screen
@@ -171,7 +69,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         title: 'Аккаунты в instagram о путешествиях по Беларуси',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                         href: {
                             pathname: '/travels/439',
                         },
@@ -183,7 +81,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         title: 'Аккаунты в instagram о путешествиях по Беларуси',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                         href: {
                             pathname: '/travels/439',
                         },
@@ -196,7 +94,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'О сайте',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
@@ -206,7 +104,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Новости/Розогрыши',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
@@ -216,7 +114,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Обратная связь',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
                 <Tabs.Screen
@@ -225,7 +123,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Новость',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
@@ -235,7 +133,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Войти',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
@@ -245,7 +143,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Зарегистрироваться',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
@@ -255,7 +153,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Новое путешествие',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
@@ -265,7 +163,7 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Изменить пароль',
-                        headerRight: () => renderRightMenu(),
+                        headerRight: () => <RenderRightMenu />,
                     }}
                 />
 

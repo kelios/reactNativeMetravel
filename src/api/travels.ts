@@ -10,19 +10,22 @@ let LOGIN = ''
 let GET_FILTER_FOR_MAP = ''
 let REGISTER = ''
 let LOGOUT = ''
-let SENDPASSWORD = ''
-let SETNEWDPASSWORD = ''
+//let SENDPASSWORD = ''
+//let SETNEWPASSWORD = ''
+let RESETPASSWORDLINK = ''
 let GET_LIST_COUNTRIES = ''
 
 if (IS_LOCAL_API == 'true') {
     URLAPI = LOCAL_API_URL
     SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/travels/search_travels_for_map`
+    GET_FILTER_FOR_MAP = `${URLAPI}/api/filterformap`
+
     LOGIN = `${URLAPI}/api/user/login/`
     LOGOUT = `${URLAPI}/api/user/logout/`
     REGISTER = `${URLAPI}/api/user/registration/`
-    GET_FILTER_FOR_MAP = `${URLAPI}/api/filterformap`
-    SENDPASSWORD = `${URLAPI}/api/sendpassword`
-    SETNEWDPASSWORD = `${URLAPI}/api/setpassword`
+    RESETPASSWORDLINK = `${URLAPI}/api/user/reset-password-link/`
+   // SENDPASSWORD = `${URLAPI}/api/sendpassword`
+   // SETNEWPASSWORD = `${URLAPI}/api/setpassword`
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
 } else {
     URLAPI = PROD_API_URL
@@ -56,11 +59,7 @@ const travelDef = {
     slug: '',
 }
 
-export const auth = async (
-    email: string,
-    password: string,
-    navigation
-) => {
+export const loginApi = async (email: string, password: string): Promise<boolean> => {
     try {
         const response = await fetch(`${LOGIN}`, {
             method: 'POST',
@@ -72,19 +71,27 @@ export const auth = async (
                 password: password,
             }),
         });
+        if (!response.ok) {
+            throw new Error('Network response was not ok.');
+        }
+
         const json = await response.json();
+
         if (json.token) {
-            // Сохраняем токен в AsyncStorage
             await AsyncStorage.setItem('userToken', json.token);
             await AsyncStorage.setItem('userName', json.name);
-            navigation.navigate('index');
+            return true;
         }
+
+        return false;
     } catch (error) {
         console.error(error);
+        Alert.alert("Ошибка", "Не удалось выполнить вход");
+        return false;
     }
 };
 
-export const sendPassword = async (
+export const sendPasswordApi = async (
     email: string,
 ) => {
     try {
@@ -97,25 +104,31 @@ export const sendPassword = async (
                 email: email
             }),
         });
-        const json = await response.json();
-        if (json.token) {
-            // Сохраняем токен в AsyncStorage
-            await AsyncStorage.setItem('userToken', json.token);
-            await AsyncStorage.setItem('userName', json.name);
-        }else{
-            return json.error;
+        if (!response.ok) {
+            throw new Error('Network response was not ok.');
         }
+
+        const json = await response.json();
+
+        if (json.success) {
+            Alert.alert("Успех", "Инструкции по восстановлению пароля отправлены на ваш email");
+            return true;
+        }
+
+        Alert.alert("Ошибка", json.message || "Не удалось отправить инструкции по восстановлению пароля");
+        return false;
     } catch (error) {
-        return error
         console.error(error);
+        Alert.alert("Ошибка", "Не удалось отправить инструкции по восстановлению пароля");
+        return false;
     }
 };
 
-export const setNewPassword = async (
+export const resetPasswordLinkApi = async (
     email: string,
 ) => {
     try {
-        const response = await fetch(`${SETNEWPASSWORD}`, {
+        const response = await fetch(`${RESETPASSWORDLINK}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -125,17 +138,58 @@ export const setNewPassword = async (
             }),
         });
         const json = await response.json();
-        if (json.token) {
-            // Сохраняем токен в AsyncStorage
-            await AsyncStorage.setItem('userToken', json.token);
-            await AsyncStorage.setItem('userName', json.name);
+        console.log(response.ok);
+        if (!response.ok) {
+            return json?.email[0];
         }
+
+        if (json.success) {
+            return 'Инструкции по восстановлению пароля отправлены на ваш email';
+        }
+
+        return false;
     } catch (error) {
         console.error(error);
+        return 'Не удалось отправить инструкции по восстановлению пароля';
     }
 };
 
-export const logout = async () => {
+export const setNewPasswordApi = async (
+    token: string,
+    email: string,
+) => {
+    try {
+        const response = await fetch(`${SETNEWPASSWORD}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                token: token
+            }),
+        });
+        if (!response.ok) {
+            throw new Error('Network response was not ok.');
+        }
+
+        const json = await response.json();
+
+        if (json.success) {
+            Alert.alert("Успех", "Пароль успешно изменен");
+            return true;
+        }
+
+        Alert.alert("Ошибка", json.message || "Не удалось изменить пароль");
+        return false;
+    } catch (error) {
+        console.error(error);
+        Alert.alert("Ошибка", "Не удалось изменить пароль");
+        return false;
+    }
+};
+
+export const logoutApi = async () => {
     try {
         const token = await AsyncStorage.getItem('userToken');
         const response = await fetch(`${LOGOUT}`, {

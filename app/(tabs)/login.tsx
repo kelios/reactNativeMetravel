@@ -1,41 +1,53 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react';
 import {
     StyleSheet,
     View,
     Dimensions,
     Image,
-    TextInput, TouchableOpacity, Text,
-} from 'react-native'
-import {auth,sendPassword} from '@/src/api/travels'
-import {Card} from 'react-native-paper'
-import {Button} from 'react-native-elements'
-import {useNavigation} from '@react-navigation/native'
+    TextInput,
+    TouchableOpacity,
+    Text,
+} from 'react-native';
+import { Card } from 'react-native-paper';
+import { Button } from 'react-native-elements';
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '@/context/AuthContext';
 
+const { width, height } = Dimensions.get('window');
 
-const {width, height} = Dimensions.get('window')
-
-export default function login() {
+export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
     const navigation = useNavigation();
+    const { login, sendPassword } = useAuth();
 
-    const isValidEmail = (email) => {
+    const isValidEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         return emailRegex.test(email);
     };
 
-    const handleForgotPassword = () => {
+    const handleResetPassword = async () => {
         if (isValidEmail(email)) {
-            let error = sendPassword(email);
+            const result = await sendPassword(email);
+                setError(result);
         } else {
-            alert('Введите корректный email адрес.');
+            setError('Введите корректный email адрес.');
         }
     };
 
-    const ForgotPasswordLink = ({onPress}) => {
+    const handleLogin = async () => {
+        setError(''); // сбросить ошибку перед попыткой входа
+        const success = await login(email, password, navigation);
+        if (!success) {
+            setError('Неверный email или пароль.');
+        }
+    };
+
+    const ForgotPasswordLink = ({ onPress }) => {
         return (
             <TouchableOpacity onPress={onPress}>
-                <Text style={{color: '#0066ff', textDecorationLine: 'underline'}}>Забыли пароль?</Text>
+                <Text style={{ color: '#0066ff', textDecorationLine: 'underline' }}>Забыли пароль?</Text>
             </TouchableOpacity>
         );
     };
@@ -43,16 +55,19 @@ export default function login() {
     return (
         <View style={styles.container}>
             <Image
-                source={{uri: '/assets/images/media/slider/about.jpg'}}
+                source={{ uri: '/assets/images/media/slider/about.jpg' }}
                 style={styles.topImage}
             />
             <Card style={styles.card}>
                 <Card.Content>
+                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
                     <TextInput
                         placeholder="Email"
                         value={email}
                         onChangeText={setEmail}
                         style={styles.input}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
                     />
                     <TextInput
                         placeholder="Пароль"
@@ -64,32 +79,26 @@ export default function login() {
                     <Button
                         title="Войти"
                         buttonStyle={styles.applyButton}
-                        onPress={() => auth(email, password, navigation)}>
-
-                    </Button>
-                    <ForgotPasswordLink onPress={() => handleForgotPassword()} />
+                        onPress={handleLogin}
+                    />
+                    <ForgotPasswordLink onPress={handleResetPassword} />
                 </Card.Content>
             </Card>
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
     card: {
-        width: '50%', // Изменено для лучшей адаптации
+        width: '80%',
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
         alignItems: 'center',
-        marginTop: -400, // Поднять карточку, чтобы перекрыть часть изображения
-        borderRadius: 8, // Добавлено для скругления углов
-        padding: 10, // Добавлено для внутренних отступов
-        shadowOpacity: 0.2, // Добавлено для тени
-        shadowRadius: 5, // Радиус тени
-        shadowOffset: {width: 0, height: 2}, // Смещение тени
-    },
-    image: {
-        width: '50%',
-        height: 400,
-        marginRight: 10, // Adds some space between the image and the text
+        marginTop: -400,
+        borderRadius: 8,
+        padding: 10,
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 2 },
     },
     topImage: {
         width: '100%',
@@ -101,15 +110,7 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
         borderRadius: 5,
         padding: 10,
-        width: 500,
-    },
-    text: {
-        padding: 10,
-        fontSize: 16,
-    },
-    link: {
-        color: '#4b7c6f',
-        fontSize: 16,
+        width: '100%',
     },
     container: {
         flex: 1,
@@ -118,6 +119,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     applyButton: {
-        backgroundColor: '#6aaaaa'
-    }
-})
+        backgroundColor: '#6aaaaa',
+    },
+    errorText: {
+        color: 'red',
+        marginBottom: 10,
+    },
+});
