@@ -167,6 +167,16 @@ export default function TabLayout() {
                     }}
                 />
 
+                <Tabs.Screen
+                    name="accountconfirmation"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: 'Подтвердить регистрацию',
+                        headerRight: () => <RenderRightMenu />,
+                    }}
+                />
+
             </Tabs>
 
             <Footer/>

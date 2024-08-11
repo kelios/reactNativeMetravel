@@ -1,9 +1,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import TextInputComponent from '@/components/TextInputComponent';
-import MultiSelectComponent from '@/components/MultiSelectComponent';
 import RichTextEditor from '@/components/RichTextEditor';
 import CheckboxComponent from '@/components/CheckboxComponent';
-import NumberInputComponent from '@/components/NumberInputComponent';
 import YoutubeLinkComponent from '@/components/YoutubeLinkComponent';
 import ButtonComponent from '@/components/ButtonComponent';
 import {
@@ -16,8 +14,10 @@ import {
     TouchableOpacity,
     ActivityIndicator
 } from 'react-native';
-import {fetchCounties, fetchFilters, fetchFiltersCountry, fetchTravelsby} from "@/src/api/travels";
+import { useRoute } from '@react-navigation/native';
+import { fetchFilters, fetchFiltersCountry, saveFormData} from "@/src/api/travels";
 import MultiSelect from "react-native-multiple-select";
+import {TravelFormData} from "@/src/types/types";
 
 interface Category {
     id: string
@@ -37,44 +37,21 @@ interface Filters {
 }
 
 
-interface FormData {
-    name: string;
-    countries: string[]
-    cities: string[]
-    overNightStay: string[]
-    complexity: string[]
-    companion: string[]
-    description: string;
-    plus: string;
-    minus: string;
-    recommendation: string;
-    youtubeLink: string;
-    categories: string[]
-    transports: string[]
-    categoryTravelAddress: string[]
-    month: string[]
-    year: string;
-    physicalCondition: Array<{ id: string; name: string }>;
-    hasChild: boolean;
-    hasPet: boolean;
-    accommodation: Array<{ id: string; name: string }>;
-    spentAmount: string;
-    numberOfPeople: string;
-    numberOfDays: string;
-    needVisa: boolean;
-    isDraft: boolean;
-}
 
 export default function NewTravelScreen() {
+    const route = useRoute();
     const windowWidth = Dimensions.get('window').width
     const styles = getStyles(windowWidth)
     const [search, setSearch] = useState('')
     const isMobile = windowWidth <= 768
     const initMenuVisible = !isMobile
 
+
     const [menuVisible, setMenuVisible] = useState(initMenuVisible)
     const [isLoading, setIsLoading] = useState(false)
     const [isLoadingFilters, setIsLoadingFilters] = useState(false)
+    const [recordId, setRecordId] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false); // Состояние для индикатора автосохранения
 
     const [filters, setFilters] = useState<Filters>({
         countries: [],
@@ -88,7 +65,8 @@ export default function NewTravelScreen() {
         year: '',
     })
 
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<TravelFormData>({
+        id: route.params?.recordId || null,
         name: '',
         countries: [],
         cities: [],
@@ -120,6 +98,48 @@ export default function NewTravelScreen() {
         getFilters()
         getFiltersCountry()
     }, [])
+
+    useEffect(() => {
+        const autoSaveInterval = setInterval(() => {
+            handleAutoSave();
+        }, 300000); // 5 минут в миллисекундах
+
+        return () => {
+            clearInterval(autoSaveInterval); // Очистка интервала при размонтировании компонента
+        };
+    }, [formData, recordId]);
+
+    const handleAutoSave = async () => {
+        try {
+            setIsSaving(true);
+            const savedId = await saveFormDataWithId(formData);
+            if (!formData.id && savedId) {
+                setFormData((prevData) => ({ ...prevData, id: savedId }));
+            }
+            console.log('Автосохранение прошло успешно!');
+        } catch (error) {
+            console.error('Ошибка при автосохранении:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleSubmit = async () => {
+        try {
+            const savedId = await saveFormDataWithId(formData);
+            if (!formData.id && savedId) {
+                setFormData((prevData) => ({ ...prevData, id: savedId }));
+            }
+            console.log('Форма отправлена успешно!');
+        } catch (error) {
+            console.error('Ошибка при отправке формы:', error);
+        }
+    };
+
+    const saveFormDataWithId = async (data: TravelFormData): Promise<string> => {
+        const updatedData = { ...data, id: data.id || null }; // Добавляем recordId в данные
+        return await saveFormData(updatedData); // Передаем данные в функцию сохранения
+    };
 
     const getFilters = useCallback(async () => {
         if (isLoadingFilters) return
@@ -166,23 +186,6 @@ export default function NewTravelScreen() {
     }
 
 
-    const handleSubmit = async () => {
-        try {
-            // Отправка данных на сервер
-            await saveFormData(formData);
-            console.log('Форма отправлена успешно!');
-        } catch (error) {
-            console.error('Ошибка при отправке формы:', error);
-        }
-    };
-
-    const saveFormData = async (data: FormData) => {
-        // Ваша логика отправки данных на сервер
-        // Например, использование fetch или axios для отправки POST запроса на сервер
-    };
-
-
-
     const handleChange = (name: keyof FormData, value: any) => {
         setFormData((prevData) => ({
             ...prevData,
@@ -205,6 +208,13 @@ export default function NewTravelScreen() {
         if (menuVisible) {
             return (
                 <View style={{ backgroundColor: 'white' }}>
+                    {formData.id && (
+                        <TextInput
+                            style={styles.hiddenInput}
+                            value={formData.id}
+                            editable={false}
+                        />
+                    )}
                     <CheckboxComponent
                         label="Черновик"
                         value={formData.isDraft}
@@ -481,6 +491,7 @@ export default function NewTravelScreen() {
                     </View>
                 </View>
             </View>
+            {isSaving && <ActivityIndicator size="small" color="#0000ff" />}
         </ScrollView>
     );
 }
@@ -571,6 +582,9 @@ const getStyles = (windowWidth: number) => {
         menuButtonText: {
             color: 'white',
             fontWeight: 'bold',
+        },
+        hiddenInput: {
+            display: 'none', // Скрываем поле ID
         },
 });
 }

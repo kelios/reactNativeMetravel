@@ -137,4 +137,33 @@ export interface FormValues {
   confirmPassword: string;
 }
 
+export interface TravelFormData {
+  id?: string | null;
+  name: string;
+  countries: string[];
+  cities: string[];
+  overNightStay: string[];
+  complexity: string[];
+  companion: string[];
+  description: string;
+  plus: string;
+  minus: string;
+  recommendation: string;
+  youtubeLink: string;
+  categories: string[];
+  transports: string[];
+  categoryTravelAddress: string[];
+  month: string[];
+  year: string;
+  physicalCondition: Array<{ id: string; name: string }>;
+  hasChild: boolean;
+  hasPet: boolean;
+  accommodation: Array<{ id: string; name: string }>;
+  spentAmount: string;
+  numberOfPeople: string;
+  numberOfDays: string;
+  needVisa: boolean;
+  isDraft: boolean;
+}
+
 

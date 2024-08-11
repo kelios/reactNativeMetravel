@@ -7,6 +7,9 @@ import {
     TextInput,
     TouchableOpacity,
     Text,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
 } from 'react-native';
 import { Card } from 'react-native-paper';
 import { Button } from 'react-native-elements';
@@ -29,8 +32,12 @@ export default function Login() {
 
     const handleResetPassword = async () => {
         if (isValidEmail(email)) {
-            const result = await sendPassword(email);
+            try {
+                const result = await sendPassword(email);
                 setError(result);
+            } catch (err: any) {
+                setError(err.message || 'Ошибка при сбросе пароля.');
+            }
         } else {
             setError('Введите корректный email адрес.');
         }
@@ -38,71 +45,104 @@ export default function Login() {
 
     const handleLogin = async () => {
         setError(''); // сбросить ошибку перед попыткой входа
-        const success = await login(email, password, navigation);
-        if (!success) {
-            setError('Неверный email или пароль.');
+        try {
+            const success = await login(email, password, navigation);
+            if (!success) {
+                setError('Неверный email или пароль.');
+            }
+        } catch (err: any) {
+            setError(err.message || 'Ошибка при входе в систему.');
         }
     };
 
     const ForgotPasswordLink = ({ onPress }) => {
         return (
             <TouchableOpacity onPress={onPress}>
-                <Text style={{ color: '#0066ff', textDecorationLine: 'underline' }}>Забыли пароль?</Text>
+                <Text style={styles.forgotPasswordText}>Забыли пароль?</Text>
             </TouchableOpacity>
         );
     };
 
     return (
-        <View style={styles.container}>
-            <Image
-                source={{ uri: '/assets/images/media/slider/about.jpg' }}
-                style={styles.topImage}
-            />
-            <Card style={styles.card}>
-                <Card.Content>
-                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
-                    <TextInput
-                        placeholder="Email"
-                        value={email}
-                        onChangeText={setEmail}
-                        style={styles.input}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+            <ScrollView contentContainerStyle={styles.scrollViewContent}>
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{ uri: '/assets/images/media/slider/about.jpg' }}
+                        style={styles.backgroundImage}
                     />
-                    <TextInput
-                        placeholder="Пароль"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                        style={styles.input}
-                    />
-                    <Button
-                        title="Войти"
-                        buttonStyle={styles.applyButton}
-                        onPress={handleLogin}
-                    />
-                    <ForgotPasswordLink onPress={handleResetPassword} />
-                </Card.Content>
-            </Card>
-        </View>
+                    <View style={styles.formContainer}>
+                        <Card style={styles.card}>
+                            <Card.Content>
+                                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                                <TextInput
+                                    placeholder="Email"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    style={styles.input}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    placeholderTextColor="#888"
+                                />
+                                <TextInput
+                                    placeholder="Пароль"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry
+                                    style={styles.input}
+                                    placeholderTextColor="#888"
+                                />
+                                <Button
+                                    title="Войти"
+                                    buttonStyle={styles.applyButton}
+                                    onPress={handleLogin}
+                                />
+                                <ForgotPasswordLink onPress={handleResetPassword} />
+                            </Card.Content>
+                        </Card>
+                    </View>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    card: {
-        width: '80%',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    container: {
+        flex: 1,
+        backgroundColor: 'white',
+    },
+    scrollViewContent: {
+        flexGrow: 1,
+    },
+    imageContainer: {
+        width: '100%',
+        height: height * 0.5, // Контейнер для изображения и формы занимает половину экрана
         alignItems: 'center',
-        marginTop: -400,
+        justifyContent: 'center', // Центрирование формы по вертикали
+        position: 'relative',
+    },
+    backgroundImage: {
+        width: '100%',
+        height: '100%', // Изображение занимает весь контейнер
+        position: 'absolute', // Абсолютное позиционирование для наложения формы
+        top: 0,
+        left: 0,
+    },
+    formContainer: {
+        width: '50%', // Форму делаем немного уже, чтобы была по центру
+    },
+    card: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Полупрозрачный фон формы
         borderRadius: 8,
-        padding: 10,
+        padding: 20,
         shadowOpacity: 0.2,
         shadowRadius: 5,
         shadowOffset: { width: 0, height: 2 },
-    },
-    topImage: {
-        width: '100%',
-        height: 500,
+        elevation: 3, // Для теней на Android
     },
     input: {
         marginBottom: 20,
@@ -111,18 +151,22 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         padding: 10,
         width: '100%',
-    },
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        width: '100%',
-        backgroundColor: 'white',
+        fontSize: 16,
+        backgroundColor: '#fff',
     },
     applyButton: {
         backgroundColor: '#6aaaaa',
+        width: '100%',
+    },
+    forgotPasswordText: {
+        color: '#0066ff',
+        textDecorationLine: 'underline',
+        marginTop: 10,
+        textAlign: 'center',
     },
     errorText: {
         color: 'red',
         marginBottom: 10,
+        textAlign: 'center',
     },
 });

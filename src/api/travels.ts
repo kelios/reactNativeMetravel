@@ -1,8 +1,18 @@
-import {Article, FeedbackData, Filters, FormValues, Travel, TravelsForMap, TravelsMap,} from '@/src/types/types'
+import {
+    Article,
+    FeedbackData,
+    Filters,
+    FormValues,
+    Travel,
+    TravelFormData,
+    TravelsForMap,
+    TravelsMap,
+} from '@/src/types/types'
 import queryString from 'query-string'
 import {IS_LOCAL_API, LOCAL_API_URL, PROD_API_URL} from '@env'
 import {Alert} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {useAuth} from "@/context/AuthContext";
 
 let URLAPI = ''
 let SEARCH_TRAVELS_FOR_MAP = ''
@@ -10,10 +20,13 @@ let LOGIN = ''
 let GET_FILTER_FOR_MAP = ''
 let REGISTER = ''
 let LOGOUT = ''
+let CONFIRM_REGISTER= ''
 //let SENDPASSWORD = ''
 //let SETNEWPASSWORD = ''
 let RESETPASSWORDLINK = ''
 let GET_LIST_COUNTRIES = ''
+let CREATE_TRAVEL = ''
+let SAVE_TRAVEL = ''
 
 if (IS_LOCAL_API == 'true') {
     URLAPI = LOCAL_API_URL
@@ -24,9 +37,11 @@ if (IS_LOCAL_API == 'true') {
     LOGOUT = `${URLAPI}/api/user/logout/`
     REGISTER = `${URLAPI}/api/user/registration/`
     RESETPASSWORDLINK = `${URLAPI}/api/user/reset-password-link/`
+    CONFIRM_REGISTER = `${URLAPI}/api/user/confirm-registration/`
    // SENDPASSWORD = `${URLAPI}/api/sendpassword`
    // SETNEWPASSWORD = `${URLAPI}/api/setpassword`
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
+    SAVE_TRAVEL = `${URLAPI}/api/travels/`
 } else {
     URLAPI = PROD_API_URL
     SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
@@ -35,7 +50,9 @@ if (IS_LOCAL_API == 'true') {
     REGISTER = `${URLAPI}/api/registration/`
     GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
+    CREATE_TRAVEL = `${URLAPI}/travels/create`
 }
+
 
 const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
@@ -595,3 +612,62 @@ export const sendFeedback = async (
         console.log('Error fetching filters: ' + e)
     }
 }
+
+// Подтверждение учетной записи
+export const confirmAccount = async (hash: string) => {
+    try {
+        const response = await fetch(CONFIRM_REGISTER, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ hash }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка подтверждения учетной записи');
+        }
+        const jsonResponse = await response.json();
+
+        if (jsonResponse.token) {
+            // Сохраняем токен и имя пользователя в AsyncStorage
+            await AsyncStorage.setItem('userToken', jsonResponse.token);
+            await AsyncStorage.setItem('userName', jsonResponse.name);
+        }
+
+        return jsonResponse;
+    } catch (error: any) {
+        throw new Error(error.message || 'Произошла ошибка при подтверждении учетной записи.');
+    }
+};
+
+export const saveFormData = async (data: TravelFormData): Promise<string> => {
+    try {
+        const token = await AsyncStorage.getItem('userToken'); // Получаем токен из AsyncStorage
+
+        if (!token) {
+            throw new Error('Пользователь не авторизован');
+        }
+
+        const response = await fetch(SAVE_TRAVEL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка при создании записи на сервере');
+        }
+
+        const responseData = await response.json();
+        console.log('Данные успешно сохранены:', responseData);
+
+        return responseData.id; // Предполагаем, что сервер возвращает ID новой записи
+    } catch (error) {
+        console.error('Ошибка при создании формы:', error);
+        throw error;
+    }
+};

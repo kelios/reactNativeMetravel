@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, Image } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Image, Dimensions } from 'react-native';
 import { Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { registration } from '@/src/api/travels';
 import { FormValues } from '@/src/types/types';
 import { Card } from 'react-native-paper';
 import { Button } from 'react-native-elements';
+
+const { height } = Dimensions.get('window'); // Получаем высоту экрана
 
 // Валидационная схема с использованием Yup
 const RegisterSchema = Yup.object().shape({
@@ -41,7 +43,7 @@ const RegisterForm = () => {
     return (
         <View style={styles.container}>
             <Image
-                source={{ uri: '/assets/images/media/slider/about.jpg' }} // Указываем путь к изображению
+                source={{ uri: '/assets/images/media/slider/about.jpg' }}
                 style={styles.backgroundImage}
             />
             <Formik<FormValues>
@@ -119,34 +121,34 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f0f0f0',
     },
     backgroundImage: {
         width: '100%',
-        height: 200, // Определяем высоту изображения, чтобы оно занимало место под формой
-        position: 'absolute', // Фиксируем его положение под формой
-        top: 0, // Располагаем изображение сверху
+        height: height * 0.5, // Картинка занимает половину экрана
+        position: 'absolute',
+        top: 0,
     },
     formContainer: {
-        width: '90%',
-        marginTop: 150, // Поднимаем форму над изображением
+        width: '60%',
+        position: 'absolute',
+        top: '5%', // Центрируем форму по вертикали в пределах картинки
     },
     card: {
         padding: 20,
         borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Полупрозрачный фон, чтобы текст был виден
+        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Полупрозрачный фон для лучшей читаемости
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
-        elevation: 3, // Shadow для Android
+        elevation: 3, // Тени для Android
     },
     errorText: {
         color: 'red',
         marginBottom: 10,
     },
     generalMessageText: {
-        color: '#e60000', // Красный цвет для ошибок
+        color: '#e60000', // Цвет ошибки
         marginBottom: 20,
         textAlign: 'center',
         fontWeight: 'bold',
@@ -162,7 +164,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     applyButton: {
-        backgroundColor: Platform.OS === 'ios' ? '#6aaaaa' : '#6aaaaa',
+        backgroundColor: '#6aaaaa',
+        width: '100%',
     },
 });
 
