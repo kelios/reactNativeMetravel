@@ -41,7 +41,7 @@ if (IS_LOCAL_API == 'true') {
    // SENDPASSWORD = `${URLAPI}/api/sendpassword`
    // SETNEWPASSWORD = `${URLAPI}/api/setpassword`
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
-    SAVE_TRAVEL = `${URLAPI}/api/travels/`
+    SAVE_TRAVEL = `${URLAPI}/api/travels/upsert/`
 } else {
     URLAPI = PROD_API_URL
     SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`
