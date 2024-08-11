@@ -624,15 +624,12 @@ export const confirmAccount = async (hash: string) => {
             body: JSON.stringify({ hash }),
         });
 
-        if (!response.ok) {
-            throw new Error('Ошибка подтверждения учетной записи');
-        }
         const jsonResponse = await response.json();
 
-        if (jsonResponse.token) {
+        if (jsonResponse.userToken) {
             // Сохраняем токен и имя пользователя в AsyncStorage
-            await AsyncStorage.setItem('userToken', jsonResponse.token);
-            await AsyncStorage.setItem('userName', jsonResponse.name);
+            await AsyncStorage.setItem('userToken', jsonResponse.userToken);
+            await AsyncStorage.setItem('userName', jsonResponse.userName);
         }
 
         return jsonResponse;

@@ -19,14 +19,14 @@ export default function AccountConfirmation() {
             try {
                 const { hash } = route.params as { hash: string };
                 const response = await confirmAccount(hash);
-                if (response.token) {
+                if (response.userToken) {
                     setIsAuthenticated(true);
-                    navigation.navigate('Home'); // Перенаправляем на главную страницу
+                    navigation.navigate('index'); // Перенаправляем на главную страницу
                 } else {
-                    setError('Не удалось подтвердить учетную запись.');
+                    setError('Не удалось подтвердить учетную запись. '+ response.non_field_errors[0]);
                 }
-            } catch (err) {
-                setError('Произошла ошибка при подтверждении учетной записи.');
+            } catch (err: any) {
+                setError('Произошла ошибка при подтверждении учетной записи. '+ err.message);
             } finally {
                 setLoading(false);
             }
@@ -53,7 +53,7 @@ export default function AccountConfirmation() {
                     {error && (
                         <Button
                             title="На главную"
-                            onPress={() => navigation.navigate('Home')}
+                            onPress={() => navigation.navigate('index')}
                             buttonStyle={styles.button}
                         />
                     )}
