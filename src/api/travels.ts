@@ -213,9 +213,7 @@ export const logoutApi = async () => {
     }
 };
 
-export const registration = async (
-    values: FormValues,
-) => {
+export const registration = async (values: FormValues): Promise<string> => {
     try {
         const response = await fetch(`${REGISTER}`, {
             method: 'POST',
@@ -224,14 +222,27 @@ export const registration = async (
             },
             body: JSON.stringify(values),
         });
-        const json = await response.json();
-        if (json.token) {
-            // Сохраняем токен в AsyncStorage
-            await AsyncStorage.setItem('userToken', json.token);
-            await AsyncStorage.setItem('userName', json.name);
+
+        const jsonResponse = await response.json();
+
+        // Проверяем, успешен ли запрос
+        if (!response.ok) {
+            // Если сервер вернул ошибку, бросаем ее
+            throw new Error(jsonResponse.error || 'Ошибка регистрации');
         }
-    } catch (error) {
-        console.error(error);
+
+        if (jsonResponse.token) {
+            // Сохраняем токен и имя пользователя в AsyncStorage
+            await AsyncStorage.setItem('userToken', jsonResponse.token);
+            await AsyncStorage.setItem('userName', jsonResponse.name);
+        }
+
+        // Возвращаем сообщение об успешной регистрации
+        return 'Пользователь успешно зарегистрирован. Пожалуйста, проверьте почту и активируйте учетную запись.';
+    } catch (error: any) {
+        // Если произошла ошибка, возвращаем ее сообщение
+        console.error('Registration error:', error);
+        return error.message || 'Произошла неизвестная ошибка.';
     }
 };
 
