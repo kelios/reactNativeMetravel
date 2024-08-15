@@ -138,7 +138,7 @@ export default function NewTravelScreen() {
 
     const saveFormDataWithId = async (data: TravelFormData): Promise<string> => {
         const updatedData = { ...data, id: data.id || null }; // Добавляем recordId в данные
-        return await saveFormData(updatedData); // Передаем данные в функцию сохранения
+        return await saveFormData(updatedData);
     };
 
     const getFilters = useCallback(async () => {
