@@ -253,8 +253,6 @@ export const registration = async (values: FormValues): Promise<string> => {
             await AsyncStorage.setItem('userToken', jsonResponse.token);
             await AsyncStorage.setItem('userName', jsonResponse.name);
         }
-
-        // Возвращаем сообщение об успешной регистрации
         return 'Пользователь успешно зарегистрирован. Пожалуйста, проверьте почту и активируйте учетную запись.';
     } catch (error: any) {
         // Если произошла ошибка, возвращаем ее сообщение
