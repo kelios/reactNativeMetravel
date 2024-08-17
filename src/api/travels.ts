@@ -667,19 +667,19 @@ export const saveFormData = async (data: TravelFormData): Promise<string> => {
     }
 };
 
-export const uploadImage = async (data: any): Promise<string> => {
+export const uploadImage = async (data: FormData): Promise<string> => {
     const token = await AsyncStorage.getItem('userToken'); // Получаем токен из AsyncStorage
 
     if (!token) {
         throw new Error('Пользователь не авторизован');
     }
+
     const response = await fetch(UPLOAD_IMAGE, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: data, // Передаем FormData напрямую
     });
 
     if (response.status === 200) {
@@ -687,5 +687,4 @@ export const uploadImage = async (data: any): Promise<string> => {
     } else {
         return "Upload failed.";
     }
-
 };

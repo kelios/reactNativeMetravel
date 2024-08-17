@@ -21,6 +21,7 @@ import {TravelFormData} from "@/src/types/types";
 import ArticleEditor from "@/components/ArticleEditor";
 import ImageUploadComponent from "@/components/ImageUploadComponent";
 import MapUploadComponent from "@/components/MapUploadComponent";
+import ImageGalleryComponent from "@/components/ImageGalleryComponent";
 
 interface Category {
     id: string
@@ -475,6 +476,7 @@ export default function NewTravelScreen() {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.formSection}>
+                {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
                 <View style={styles.formRow}>
                     <View style={styles.leftColumn}>
                         <TextInputComponent
@@ -505,6 +507,7 @@ export default function NewTravelScreen() {
                                 height={300}  // Устанавливаем высоту окна редактора
                                 content={formData.plus}
                                 onChange={(newContent: any) => handleChange('plus', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
                             />
                         </SafeAreaView>
 
@@ -514,6 +517,7 @@ export default function NewTravelScreen() {
                                 height={300}  // Устанавливаем высоту окна редактора
                                 content={formData.minus}
                                 onChange={(newContent: any) => handleChange('minus', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
                             />
                         </SafeAreaView>
 
@@ -523,9 +527,12 @@ export default function NewTravelScreen() {
                                 height={300}  // Устанавливаем высоту окна редактора
                                 content={formData.minus}
                                 onChange={(newContent: any) => handleChange('recommendation', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
                             />
                         </SafeAreaView>
 
+                        <ImageGalleryComponent collection='gallery'>
+                        </ ImageGalleryComponent>
 
                     </View>
                     <View style={styles.rightColumn}>
@@ -549,7 +556,7 @@ export default function NewTravelScreen() {
                     </View>
                 </View>
             </View>
-            {isSaving && <ActivityIndicator size="small" color="#0000ff"/>}
+            {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
         </ScrollView>
     );
 }
