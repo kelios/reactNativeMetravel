@@ -1,61 +1,91 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { uploadImage } from '@/src/api/travels'; // Функция загрузки изображений
 
 // Иконка маркера
 const markerIcon = new L.Icon({
-    iconUrl: require('leaflet/dist/images/marker-icon.png'),
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
+    iconUrl: '/assets/icons/logo_yellow.ico',
+    iconSize: [27, 30],
+    iconAnchor: [27, 15],
+    popupAnchor: [0, -15],
 });
 
-const WebMapComponent = () => {
-    const [markers, setMarkers] = useState([]);
+// Компонент для обработки кликов на карте
+const MapClickHandler = ({ addMarker }) => {
+    useMapEvents({
+        click(e) {
+            addMarker(e.latlng);
+        }
+    });
+    return null;
+};
 
-    // Обработчик кликов по карте для добавления маркера
-    const handleMapClick = (e) => {
+// Функция для обратного геокодирования (определение адреса по координатам)
+const reverseGeocode = async (latlng) => {
+    const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`
+    );
+    const data = await response.json();
+    return data;
+};
+
+const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect, onCountryRemove, categoryTravelAddress }) => {
+    const addMarker = async (latlng) => {
+        // Выполняем обратное геокодирование
+        const geocodeData = await reverseGeocode(latlng);
+        const address = geocodeData.display_name || '';
+        const country = geocodeData.address.country || '';
+
+        // Создаем новый маркер с адресом
         const newMarker = {
-            position: e.latlng,
+            position: latlng,
             image: '',
             category: '',
-            address: '',
+            address,
         };
-        setMarkers([...markers, newMarker]);
+
+        onMarkerAdd(newMarker);
+
+        // Находим страну по названию и передаем её в родительский компонент
+        if (country) {
+            const foundCountry = categoryTravelAddress.find(c => c.title_ru === country);
+            if (foundCountry) {
+                onCountrySelect(foundCountry.country_id);
+            }
+        }
     };
 
-    // Обработчик изменения данных маркера (например, категории или изображения)
     const handleMarkerChange = async (index, field, value) => {
         const updatedMarkers = [...markers];
-        updatedMarkers[index][field] = value || ''; // Заменяем null на пустую строку
-        setMarkers(updatedMarkers);
+        updatedMarkers[index][field] = value || '';
+        onMarkerAdd(updatedMarkers);
 
-        // Если загружается изображение
         if (field === 'image' && value instanceof File) {
             const formData = new FormData();
             formData.append('file', value);
             formData.append('collection', 'travelMainImage');
 
             const response = await uploadImage(formData);
-            updatedMarkers[index].image = response; // Обновляем URL изображения после загрузки
-            setMarkers(updatedMarkers);
+            updatedMarkers[index].image = response;
+            onMarkerAdd(updatedMarkers);
         }
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <div style={{ flex: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 2, marginBottom: '20px' }}>
                 <MapContainer
                     center={[51.505, -0.09]}
                     zoom={13}
                     style={{ height: '500px', width: '100%', border: '1px solid #ccc' }}
-                    onClick={handleMapClick}
                 >
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
                     />
+                    <MapClickHandler addMarker={addMarker} />
                     {markers.map((marker, idx) => (
                         <Marker key={idx} position={marker.position} icon={markerIcon}>
                             <Popup>
@@ -64,14 +94,16 @@ const WebMapComponent = () => {
                                     <div style={{ marginBottom: '10px' }}>
                                         <label>Категория:</label>
                                         <select
-                                            value={marker.category || ''} // Обработка null
+                                            value={marker.category || ''}
                                             onChange={(e) => handleMarkerChange(idx, 'category', e.target.value)}
                                             style={styles.select}
                                         >
                                             <option value="">Выберите категорию</option>
-                                            <option value="nature">Природа</option>
-                                            <option value="city">Город</option>
-                                            <option value="other">Другое</option>
+                                            {categoryTravelAddress.map((category) => (
+                                                <option key={category.id} value={category.name}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
 
@@ -79,7 +111,7 @@ const WebMapComponent = () => {
                                         <label>Адрес:</label>
                                         <input
                                             type="text"
-                                            value={marker.address || ''} // Обработка null
+                                            value={marker.address || ''}
                                             onChange={(e) => handleMarkerChange(idx, 'address', e.target.value)}
                                             placeholder="Введите адрес"
                                             style={styles.input}
@@ -108,7 +140,7 @@ const WebMapComponent = () => {
                 </MapContainer>
             </div>
 
-            <div style={{ flex: 1, padding: '20px', borderLeft: '1px solid #ccc', maxHeight: '500px', overflowY: 'auto' }}>
+            <div style={{ flex: 1, padding: '20px', borderTop: '1px solid #ccc', maxHeight: '300px', overflowY: 'auto' }}>
                 <h3>Точки на карте</h3>
                 {markers.length === 0 ? (
                     <p>Нажмите на карту, чтобы добавить точку</p>
@@ -116,17 +148,20 @@ const WebMapComponent = () => {
                     markers.map((marker, idx) => (
                         <div key={idx} style={styles.markerForm}>
                             <h4>Точка {idx + 1}</h4>
+                            <p>Координаты: {marker.position.lat}, {marker.position.lng}</p>
                             <div style={{ marginBottom: '10px' }}>
                                 <label>Категория:</label>
                                 <select
-                                    value={marker.category || ''} // Обработка null
+                                    value={marker.category || ''}
                                     onChange={(e) => handleMarkerChange(idx, 'category', e.target.value)}
                                     style={styles.select}
                                 >
                                     <option value="">Выберите категорию</option>
-                                    <option value="nature">Природа</option>
-                                    <option value="city">Город</option>
-                                    <option value="other">Другое</option>
+                                    {categoryTravelAddress.map((category) => (
+                                        <option key={category.id} value={category.name}>
+                                            {category.name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 
@@ -134,7 +169,7 @@ const WebMapComponent = () => {
                                 <label>Адрес:</label>
                                 <input
                                     type="text"
-                                    value={marker.address || ''} // Обработка null
+                                    value={marker.address || ''}
                                     onChange={(e) => handleMarkerChange(idx, 'address', e.target.value)}
                                     placeholder="Введите адрес"
                                     style={styles.input}

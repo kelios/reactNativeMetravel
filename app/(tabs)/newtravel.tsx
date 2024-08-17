@@ -57,6 +57,8 @@ export default function NewTravelScreen() {
     const [recordId, setRecordId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false); // Состояние для индикатора автосохранения
 
+    const [markers, setMarkers] = useState([]); // Хранение маркеров
+
     const [filters, setFilters] = useState<Filters>({
         countries: [],
         categories: [],
@@ -149,13 +151,19 @@ export default function NewTravelScreen() {
         const cleanedObj: any = {};
 
         Object.keys(obj).forEach(key => {
-            if (obj[key] === '') {
+            const value = obj[key];
+
+            // Проверяем, является ли значение массивом
+            if (Array.isArray(value)) {
+                cleanedObj[key] = value;
+            } else if (value === '') {
+                // Заменяем пустые строки на null
                 cleanedObj[key] = null;
-            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+            } else if (typeof value === 'object' && value !== null) {
                 // Рекурсивно очищаем вложенные объекты
-                cleanedObj[key] = cleanEmptyFields(obj[key]);
+                cleanedObj[key] = cleanEmptyFields(value);
             } else {
-                cleanedObj[key] = obj[key];
+                cleanedObj[key] = value;
             }
         });
 
@@ -224,6 +232,33 @@ export default function NewTravelScreen() {
     if (!filters) {
         return <ActivityIndicator/>
     }
+
+    const handleCountrySelection = (countryId: any) => {
+        // Находим страну по ее ID
+        const country = filters.countries.find((c) => c.country_id === countryId);
+
+        if (country) {
+            setFormData((prevData) => ({
+                ...prevData,
+                countries: [...prevData.countries, country], // Добавляем страну в список
+            }));
+        }
+    };
+
+    const handleCountryRemove = (countryId) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            countries: prevData.countries.filter((country) => country.country_id !== countryId),
+        }));
+    };
+
+    const handleMarkerAdd = (newMarker) => {
+        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+    };
+
+    const handleMarkerRemove = (index) => {
+        setMarkers((prevMarkers) => prevMarkers.filter((_, i) => i !== index));
+    };
 
     const renderFilters = () => {
         if (menuVisible) {
@@ -509,7 +544,14 @@ export default function NewTravelScreen() {
                             onChange={(value) => handleChange('youtubeLink', value)}
                         />
 
-                        <WebMapComponent/>
+                        <WebMapComponent
+                            markers={markers}
+                            onMarkerAdd={handleMarkerAdd}
+                            onMarkerRemove={handleMarkerRemove}
+                            onCountrySelect={handleCountrySelection}
+                            onCountryRemove={handleCountryRemove}
+                            categoryTravelAddress={filters.categoryTravelAddress} // Категории для маркеров
+                        />
 
                         <SafeAreaView>
                             <ArticleEditor
