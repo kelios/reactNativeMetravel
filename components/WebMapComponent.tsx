@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { uploadImage } from '@/src/api/travels'; // Функция загрузки изображений
+import ImageUploadComponent from '@/components/ImageUploadComponent'; // Подключаем компонент загрузки изображений
 
 // Иконка маркера
 const markerIcon = new L.Icon({
     iconUrl: '/assets/icons/logo_yellow.ico',
     iconSize: [27, 30],
-    iconAnchor: [27, 15],
-    popupAnchor: [0, -15],
+    iconAnchor: [13, 30],
+    popupAnchor: [0, -30],
 });
 
 // Компонент для обработки кликов на карте
@@ -31,55 +31,61 @@ const reverseGeocode = async (latlng) => {
     return data;
 };
 
-const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect, onCountryRemove, categoryTravelAddress }) => {
+const WebMapComponent = ({
+                             markers,
+                             onMarkersChange,
+                             onCountrySelect,
+                             categoryTravelAddress,
+                             countrylist
+                         }) => {
     const addMarker = async (latlng) => {
-        // Выполняем обратное геокодирование
         const geocodeData = await reverseGeocode(latlng);
-        const address = geocodeData.display_name || '';
-        const country = geocodeData.address.country || '';
+        const address = geocodeData?.display_name || '';
+        const country = geocodeData?.address?.country || '';
 
-        // Создаем новый маркер с адресом
         const newMarker = {
             position: latlng,
             image: '',
             category: '',
             address,
+            country_id: null,
         };
 
-        onMarkerAdd(newMarker);
-
-        // Находим страну по названию и передаем её в родительский компонент
         if (country) {
-            const foundCountry = categoryTravelAddress.find(c => c.title_ru === country);
+            const foundCountry = countrylist.find(c => c.title_ru === country);
             if (foundCountry) {
+                newMarker.country_id = foundCountry.country_id;
                 onCountrySelect(foundCountry.country_id);
             }
         }
+
+        onMarkersChange([...markers, newMarker]);
     };
 
-    const handleMarkerChange = async (index, field, value) => {
+    const handleMarkerChange = (index, field, value) => {
         const updatedMarkers = [...markers];
         updatedMarkers[index][field] = value || '';
-        onMarkerAdd(updatedMarkers);
+        onMarkersChange(updatedMarkers);
+    };
 
-        if (field === 'image' && value instanceof File) {
-            const formData = new FormData();
-            formData.append('file', value);
-            formData.append('collection', 'travelMainImage');
+    const handleImageUpload = (index, imageUrl) => {
+        const updatedMarkers = [...markers];
+        updatedMarkers[index].image = imageUrl;
+        onMarkersChange(updatedMarkers);
+    };
 
-            const response = await uploadImage(formData);
-            updatedMarkers[index].image = response;
-            onMarkerAdd(updatedMarkers);
-        }
+    const handleMarkerRemove = (index) => {
+        const updatedMarkers = markers.filter((_, idx) => idx !== index);
+        onMarkersChange(updatedMarkers);
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 2, marginBottom: '20px' }}>
+        <div style={styles.container}>
+            <div style={styles.mapSection}>
                 <MapContainer
                     center={[51.505, -0.09]}
                     zoom={13}
-                    style={{ height: '500px', width: '100%', border: '1px solid #ccc' }}
+                    style={styles.map}
                 >
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -89,14 +95,14 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
                     {markers.map((marker, idx) => (
                         <Marker key={idx} position={marker.position} icon={markerIcon}>
                             <Popup>
-                                <div>
+                                <div style={styles.popupContent}>
                                     <h4>Информация о точке</h4>
-                                    <div style={{ marginBottom: '10px' }}>
+                                    <div style={styles.popupRow}>
                                         <label>Категория:</label>
                                         <select
                                             value={marker.category || ''}
                                             onChange={(e) => handleMarkerChange(idx, 'category', e.target.value)}
-                                            style={styles.select}
+                                            style={styles.input}
                                         >
                                             <option value="">Выберите категорию</option>
                                             {categoryTravelAddress.map((category) => (
@@ -107,7 +113,7 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
                                         </select>
                                     </div>
 
-                                    <div style={{ marginBottom: '10px' }}>
+                                    <div style={styles.popupRow}>
                                         <label>Адрес:</label>
                                         <input
                                             type="text"
@@ -118,21 +124,24 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
                                         />
                                     </div>
 
-                                    <div style={{ marginBottom: '10px' }}>
+                                    <div style={styles.popupRow}>
                                         <label>Изображение:</label>
-                                        <input
-                                            type="file"
-                                            onChange={(e) => handleMarkerChange(idx, 'image', e.target.files[0])}
-                                            style={styles.input}
+                                        <ImageUploadComponent
+                                            collection="travelImageAddress"
+                                            onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                         />
                                         {marker.image && (
                                             <img
                                                 src={marker.image}
                                                 alt="Превью"
-                                                style={{ width: '100px', height: '100px', marginTop: '10px', border: '1px solid #ccc' }}
+                                                style={styles.imagePreview}
                                             />
                                         )}
                                     </div>
+
+                                    <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
+                                        Удалить точку
+                                    </button>
                                 </div>
                             </Popup>
                         </Marker>
@@ -140,21 +149,21 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
                 </MapContainer>
             </div>
 
-            <div style={{ flex: 1, padding: '20px', borderTop: '1px solid #ccc', maxHeight: '300px', overflowY: 'auto' }}>
+            <div style={styles.markersList}>
                 <h3>Точки на карте</h3>
                 {markers.length === 0 ? (
                     <p>Нажмите на карту, чтобы добавить точку</p>
                 ) : (
                     markers.map((marker, idx) => (
-                        <div key={idx} style={styles.markerForm}>
+                        <div key={idx} style={styles.markerItem}>
                             <h4>Точка {idx + 1}</h4>
                             <p>Координаты: {marker.position.lat}, {marker.position.lng}</p>
-                            <div style={{ marginBottom: '10px' }}>
+                            <div style={styles.markerRow}>
                                 <label>Категория:</label>
                                 <select
                                     value={marker.category || ''}
                                     onChange={(e) => handleMarkerChange(idx, 'category', e.target.value)}
-                                    style={styles.select}
+                                    style={styles.input}
                                 >
                                     <option value="">Выберите категорию</option>
                                     {categoryTravelAddress.map((category) => (
@@ -165,7 +174,7 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
                                 </select>
                             </div>
 
-                            <div style={{ marginBottom: '10px' }}>
+                            <div style={styles.markerRow}>
                                 <label>Адрес:</label>
                                 <input
                                     type="text"
@@ -176,23 +185,24 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
                                 />
                             </div>
 
-                            <div style={{ marginBottom: '10px' }}>
+                            <div style={styles.markerRow}>
                                 <label>Изображение:</label>
-                                <input
-                                    type="file"
-                                    onChange={(e) => handleMarkerChange(idx, 'image', e.target.files[0])}
-                                    style={styles.input}
+                                <ImageUploadComponent
+                                    collection="travelImageAddress"
+                                    onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                 />
                                 {marker.image && (
                                     <img
                                         src={marker.image}
                                         alt="Превью"
-                                        style={{ width: '100px', height: '100px', marginTop: '10px', border: '1px solid #ccc' }}
+                                        style={styles.imagePreview}
                                     />
                                 )}
                             </div>
 
-                            <hr style={{ margin: '20px 0' }} />
+                            <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
+                                Удалить точку
+                            </button>
                         </div>
                     ))
                 )}
@@ -202,24 +212,67 @@ const WebMapComponent = ({ markers, onMarkerAdd, onMarkerRemove, onCountrySelect
 };
 
 const styles = {
-    markerForm: {
+    container: {
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '20px',
+        backgroundColor: '#f8f8f8',
+    },
+    mapSection: {
+        marginBottom: '20px',
+        borderRadius: '10px',
+        overflow: 'hidden',
+        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
+    },
+    map: {
+        height: '500px',
+        width: '100%',
+        borderRadius: '10px',
+    },
+    markersList: {
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '10px',
+        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
+        maxHeight: '400px',
+        overflowY: 'auto',
+    },
+    markerItem: {
         padding: '10px',
         border: '1px solid #ddd',
-        borderRadius: '5px',
-        marginBottom: '20px',
-        backgroundColor: '#f9f9f9',
+        borderRadius: '8px',
+        marginBottom: '15px',
+        backgroundColor: '#fff',
+        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    },
+    popupContent: {
+        fontFamily: 'Arial, sans-serif',
+    },
+    popupRow: {
+        marginBottom: '10px',
     },
     input: {
         width: '100%',
         padding: '8px',
-        borderRadius: '4px',
+        borderRadius: '6px',
         border: '1px solid #ccc',
+        fontSize: '14px',
     },
-    select: {
-        width: '100%',
-        padding: '8px',
-        borderRadius: '4px',
+    button: {
+        backgroundColor: '#ff6347',
+        color: 'white',
+        border: 'none',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontSize: '14px',
+    },
+    imagePreview: {
+        width: '100px',
+        height: '100px',
+        marginTop: '10px',
         border: '1px solid #ccc',
+        borderRadius: '6px',
     },
 };
 

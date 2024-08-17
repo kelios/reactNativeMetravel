@@ -43,6 +43,7 @@
     "formik": "^2.4.5",
     "leaflet": "^1.9.4",
     "lint": "^1.1.2",
+    "pretty-format": "^29.7.0",
     "query-string": "^8.1.0",
     "react": "18.2.0",
     "react-cookie-consent": "^9.0.0",

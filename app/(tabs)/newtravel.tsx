@@ -234,30 +234,53 @@ export default function NewTravelScreen() {
     }
 
     const handleCountrySelection = (countryId: any) => {
-        // Находим страну по ее ID
-        const country = filters.countries.find((c) => c.country_id === countryId);
-
-        if (country) {
-            setFormData((prevData) => ({
+        if (countryId) {
+            setFormData(prevData => ({
                 ...prevData,
-                countries: [...prevData.countries, country], // Добавляем страну в список
+                countries: [...prevData.countries, countryId],
             }));
         }
     };
 
-    const handleCountryRemove = (countryId) => {
-        setFormData((prevData) => ({
+    const handleMarkerAdd = (newMarker) => {
+        setMarkers(prevMarkers => [...prevMarkers, newMarker]);
+        const newCoords = { lat: newMarker.position.lat, lng: newMarker.position.lng };
+        setFormData(prevData => ({
             ...prevData,
-            countries: prevData.countries.filter((country) => country.country_id !== countryId),
+            coordsMeTravel: [...prevData.coordsMeTravel, newCoords],
+            travelAddressAdress: [...prevData.travelAddressAdress, newMarker.address],
+            travelAddressCountry: [...prevData.travelAddressCountry, newMarker.country_id || null],
+            travelImageAddress: [...prevData.travelImageAddress, []],
+            travelAddressCity: [...prevData.travelAddressCity, null],
         }));
     };
 
-    const handleMarkerAdd = (newMarker) => {
-        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+    const handleMarkerRemove = (index) => {
+        setMarkers(prevMarkers => prevMarkers.filter((_, i) => i !== index));
+        setFormData(prevData => ({
+            ...prevData,
+            coordsMeTravel: prevData.coordsMeTravel.filter((_, i) => i !== index),
+            travelAddressAdress: prevData.travelAddressAdress.filter((_, i) => i !== index),
+            travelAddressCountry: prevData.travelAddressCountry.filter((_, i) => i !== index),
+            travelImageAddress: prevData.travelImageAddress.filter((_, i) => i !== index),
+            travelAddressCity: prevData.travelAddressCity.filter((_, i) => i !== index),
+        }));
     };
 
-    const handleMarkerRemove = (index) => {
-        setMarkers((prevMarkers) => prevMarkers.filter((_, i) => i !== index));
+    const handleMarkersChange = (updatedMarkers) => {
+        setMarkers(updatedMarkers);
+        const coordsMeTravel = updatedMarkers.map(marker => marker.position);
+        const travelAddressAdress = updatedMarkers.map(marker => marker.address);
+        const travelAddressCountry = updatedMarkers.map(marker => marker.country_id || null);
+        const travelImageThumbUrlArr = updatedMarkers.map(marker => marker.image || '');
+
+        setFormData(prevData => ({
+            ...prevData,
+            coordsMeTravel,
+            travelAddressAdress,
+            travelAddressCountry,
+            travelImageThumbUrlArr,
+        }));
     };
 
     const renderFilters = () => {
@@ -546,11 +569,10 @@ export default function NewTravelScreen() {
 
                         <WebMapComponent
                             markers={markers}
-                            onMarkerAdd={handleMarkerAdd}
-                            onMarkerRemove={handleMarkerRemove}
+                            onMarkersChange={handleMarkersChange}
                             onCountrySelect={handleCountrySelection}
-                            onCountryRemove={handleCountryRemove}
-                            categoryTravelAddress={filters.categoryTravelAddress} // Категории для маркеров
+                            categoryTravelAddress={filters.categoryTravelAddress}
+                            countrylist={filters.countries}
                         />
 
                         <SafeAreaView>
@@ -671,7 +693,7 @@ const getStyles = (windowWidth: number) => {
             backgroundColor: 'white',
         },
         applyButton: {
-            backgroundColor: '#6aaaaa',
+            backgroundColor: '#ff9f5a',
             padding: 10,
             alignItems: 'center',
             borderRadius: 5,
