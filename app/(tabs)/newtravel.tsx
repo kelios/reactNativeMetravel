@@ -1,9 +1,8 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import TextInputComponent from '@/components/TextInputComponent';
-import RichTextEditor from '@/components/RichTextEditor';
 import CheckboxComponent from '@/components/CheckboxComponent';
 import YoutubeLinkComponent from '@/components/YoutubeLinkComponent';
-import ButtonComponent from '@/components/ButtonComponent';
+
 import {
     ScrollView,
     StyleSheet,
@@ -12,12 +11,16 @@ import {
     Dimensions,
     TextInput,
     TouchableOpacity,
-    ActivityIndicator
+    ActivityIndicator,
+    SafeAreaView
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import { fetchFilters, fetchFiltersCountry, saveFormData} from "@/src/api/travels";
+import {useRoute} from '@react-navigation/native';
+import {fetchFilters, fetchFiltersCountry, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
 import MultiSelect from "react-native-multiple-select";
 import {TravelFormData} from "@/src/types/types";
+import ArticleEditor from "@/components/ArticleEditor";
+import ImageUploadComponent from "@/components/ImageUploadComponent";
+import MapUploadComponent from "@/components/MapUploadComponent";
 
 interface Category {
     id: string
@@ -32,10 +35,9 @@ interface Filters {
     complexity: string[]
     month: string[]
     overNightStay: string[]
+    coordsMeTravel: string[]
     transports: string[]
-    year: string
 }
-
 
 
 export default function NewTravelScreen() {
@@ -62,36 +64,38 @@ export default function NewTravelScreen() {
         month: [],
         overNightStay: [],
         transports: [],
-        year: '',
     })
 
     const [formData, setFormData] = useState<TravelFormData>({
         id: route.params?.recordId || null,
         name: '',
-        countries: [],
-        cities: [],
-        categoryTravelAddress: [],
-        overNightStay: [],
-        complexity: [],
-        companion: [],
-        description: '',
-        plus: '',
-        minus: '',
-        recommendation: '',
-        youtubeLink: '',
         categories: [],
         transports: [],
         month: [],
+        complexity: [],
+        over_night_stay: [],
+        cities: [],
+        countries: [],
+        budget: '',
         year: '',
-        physicalCondition: [],
-        hasChild: false,
-        hasPet: false,
-        accommodation: [],
-        spentAmount: '',
-        numberOfPeople: '',
-        numberOfDays: '',
-        needVisa: false,
-        isDraft: false,
+        number_peoples: '',
+        number_days: '',
+        minus: '',
+        plus: '',
+        recommendation: '',
+        description: '',
+        publish: false,
+        visa: false,
+        coordsMeTravel: [],
+        countryIds: [],
+        travelAddressIds: [],
+        travelAddressCity: [],
+        travelAddressCountry: [],
+        travelAddressAdress: [],
+        thumbs200ForCollectionArr: [],
+        travelImageThumbUrlArr: [],
+        travelImageAddress: [],
+        categoriesIds: []
     });
 
     useEffect(() => {
@@ -100,21 +104,19 @@ export default function NewTravelScreen() {
     }, [])
 
     useEffect(() => {
-        const autoSaveInterval = setInterval(() => {
+        const autoSaveTimeout = setTimeout(() => {
             handleAutoSave();
-        }, 300000); // 5 минут в миллисекундах
+        }, 5000); // Автосохранение через 5 секунд после изменения
 
-        return () => {
-            clearInterval(autoSaveInterval); // Очистка интервала при размонтировании компонента
-        };
-    }, [formData, recordId]);
+        return () => clearTimeout(autoSaveTimeout); // Очистка таймера при каждом изменении
+    }, [formData]);
 
     const handleAutoSave = async () => {
         try {
             setIsSaving(true);
             const savedId = await saveFormDataWithId(formData);
             if (!formData.id && savedId) {
-                setFormData((prevData) => ({ ...prevData, id: savedId }));
+                setFormData((prevData) => ({...prevData, id: savedId}));
             }
             console.log('Автосохранение прошло успешно!');
         } catch (error) {
@@ -128,7 +130,7 @@ export default function NewTravelScreen() {
         try {
             const savedId = await saveFormDataWithId(formData);
             if (!formData.id && savedId) {
-                setFormData((prevData) => ({ ...prevData, id: savedId }));
+                setFormData((prevData) => ({...prevData, id: savedId}));
             }
             console.log('Форма отправлена успешно!');
         } catch (error) {
@@ -137,7 +139,7 @@ export default function NewTravelScreen() {
     };
 
     const saveFormDataWithId = async (data: TravelFormData): Promise<string> => {
-        const updatedData = { ...data, id: data.id || null }; // Добавляем recordId в данные
+        const updatedData = {...data, id: data.id || null}; // Добавляем recordId в данные
         return await saveFormData(updatedData);
     };
 
@@ -178,10 +180,10 @@ export default function NewTravelScreen() {
             })
         }
 
-    const handleTextFilterChange = (value: string) => {
+    const handleTextFilterChange = (key:string, value: string) => {
         setFormData({
             ...formData,
-            year: value,
+            [key]: value,
         })
     }
 
@@ -201,13 +203,13 @@ export default function NewTravelScreen() {
     }
 
     if (!filters) {
-        return <ActivityIndicator />
+        return <ActivityIndicator/>
     }
 
     const renderFilters = () => {
         if (menuVisible) {
             return (
-                <View style={{ backgroundColor: 'white' }}>
+                <View style={{backgroundColor: 'white'}}>
                     {formData.id && (
                         <TextInput
                             style={styles.hiddenInput}
@@ -217,11 +219,13 @@ export default function NewTravelScreen() {
                     )}
                     <CheckboxComponent
                         label="Черновик"
-                        value={formData.isDraft}
-                        onChange={(value) => handleChange('isDraft', value)}
+                        value={formData?.publish}
+                        onChange={(value) => handleChange('publish', value)}
                     />
+                    <SafeAreaView style={styles.container}>
+                        <ImageUploadComponent collection='travelMainImage' /> {/* Вызов компонента с параметром collection */}
+                    </SafeAreaView>
 
-                    <ButtonComponent label="Загрузить главное фото вашего путешествия" onPress={() => console.log('Upload main photo')} />
                     <MultiSelect
                         hideTags
                         items={filters?.countries || []}
@@ -240,7 +244,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="title_ru"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -263,7 +267,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -288,7 +292,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -311,7 +315,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -334,7 +338,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -357,7 +361,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -366,8 +370,8 @@ export default function NewTravelScreen() {
                         hideTags
                         items={filters?.overNightStay}
                         uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('overNightStay')}
-                        selectedItems={formData?.overNightStay}
+                        onSelectedItemsChange={onSelectedItemsChange('over_night_stay')}
+                        selectedItems={formData?.over_night_stay}
                         isLoading={isLoadingFilters}
                         selectText="Варианты ночлега..."
                         searchInputPlaceholderText="Варианты ночлега..."
@@ -380,7 +384,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -403,7 +407,7 @@ export default function NewTravelScreen() {
                         selectedItemIconColor="#CCC"
                         itemTextColor="#000"
                         displayKey="name"
-                        searchInputStyle={{ color: '#CCC' }}
+                        searchInputStyle={{color: '#CCC'}}
                         submitButtonColor="#CCC"
                         submitButtonText="Submit"
                     />
@@ -412,9 +416,44 @@ export default function NewTravelScreen() {
                         style={styles.input}
                         placeholder="Год"
                         value={formData?.year}
-                        onChangeText={handleTextFilterChange}
+                        onChangeText={(value) => handleTextFilterChange('year', value)}
                         keyboardType="numeric"
                     />
+
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Количество человек"
+                        value={formData?.number_peoples}
+                        onChangeText={(value) => handleTextFilterChange('number_peoples', value)}
+                        keyboardType="numeric"
+                    />
+
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Количество потраченных средств $"
+                        value={formData?.budget}
+                        onChangeText={(value) => handleTextFilterChange('budget', value)}
+                        keyboardType="numeric"
+                    />
+
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Количество дней"
+                        value={formData?.number_days}
+                        onChangeText={(value) => handleTextFilterChange('number_days', value)}
+                        keyboardType="numeric"
+                    />
+
+                    <CheckboxComponent
+                        label="Нужна виза"
+                        value={formData?.visa}
+                        onChange={(value) => handleChange('visa', value)}
+                    />
+
+
+                        <MapUploadComponent collection='travelRoad'>
+                        </ MapUploadComponent>
+
 
                     <TouchableOpacity
                         style={styles.applyButton}
@@ -444,31 +483,50 @@ export default function NewTravelScreen() {
                             onChange={(value) => handleChange('name', value)}
                         />
 
-                        <RichTextEditor
-                            label="Описание"
-                            value={formData.description}
-                            onChange={(value) => handleChange('description', value)}
-                        />
-                        <RichTextEditor
-                            label="Плюсы"
-                            value={formData.plus}
-                            onChange={(value) => handleChange('plus', value)}
-                        />
-                        <RichTextEditor
-                            label="Минусы"
-                            value={formData.minus}
-                            onChange={(value) => handleChange('minus', value)}
-                        />
-                        <RichTextEditor
-                            label="Рекомендации"
-                            value={formData.recommendation}
-                            onChange={(value) => handleChange('recommendation', value)}
-                        />
                         <YoutubeLinkComponent
                             label="Ссылка на Youtube"
                             value={formData.youtubeLink}
                             onChange={(value) => handleChange('youtubeLink', value)}
                         />
+
+                        <SafeAreaView>
+                            <ArticleEditor
+                                label="Описание"
+                                height={400}  // Устанавливаем высоту окна редактора
+                                content={formData.description}
+                                onChange={(newContent: any) => handleChange('description', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
+                            />
+                        </SafeAreaView>
+
+                        <SafeAreaView>
+                            <ArticleEditor
+                                label="Плюсы"
+                                height={300}  // Устанавливаем высоту окна редактора
+                                content={formData.plus}
+                                onChange={(newContent: any) => handleChange('plus', newContent)}
+                            />
+                        </SafeAreaView>
+
+                        <SafeAreaView>
+                            <ArticleEditor
+                                label="Минусы"
+                                height={300}  // Устанавливаем высоту окна редактора
+                                content={formData.minus}
+                                onChange={(newContent: any) => handleChange('minus', newContent)}
+                            />
+                        </SafeAreaView>
+
+                        <SafeAreaView style={{flex: 1}}>
+                            <ArticleEditor
+                                label="Рекомендации"
+                                height={300}  // Устанавливаем высоту окна редактора
+                                content={formData.minus}
+                                onChange={(newContent: any) => handleChange('recommendation', newContent)}
+                            />
+                        </SafeAreaView>
+
+
                     </View>
                     <View style={styles.rightColumn}>
 
@@ -491,49 +549,49 @@ export default function NewTravelScreen() {
                     </View>
                 </View>
             </View>
-            {isSaving && <ActivityIndicator size="small" color="#0000ff" />}
+            {isSaving && <ActivityIndicator size="small" color="#0000ff"/>}
         </ScrollView>
     );
 }
 
 const getStyles = (windowWidth: number) => {
     return StyleSheet.create({
-    container: {
-        flexGrow: 1,
-        padding: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingBottom: windowWidth > 500 ? '7%' : '20%',
-    },
-    formSection: {
-        width: '100%',
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
-    },
-    sectionTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#4b7c6f',
-    },
-    formRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    leftColumn: {
-        flex: 0.7,
-        marginRight: 10,
-    },
-    rightColumn: {
-        flex: 0.3,
-        marginLeft: 10,
-    },
+        container: {
+            flexGrow: 1,
+            padding: 20,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingBottom: windowWidth > 500 ? '7%' : '20%',
+        },
+        formSection: {
+            width: '100%',
+            backgroundColor: '#fff',
+            borderRadius: 8,
+            padding: 20,
+            shadowColor: '#000',
+            shadowOffset: {width: 0, height: 2},
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 5,
+        },
+        sectionTitle: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 20,
+            color: '#4b7c6f',
+        },
+        formRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+        },
+        leftColumn: {
+            flex: 0.7,
+            marginRight: 10,
+        },
+        rightColumn: {
+            flex: 0.3,
+            marginLeft: 10,
+        },
 
 
         input: {
@@ -586,5 +644,6 @@ const getStyles = (windowWidth: number) => {
         hiddenInput: {
             display: 'none', // Скрываем поле ID
         },
-});
+    });
 }
+

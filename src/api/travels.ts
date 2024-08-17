@@ -20,7 +20,7 @@ let LOGIN = ''
 let GET_FILTER_FOR_MAP = ''
 let REGISTER = ''
 let LOGOUT = ''
-let CONFIRM_REGISTER= ''
+let CONFIRM_REGISTER = ''
 //let SENDPASSWORD = ''
 //let SETNEWPASSWORD = ''
 let RESETPASSWORDLINK = ''
@@ -38,8 +38,8 @@ if (IS_LOCAL_API == 'true') {
     REGISTER = `${URLAPI}/api/user/registration/`
     RESETPASSWORDLINK = `${URLAPI}/api/user/reset-password-link/`
     CONFIRM_REGISTER = `${URLAPI}/api/user/confirm-registration/`
-   // SENDPASSWORD = `${URLAPI}/api/sendpassword`
-   // SETNEWPASSWORD = `${URLAPI}/api/setpassword`
+    // SENDPASSWORD = `${URLAPI}/api/sendpassword`
+    // SETNEWPASSWORD = `${URLAPI}/api/setpassword`
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
     SAVE_TRAVEL = `${URLAPI}/api/travels/upsert/`
 } else {
@@ -53,7 +53,7 @@ if (IS_LOCAL_API == 'true') {
     CREATE_TRAVEL = `${URLAPI}/travels/create`
 }
 
-
+export const UPLOAD_IMAGE = `${URLAPI}/api/upload`
 const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
 const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`
@@ -224,7 +224,7 @@ export const logoutApi = async () => {
         const json = await response.json();
         await AsyncStorage.removeItem('userName');
         await AsyncStorage.removeItem('userToken');
-   } catch (error) {
+    } catch (error) {
         console.error(error);
         Alert.alert("Ошибка", "Не удалось выполнить выход");
     }
@@ -619,7 +619,7 @@ export const confirmAccount = async (hash: string) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ hash }),
+            body: JSON.stringify({hash}),
         });
 
         const jsonResponse = await response.json();
@@ -665,4 +665,27 @@ export const saveFormData = async (data: TravelFormData): Promise<string> => {
         console.error('Ошибка при создании формы:', error);
         throw error;
     }
+};
+
+export const uploadImage = async (data: any): Promise<string> => {
+    const token = await AsyncStorage.getItem('userToken'); // Получаем токен из AsyncStorage
+
+    if (!token) {
+        throw new Error('Пользователь не авторизован');
+    }
+    const response = await fetch(UPLOAD_IMAGE, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (response.status === 200) {
+        return "Image uploaded successfully.";
+    } else {
+        return "Upload failed.";
+    }
+
 };

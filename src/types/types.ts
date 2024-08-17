@@ -1,57 +1,4 @@
 export type Travel = {
-  id: number
-  slug: string
-
-  name: string
-  travel_image_thumb_url: string
-  travel_image_thumb_small_url: string
-  url: string
-
-  userName: string
-  description: string
-  cityName: string
-  countryName: string
-  countUnicIpView: string
-  gallery: String[]
-  travelAddress: String[]
-  userIds: string
-  year: string
-  monthName: string
-  number_days: number
-}
-
-export type TravelCoords = {
-  address?: string
-  categoryName: string
-  coord?: string
-  lat: string
-  lng: string
-  travelImageThumbUrl: string
-  urlTravel: string
-}
-
-export type TravelInfo = {
-  name: string
-  url: string
-  publish: boolean
-  moderation: boolean
-  countryName: string
-  travel_image_thumb_url: string
-  travel_image_thumb_small_url: string
-  slug: string
-  id: number
-}
-
-export type TravelsMap = {
-  [key: string]: TravelInfo
-}
-
-export type TravelsForMap = {
-  [key: number]: TravelCoords
-}
-
-export type Travels = {
-  data: {
     id: number
     slug: string
 
@@ -65,105 +12,164 @@ export type Travels = {
     cityName: string
     countryName: string
     countUnicIpView: string
-  }
-  total: number
+    gallery: String[]
+    travelAddress: String[]
+    userIds: string
+    year: string
+    monthName: string
+    number_days: number
+}
+
+export type TravelCoords = {
+    address?: string
+    categoryName: string
+    coord?: string
+    lat: string
+    lng: string
+    travelImageThumbUrl: string
+    urlTravel: string
+}
+
+export type TravelInfo = {
+    name: string
+    url: string
+    publish: boolean
+    moderation: boolean
+    countryName: string
+    travel_image_thumb_url: string
+    travel_image_thumb_small_url: string
+    slug: string
+    id: number
+}
+
+export type TravelsMap = {
+    [key: string]: TravelInfo
+}
+
+export type TravelsForMap = {
+    [key: number]: TravelCoords
+}
+
+export type Travels = {
+    data: {
+        id: number
+        slug: string
+
+        name: string
+        travel_image_thumb_url: string
+        travel_image_thumb_small_url: string
+        url: string
+
+        userName: string
+        description: string
+        cityName: string
+        countryName: string
+        countUnicIpView: string
+    }
+    total: number
 }
 
 export type Articles = {
-  data: {
+    data: {
+        id?: number
+        name: string
+        description: string
+        article_image_thumb_url: string
+        article_image_thumb_small_url: string
+        article_type: ArticleType
+    }
+    total: number
+}
+
+export type Article = {
     id?: number
     name: string
     description: string
     article_image_thumb_url: string
     article_image_thumb_small_url: string
     article_type: ArticleType
-  }
-  total: number
-}
-
-export type Article = {
-  id?: number
-  name: string
-  description: string
-  article_image_thumb_url: string
-  article_image_thumb_small_url: string
-  article_type: ArticleType
 }
 
 export type ArticleType = {
-  id: number
-  name: string
-  status: number
-  created_at: number
-  updated_at: number
+    id: number
+    name: string
+    status: number
+    created_at: number
+    updated_at: number
 }
 
 export type Filters = {
- /* categories: string[]
-  categoryTravelAddress: string[]
-  companion: string[]
-  complexity: string[]
-  month: string[]
-  overNightStay: string[]
-  transports: string[]
-  user_id?:number*/
-  countries: string[]
-  categories: string[]
-  categoryTravelAddress: string[]
-  companion: string[]
-  complexity: string[]
-  month: string[]
-  overNightStay: string[]
-  transports: string[]
-  year: string
-  user_id?: number
+    /* categories: string[]
+     categoryTravelAddress: string[]
+     companion: string[]
+     complexity: string[]
+     month: string[]
+     overNightStay: string[]
+     transports: string[]
+     user_id?:number*/
+    countries: string[]
+    categories: string[]
+    categoryTravelAddress: string[]
+    companion: string[]
+    complexity: string[]
+    month: string[]
+    overNightStay: string[]
+    transports: string[]
+    year: string
+    user_id?: number
 }
 
 export type FeedbackData = {
-  name: string
-  email: string
-  message: string
+    name: string
+    email: string
+    message: string
 }
 
 export type FiltersContextType = {
-  filters: Filters;
-  updateFilters: (newFilters: Partial<Filters>) => void;
+    filters: Filters;
+    updateFilters: (newFilters: Partial<Filters>) => void;
 }
 
 export interface FormValues {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
 }
 
 export interface TravelFormData {
-  id?: string | null;
-  name: string;
-  countries: string[];
-  cities: string[];
-  overNightStay: string[];
-  complexity: string[];
-  companion: string[];
-  description: string;
-  plus: string;
-  minus: string;
-  recommendation: string;
-  youtubeLink: string;
-  categories: string[];
-  transports: string[];
-  categoryTravelAddress: string[];
-  month: string[];
-  year: string;
-  physicalCondition: Array<{ id: string; name: string }>;
-  hasChild: boolean;
-  hasPet: boolean;
-  accommodation: Array<{ id: string; name: string }>;
-  spentAmount: string;
-  numberOfPeople: string;
-  numberOfDays: string;
-  needVisa: boolean;
-  isDraft: boolean;
+    id?: string | null;
+    name: string;
+    countries: string[];
+    cities: string[];
+    over_night_stay: string[];
+    complexity: string[];
+    companion: string[];
+    description: string;
+    plus: string;
+    minus: string;
+    recommendation: string;
+    youtubeLink: string;
+    categories: string[];
+    countryIds: string[];
+    travelAddressIds: string[];
+    travelAddressCity: string[];
+    travelAddressCountry: string[];
+    travelAddressAdress: string[];
+    thumbs200ForCollectionArr: string[];
+    travelImageThumbUrlArr: string[];
+    travelImageAddress: string[];
+    categoriesIds: string[];
+    transports: string[];
+    coordsMeTravel: string[];
+    categoryTravelAddress: string[];
+    month: string[];
+    year: string;
+    budget: string;
+    number_peoples: string;
+    number_days: string;
+    visa: boolean;
+    publish: boolean;
 }
 
 
