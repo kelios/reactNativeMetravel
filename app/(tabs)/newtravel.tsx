@@ -77,7 +77,7 @@ export default function NewTravelScreen() {
         transports: [],
         month: [],
         complexity: [],
-        over_night_stay: [],
+        over_nights_stay: [],
         cities: [],
         countries: [],
         budget: '',
@@ -447,8 +447,8 @@ export default function NewTravelScreen() {
                         hideTags
                         items={filters?.overNightStay}
                         uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('over_night_stay')}
-                        selectedItems={formData?.over_night_stay}
+                        onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
+                        selectedItems={formData?.over_nights_stay}
                         isLoading={isLoadingFilters}
                         selectText="Варианты ночлега..."
                         searchInputPlaceholderText="Варианты ночлега..."

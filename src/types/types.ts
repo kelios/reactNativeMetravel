@@ -142,7 +142,7 @@ export interface TravelFormData {
     name?: string;
     countries: string[];
     cities: string[];
-    over_night_stay: string[];
+    over_nights_stay: string[];
     complexity: string[];
     companion: string[];
     description?: string;
