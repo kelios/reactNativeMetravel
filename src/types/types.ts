@@ -139,17 +139,17 @@ export interface FormValues {
 
 export interface TravelFormData {
     id?: string | null;
-    name: string;
+    name?: string;
     countries: string[];
     cities: string[];
     over_night_stay: string[];
     complexity: string[];
     companion: string[];
-    description: string;
-    plus: string;
-    minus: string;
-    recommendation: string;
-    youtubeLink: string;
+    description?: string;
+    plus?: string;
+    minus?: string;
+    recommendation?: string;
+    youtubeLink?: string;
     categories: string[];
     countryIds: string[];
     travelAddressIds: string[];
@@ -164,10 +164,10 @@ export interface TravelFormData {
     coordsMeTravel: string[];
     categoryTravelAddress: string[];
     month: string[];
-    year: string;
-    budget: string;
-    number_peoples: string;
-    number_days: string;
+    year?: string;
+    budget?: string;
+    number_peoples?: string;
+    number_days?: string;
     visa: boolean;
     publish: boolean;
 }

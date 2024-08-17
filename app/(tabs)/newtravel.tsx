@@ -22,6 +22,7 @@ import ArticleEditor from "@/components/ArticleEditor";
 import ImageUploadComponent from "@/components/ImageUploadComponent";
 import MapUploadComponent from "@/components/MapUploadComponent";
 import ImageGalleryComponent from "@/components/ImageGalleryComponent";
+import WebMapComponent from "@/components/WebMapComponent";
 
 interface Category {
     id: string
@@ -141,8 +142,25 @@ export default function NewTravelScreen() {
 
     const saveFormDataWithId = async (data: TravelFormData): Promise<string> => {
         const updatedData = {...data, id: data.id || null}; // Добавляем recordId в данные
-        return await saveFormData(updatedData);
+
+        return await saveFormData(cleanEmptyFields(updatedData));
     };
+    function cleanEmptyFields(obj: any): any {
+        const cleanedObj: any = {};
+
+        Object.keys(obj).forEach(key => {
+            if (obj[key] === '') {
+                cleanedObj[key] = null;
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                // Рекурсивно очищаем вложенные объекты
+                cleanedObj[key] = cleanEmptyFields(obj[key]);
+            } else {
+                cleanedObj[key] = obj[key];
+            }
+        });
+
+        return cleanedObj;
+    }
 
     const getFilters = useCallback(async () => {
         if (isLoadingFilters) return
@@ -150,13 +168,13 @@ export default function NewTravelScreen() {
         const newData = await fetchFilters()
         setFilters((prevFilters) => ({
             ...prevFilters,
-            categories: newData?.categories,
-            categoryTravelAddress: newData?.categoryTravelAddress,
-            companion: newData?.companion,
-            complexity: newData?.complexity,
-            month: newData?.month,
-            overNightStay: newData?.overNightStay,
-            transports: newData?.transports,
+            categories: newData?.categories || [],
+            categoryTravelAddress: newData?.categoryTravelAddress || [],
+            companion: newData?.companion || [],
+            complexity: newData?.complexity || [],
+            month: newData?.month || [],
+            overNightStay: newData?.overNightStay || [],
+            transports: newData?.transports || [],
         }))
         setIsLoadingFilters(false)
     }, [isLoadingFilters, filters])
@@ -490,6 +508,8 @@ export default function NewTravelScreen() {
                             value={formData.youtubeLink}
                             onChange={(value) => handleChange('youtubeLink', value)}
                         />
+
+                        <WebMapComponent/>
 
                         <SafeAreaView>
                             <ArticleEditor
