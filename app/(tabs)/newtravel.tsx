@@ -32,7 +32,6 @@ interface Category {
 interface Filters {
     countries: string[]
     categories: string[]
-    categoryTravelAddress: string[]
     companion: string[]
     complexity: string[]
     month: string[]
@@ -46,15 +45,12 @@ export default function NewTravelScreen() {
     const route = useRoute();
     const windowWidth = Dimensions.get('window').width
     const styles = getStyles(windowWidth)
-    const [search, setSearch] = useState('')
     const isMobile = windowWidth <= 768
     const initMenuVisible = !isMobile
 
 
     const [menuVisible, setMenuVisible] = useState(initMenuVisible)
-    const [isLoading, setIsLoading] = useState(false)
     const [isLoadingFilters, setIsLoadingFilters] = useState(false)
-    const [recordId, setRecordId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false); // Состояние для индикатора автосохранения
 
     const [markers, setMarkers] = useState([]); // Хранение маркеров
@@ -62,7 +58,6 @@ export default function NewTravelScreen() {
     const [filters, setFilters] = useState<Filters>({
         countries: [],
         categories: [],
-        categoryTravelAddress: [],
         companion: [],
         complexity: [],
         month: [],
@@ -96,10 +91,10 @@ export default function NewTravelScreen() {
         travelAddressCity: [],
         travelAddressCountry: [],
         travelAddressAdress: [],
+        travelAddressCategory: [],
         thumbs200ForCollectionArr: [],
         travelImageThumbUrlArr: [],
         travelImageAddress: [],
-        categoriesIds: []
     });
 
     useEffect(() => {
@@ -233,44 +228,36 @@ export default function NewTravelScreen() {
         return <ActivityIndicator/>
     }
 
-    const handleCountrySelection = (countryId: any) => {
+    const handleCountrySelect = (countryId) => {
         if (countryId) {
-            setFormData(prevData => ({
-                ...prevData,
-                countries: [...prevData.countries, countryId],
-            }));
+            setFormData(prevData => {
+                // Проверяем, есть ли страна уже в списке стран
+                if (!prevData.countries.includes(countryId)) {
+                    return {
+                        ...prevData,
+                        countries: [...prevData.countries, countryId],
+                    };
+                }
+                return prevData; // Если страна уже есть, ничего не делаем
+            });
         }
     };
 
-    const handleMarkerAdd = (newMarker) => {
-        setMarkers(prevMarkers => [...prevMarkers, newMarker]);
-        const newCoords = { lat: newMarker.position.lat, lng: newMarker.position.lng };
-        setFormData(prevData => ({
-            ...prevData,
-            coordsMeTravel: [...prevData.coordsMeTravel, newCoords],
-            travelAddressAdress: [...prevData.travelAddressAdress, newMarker.address],
-            travelAddressCountry: [...prevData.travelAddressCountry, newMarker.country_id || null],
-            travelImageAddress: [...prevData.travelImageAddress, []],
-            travelAddressCity: [...prevData.travelAddressCity, null],
-        }));
+    const handleCountryDeselect = (countryId) => {
+        setFormData(prevData => {
+            return {
+                ...prevData,
+                countries: prevData.countries.filter(id => id !== countryId),
+            };
+        });
     };
 
-    const handleMarkerRemove = (index) => {
-        setMarkers(prevMarkers => prevMarkers.filter((_, i) => i !== index));
-        setFormData(prevData => ({
-            ...prevData,
-            coordsMeTravel: prevData.coordsMeTravel.filter((_, i) => i !== index),
-            travelAddressAdress: prevData.travelAddressAdress.filter((_, i) => i !== index),
-            travelAddressCountry: prevData.travelAddressCountry.filter((_, i) => i !== index),
-            travelImageAddress: prevData.travelImageAddress.filter((_, i) => i !== index),
-            travelAddressCity: prevData.travelAddressCity.filter((_, i) => i !== index),
-        }));
-    };
 
     const handleMarkersChange = (updatedMarkers) => {
         setMarkers(updatedMarkers);
         const coordsMeTravel = updatedMarkers.map(marker => marker.position);
         const travelAddressAdress = updatedMarkers.map(marker => marker.address);
+        const travelAddressCategory = updatedMarkers.map(marker => marker.category_id);
         const travelAddressCountry = updatedMarkers.map(marker => marker.country_id || null);
         const travelImageThumbUrlArr = updatedMarkers.map(marker => marker.image || '');
 
@@ -278,10 +265,12 @@ export default function NewTravelScreen() {
             ...prevData,
             coordsMeTravel,
             travelAddressAdress,
+            travelAddressCategory,
             travelAddressCountry,
             travelImageThumbUrlArr,
         }));
     };
+
 
     const renderFilters = () => {
         if (menuVisible) {
@@ -349,32 +338,7 @@ export default function NewTravelScreen() {
                         submitButtonText="Submit"
                     />
 
-                    <MultiSelect
-                        hideTags
-                        items={filters?.categoryTravelAddress || []}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange(
-                            'categoryTravelAddress',
-                        )}
-                        selectedItems={formData?.categoryTravelAddress}
-                        isLoading={isLoadingFilters}
-                        selectText="Обьекты..."
-                        searchInputPlaceholderText="Обьекты..."
-                        onChangeInput={(text) => console.log(text)}
-                        //   altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
+                  <MultiSelect
                         hideTags
                         items={filters?.transports}
                         uniqueKey="id"
@@ -384,7 +348,6 @@ export default function NewTravelScreen() {
                         selectText="Транспорт..."
                         searchInputPlaceholderText="Транспорт..."
                         onChangeInput={(text) => console.log(text)}
-                        //altFontFamily="ProximaNova-Light"
                         tagRemoveIconColor="#CCC"
                         tagBorderColor="#CCC"
                         tagTextColor="#CCC"
@@ -570,7 +533,8 @@ export default function NewTravelScreen() {
                         <WebMapComponent
                             markers={markers}
                             onMarkersChange={handleMarkersChange}
-                            onCountrySelect={handleCountrySelection}
+                            onCountrySelect={handleCountrySelect}
+                            onCountryDeselect={handleCountryDeselect}
                             categoryTravelAddress={filters.categoryTravelAddress}
                             countrylist={filters.countries}
                         />

@@ -35,6 +35,7 @@ const WebMapComponent = ({
                              markers,
                              onMarkersChange,
                              onCountrySelect,
+                             onCountryDeselect,
                              categoryTravelAddress,
                              countrylist
                          }) => {
@@ -75,8 +76,19 @@ const WebMapComponent = ({
     };
 
     const handleMarkerRemove = (index) => {
+        const removedMarker = markers[index];
         const updatedMarkers = markers.filter((_, idx) => idx !== index);
         onMarkersChange(updatedMarkers);
+
+        // Проверка, остались ли маркеры с той же страной
+        if (removedMarker.country_id) {
+            const hasOtherMarkersWithSameCountry = updatedMarkers.some(marker => marker.country_id === removedMarker.country_id);
+
+            // Если больше нет маркеров с этой страной, вызываем onCountryDeselect
+            if (!hasOtherMarkersWithSameCountry) {
+                onCountryDeselect(removedMarker.country_id); // Передаем только country_id
+            }
+        }
     };
 
     return (

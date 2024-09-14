@@ -156,13 +156,13 @@ export interface TravelFormData {
     travelAddressCity: string[];
     travelAddressCountry: string[];
     travelAddressAdress: string[];
+    travelAddressCategory: string[];
+    coordsMeTravel: string[];
     thumbs200ForCollectionArr: string[];
     travelImageThumbUrlArr: string[];
     travelImageAddress: string[];
     categoriesIds: string[];
     transports: string[];
-    coordsMeTravel: string[];
-    categoryTravelAddress: string[];
     month: string[];
     year?: string;
     budget?: string;
