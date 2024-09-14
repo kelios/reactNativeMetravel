@@ -43,7 +43,7 @@ export default function AboutScreen() {
         style={styles.topImage}
       />
       <View style={styles.container}>
-        <View>
+        <View style = {styles.aboutText}>
           <Title>METRAVEL</Title>
           <Paragraph>
             MeTravel.by – это некоммерческий проект для путешественников.{' '}
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '50%',
-    height: 400,
+    height: 500,
     marginRight: 10, // Adds some space between the image and the text
   },
   topImage: {
@@ -104,4 +104,7 @@ const styles = StyleSheet.create({
     color: '#4b7c6f',
     fontSize: 16,
   },
+  aboutText:{
+    padding:20,
+  }
 })

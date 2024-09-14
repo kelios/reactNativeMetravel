@@ -23,6 +23,7 @@ const Footer: React.FC = () => {
           <Text style={styles.linkText}>О сайте</Text>
         </TouchableOpacity>
 
+        {/*
         <TouchableOpacity
           onPress={() => {
             navigation.navigate('articles')
@@ -30,7 +31,7 @@ const Footer: React.FC = () => {
         >
           <Text style={styles.linkText}>Новости/Розыгрыши</Text>
         </TouchableOpacity>
-
+       */}
         <TouchableOpacity
           onPress={() => {
             navigation.navigate('contact')

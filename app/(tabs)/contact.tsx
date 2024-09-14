@@ -49,7 +49,7 @@ export default function FeedbackForm() {
             onChangeText={setMessage}
             multiline
           />
-          <Button title="Отправить" onPress={handleSubmit} />
+          <Button color="#6AAAAA" title="Отправить" onPress={handleSubmit} />
         </View>
         <Image
           source={{ uri: '/assets/images/media/slider/main2.jpg' }}
@@ -66,6 +66,9 @@ const styles = StyleSheet.create({
     alignItems: 'center', // This vertically aligns the child items in the middle
     padding: 50,
   },
+  button: {
+
+  },
   form: {
     flex: 1,
     padding: 50,
@@ -79,7 +82,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '50%',
-    height: 400,
+    height: 500,
     marginRight: 10, // Adds some space between the image and the text
   },
   topImage: {

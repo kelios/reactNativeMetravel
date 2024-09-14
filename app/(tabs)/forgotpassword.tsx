@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     },
     image: {
         width: '50%',
-        height: 400,
+        height: 500,
         marginRight: 10, // Adds some space between the image and the text
     },
     topImage: {
