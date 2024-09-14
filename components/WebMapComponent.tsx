@@ -2,7 +2,19 @@ import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import ImageUploadComponent from '@/components/ImageUploadComponent'; // Подключаем компонент загрузки изображений
+import ImageUploadComponent from '@/components/ImageUploadComponent';
+import MultiSelect from "react-native-multiple-select";
+import {MarkerData} from "@/src/types/types";
+
+
+interface WebMapComponentProps {
+    markers: MarkerData[];
+    onMarkersChange: (markers: MarkerData[]) => void;
+    onCountrySelect: (countryId: number) => void;
+    onCountryDeselect: (countryId: number) => void;
+    categoryTravelAddress: { id: number; name: string }[];
+    countrylist: { country_id: number; title_ru: string }[];
+}
 
 // Иконка маркера
 const markerIcon = new L.Icon({
@@ -45,17 +57,20 @@ const WebMapComponent = ({
         const country = geocodeData?.address?.country || '';
 
         const newMarker = {
-            position: latlng,
-            image: '',
-            category: '',
-            address,
-            country_id: null,
+            id: null, // Изначально id будет null
+            lat: latlng.lat,
+            lng: latlng.lng,
+            country: null,
+            city: null, // Опционально
+            address: address,
+            categories: [],
+            image: ''
         };
 
         if (country) {
             const foundCountry = countrylist.find(c => c.title_ru === country);
             if (foundCountry) {
-                newMarker.country_id = foundCountry.country_id;
+                newMarker.country = foundCountry.country_id;
                 onCountrySelect(foundCountry.country_id);
             }
         }
@@ -65,7 +80,10 @@ const WebMapComponent = ({
 
     const handleMarkerChange = (index, field, value) => {
         const updatedMarkers = [...markers];
-        updatedMarkers[index][field] = value || '';
+        updatedMarkers[index] = {
+            ...updatedMarkers[index],
+            [field]: value || '',
+        };
         onMarkersChange(updatedMarkers);
     };
 
@@ -80,13 +98,10 @@ const WebMapComponent = ({
         const updatedMarkers = markers.filter((_, idx) => idx !== index);
         onMarkersChange(updatedMarkers);
 
-        // Проверка, остались ли маркеры с той же страной
-        if (removedMarker.country_id) {
-            const hasOtherMarkersWithSameCountry = updatedMarkers.some(marker => marker.country_id === removedMarker.country_id);
-
-            // Если больше нет маркеров с этой страной, вызываем onCountryDeselect
+        if (removedMarker.country) {
+            const hasOtherMarkersWithSameCountry = updatedMarkers.some(marker => marker.country === removedMarker.country);
             if (!hasOtherMarkersWithSameCountry) {
-                onCountryDeselect(removedMarker.country_id); // Передаем только country_id
+                onCountryDeselect(removedMarker.country);
             }
         }
     };
@@ -94,37 +109,30 @@ const WebMapComponent = ({
     return (
         <div style={styles.container}>
             <div style={styles.mapSection}>
-                <MapContainer
-                    center={[51.505, -0.09]}
-                    zoom={13}
-                    style={styles.map}
-                >
+                <MapContainer center={[51.505, -0.09]} zoom={13} style={styles.map}>
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
                     />
                     <MapClickHandler addMarker={addMarker} />
                     {markers.map((marker, idx) => (
-                        <Marker key={idx} position={marker.position} icon={markerIcon}>
+                        <Marker key={idx} position={[marker.lat, marker.lng]} icon={markerIcon}>
                             <Popup>
                                 <div style={styles.popupContent}>
                                     <h4>Информация о точке</h4>
                                     <div style={styles.popupRow}>
-                                        <label>Категория:</label>
-                                        <select
-                                            value={marker.category || ''}
-                                            onChange={(e) => handleMarkerChange(idx, 'category', e.target.value)}
+                                        <label>Категории:</label>
+                                        <MultiSelect
+                                            hideTags
+                                            items={categoryTravelAddress}
+                                            uniqueKey="id"
+                                            onSelectedItemsChange={(selectedItems) => handleMarkerChange(idx, 'categories', selectedItems)}
+                                            selectedItems={marker.categories}
+                                            selectText="Выберите категории"
+                                            searchInputPlaceholderText="Выберите категории"
                                             style={styles.input}
-                                        >
-                                            <option value="">Выберите категорию</option>
-                                            {categoryTravelAddress.map((category) => (
-                                                <option key={category.id} value={category.name}>
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        />
                                     </div>
-
                                     <div style={styles.popupRow}>
                                         <label>Адрес:</label>
                                         <input
@@ -135,7 +143,6 @@ const WebMapComponent = ({
                                             style={styles.input}
                                         />
                                     </div>
-
                                     <div style={styles.popupRow}>
                                         <label>Изображение:</label>
                                         <ImageUploadComponent
@@ -143,14 +150,9 @@ const WebMapComponent = ({
                                             onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                         />
                                         {marker.image && (
-                                            <img
-                                                src={marker.image}
-                                                alt="Превью"
-                                                style={styles.imagePreview}
-                                            />
+                                            <img src={marker.image} alt="Превью" style={styles.imagePreview} />
                                         )}
                                     </div>
-
                                     <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
                                         Удалить точку
                                     </button>
@@ -169,23 +171,20 @@ const WebMapComponent = ({
                     markers.map((marker, idx) => (
                         <div key={idx} style={styles.markerItem}>
                             <h4>Точка {idx + 1}</h4>
-                            <p>Координаты: {marker.position.lat}, {marker.position.lng}</p>
+                            <p>Координаты: {marker.lat}, {marker.lng}</p>
                             <div style={styles.markerRow}>
-                                <label>Категория:</label>
-                                <select
-                                    value={marker.category || ''}
-                                    onChange={(e) => handleMarkerChange(idx, 'category', e.target.value)}
+                                <label>Категории:</label>
+                                <MultiSelect
+                                    hideTags
+                                    items={categoryTravelAddress}
+                                    uniqueKey="id"
+                                    onSelectedItemsChange={(selectedItems) => handleMarkerChange(idx, 'categories', selectedItems)}
+                                    selectedItems={marker.categories}
+                                    selectText="Выберите категории"
+                                    searchInputPlaceholderText="Выберите категории"
                                     style={styles.input}
-                                >
-                                    <option value="">Выберите категорию</option>
-                                    {categoryTravelAddress.map((category) => (
-                                        <option key={category.id} value={category.name}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                />
                             </div>
-
                             <div style={styles.markerRow}>
                                 <label>Адрес:</label>
                                 <input
@@ -196,7 +195,6 @@ const WebMapComponent = ({
                                     style={styles.input}
                                 />
                             </div>
-
                             <div style={styles.markerRow}>
                                 <label>Изображение:</label>
                                 <ImageUploadComponent
@@ -204,14 +202,9 @@ const WebMapComponent = ({
                                     onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                 />
                                 {marker.image && (
-                                    <img
-                                        src={marker.image}
-                                        alt="Превью"
-                                        style={styles.imagePreview}
-                                    />
+                                    <img src={marker.image} alt="Превью" style={styles.imagePreview} />
                                 )}
                             </div>
-
                             <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
                                 Удалить точку
                             </button>

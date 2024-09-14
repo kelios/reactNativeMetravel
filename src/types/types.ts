@@ -172,4 +172,15 @@ export interface TravelFormData {
     publish: boolean;
 }
 
+export interface MarkerData {
+    id: number | null; // Добавляем поле id
+    lat: number;
+    lng: number;
+    country: number | null;
+    city: number | null;
+    address: string;
+    categories: number[];
+    image: string;
+}
+
 

@@ -17,7 +17,7 @@ import {
 import {useRoute} from '@react-navigation/native';
 import {fetchFilters, fetchFiltersCountry, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
 import MultiSelect from "react-native-multiple-select";
-import {TravelFormData} from "@/src/types/types";
+import {TravelFormData,MarkerData} from "@/src/types/types";
 import ArticleEditor from "@/components/ArticleEditor";
 import ImageUploadComponent from "@/components/ImageUploadComponent";
 import MapUploadComponent from "@/components/MapUploadComponent";
@@ -86,12 +86,6 @@ export default function NewTravelScreen() {
         publish: false,
         visa: false,
         coordsMeTravel: [],
-        countryIds: [],
-        travelAddressIds: [],
-        travelAddressCity: [],
-        travelAddressCountry: [],
-        travelAddressAdress: [],
-        travelAddressCategory: [],
         thumbs200ForCollectionArr: [],
         travelImageThumbUrlArr: [],
         travelImageAddress: [],
@@ -253,24 +247,22 @@ export default function NewTravelScreen() {
     };
 
 
-    const handleMarkersChange = (updatedMarkers) => {
+    const handleMarkersChange = (updatedMarkers: MarkerData[]) => {
         setMarkers(updatedMarkers);
-        const coordsMeTravel = updatedMarkers.map(marker => marker.position);
-        const travelAddressAdress = updatedMarkers.map(marker => marker.address);
-        const travelAddressCategory = updatedMarkers.map(marker => marker.category_id);
-        const travelAddressCountry = updatedMarkers.map(marker => marker.country_id || null);
-        const travelImageThumbUrlArr = updatedMarkers.map(marker => marker.image || '');
-
         setFormData(prevData => ({
             ...prevData,
-            coordsMeTravel,
-            travelAddressAdress,
-            travelAddressCategory,
-            travelAddressCountry,
-            travelImageThumbUrlArr,
+            coordsMeTravel: updatedMarkers.map(marker => ({
+                id: marker.id,
+                lat: marker.lat,
+                lng: marker.lng,
+                country: marker.country,
+                city: marker.city,
+                address: marker.address,
+                categories: marker.categories,
+                image: marker.image,
+            })),
         }));
     };
-
 
     const renderFilters = () => {
         if (menuVisible) {
