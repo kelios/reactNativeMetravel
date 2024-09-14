@@ -114,6 +114,8 @@ export default function TravelsBycreen() {
     setIsLoading(true)
     const newData = await fetchTravelsby(currentPage, itemsPerPage, search, {
       user_id: user_id,
+      moderation:1,
+      publish:1,
     })
     setTravels(newData)
     setIsLoading(false)

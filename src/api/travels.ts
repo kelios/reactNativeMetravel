@@ -97,6 +97,7 @@ export const loginApi = async (email: string, password: string): Promise<boolean
         if (json.token) {
             await AsyncStorage.setItem('userToken', json.token);
             await AsyncStorage.setItem('userName', json.name);
+            await AsyncStorage.setItem('userId', json.id);
             return true;
         }
 
@@ -224,6 +225,7 @@ export const logoutApi = async () => {
         const json = await response.json();
         await AsyncStorage.removeItem('userName');
         await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('userId');
     } catch (error) {
         console.error(error);
         Alert.alert("Ошибка", "Не удалось выполнить выход");
@@ -269,7 +271,7 @@ export const fetchTravels = async (
     urlParams: Record<string, any>,
 ) => {
     try {
-        const whereObject = {publish: 1, moderation: 1, ...urlParams}
+        const whereObject = {...urlParams}
         const params = {
             page: page + 1,
             perPage: itemsPerPage,
@@ -648,7 +650,7 @@ export const saveFormData = async (data: TravelFormData): Promise<string> => {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
+                'Authorization': `Token ${token}`,
             },
             body: JSON.stringify(data),
         });
@@ -677,7 +679,7 @@ export const uploadImage = async (data: FormData): Promise<string> => {
     const response = await fetch(UPLOAD_IMAGE, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Token ${token}`,
         },
         body: data, // Передаем FormData напрямую
     });
@@ -688,3 +690,17 @@ export const uploadImage = async (data: FormData): Promise<string> => {
         return "Upload failed.";
     }
 };
+
+export const deleteTravel = async (id: string) => {
+    try {
+        const response = await fetch(`${GET_TRAVELS}/${id}`, {
+            method: 'DELETE',
+        })
+        if (!response.ok) {
+            throw new Error('Ошибка при удалении путешествия')
+        }
+    } catch (error) {
+        console.error('Ошибка при удалении путешествия:', error)
+        throw error
+    }
+}

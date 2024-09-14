@@ -114,6 +114,8 @@ export default function TabOneScreen() {
     setIsLoading(true)
     const newData = await fetchTravels(currentPage, itemsPerPage, search, {
       user_id: user_id,
+      moderation:1,
+      publish:1,
     })
     setTravels(newData)
     setIsLoading(false)

@@ -17,12 +17,15 @@ import {
   fetchFilters,
   fetchFiltersTravel,
   fetchFiltersCountry,
+  deleteTravel,
 } from '@/src/api/travels'
 import { View } from '@/components/Themed'
 import { DataTable } from 'react-native-paper'
 import { SearchBar, Button } from 'react-native-elements'
 import MultiSelect from 'react-native-multiple-select'
 import { useLocalSearchParams } from 'expo-router'
+import {useRoute} from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Category {
   id: string
@@ -94,7 +97,17 @@ export default function MeTravelScreen() {
   const itemsPerPageOptions = [10, 20, 30, 50, 100]
   const [currentPage, setCurrentPage] = useState(initialPage)
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2])
-  const { user_id } = useLocalSearchParams()
+  const [userId, setUserId] = useState('');
+
+  useEffect(() => {
+    const getUserId = async () => {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedUserId) {
+        setUserId(storedUserId);
+      }
+    };
+    getUserId();
+  }, []);
 
   useEffect(() => {
     getFilters()
@@ -102,18 +115,26 @@ export default function MeTravelScreen() {
   }, [])
 
   useEffect(() => {
-    fetchMore()
-  }, [currentPage, itemsPerPage, search])
+    if (userId) {
+      fetchMore();
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchMore();
+    }
+  }, [currentPage, itemsPerPage, search]);
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [itemsPerPage, search, user_id])
+  }, [itemsPerPage, search, userId])
 
   const fetchMore = async () => {
-    if (isLoading) return
+    if (isLoading || !userId) return
     setIsLoading(true)
     const newData = await fetchTravels(currentPage, itemsPerPage, search, {
-      user_id: user_id,
+      user_id: userId || null,
     })
     setTravels(newData)
     setIsLoading(false)
@@ -192,6 +213,38 @@ export default function MeTravelScreen() {
 
   const closeMenu = () => {
     setMenuVisible(false)
+  }
+
+  const handleEdit = (id: string) => {
+    // Переход на страницу редактирования с передачей id путешествия
+    navigation.navigate('newtravel', { recordId: id })
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      // Подтверждение удаления
+      Alert.alert(
+          "Удаление",
+          "Вы уверены, что хотите удалить это путешествие?",
+          [
+            {
+              text: "Отмена",
+              style: "cancel"
+            },
+            {
+              text: "Удалить",
+              onPress: async () => {
+                // Вызов API для удаления путешествия
+                await deleteTravel(id)
+                // Обновление списка путешествий
+                setTravels((prevTravels) => prevTravels.filter(travel => travel.id !== id))
+              }
+            }
+          ]
+      )
+    } catch (error) {
+      console.error("Ошибка при удалении путешествия:", error)
+    }
   }
 
   if (!filters) {
@@ -471,7 +524,14 @@ export default function MeTravelScreen() {
           </View>
           <FlatList
             data={travels?.data}
-            renderItem={({ item }) => <TravelListItem travel={item} />}
+            renderItem={({ item }) =>
+              <TravelListItem
+              travel={item}
+              currentUserId={userId}
+              onEditPress={(id) => handleEdit(id)}
+              onDeletePress={(id) => handleDelete(id)}
+              />
+          }
             keyExtractor={(item) => item.id.toString()}
           />
           <View style={styles.containerPaginator}>

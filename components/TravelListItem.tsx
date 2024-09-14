@@ -1,65 +1,69 @@
-import { View, Pressable, Dimensions, StyleSheet } from 'react-native'
+import { View, Pressable, Dimensions, StyleSheet, TouchableOpacity } from 'react-native'
 import { Travel } from '@/src/types/types'
 import * as Linking from 'expo-linking'
 import { Card, Title, Paragraph, Text } from 'react-native-paper'
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
-import {
-  useFonts,
-  PlayfairDisplay_400Regular,
-} from '@expo-google-fonts/playfair-display'
-import {useRoute} from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 
 type TravelListItemProps = {
-  travel: Travel
-  onImagePress?: () => void
+  travel: Travel,
+  currentUserId: string,
+  onEditPress: (id: string) => void,
+  onDeletePress: (id: string) => void,
 }
-const { width, height } = Dimensions.get('window')
 
-const TravelListItem = ({ travel }: TravelListItemProps) => {
+const { width } = Dimensions.get('window')
+
+const TravelListItem = ({ travel, currentUserId, onEditPress, onDeletePress }: TravelListItemProps) => {
   const {
     name,
-    url,
     slug,
     travel_image_thumb_url,
     id,
-    cityName,
     countryName,
     userName,
     countUnicIpView,
   } = travel
 
   const route = useRoute();
-  // Извлекаем параметры из URL
-  const { paramName } = route.params || {};
-
-  console.log('paramName');
-  console.log(paramName);
+  const isButtonVisible = route.name === 'metravel';
 
   const Urltravel = Linking.createURL(`travels/${slug}`, {
     queryParams: { id: id },
   })
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={() => Linking.openURL(Urltravel)}>
-        <Card style={styles.card}>
-          <View style={styles.imageWrapper}>
-            <Card.Cover
-              source={{ uri: travel_image_thumb_url }}
-              style={styles.image}
-            />
-          </View>
-          <Card.Content>
-            <Title>{name}</Title>
-            <Paragraph>{countryName}</Paragraph>
-            <Paragraph>
-              <Text>Автор - {userName}</Text>
-              <Text style={styles.paragraphLeft}>({countUnicIpView} 👀)</Text>
-            </Paragraph>
-          </Card.Content>
-        </Card>
-      </Pressable>
-    </View>
+      <View style={styles.container}>
+        <Pressable onPress={() => Linking.openURL(Urltravel)}>
+          <Card style={styles.card}>
+            <View style={styles.imageWrapper}>
+              <Card.Cover
+                  source={{ uri: travel_image_thumb_url }}
+                  style={styles.image}
+              />
+            </View>
+            <Card.Content>
+              <Title>{name}</Title>
+              <Paragraph>{countryName}</Paragraph>
+              <Paragraph>
+                <Text>Автор - {userName}</Text>
+                <Text style={styles.paragraphLeft}>({countUnicIpView} 👀)</Text>
+              </Paragraph>
+
+              {isButtonVisible && (
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.editButton} onPress={() => onEditPress(id)}>
+                      <Text style={styles.buttonText}>✎</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteButton} onPress={() => onDeletePress(id)}>
+                      <Text style={styles.buttonText}>🗑</Text>
+                    </TouchableOpacity>
+                  </View>
+              )}
+            </Card.Content>
+          </Card>
+        </Pressable>
+      </View>
   )
 }
 
@@ -91,6 +95,31 @@ const styles = StyleSheet.create({
   },
   paragraphLeft: {
     marginLeft: wp(1.5),
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  editButton: {
+    backgroundColor: '#6AAAAA',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  deleteButton: {
+    backgroundColor: '#f44336',
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    marginHorizontal: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 18,
   },
 })
 

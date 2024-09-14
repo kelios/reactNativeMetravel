@@ -15,7 +15,7 @@ import {
     SafeAreaView
 } from 'react-native';
 import {useRoute} from '@react-navigation/native';
-import {fetchFilters, fetchFiltersCountry, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
+import {fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
 import MultiSelect from "react-native-multiple-select";
 import {TravelFormData,MarkerData} from "@/src/types/types";
 import ArticleEditor from "@/components/ArticleEditor";
@@ -55,6 +55,9 @@ export default function NewTravelScreen() {
 
     const [markers, setMarkers] = useState([]); // Хранение маркеров
 
+    console.log('test');
+    const travelId = route.params?.recordId || null;
+
     const [filters, setFilters] = useState<Filters>({
         countries: [],
         categories: [],
@@ -66,7 +69,7 @@ export default function NewTravelScreen() {
     })
 
     const [formData, setFormData] = useState<TravelFormData>({
-        id: route.params?.recordId || null,
+        id: travelId,
         name: '',
         categories: [],
         transports: [],
@@ -94,7 +97,46 @@ export default function NewTravelScreen() {
     useEffect(() => {
         getFilters()
         getFiltersCountry()
-    }, [])
+        if (travelId) {
+            loadTravelData(travelId);
+        }
+    }, [travelId])
+
+    const loadTravelData = async (id: string) => {
+        try {
+            const travelData = await fetchTravel(id);
+            setFormData({
+                id: travelData.id,
+                name: travelData.name,
+                categories: travelData.categories || [],
+                transports: travelData.transports || [],
+                month: travelData.month || [],
+                complexity: travelData.complexity || [],
+                over_nights_stay: travelData.over_nights_stay || [],
+                cities: travelData.cities || [],
+                countries: travelData.countries || [],
+                budget: travelData.budget || '',
+                year: travelData.year || '',
+                number_peoples: travelData.number_peoples || '',
+                number_days: travelData.number_days || '',
+                minus: travelData.minus || '',
+                plus: travelData.plus || '',
+                recommendation: travelData.recommendation || '',
+                description: travelData.description || '',
+                publish: travelData.publish || false,
+                visa: travelData.visa || false,
+                coordsMeTravel: travelData.coordsMeTravel || [],
+                thumbs200ForCollectionArr: travelData.thumbs200ForCollectionArr || [],
+                travelImageThumbUrlArr: travelData.travelImageThumbUrlArr || [],
+                travelImageAddress: travelData.travelImageAddress || [],
+            });
+
+            // Заполняем маркеры на карте
+            setMarkers(travelData.coordsMeTravel || []);
+        } catch (error) {
+            console.error('Ошибка при загрузке данных путешествия:', error);
+        }
+    };
 
     useEffect(() => {
         const autoSaveTimeout = setTimeout(() => {
