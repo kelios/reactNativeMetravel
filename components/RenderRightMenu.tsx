@@ -83,7 +83,7 @@ function RenderRightMenu() {
                         />
                         <Menu.Item
                             onPress={() => {
-                                navigation.navigate('newtravel');
+                                navigation.navigate('travel/new');
                                 closeMenu();
                             }}
                             title="Добавить путешествие"

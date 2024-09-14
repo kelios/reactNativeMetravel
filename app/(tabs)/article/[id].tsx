@@ -1,14 +1,10 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react'
 import {
-  View,
   ScrollView,
   ActivityIndicator,
   useWindowDimensions,
   StyleSheet,
   SafeAreaView,
-  Pressable,
-  TouchableOpacity,
-  Text,
   Platform,
 } from 'react-native'
 import { Stack, useLocalSearchParams } from 'expo-router'
@@ -17,9 +13,6 @@ import IframeRenderer, { iframeModel } from '@native-html/iframe-plugin'
 import RenderHTML from 'react-native-render-html'
 import { WebView } from 'react-native-webview'
 import { Card, Title } from 'react-native-paper'
-import Slider from '@/components/Slider'
-import PointList from '@/components/PointList'
-import { IS_LOCAL_API } from '@env'
 import { fetchArticle } from '@/src/api/travels'
 
 interface ArticleDetailsProps {
@@ -27,7 +20,6 @@ interface ArticleDetailsProps {
 }
 
 const ArticleDetails: React.FC<ArticleDetailsProps> = () => {
-  const [isMounted, setIsMounted] = useState(false)
   const { id } = useLocalSearchParams()
   const [article, setArticle] = useState<Article | null>(null)
   const { width } = useWindowDimensions()

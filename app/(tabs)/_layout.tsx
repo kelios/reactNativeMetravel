@@ -4,6 +4,7 @@ import {Tabs} from 'expo-router'
 import {Image, useColorScheme, useWindowDimensions} from 'react-native'
 import Footer from '@/components/Footer'
 import RenderRightMenu from '@/components/RenderRightMenu';
+import NewTravelScreen from "@/app/travel/new";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -148,11 +149,21 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
-                    name="newtravel"
+                    name="travel/new"
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Новое путешествие',
+                        headerRight: () => <RenderRightMenu />,
+                    }}
+                />
+
+                <Tabs.Screen
+                    name="travel/[id]"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: 'Редактировать путешествие',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />

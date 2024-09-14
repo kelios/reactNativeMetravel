@@ -217,7 +217,7 @@ export default function MeTravelScreen() {
 
   const handleEdit = (id: string) => {
     // Переход на страницу редактирования с передачей id путешествия
-    navigation.navigate('newtravel', { recordId: id })
+    navigation.navigate('travel/'+id)
   }
 
   const handleDelete = async (id: string) => {
@@ -528,8 +528,8 @@ export default function MeTravelScreen() {
               <TravelListItem
               travel={item}
               currentUserId={userId}
-              onEditPress={(id) => handleEdit(id)}
-              onDeletePress={(id) => handleDelete(id)}
+              onEditPress={(id) => handleEdit(item.id.toString())}
+              onDeletePress={(id) => handleDelete(item.id.toString())}
               />
           }
             keyExtractor={(item) => item.id.toString()}

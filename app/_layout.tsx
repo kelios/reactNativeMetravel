@@ -12,7 +12,6 @@ import {
 import {PlayfairDisplay_400Regular} from '@expo-google-fonts/playfair-display'
 import {FiltersProvider} from "@/providers/FiltersProvider";
 import {AuthProvider} from "@/context/AuthContext";
-import NewTravelScreen from "@/app/(tabs)/newtravel";
 
 export {
     // Catch any errors thrown by the Layout component.
