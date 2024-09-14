@@ -64,7 +64,7 @@ const WebMapComponent = ({
             city: null, // Опционально
             address: address,
             categories: [],
-            image: ''
+            image: null,
         };
 
         if (country) {

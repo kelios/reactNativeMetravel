@@ -158,6 +158,16 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
+                    name="metravel"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: 'Мои путешествия',
+                        headerRight: () => <RenderRightMenu />,
+                    }}
+                />
+
+                <Tabs.Screen
                     name="forgotpassword"
                     options={{
                         tabBarIconStyle: {display: 'none'},

@@ -76,7 +76,7 @@ function RenderRightMenu() {
                         <Menu.Item
                             onPress={() => {
                                 updateFilters({ user_id: 1 });
-                                navigation.navigate('index');
+                                navigation.navigate('metravel');
                                 closeMenu();
                             }}
                             title="Мои путешествия"

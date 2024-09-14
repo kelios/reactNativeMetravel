@@ -7,6 +7,7 @@ import {
   useFonts,
   PlayfairDisplay_400Regular,
 } from '@expo-google-fonts/playfair-display'
+import {useRoute} from "@react-navigation/native";
 
 type TravelListItemProps = {
   travel: Travel
@@ -26,6 +27,13 @@ const TravelListItem = ({ travel }: TravelListItemProps) => {
     userName,
     countUnicIpView,
   } = travel
+
+  const route = useRoute();
+  // Извлекаем параметры из URL
+  const { paramName } = route.params || {};
+
+  console.log('paramName');
+  console.log(paramName);
 
   const Urltravel = Linking.createURL(`travels/${slug}`, {
     queryParams: { id: id },
