@@ -149,6 +149,16 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
+                    name="set-password"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: 'Установить пароль',
+                        headerRight: () => <RenderRightMenu />,
+                    }}
+                />
+
+                <Tabs.Screen
                     name="travel/new"
                     options={{
                         tabBarIconStyle: {display: 'none'},
@@ -174,16 +184,6 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         href: null,
                         title: 'Мои путешествия',
-                        headerRight: () => <RenderRightMenu />,
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="forgotpassword"
-                    options={{
-                        tabBarIconStyle: {display: 'none'},
-                        href: null,
-                        title: 'Изменить пароль',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />

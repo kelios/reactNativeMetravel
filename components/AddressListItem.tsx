@@ -1,103 +1,77 @@
-import React from 'react'
-import {
-  View,
-  Pressable,
-  Dimensions,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native'
-import { TravelCoords } from '@/src/types/types'
-import * as Linking from 'expo-linking'
-import { Card, Title, Paragraph, Text } from 'react-native-paper'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
-import {
-  useFonts,
-  PlayfairDisplay_400Regular,
-} from '@expo-google-fonts/playfair-display'
+import React from 'react';
+import { View, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import * as Linking from 'expo-linking';
+import { Card, Text } from 'react-native-paper';
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { TravelCoords } from '@/src/types/types';
 
 type AddressListItemProps = {
-  travel: TravelCoords
-  onImagePress?: () => void
-}
-const { width, height } = Dimensions.get('window')
+  travel: TravelCoords;
+  onImagePress?: () => void;
+};
 
-const AddressListItem = ({ travel }: AddressListItemProps) => {
+const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
   const {
     address,
     categoryName,
     coord,
-    lat,
-    lng,
     travelImageThumbUrl,
     urlTravel,
-  } = travel
+  } = travel;
+  const { width } = useWindowDimensions();
 
   return (
-    <Card style={styles.container}>
-      <Pressable onPress={() => Linking.openURL(urlTravel)}>
-        <View style={styles.imageWrapper}>
+      <Card style={styles.container}>
+        <Pressable onPress={() => Linking.openURL(urlTravel)}>
           {travelImageThumbUrl && (
-            <Card.Cover
-              source={{ uri: travelImageThumbUrl }}
-              style={styles.image}
-            />
+              <View style={styles.imageWrapper}>
+                <Card.Cover
+                    source={{ uri: travelImageThumbUrl }}
+                    style={styles.image}
+                />
+              </View>
           )}
-        </View>
-        <Card.Content style={styles.cardContent}>
-          <Text style={styles.label}>Координаты места :</Text>
-          <Text>{coord}</Text>
-          <Text style={styles.label}>Адрес места :</Text>
-          <Text>{address}</Text>
-          <Text style={styles.label}>Категория объекта :</Text>
-          <Text>{categoryName}</Text>
-        </Card.Content>
-      </Pressable>
-    </Card>
-  )
-}
+          <Card.Content style={styles.cardContent}>
+            <Text style={styles.label}>Координаты места:</Text>
+            <Text style={styles.text}>{coord}</Text>
+            <Text style={styles.label}>Адрес места:</Text>
+            <Text style={styles.text}>{address}</Text>
+            <Text style={styles.label}>Категория объекта:</Text>
+            <Text style={styles.text}>{categoryName}</Text>
+          </Card.Content>
+        </Pressable>
+      </Card>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     borderRadius: 10,
     elevation: 2,
-    padding: wp(1.5), // Используем wp для ширины и высоты в процентах от ширины экрана
-    margin: wp(1.5),
-    marginHorizontal: wp(1.5),
-    alignItems: 'center', // Выравнивание по центру
-    alignContent: 'center',
+    padding: wp(3),
+    margin: wp(2),
+    backgroundColor: '#fff',
   },
   cardContent: {
     alignItems: 'center',
-    alignContent: 'center',
+    marginTop: 10,
   },
   text: {
-    paddingTop: 10,
     color: '#4b7c6f',
     fontSize: 16,
     textAlign: 'center',
-  },
-  paragraph: {
-    fontSize: 14,
-  },
-  pointContent: {
-    flexShrink: 1,
-  },
-  pointContentLarge: {
-    flexShrink: 1,
+    marginVertical: 2,
   },
   imageWrapper: {
-    height: 250,
-    // maxWidth: 280,
-    //  overflow: 'hidden',
+    height: 200,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
-    // resizeMode: 'contain', // Изменено на 'contain'
-  },
-  paragraphLeft: {
-    marginLeft: wp(1.5),
   },
   label: {
     fontWeight: 'bold',
@@ -107,6 +81,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ff9f5a',
     borderRadius: 4,
   },
-})
+});
 
-export default AddressListItem
+export default AddressListItem;

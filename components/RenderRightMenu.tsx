@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Button, Menu } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -12,7 +12,7 @@ function RenderRightMenu() {
     const [visible, setVisible] = useState(false);
     const openMenu = () => setVisible(true);
     const closeMenu = () => setVisible(false);
-    const { updateFilters, filters } = useFilters();
+    const { updateFilters } = useFilters();
     const [username, setUsername] = useState('');
     const { isAuthenticated, setIsAuthenticated, logout } = useAuth();
 
@@ -36,19 +36,13 @@ function RenderRightMenu() {
     }, []);
 
     return (
-        <View
-            style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                paddingRight: 10,
-            }}
-        >
-            {username && <Text>{username}</Text>}
+        <View style={styles.container}>
+            {username && <Text style={styles.username}>{username}</Text>}
             <Menu
                 visible={visible}
                 onDismiss={closeMenu}
                 anchor={
-                    <Button onPress={openMenu}>
+                    <Button onPress={openMenu} style={styles.menuButton}>
                         <Icon name="menu" size={24} color="#000" />
                     </Button>
                 }
@@ -61,6 +55,7 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Войти"
+                            icon="login"
                         />
                         <Menu.Item
                             onPress={() => {
@@ -68,6 +63,7 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Зарегистрироваться"
+                            icon="account-plus"
                         />
                     </>
                 )}
@@ -80,6 +76,7 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Мои путешествия"
+                            icon="earth"
                         />
                         <Menu.Item
                             onPress={() => {
@@ -87,6 +84,7 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Добавить путешествие"
+                            icon="map-plus"
                         />
                         <Menu.Item
                             onPress={async () => {
@@ -95,6 +93,7 @@ function RenderRightMenu() {
                                 navigation.navigate('index');
                             }}
                             title="Выход"
+                            icon="logout"
                         />
                     </>
                 )}
@@ -102,5 +101,24 @@ function RenderRightMenu() {
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingRight: 10,
+        alignItems: 'center',
+    },
+    username: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginRight: 10,
+    },
+    menuButton: {
+        backgroundColor: '#f0f0f0',
+        borderRadius: 20,
+        padding: 5,
+    },
+});
 
 export default RenderRightMenu;

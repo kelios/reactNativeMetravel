@@ -5,8 +5,10 @@ import {
   View,
   Text,
   Image,
+  ScrollView,
 } from 'react-native';
 import { Card } from 'react-native-paper';
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 type Point = {
   id: string;
@@ -26,15 +28,19 @@ const PointList: React.FC<PointListProps> = ({ points, onLayout }) => {
   const isLargeScreen = useMemo(() => width > 768, [width]);
 
   return (
-      <View style={[styles.pointListContainer, isLargeScreen && { marginTop: 20, margin: 10, padding: 20 }]} onLayout={onLayout}>
+      <ScrollView style={[styles.pointListContainer, isLargeScreen && styles.pointListLargeContainer]} onLayout={onLayout}>
         {points.map((point) => (
             <Card key={point.id} style={[styles.pointItem, isLargeScreen && styles.pointItemLarge]}>
               <View style={[styles.pointContent, isLargeScreen && styles.pointContentLarge]}>
                 <Image
                     source={{ uri: point.travelImageThumbUrl }}
-                    style={styles.pointImage}
+                    style={[styles.pointImage, isLargeScreen && styles.pointImageLarge]}
+                    resizeMode="cover"
                 />
-                <View style={[styles.description, isLargeScreen && styles.descriptionLarge]}>
+                <View style={[
+                  styles.description,
+                  isLargeScreen ? styles.descriptionLarge : { marginTop: 10 }
+                ]}>
                   <Text style={styles.label}>Координаты места:</Text>
                   <Text>{point.coord}</Text>
                   <Text style={styles.label}>Адрес места:</Text>
@@ -45,7 +51,7 @@ const PointList: React.FC<PointListProps> = ({ points, onLayout }) => {
               </View>
             </Card>
         ))}
-      </View>
+      </ScrollView>
   );
 };
 
@@ -53,18 +59,32 @@ const styles = StyleSheet.create({
   pointListContainer: {
     flexShrink: 1,
   },
+  pointListLargeContainer: {
+    marginTop: 20,
+    margin: 10,
+    padding: 20,
+  },
   pointItem: {
-    marginBottom: 10,
+    marginBottom: 15,
+    borderRadius: 10,
+    elevation: 3,
+    backgroundColor: '#fff',
+    padding: wp(2),
   },
   pointItemLarge: {
     flexDirection: 'row',
+    padding: wp(3),
   },
   pointContent: {
+    flexDirection: 'column',
     alignItems: 'center',
     maxWidth: 800,
     flexShrink: 1,
   },
-  pointContentLarge: {},
+  pointContentLarge: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
   label: {
     fontWeight: 'bold',
     fontSize: 16,
@@ -74,16 +94,23 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   pointImage: {
-    width: 200,
-    height: 200,
+    width: wp(25),
+    height: wp(25),
     borderRadius: 10,
+    marginBottom: 10,
+  },
+  pointImageLarge: {
+    width: wp(20), // Ограничиваем ширину изображения на больших экранах
+    height: wp(20),
+    marginRight: 15, // Добавляем отступ справа
   },
   description: {
-    marginLeft: 5,
-    flexShrink: 1,
+    flex: 1,
+    marginLeft: 0,
   },
   descriptionLarge: {
-    marginLeft: 10,
+    flex: 1, // Занимает оставшееся пространство
+    marginLeft: 15, // Отступ между изображением и текстом
   },
 });
 
