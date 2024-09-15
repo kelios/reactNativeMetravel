@@ -26,7 +26,7 @@ const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collect
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
-            formData.append('id_travel', idTravel);
+            formData.append('id', idTravel);
 
             const response = await uploadImage(formData);
 

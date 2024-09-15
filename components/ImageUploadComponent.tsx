@@ -78,7 +78,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
-            formData.append('id_travel', idTravel);
+            formData.append('id', idTravel);
 
             // Отправляем данные через функцию `uploadImage`
             const response = await uploadImage(formData);

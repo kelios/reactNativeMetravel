@@ -74,7 +74,7 @@ const MapUploadComponent: React.FC<MapUploadComponentProps> = ({ collection, idT
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
-            formData.append('id_travel', idTravel);
+            formData.append('id', idTravel);
 
             const response = await uploadImage(formData);
 
