@@ -17,7 +17,7 @@ import {
 import {useRoute} from '@react-navigation/native';
 import {fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
 import MultiSelect from "react-native-multiple-select";
-import {TravelFormData,MarkerData} from "@/src/types/types";
+import {TravelFormData, MarkerData} from "@/src/types/types";
 import ArticleEditor from "@/components/ArticleEditor";
 import ImageUploadComponent from "@/components/ImageUploadComponent";
 import MapUploadComponent from "@/components/MapUploadComponent";
@@ -56,7 +56,7 @@ export default function UpsertTravel() {
 
     const [markers, setMarkers] = useState([]); // Хранение маркеров
 
-    const { id } = useLocalSearchParams();
+    const {id} = useLocalSearchParams();
     const travelId = id || null;
 
     const [filters, setFilters] = useState<Filters>({
@@ -150,10 +150,11 @@ export default function UpsertTravel() {
     const handleAutoSave = async () => {
         try {
             setIsSaving(true);
-            const savedId = await saveFormDataWithId(formData);
-            if (!formData.id && savedId) {
-                setFormData((prevData) => ({...prevData, id: savedId}));
+            const savedData = await saveFormDataWithId(formData);
+            if (!formData.id && savedData.id) {
+                setFormData((prevData) => ({...prevData, id: savedData.id}));
             }
+            setMarkers(savedData.coordsMeTravel);
             console.log('Автосохранение прошло успешно!');
         } catch (error) {
             console.error('Ошибка при автосохранении:', error);
@@ -164,9 +165,9 @@ export default function UpsertTravel() {
 
     const handleSubmit = async () => {
         try {
-            const savedId = await saveFormDataWithId(formData);
-            if (!formData.id && savedId) {
-                setFormData((prevData) => ({...prevData, id: savedId}));
+            const savedData = await saveFormDataWithId(formData);
+            if (!formData.id && savedData.id) {
+                setFormData((prevData) => ({...prevData, id: savedData.id}));
             }
             console.log('Форма отправлена успешно!');
         } catch (error) {
@@ -174,11 +175,12 @@ export default function UpsertTravel() {
         }
     };
 
-    const saveFormDataWithId = async (data: TravelFormData): Promise<string> => {
+    const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
         const updatedData = {...data, id: data.id || null}; // Добавляем recordId в данные
 
         return await saveFormData(cleanEmptyFields(updatedData));
     };
+
     function cleanEmptyFields(obj: any): any {
         const cleanedObj: any = {};
 
@@ -239,7 +241,7 @@ export default function UpsertTravel() {
             })
         }
 
-    const handleTextFilterChange = (key:string, value: string) => {
+    const handleTextFilterChange = (key: string, value: string) => {
         setFormData({
             ...formData,
             [key]: value,
@@ -311,337 +313,344 @@ export default function UpsertTravel() {
         if (menuVisible) {
             return (
                 <View style={{backgroundColor: 'white'}}>
-            {formData.id && (
-                <TextInput
-                    style={styles.hiddenInput}
-                value={formData.id}
-                editable={false}
-                />
-            )}
-            <CheckboxComponent
-                label="Черновик"
-            value={formData?.publish}
-            onChange={(value) => handleChange('publish', value)}
-            />
-            <SafeAreaView style={styles.container}>
-            <ImageUploadComponent collection='travelMainImage' /> {/* Вызов компонента с параметром collection */}
-                </SafeAreaView>
+                    {formData.id && (
+                        <TextInput
+                            style={styles.hiddenInput}
+                            value={formData.id}
+                            editable={false}
+                        />
+                    )}
+                    <CheckboxComponent
+                        label="Черновик"
+                        value={formData?.publish}
+                        onChange={(value) => handleChange('publish', value)}
+                    />
+                    {formData.id && (
+                        <SafeAreaView style={styles.container}>
+                            <ImageUploadComponent collection='travelMainImage'
+                                                  idTravel={formData?.id}/>
 
-                <MultiSelect
-            hideTags
-            items={filters?.countries || []}
-            uniqueKey="country_id"
-            onSelectedItemsChange={onSelectedItemsChange('countries')}
-            selectedItems={formData?.countries}
-            isLoading={isLoadingFilters}
-            selectText="Выберите страны..."
-            searchInputPlaceholderText="Выберите страны..."
-            onChangeInput={(text) => console.log(text)}
-            //  altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="title_ru"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-                />
+                        </SafeAreaView>
+                    )}
 
-                <MultiSelect
-                    hideTags
-            items={filters?.categories || []}
-            uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('categories')}
-            selectedItems={formData?.categories}
-            isLoading={isLoadingFilters}
-            selectText="Категории..."
-            searchInputPlaceholderText="Категории..."
-            onChangeInput={(text) => console.log(text)}
-            //   altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="name"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-                />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.countries || []}
+                        uniqueKey="country_id"
+                        onSelectedItemsChange={onSelectedItemsChange('countries')}
+                        selectedItems={formData?.countries}
+                        isLoading={isLoadingFilters}
+                        selectText="Выберите страны..."
+                        searchInputPlaceholderText="Выберите страны..."
+                        onChangeInput={(text) => console.log(text)}
+                        //  altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="title_ru"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-                <MultiSelect
-                    hideTags
-            items={filters?.transports}
-            uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('transports')}
-            selectedItems={formData?.transports}
-            isLoading={isLoadingFilters}
-            selectText="Транспорт..."
-            searchInputPlaceholderText="Транспорт..."
-            onChangeInput={(text) => console.log(text)}
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="name"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-                />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.categories || []}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('categories')}
+                        selectedItems={formData?.categories}
+                        isLoading={isLoadingFilters}
+                        selectText="Категории..."
+                        searchInputPlaceholderText="Категории..."
+                        onChangeInput={(text) => console.log(text)}
+                        //   altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-                <MultiSelect
-                    hideTags
-            items={filters?.complexity}
-            uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('complexity')}
-            selectedItems={formData?.complexity}
-            isLoading={isLoadingFilters}
-            selectText="Уровень физической подготовки..."
-            searchInputPlaceholderText="Уровень физической подготовки..."
-            onChangeInput={(text) => console.log(text)}
-            // altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="name"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-                />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.transports}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('transports')}
+                        selectedItems={formData?.transports}
+                        isLoading={isLoadingFilters}
+                        selectText="Транспорт..."
+                        searchInputPlaceholderText="Транспорт..."
+                        onChangeInput={(text) => console.log(text)}
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-                <MultiSelect
-                    hideTags
-            items={filters?.companion}
-            uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('companion')}
-            selectedItems={formData?.companion}
-            isLoading={isLoadingFilters}
-            selectText="Варианты отдыха с..."
-            searchInputPlaceholderText="Варианты отдыха с..."
-            onChangeInput={(text) => console.log(text)}
-            //   altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="name"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-                />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.complexity}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('complexity')}
+                        selectedItems={formData?.complexity}
+                        isLoading={isLoadingFilters}
+                        selectText="Уровень физической подготовки..."
+                        searchInputPlaceholderText="Уровень физической подготовки..."
+                        onChangeInput={(text) => console.log(text)}
+                        // altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-                <MultiSelect
-                    hideTags
-            items={filters?.overNightStay}
-            uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
-            selectedItems={formData?.over_nights_stay}
-            isLoading={isLoadingFilters}
-            selectText="Варианты ночлега..."
-            searchInputPlaceholderText="Варианты ночлега..."
-            onChangeInput={(text) => console.log(text)}
-            // altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="name"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-                />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.companion}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('companion')}
+                        selectedItems={formData?.companion}
+                        isLoading={isLoadingFilters}
+                        selectText="Варианты отдыха с..."
+                        searchInputPlaceholderText="Варианты отдыха с..."
+                        onChangeInput={(text) => console.log(text)}
+                        //   altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-                <MultiSelect
-                    hideTags
-            items={filters?.month}
-            uniqueKey="id"
-            onSelectedItemsChange={onSelectedItemsChange('month')}
-            selectedItems={formData?.month}
-            isLoading={isLoadingFilters}
-            selectText="Месяц..."
-            searchInputPlaceholderText="Месяц..."
-            onChangeInput={(text) => console.log(text)}
-            //  altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="name"
-            searchInputStyle={{color: '#CCC'}}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-            />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.overNightStay}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
+                        selectedItems={formData?.over_nights_stay}
+                        isLoading={isLoadingFilters}
+                        selectText="Варианты ночлега..."
+                        searchInputPlaceholderText="Варианты ночлега..."
+                        onChangeInput={(text) => console.log(text)}
+                        // altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-            <TextInput
-                style={styles.input}
-            placeholder="Год"
-            value={formData?.year}
-            onChangeText={(value) => handleTextFilterChange('year', value)}
-            keyboardType="numeric"
-            />
+                    <MultiSelect
+                        hideTags
+                        items={filters?.month}
+                        uniqueKey="id"
+                        onSelectedItemsChange={onSelectedItemsChange('month')}
+                        selectedItems={formData?.month}
+                        isLoading={isLoadingFilters}
+                        selectText="Месяц..."
+                        searchInputPlaceholderText="Месяц..."
+                        onChangeInput={(text) => console.log(text)}
+                        //  altFontFamily="ProximaNova-Light"
+                        tagRemoveIconColor="#CCC"
+                        tagBorderColor="#CCC"
+                        tagTextColor="#CCC"
+                        selectedItemTextColor="#CCC"
+                        selectedItemIconColor="#CCC"
+                        itemTextColor="#000"
+                        displayKey="name"
+                        searchInputStyle={{color: '#CCC'}}
+                        submitButtonColor="#CCC"
+                        submitButtonText="Submit"
+                    />
 
-            <TextInput
-                style={styles.input}
-            placeholder="Количество человек"
-            value={formData?.number_peoples}
-            onChangeText={(value) => handleTextFilterChange('number_peoples', value)}
-            keyboardType="numeric"
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Год"
+                        value={formData?.year}
+                        onChangeText={(value) => handleTextFilterChange('year', value)}
+                        keyboardType="numeric"
+                    />
 
-            <TextInput
-                style={styles.input}
-            placeholder="Количество потраченных средств $"
-            value={formData?.budget}
-            onChangeText={(value) => handleTextFilterChange('budget', value)}
-            keyboardType="numeric"
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Количество человек"
+                        value={formData?.number_peoples}
+                        onChangeText={(value) => handleTextFilterChange('number_peoples', value)}
+                        keyboardType="numeric"
+                    />
 
-            <TextInput
-                style={styles.input}
-            placeholder="Количество дней"
-            value={formData?.number_days}
-            onChangeText={(value) => handleTextFilterChange('number_days', value)}
-            keyboardType="numeric"
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Количество потраченных средств $"
+                        value={formData?.budget}
+                        onChangeText={(value) => handleTextFilterChange('budget', value)}
+                        keyboardType="numeric"
+                    />
 
-            <CheckboxComponent
-                label="Нужна виза"
-            value={formData?.visa}
-            onChange={(value) => handleChange('visa', value)}
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Количество дней"
+                        value={formData?.number_days}
+                        onChangeText={(value) => handleTextFilterChange('number_days', value)}
+                        keyboardType="numeric"
+                    />
+
+                    <CheckboxComponent
+                        label="Нужна виза"
+                        value={formData?.visa}
+                        onChange={(value) => handleChange('visa', value)}
+                    />
+
+                    {formData.id && (
+                    <MapUploadComponent collection='travelRoad' idTravel={formData?.id} >
+                    </ MapUploadComponent>
+                    )}
 
 
-            <MapUploadComponent collection='travelRoad'>
-                </ MapUploadComponent>
-
-
-                <TouchableOpacity
-            style={styles.applyButton}
-            onPress={handleSubmit}
-            >
-            <Text style={styles.applyButtonText}>Сохранить</Text>
-                </TouchableOpacity>
-            {isMobile && (
-                <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
-            <Text style={styles.closeButtonText}>Закрыть</Text>
-                </TouchableOpacity>
-            )}
-            </View>
-        )
+                    <TouchableOpacity
+                        style={styles.applyButton}
+                        onPress={handleSubmit}
+                    >
+                        <Text style={styles.applyButtonText}>Сохранить</Text>
+                    </TouchableOpacity>
+                    {isMobile && (
+                        <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
+                            <Text style={styles.closeButtonText}>Закрыть</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            )
         }
         return null
     }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.formSection}>
-        {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
-    <View style={styles.formRow}>
-    <View style={styles.leftColumn}>
-    <TextInputComponent
-        label="Название"
-    value={formData.name}
-    onChange={(value) => handleChange('name', value)}
-    />
+            <View style={styles.formSection}>
+                {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
+                <View style={styles.formRow}>
+                    <View style={styles.leftColumn}>
+                        <TextInputComponent
+                            label="Название"
+                            value={formData.name}
+                            onChange={(value) => handleChange('name', value)}
+                        />
 
-    <YoutubeLinkComponent
-    label="Ссылка на Youtube"
-    value={formData.youtubeLink}
-    onChange={(value) => handleChange('youtubeLink', value)}
-    />
+                        <YoutubeLinkComponent
+                            label="Ссылка на Youtube"
+                            value={formData.youtubeLink}
+                            onChange={(value) => handleChange('youtubeLink', value)}
+                        />
 
-    <WebMapComponent
-    markers={markers}
-    onMarkersChange={handleMarkersChange}
-    onCountrySelect={handleCountrySelect}
-    onCountryDeselect={handleCountryDeselect}
-    categoryTravelAddress={filters.categoryTravelAddress}
-    countrylist={filters.countries}
-    />
+                        <WebMapComponent
+                            markers={markers}
+                            onMarkersChange={handleMarkersChange}
+                            onCountrySelect={handleCountrySelect}
+                            onCountryDeselect={handleCountryDeselect}
+                            categoryTravelAddress={filters.categoryTravelAddress}
+                            countrylist={filters.countries}
+                        />
 
-    <SafeAreaView>
-    <ArticleEditor
-        label="Описание"
-    height={400}  // Устанавливаем высоту окна редактора
-    content={formData.description}
-    onChange={(newContent: any) => handleChange('description', newContent)}
-    uploadUrl={UPLOAD_IMAGE}
-    />
-    </SafeAreaView>
+                        <SafeAreaView>
+                            <ArticleEditor
+                                label="Описание"
+                                height={400}  // Устанавливаем высоту окна редактора
+                                content={formData.description}
+                                onChange={(newContent: any) => handleChange('description', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
+                            />
+                        </SafeAreaView>
 
-    <SafeAreaView>
-    <ArticleEditor
-        label="Плюсы"
-    height={300}  // Устанавливаем высоту окна редактора
-    content={formData.plus}
-    onChange={(newContent: any) => handleChange('plus', newContent)}
-    uploadUrl={UPLOAD_IMAGE}
-    />
-    </SafeAreaView>
+                        <SafeAreaView>
+                            <ArticleEditor
+                                label="Плюсы"
+                                height={300}  // Устанавливаем высоту окна редактора
+                                content={formData.plus}
+                                onChange={(newContent: any) => handleChange('plus', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
+                            />
+                        </SafeAreaView>
 
-    <SafeAreaView>
-    <ArticleEditor
-        label="Минусы"
-    height={300}  // Устанавливаем высоту окна редактора
-    content={formData.minus}
-    onChange={(newContent: any) => handleChange('minus', newContent)}
-    uploadUrl={UPLOAD_IMAGE}
-    />
-    </SafeAreaView>
+                        <SafeAreaView>
+                            <ArticleEditor
+                                label="Минусы"
+                                height={300}  // Устанавливаем высоту окна редактора
+                                content={formData.minus}
+                                onChange={(newContent: any) => handleChange('minus', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
+                            />
+                        </SafeAreaView>
 
-    <SafeAreaView style={{flex: 1}}>
-    <ArticleEditor
-        label="Рекомендации"
-    height={300}  // Устанавливаем высоту окна редактора
-    content={formData.minus}
-    onChange={(newContent: any) => handleChange('recommendation', newContent)}
-    uploadUrl={UPLOAD_IMAGE}
-    />
-    </SafeAreaView>
+                        <SafeAreaView style={{flex: 1}}>
+                            <ArticleEditor
+                                label="Рекомендации"
+                                height={300}  // Устанавливаем высоту окна редактора
+                                content={formData.minus}
+                                onChange={(newContent: any) => handleChange('recommendation', newContent)}
+                                uploadUrl={UPLOAD_IMAGE}
+                            />
+                        </SafeAreaView>
 
-    <ImageGalleryComponent collection='gallery'>
-        </ ImageGalleryComponent>
+                        {formData.id && (
+                        <ImageGalleryComponent collection='gallery' idTravel={formData?.id}>
+                        </ ImageGalleryComponent>
+                        )}
 
-        </View>
-        <View style={styles.rightColumn}>
+                    </View>
+                    <View style={styles.rightColumn}>
 
-        {isMobile ? (
-                <View
-                    style={[
-                        styles.sideMenu,
-                    styles.mobileSideMenu,
-                    menuVisible && styles.visibleMobileSideMenu,
-]}
->
-    {renderFilters()}
-    </View>
-) : (
-        <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-    {renderFilters()}
-    </View>
-)}
+                        {isMobile ? (
+                            <View
+                                style={[
+                                    styles.sideMenu,
+                                    styles.mobileSideMenu,
+                                    menuVisible && styles.visibleMobileSideMenu,
+                                ]}
+                            >
+                                {renderFilters()}
+                            </View>
+                        ) : (
+                            <View style={[styles.sideMenu, styles.desktopSideMenu]}>
+                                {renderFilters()}
+                            </View>
+                        )}
 
-    </View>
-    </View>
-    </View>
-    {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
-    </ScrollView>
-);
+                    </View>
+                </View>
+            </View>
+            {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
+        </ScrollView>
+    );
 }
 
 const getStyles = (windowWidth: number) => {

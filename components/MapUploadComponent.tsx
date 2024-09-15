@@ -11,9 +11,10 @@ if (Platform.OS !== 'web') {
 
 interface MapUploadComponentProps {
     collection: string;
+    idTravel: string;
 }
 
-const MapUploadComponent: React.FC<MapUploadComponentProps> = ({ collection }) => {
+const MapUploadComponent: React.FC<MapUploadComponentProps> = ({ collection, idTravel }) => {
     const [fileUri, setFileUri] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string | null>(null);
     const [uploadMessage, setUploadMessage] = useState<string | null>(null);
@@ -73,6 +74,7 @@ const MapUploadComponent: React.FC<MapUploadComponentProps> = ({ collection }) =
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
+            formData.append('id_travel', idTravel);
 
             const response = await uploadImage(formData);
 

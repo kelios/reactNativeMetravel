@@ -21,8 +21,7 @@ let GET_FILTER_FOR_MAP = ''
 let REGISTER = ''
 let LOGOUT = ''
 let CONFIRM_REGISTER = ''
-//let SENDPASSWORD = ''
-//let SETNEWPASSWORD = ''
+let SETNEWPASSWORD = ''
 let RESETPASSWORDLINK = ''
 let GET_LIST_COUNTRIES = ''
 let CREATE_TRAVEL = ''
@@ -38,8 +37,7 @@ if (IS_LOCAL_API == 'true') {
     REGISTER = `${URLAPI}/api/user/registration/`
     RESETPASSWORDLINK = `${URLAPI}/api/user/reset-password-link/`
     CONFIRM_REGISTER = `${URLAPI}/api/user/confirm-registration/`
-    // SENDPASSWORD = `${URLAPI}/api/sendpassword`
-    // SETNEWPASSWORD = `${URLAPI}/api/setpassword`
+    SETNEWPASSWORD = `${URLAPI}/api/user/set-password-after-reset/`
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`
     SAVE_TRAVEL = `${URLAPI}/api/travels/upsert/`
 } else {
@@ -173,8 +171,8 @@ export const resetPasswordLinkApi = async (
 };
 
 export const setNewPasswordApi = async (
-    token: string,
-    email: string,
+    password_reset_token: string,
+    password: string,
 ) => {
     try {
         const response = await fetch(`${SETNEWPASSWORD}`, {
@@ -183,8 +181,8 @@ export const setNewPasswordApi = async (
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                email: email,
-                token: token
+                password: password,
+                password_reset_token: password_reset_token
             }),
         });
         if (!response.ok) {
@@ -638,7 +636,7 @@ export const confirmAccount = async (hash: string) => {
     }
 };
 
-export const saveFormData = async (data: TravelFormData): Promise<string> => {
+export const saveFormData = async (data: TravelFormData): Promise<TravelFormData> => {
     try {
         const token = await AsyncStorage.getItem('userToken'); // Получаем токен из AsyncStorage
 
@@ -662,7 +660,7 @@ export const saveFormData = async (data: TravelFormData): Promise<string> => {
         const responseData = await response.json();
         console.log('Данные успешно сохранены:', responseData);
 
-        return responseData.id; // Предполагаем, что сервер возвращает ID новой записи
+        return responseData; // Предполагаем, что сервер возвращает ID новой записи
     } catch (error) {
         console.error('Ошибка при создании формы:', error);
         throw error;

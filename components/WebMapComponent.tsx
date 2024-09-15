@@ -143,16 +143,20 @@ const WebMapComponent = ({
                                             style={styles.input}
                                         />
                                     </div>
+                                    {marker.id  && (
                                     <div style={styles.popupRow}>
-                                        <label>Изображение:</label>
+                                        <label>Изображение :</label>
                                         <ImageUploadComponent
                                             collection="travelImageAddress"
+                                            idTravel  = {marker.id}
                                             onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                         />
+
                                         {marker.image && (
                                             <img src={marker.image} alt="Превью" style={styles.imagePreview} />
                                         )}
                                     </div>
+                                    )}
                                     <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
                                         Удалить точку
                                     </button>
@@ -195,16 +199,20 @@ const WebMapComponent = ({
                                     style={styles.input}
                                 />
                             </div>
+
+                            {marker.id  && (
                             <div style={styles.markerRow}>
                                 <label>Изображение:</label>
                                 <ImageUploadComponent
                                     collection="travelImageAddress"
+                                    idTravel  = {marker.id}
                                     onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                 />
                                 {marker.image && (
                                     <img src={marker.image} alt="Превью" style={styles.imagePreview} />
                                 )}
                             </div>
+                            )}
                             <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
                                 Удалить точку
                             </button>

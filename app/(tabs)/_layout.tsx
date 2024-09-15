@@ -4,7 +4,7 @@ import {Tabs} from 'expo-router'
 import {Image, useColorScheme, useWindowDimensions} from 'react-native'
 import Footer from '@/components/Footer'
 import RenderRightMenu from '@/components/RenderRightMenu';
-import NewTravelScreen from "@/app/travel/new";
+import NewTravelScreen from "@/app/(tabs)/travel/new";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/

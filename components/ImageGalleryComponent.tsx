@@ -6,10 +6,11 @@ import { uploadImage } from '@/src/api/travels';
 
 interface GalleryUploadComponentProps {
     collection: string;
+    idTravel: string;
     maxImages?: number;
 }
 
-const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collection, maxImages = 10 }) => {
+const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collection,idTravel, maxImages = 10 }) => {
     const [images, setImages] = useState<string[]>([]);
     const [loading, setLoading] = useState<boolean[]>(Array(maxImages).fill(false));
     const [uploadMessages, setUploadMessages] = useState<string[]>(Array(maxImages).fill(''));
@@ -25,6 +26,7 @@ const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collect
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
+            formData.append('id_travel', idTravel);
 
             const response = await uploadImage(formData);
 
