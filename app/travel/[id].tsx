@@ -1,6 +1,11 @@
-import React from 'react';
-import UpsertTravel from '@/components/UpsertTravel';
+import React, { Suspense } from 'react';
+
+const UpsertTravel = React.lazy(() => import('@/components/UpsertTravel'));
 
 export default function EditTravelScreen() {
-  return <UpsertTravel />;
+  return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <UpsertTravel />
+      </Suspense>
+  );
 }
