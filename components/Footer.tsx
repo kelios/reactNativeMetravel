@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 
 const Footer: React.FC = () => {
@@ -18,17 +19,57 @@ const Footer: React.FC = () => {
         <View style={styles.linkContainer}>
           <TouchableOpacity
               onPress={() => {
-                navigation.navigate('about');
+                navigation.navigate('index');
               }}
+              style={styles.link}
           >
-            <Text style={styles.linkText}>О сайте</Text>
+            <Icon name="home" size={20} color="#ff9f5a" />
+            <Text style={styles.linkText}>Все путешествия</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('travelsby');
+              }}
+              style={styles.link}
+          >
+            <Icon name="globe" size={20} color="#ff9f5a" />
+            <Text style={styles.linkText}>Путешествуем по Беларуси</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('map');
+              }}
+              style={styles.link}
+          >
+            <Icon name="map" size={20} color="#ff9f5a" />
+            <Text style={styles.linkText}>Карта путешествий</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('travels/439');
+              }}
+              style={styles.link}
+          >
+            <Icon name="instagram" size={20} color="#ff9f5a" />
+            <Text style={styles.linkText}>Аккаунты в Instagram</Text>
           </TouchableOpacity>
           <TouchableOpacity
               onPress={() => {
                 navigation.navigate('contact');
               }}
+              style={styles.link}
           >
+            <Icon name="envelope" size={20} color="#ff9f5a" />
             <Text style={styles.linkText}>Обратная связь</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('about');
+              }}
+              style={styles.link}
+          >
+            <Icon name="info-circle" size={20} color="#ff9f5a" />
+            <Text style={styles.linkText}>О сайте</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.footerTextContainer}>
@@ -52,12 +93,19 @@ const getStyles = (windowsWidth: number) => {
     },
     linkContainer: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    link: {
+      flexDirection: 'row',
+      alignItems: 'center',
       marginBottom: 10,
     },
     linkText: {
       color: '#ff9f5a',
-      fontSize: 16,
+      fontSize: windowsWidth > 500 ? 16 : 14,
+      marginLeft: 8,
       textDecorationLine: 'underline',
     },
     footerTextContainer: {
@@ -65,7 +113,7 @@ const getStyles = (windowsWidth: number) => {
     },
     footerText: {
       color: '#bbb',
-      fontSize: 14,
+      fontSize: windowsWidth > 500 ? 16 : 14,
     },
   });
 };

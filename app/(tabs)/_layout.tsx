@@ -24,10 +24,10 @@ export default function TabLayout() {
                 screenOptions={{
                     tabBarStyle: {
                         width: '100%',
-                        padding: width > 500 ? 10 : 0,
+                        padding:  0,
                         position: 'absolute',
-                        bottom: width > 500 ? 30 : 20,
-                        height: width > 500 ? 50 : 80,
+                        bottom: 0,
+                        height: 0,
                     },
                 }}
             >
