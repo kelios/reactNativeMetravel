@@ -28,6 +28,7 @@ export type TravelCoords = {
     lng: string
     travelImageThumbUrl: string
     urlTravel: string
+    articleUrl?: string
 }
 
 export type TravelInfo = {

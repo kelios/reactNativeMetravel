@@ -28,25 +28,27 @@ const PointList: React.FC<PointListProps> = ({ points, onLayout }) => {
   const isLargeScreen = useMemo(() => width > 768, [width]);
 
   return (
-      <ScrollView style={[styles.pointListContainer, isLargeScreen && styles.pointListLargeContainer]} onLayout={onLayout}>
+      <ScrollView
+          style={[styles.pointListContainer, isLargeScreen && styles.pointListLargeContainer]}
+          onLayout={onLayout}
+      >
         {points.map((point) => (
             <Card key={point.id} style={[styles.pointItem, isLargeScreen && styles.pointItemLarge]}>
               <View style={[styles.pointContent, isLargeScreen && styles.pointContentLarge]}>
-                <Image
-                    source={{ uri: point.travelImageThumbUrl }}
-                    style={[styles.pointImage, isLargeScreen && styles.pointImageLarge]}
-                    resizeMode="cover"
-                />
-                <View style={[
-                  styles.description,
-                  isLargeScreen ? styles.descriptionLarge : { marginTop: 10 }
-                ]}>
+                {point.travelImageThumbUrl && (
+                    <Image
+                        source={{ uri: point.travelImageThumbUrl }}
+                        style={[styles.pointImage, isLargeScreen && styles.pointImageLarge]}
+                        resizeMode="cover"
+                    />
+                )}
+                <View style={styles.description}>
                   <Text style={styles.label}>Координаты места:</Text>
-                  <Text>{point.coord}</Text>
+                  <Text style={styles.text}>{point.coord}</Text>
                   <Text style={styles.label}>Адрес места:</Text>
-                  <Text>{point.address}</Text>
+                  <Text style={styles.text}>{point.address}</Text>
                   <Text style={styles.label}>Категория объекта:</Text>
-                  <Text>{point.categoryName}</Text>
+                  <Text style={styles.text}>{point.categoryName}</Text>
                 </View>
               </View>
             </Card>
@@ -58,11 +60,11 @@ const PointList: React.FC<PointListProps> = ({ points, onLayout }) => {
 const styles = StyleSheet.create({
   pointListContainer: {
     flexShrink: 1,
+    paddingHorizontal: wp(2),
   },
   pointListLargeContainer: {
     marginTop: 20,
-    margin: 10,
-    padding: 20,
+    paddingHorizontal: wp(4),
   },
   pointItem: {
     marginBottom: 15,
@@ -70,6 +72,10 @@ const styles = StyleSheet.create({
     elevation: 3,
     backgroundColor: '#fff',
     padding: wp(2),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   pointItemLarge: {
     flexDirection: 'row',
@@ -77,8 +83,7 @@ const styles = StyleSheet.create({
   },
   pointContent: {
     flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: 800,
+    alignItems: 'flex-start',
     flexShrink: 1,
   },
   pointContentLarge: {
@@ -87,11 +92,14 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: 'bold',
-    fontSize: 16,
-    marginVertical: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ff9f5a',
-    borderRadius: 4,
+    fontSize: 14,
+    color: '#00796b',
+    marginBottom: 4,
+  },
+  text: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
   },
   pointImage: {
     width: wp(25),
@@ -100,17 +108,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   pointImageLarge: {
-    width: wp(20), // Ограничиваем ширину изображения на больших экранах
+    width: wp(20),
     height: wp(20),
-    marginRight: 15, // Добавляем отступ справа
+    marginRight: 15,
   },
   description: {
     flex: 1,
-    marginLeft: 0,
-  },
-  descriptionLarge: {
-    flex: 1, // Занимает оставшееся пространство
-    marginLeft: 15, // Отступ между изображением и текстом
+    marginTop: 10,
   },
 });
 
