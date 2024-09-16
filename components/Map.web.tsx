@@ -165,6 +165,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   popupContent: {
+    padding:5,
     backgroundColor: '#fff',
     borderRadius: 8,
     shadowColor: '#000',
