@@ -27,11 +27,7 @@ import PopularTravelList from '@/components/PopularTravelList';
 
 const MapClientSideComponent = React.lazy(() => import('@/components/Map'));
 
-interface TravelDetailsProps {
-  id: number;
-}
-
-const TravelDetails: React.FC<TravelDetailsProps> = () => {
+const TravelDetails: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
   const { id } = useLocalSearchParams();
   const [travel, setTravel] = useState<Travel | null>(null);
@@ -39,17 +35,11 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   const isMobile = width <= 768;
 
   useEffect(() => {
-    if (isMobile) {
-      setMenuVisible(false);
-    } else {
-      setMenuVisible(true);
-    }
+    setMenuVisible(!isMobile);
   }, [isMobile]);
 
-  const initMenuVisible = !isMobile;
   const scrollRef = useRef<ScrollView>(null);
-
-  const [menuVisible, setMenuVisible] = useState(initMenuVisible);
+  const [menuVisible, setMenuVisible] = useState(!isMobile);
   const [anchors, setAnchors] = useState<{ [key: string]: number }>({});
 
   const toggleMenu = () => {
@@ -89,7 +79,12 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
   };
 
   if (!travel) {
-    return <ActivityIndicator />;
+    return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#935233" />
+          <Text style={styles.loadingText}>Загрузка данных...</Text>
+        </View>
+    );
   }
 
   const rendersideBar = () => {
@@ -112,7 +107,6 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
           ? travel.gallery
           : (travel.gallery || []).map((item) => item?.url);
 
-  // Проверка на наличие галереи и что это массив
   const hasGallery = Array.isArray(gallery) && gallery.length > 0;
 
   const styleHtml = `
@@ -159,7 +153,6 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
               <View style={styles.content}>
                 {isMobile && !menuVisible && (
                     <TouchableOpacity
-                        title="Меню"
                         style={styles.menuButtonContainer}
                         onPress={toggleMenu}
                     >
@@ -217,7 +210,7 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                                         p: { marginTop: 15, marginBottom: 0 },
                                         iframe: {
                                           height: 1500,
-                                          width: 680,
+                                          width: '100%',
                                           overflow: 'hidden',
                                           marginTop: 15,
                                           borderRadius: 5,
@@ -231,17 +224,13 @@ const TravelDetails: React.FC<TravelDetailsProps> = () => {
                         </Card>
                     )}
                     <View style={styles.mapBlock}>
-                      <Suspense fallback={<Text>Loading...</Text>}>
+                      <Suspense fallback={<Text>Загрузка карты...</Text>}>
                         <MapClientSideComponent travel={travel} />
                       </Suspense>
                     </View>
 
                     {travel?.travelAddress && (
-                        <ScrollView style={styles.pointListContainer}>
-                          {travel.travelAddress.map((point) => (
-                              <PointList points={[point]} key={point.id} onLayout={handleLayout('map')} />
-                          ))}
-                        </ScrollView>
+                        <PointList points={travel.travelAddress} onLayout={handleLayout('map')} />
                     )}
 
                     {travel?.travelAddress && (
@@ -268,9 +257,20 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: 'white',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
+  },
   mapBlock: {
-    width: 800,
-    height: 800,
+    width: '100%',
+    height: 500,
+    marginBottom: 20,
   },
   container: {
     flex: 1,
@@ -278,26 +278,30 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    width: '80%',
+    width: '100%',
     backgroundColor: 'white',
   },
   contentContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 20,
   },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
     maxWidth: 800,
     marginHorizontal: 'auto',
+    padding: 20,
   },
   card: {
-    margin: 20,
+    width: '100%',
+    marginVertical: 20,
     elevation: 5,
     backgroundColor: 'white',
     borderRadius: 10,
-    maxWidth: 800,
   },
   overlay: {
     flex: 1,
@@ -312,6 +316,11 @@ const styles = StyleSheet.create({
   sideMenu: {
     padding: 20,
     backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   mobileSideMenu: {
     width: '100%',
@@ -330,43 +339,17 @@ const styles = StyleSheet.create({
     width: 300,
     backgroundColor: 'white',
   },
-  applyButton: {
-    backgroundColor: '#6aaaaa',
-    padding: 10,
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  applyButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    backgroundColor: 'gray',
-    padding: 10,
-    alignItems: 'center',
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
   menuButtonContainer: {
     width: '100%',
     backgroundColor: '#6aaaaa',
-  },
-  menuButton: {
-    backgroundColor: '#6aaaaa',
+    paddingVertical: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+    alignItems: 'center',
   },
   linkText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    padding: 15,
-  },
-  menuButtonText: {
-    color: 'white',
     fontWeight: 'bold',
   },
   pointListContainer: {

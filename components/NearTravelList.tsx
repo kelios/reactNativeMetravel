@@ -1,83 +1,100 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState } from 'react';
 import {
   View,
   FlatList,
-  Dimensions,
   StyleSheet,
   useWindowDimensions,
   ActivityIndicator,
-} from 'react-native'
-import { Travels, Travel } from '@/src/types/types'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
-import {
-  useFonts,
-  PlayfairDisplay_400Regular,
-} from '@expo-google-fonts/playfair-display'
-import { fetchTravelsNear } from '@/src/api/travels'
-import TravelTmlRound from '@/components/TravelTmlRound'
-import { Title } from 'react-native-paper'
+  Text,
+} from 'react-native';
+import { Travel } from '@/src/types/types';
+import { fetchTravelsNear } from '@/src/api/travels';
+import TravelTmlRound from '@/components/TravelTmlRound';
+import { Title } from 'react-native-paper';
 
 type NearTravelListProps = {
-  travel: Travel
-  onLayout?: (event: any) => void
-}
-const { width, height } = Dimensions.get('window')
+  travel: Travel;
+  onLayout?: (event: any) => void;
+};
 
 const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
-  const [travelsNear, setTravelsNear] = useState<Travel[]>([])
-  const { width } = useWindowDimensions()
-  const isMobile = width <= 768
-  const numCol = isMobile ? 1 : 3
-  const [isLoading, setIsLoading] = useState(false)
+  const [travelsNear, setTravelsNear] = useState<Travel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { width } = useWindowDimensions();
+  const isMobile = width <= 768;
+  const numCol = isMobile ? 1 : 3;
 
   useEffect(() => {
+    setIsLoading(true); // Start loading
     fetchTravelsNear(Number(travel.id))
-      .then((travelData) => {
-        setTravelsNear(travelData)
-        setIsLoading(false)
-      })
-      .catch((error) => {
-        console.error('Failed to fetch travel data:', error)
-      })
-  }, [travel])
+        .then((travelData) => {
+          setTravelsNear(travelData);
+          setIsLoading(false);
+        })
+        .catch((error) => {
+          console.error('Failed to fetch travel data:', error);
+          setIsLoading(false);
+        });
+  }, [travel]);
 
   if (isLoading) {
-    return <ActivityIndicator />
+    return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#935233" />
+          <Text style={styles.loadingText}>Загрузка маршрутов рядом...</Text>
+        </View>
+    );
   }
 
   return (
-    <View style={styles.container} onLayout={onLayout}>
-      <Title style={styles.linkText}>
-        Рядом (~60км) можно еще посмотреть...
-      </Title>
-      <FlatList
-        scrollEnabled={false}
-        showsHorizontalScrollIndicator={false}
-        data={travelsNear}
-        renderItem={({ item }) => <TravelTmlRound travel={item} />}
-        keyExtractor={(item) => item.id.toString()}
-        horizontal={false}
-        numColumns={numCol}
-        key={numCol}
-      />
-    </View>
-  )
-}
+      <View style={styles.container} onLayout={onLayout}>
+        <Title style={styles.title}>
+          Рядом (~60км) можно еще посмотреть...
+        </Title>
+        <FlatList
+            contentContainerStyle={styles.flatListContent}
+            showsHorizontalScrollIndicator={false}
+            data={travelsNear}
+            renderItem={({ item }) => <TravelTmlRound travel={item} />}
+            keyExtractor={(item) => item.id.toString()}
+            numColumns={numCol}
+            key={numCol} // Это нужно для перерасчета колонок при изменении количества
+        />
+      </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
-    // justifyContent: 'center',
-    // alignItems: 'center',
-    margin: 5,
+    marginTop: 20,
+    marginBottom: 20,
+    paddingHorizontal: 20,
     width: '100%',
   },
-  linkText: {
-    paddingTop: 50,
-    paddingBottom: 50,
-    color: '#935233', // Color for the link (iOS blue)
-    borderBottomColor: 'black',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-})
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#935233',
+    marginBottom: 20,
+    textAlign: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#935233',
+    paddingBottom: 10,
+  },
+  flatListContent: {
+    justifyContent: 'space-between',
+  },
+});
 
-export default NearTravelList
+export default NearTravelList;

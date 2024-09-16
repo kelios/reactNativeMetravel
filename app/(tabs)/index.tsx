@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useCallback } from 'react'
 import {
   StyleSheet,
   FlatList,
@@ -10,7 +11,6 @@ import {
   Pressable,
 } from 'react-native'
 import TravelListItem from '@/components/TravelListItem'
-import React, { useEffect, useState, useCallback } from 'react'
 import { Travels } from '@/src/types/types'
 import {
   fetchTravels,
@@ -23,11 +23,6 @@ import { DataTable } from 'react-native-paper'
 import { SearchBar, Button } from 'react-native-elements'
 import MultiSelect from 'react-native-multiple-select'
 import { useLocalSearchParams } from 'expo-router'
-
-interface Category {
-  id: string
-  name: string
-}
 
 interface Filters {
   countries: string[]
@@ -53,7 +48,7 @@ interface FilterValue {
   year: string
 }
 
-export default function TabOneScreen() {
+export default function TravelScreen() {
   const initialPage = 0
   const windowWidth = Dimensions.get('window').width
   const styles = getStyles(windowWidth)
@@ -86,7 +81,7 @@ export default function TabOneScreen() {
   const isMobile = windowWidth <= 768
   const initMenuVisible = !isMobile
 
-  const [menuVisible, setMenuVisible] = useState(initMenuVisible) // Состояние видимости меню
+  const [menuVisible, setMenuVisible] = useState(initMenuVisible)
 
   const [travels, setTravels] = useState<Travels[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -114,8 +109,8 @@ export default function TabOneScreen() {
     setIsLoading(true)
     const newData = await fetchTravels(currentPage, itemsPerPage, search, {
       user_id: user_id,
-      moderation:1,
-      publish:1,
+      moderation: 1,
+      publish: 1,
     })
     setTravels(newData)
     setIsLoading(false)
@@ -136,7 +131,7 @@ export default function TabOneScreen() {
       transports: newData?.transports,
     }))
     setIsLoadingFilters(false)
-  }, [isLoadingFilters, filters])
+  }, [isLoadingFilters])
 
   const getFiltersCountry = useCallback(async () => {
     if (isLoadingFilters) return
@@ -147,7 +142,7 @@ export default function TabOneScreen() {
       countries: country,
     }))
     setIsLoadingFilters(false)
-  }, [isLoadingFilters, filters])
+  }, [isLoadingFilters])
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
@@ -157,10 +152,10 @@ export default function TabOneScreen() {
     if (isLoading) return
     setIsLoading(true)
     const newData = await fetchFiltersTravel(
-      currentPage,
-      itemsPerPage,
-      search,
-      filterValue,
+        currentPage,
+        itemsPerPage,
+        search,
+        filterValue
     )
     setTravels(newData)
     setIsLoading(false)
@@ -174,12 +169,12 @@ export default function TabOneScreen() {
   }
 
   const onSelectedItemsChange =
-    (field: keyof FilterValue) => (selectedItems: string[]) => {
-      setFilterValue({
-        ...filterValue,
-        [field]: selectedItems,
-      })
-    }
+      (field: keyof FilterValue) => (selectedItems: string[]) => {
+        setFilterValue({
+          ...filterValue,
+          [field]: selectedItems,
+        })
+      }
 
   const handleTextFilterChange = (value: string) => {
     setFilterValue({
@@ -203,30 +198,28 @@ export default function TabOneScreen() {
   const renderFilters = () => {
     if (menuVisible) {
       return (
-        <View style={{ backgroundColor: 'white' }}>
-          <MultiSelect
-            hideTags
-            items={filters?.countries || []}
-            uniqueKey="country_id"
-            onSelectedItemsChange={onSelectedItemsChange('countries')}
-            selectedItems={filterValue?.countries}
-            isLoading={isLoadingFilters}
-            selectText="Выберите страны..."
-            searchInputPlaceholderText="Выберите страны..."
-            onChangeInput={(text) => console.log(text)}
-            styleListContainer={{ height: 200 }}
-            //  altFontFamily="ProximaNova-Light"
-            tagRemoveIconColor="#CCC"
-            tagBorderColor="#CCC"
-            tagTextColor="#CCC"
-            selectedItemTextColor="#CCC"
-            selectedItemIconColor="#CCC"
-            itemTextColor="#000"
-            displayKey="title_ru"
-            searchInputStyle={{ color: '#CCC' }}
-            submitButtonColor="#CCC"
-            submitButtonText="Submit"
-          />
+          <View style={{ backgroundColor: 'white' }}>
+            <MultiSelect
+                hideTags
+                items={filters?.countries || []}
+                uniqueKey="country_id"
+                onSelectedItemsChange={onSelectedItemsChange('countries')}
+                selectedItems={filterValue?.countries}
+                isLoading={isLoadingFilters}
+                selectText="Выберите страны..."
+                searchInputPlaceholderText="Выберите страны..."
+                styleListContainer={{ height: 200 }}
+                tagRemoveIconColor="#CCC"
+                tagBorderColor="#CCC"
+                tagTextColor="#CCC"
+                selectedItemTextColor="#CCC"
+                selectedItemIconColor="#CCC"
+                itemTextColor="#000"
+                displayKey="title_ru"
+                searchInputStyle={{ color: '#CCC' }}
+                submitButtonColor="#CCC"
+                submitButtonText="Применить"
+            />
 
           <MultiSelect
             hideTags
@@ -397,27 +390,26 @@ export default function TabOneScreen() {
             submitButtonColor="#CCC"
             submitButtonText="Submit"
           />
+            <TextInput
+                style={styles.input}
+                placeholder="Год"
+                value={filterValue?.year}
+                onChangeText={handleTextFilterChange}
+                keyboardType="numeric"
+            />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Год"
-            value={filterValue?.year}
-            onChangeText={handleTextFilterChange}
-            keyboardType="numeric"
-          />
-
-          <TouchableOpacity
-            style={styles.applyButton}
-            onPress={handleApplyFilters}
-          >
-            <Text style={styles.applyButtonText}>Поиск</Text>
-          </TouchableOpacity>
-          {isMobile && (
-            <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
-              <Text style={styles.closeButtonText}>Закрыть</Text>
+            <TouchableOpacity
+                style={styles.applyButton}
+                onPress={handleApplyFilters}
+            >
+              <Text style={styles.applyButtonText}>Поиск</Text>
             </TouchableOpacity>
-          )}
-        </View>
+            {isMobile && (
+                <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
+                  <Text style={styles.closeButtonText}>Закрыть</Text>
+                </TouchableOpacity>
+            )}
+          </View>
       )
     }
     return null
@@ -428,74 +420,73 @@ export default function TabOneScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        {isMobile && menuVisible && (
-          <Pressable onPress={closeMenu} style={styles.overlay} />
-        )}
-        {isMobile ? (
-          <View
-            style={[
-              styles.sideMenu,
-              styles.mobileSideMenu,
-              menuVisible && styles.visibleMobileSideMenu,
-            ]}
-          >
-            {renderFilters()}
-          </View>
-        ) : (
-          <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-            {renderFilters()}
-          </View>
-        )}
-        <View style={styles.content}>
-          {isMobile && !menuVisible && (
-            <Button
-              title="Фильтры"
-              onPress={toggleMenu}
-              containerStyle={styles.menuButtonContainer} // Стили контейнера
-              buttonStyle={styles.menuButton} // Стили кнопки
-              titleStyle={styles.menuButtonText} // Стили текста на кнопке
-            />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          {isMobile && menuVisible && (
+              <Pressable onPress={closeMenu} style={styles.overlay} />
           )}
-          <View style={styles.containerSearch}>
-            <SearchBar
-              placeholder="Введите ключевые слова или фразы, которые описывают то, что вы ищете. 
-          Например, если вы ищете пляжи, вы можете ввести пляж, море, горы и т.д."
-              onChangeText={updateSearch}
-              value={search}
-              lightTheme
-              round
-              containerStyle={styles.searchBarContainer}
-              inputContainerStyle={{ backgroundColor: 'white' }}
-              inputStyle={{ backgroundColor: 'white', fontSize: 14 }}
-            />
-          </View>
-          <FlatList
-            data={travels?.data}
-            renderItem={({ item }) => <TravelListItem travel={item} />}
-            keyExtractor={(item) => item.id.toString()}
-          />
-          <View style={styles.containerPaginator}>
-            <DataTable>
-              <DataTable.Pagination
-                page={currentPage}
-                numberOfPages={Math.ceil(travels?.total / itemsPerPage) ?? 20}
-                onPageChange={(page) => handlePageChange(page)}
-                label={`${currentPage + 1} of ${Math.ceil(
-                  travels?.total / itemsPerPage,
-                )}`}
-                showFastPaginationControls
-                numberOfItemsPerPageList={itemsPerPageOptions}
-                numberOfItemsPerPage={itemsPerPage}
-                onItemsPerPageChange={setItemsPerPage}
-                style={{ flexWrap: 'nowrap' }}
+          {isMobile ? (
+              <View
+                  style={[
+                    styles.sideMenu,
+                    styles.mobileSideMenu,
+                    menuVisible && styles.visibleMobileSideMenu,
+                  ]}
+              >
+                {renderFilters()}
+              </View>
+          ) : (
+              <View style={[styles.sideMenu, styles.desktopSideMenu]}>
+                {renderFilters()}
+              </View>
+          )}
+          <View style={styles.content}>
+            {isMobile && !menuVisible && (
+                <Button
+                    title="Фильтры"
+                    onPress={toggleMenu}
+                    containerStyle={styles.menuButtonContainer}
+                    buttonStyle={styles.menuButton}
+                    titleStyle={styles.menuButtonText}
+                />
+            )}
+            <View style={styles.containerSearch}>
+              <SearchBar
+                  placeholder="Введите ключевые слова..."
+                  onChangeText={updateSearch}
+                  value={search}
+                  lightTheme
+                  round
+                  containerStyle={styles.searchBarContainer}
+                  inputContainerStyle={{ backgroundColor: 'white' }}
+                  inputStyle={{ backgroundColor: 'white', fontSize: 14 }}
               />
-            </DataTable>
+            </View>
+            <FlatList
+                data={travels?.data}
+                renderItem={({ item }) => <TravelListItem travel={item} />}
+                keyExtractor={(item) => item.id.toString()}
+            />
+            <View style={styles.containerPaginator}>
+              <DataTable>
+                <DataTable.Pagination
+                    page={currentPage}
+                    numberOfPages={Math.ceil(travels?.total / itemsPerPage) ?? 20}
+                    onPageChange={(page) => handlePageChange(page)}
+                    label={`${currentPage + 1} of ${Math.ceil(
+                        travels?.total / itemsPerPage,
+                    )}`}
+                    showFastPaginationControls
+                    numberOfItemsPerPageList={itemsPerPageOptions}
+                    numberOfItemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                    style={{ flexWrap: 'nowrap' }}
+                />
+              </DataTable>
+            </View>
           </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
   )
 }
 
@@ -531,16 +522,12 @@ const getStyles = (windowWidth: number) => {
     searchBarContainer: {
       backgroundColor: 'white',
       flexDirection: 'row',
-      //  flex: 1,
-      // height:200,
       justifyContent: 'center',
       alignItems: 'center',
       alignContent: 'center',
       borderBottomColor: 'transparent',
       borderTopColor: 'transparent',
     },
-
-    //боковое меню
     overlay: {
       flex: 1,
       backgroundColor: 'white',
@@ -572,12 +559,6 @@ const getStyles = (windowWidth: number) => {
       width: 300,
       backgroundColor: 'white',
     },
-    filterHeader: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 10,
-      backgroundColor: 'white',
-    },
     input: {
       marginBottom: 10,
       borderWidth: 1,
@@ -606,20 +587,11 @@ const getStyles = (windowWidth: number) => {
       color: 'white',
       fontWeight: 'bold',
     },
-
     menuButtonContainer: {
-      //alignSelf: 'flex-start', // Позиционирование кнопки
-      //flex:1,
       width: 600,
-      // marginLeft: 20, // Отступ слева
-      // marginTop: 20, // Отступ сверху
     },
     menuButton: {
-      // flex: 1,
       backgroundColor: '#6aaaaa',
-      // paddingHorizontal: 20,
-      //  paddingVertical: 10,
-      //  borderRadius: 5,
     },
     menuButtonText: {
       color: 'white',
