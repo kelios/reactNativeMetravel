@@ -1,20 +1,31 @@
-import { View, Pressable, Dimensions, StyleSheet, TouchableOpacity } from 'react-native'
-import { Travel } from '@/src/types/types'
-import * as Linking from 'expo-linking'
-import { Card, Title, Paragraph, Text } from 'react-native-paper'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
-import { useRoute } from "@react-navigation/native";
+import React from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
+import * as Linking from 'expo-linking';
+import { Card, Title, Paragraph, Text } from 'react-native-paper';
+import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { useRoute } from '@react-navigation/native';
+import { Travel } from '@/src/types/types';
 
 type TravelListItemProps = {
-  travel: Travel,
-  currentUserId: string,
-  onEditPress: (id: string) => void,
-  onDeletePress: (id: string) => void,
-}
+  travel: Travel;
+  currentUserId: string;
+  onEditPress: (id: string) => void;
+  onDeletePress: (id: string) => void;
+};
 
-const { width } = Dimensions.get('window')
+const { width } = Dimensions.get('window');
 
-const TravelListItem = ({ travel, currentUserId, onEditPress, onDeletePress }: TravelListItemProps) => {
+const TravelListItem = ({
+                          travel,
+                          currentUserId,
+                          onEditPress,
+                          onDeletePress,
+                        }: TravelListItemProps) => {
   const {
     name,
     slug,
@@ -23,18 +34,18 @@ const TravelListItem = ({ travel, currentUserId, onEditPress, onDeletePress }: T
     countryName,
     userName,
     countUnicIpView,
-  } = travel
+  } = travel;
 
   const route = useRoute();
   const isButtonVisible = route.name === 'metravel';
 
   const Urltravel = Linking.createURL(`travels/${slug}`, {
     queryParams: { id: id },
-  })
+  });
 
   return (
       <View style={styles.container}>
-        <Pressable onPress={() => Linking.openURL(Urltravel)}>
+        <TouchableOpacity onPress={() => Linking.openURL(Urltravel)} activeOpacity={0.8}>
           <Card style={styles.card}>
             <View style={styles.imageWrapper}>
               <Card.Cover
@@ -52,27 +63,33 @@ const TravelListItem = ({ travel, currentUserId, onEditPress, onDeletePress }: T
 
               {isButtonVisible && (
                   <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.editButton} onPress={() => onEditPress(id)}>
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => onEditPress(id)}
+                    >
                       <Text style={styles.buttonText}>✎</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteButton} onPress={() => onDeletePress(id)}>
+                    <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => onDeletePress(id)}
+                    >
                       <Text style={styles.buttonText}>🗑</Text>
                     </TouchableOpacity>
                   </View>
               )}
             </Card.Content>
           </Card>
-        </Pressable>
+        </TouchableOpacity>
       </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 10,
-    width: '100%',
-    fontFamily: 'PlayfairDisplay_400Regular',
-    fontSize: 40,
+    flex: 1,
+    alignItems: 'center', // Центрирование по горизонтали
+    justifyContent: 'center', // Центрирование по вертикали
+    paddingVertical: 20,
   },
   card: {
     borderRadius: 10,
@@ -80,18 +97,17 @@ const styles = StyleSheet.create({
     padding: wp(1.5),
     marginHorizontal: wp(1.5),
     maxWidth: 600,
+    overflow: 'hidden', // Чтобы углы обрезались
   },
   imageWrapper: {
     flex: width < 600 ? 0 : 1,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
     overflow: 'hidden',
     alignItems: 'center',
   },
   image: {
-    aspectRatio: 1 / 1,
+    aspectRatio: 1,
     width: '100%',
-    height: width < 600 ? 340 : 600,
+    height: width < 600 ? wp(80) : 600, // Адаптивная высота
   },
   paragraphLeft: {
     marginLeft: wp(1.5),
@@ -121,6 +137,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
   },
-})
+});
 
-export default TravelListItem
+export default TravelListItem;

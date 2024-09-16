@@ -1,110 +1,109 @@
-import React from 'react'
-import { StatusBar } from 'expo-status-bar'
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import {
-  Platform,
   StyleSheet,
   Text,
   View,
   Dimensions,
-  Button,
   Linking,
-  Image,
+  ImageBackground,
   TouchableOpacity,
-} from 'react-native'
-import { Card, Title, Paragraph } from 'react-native-paper'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
-import { Stack } from 'expo-router'
+} from 'react-native';
+import { Title, Paragraph } from 'react-native-paper';
 
-const { width, height } = Dimensions.get('window')
+const { width } = Dimensions.get('window');
+
 export default function AboutScreen() {
   const sendMail = () => {
-    const email = 'info@metravel.by'
-    const subject = 'Info metravel.by'
-    const body = 'Добрый день!'
-    const url = `mailto:${email}?subject=${encodeURIComponent(
-      subject,
-    )}&body=${encodeURIComponent(body)}`
+    const email = 'info@metravel.by';
+    const subject = 'Info metravel.by';
+    const body = 'Добрый день!';
+    const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(url)
-        } else {
-          console.log("Don't know how to open this URL:", url)
-        }
-      })
-      .catch((err) => console.error('An error occurred', err))
-  }
+        .then((supported) => {
+          if (supported) {
+            return Linking.openURL(url);
+          } else {
+            console.log("Don't know how to open this URL:", url);
+          }
+        })
+        .catch((err) => console.error('An error occurred', err));
+  };
 
   return (
-    <View>
-      <Image
-        source={{ uri: '/assets/images/media/slider/about.jpg' }}
-        style={styles.topImage}
-      />
       <View style={styles.container}>
-        <View style = {styles.aboutText}>
-          <Title>METRAVEL</Title>
-          <Paragraph>
-            MeTravel.by – это некоммерческий проект для путешественников.{' '}
-          </Paragraph>
-          <Paragraph>
-            Для того что бы поделиться своими путешествиями:
-          </Paragraph>
-          <Paragraph>1) Регистрируемся</Paragraph>
-          <Paragraph>
-            2) Делимся своими воспоминаниями Новое путешествие
-          </Paragraph>
-          <Paragraph>3) Ставим статус Опубликовать.</Paragraph>
-          <Paragraph>
-            4) Совсем немного (в течении 24 часов) ожидаем модерации.
-          </Paragraph>
-          <Paragraph>
-            5) Если хотите, что бы ваша статья была опубликована в нашем
-            instagram, пишите в директ Старт проекта июнь 2020.
-          </Paragraph>
-          <Paragraph>
-            Использование материала и перепечатка, возможны только с разрешения
-            владельца статьи. Отзывы и любые идеи можно присылать на почту
-          </Paragraph>
-
-          <TouchableOpacity onPress={sendMail}>
-            <Text style={styles.link}> info@metravel.by </Text>
-          </TouchableOpacity>
-        </View>
-        <Image
-          source={{ uri: '/assets/images/media/slider/main2.jpg' }}
-          style={styles.image}
-        />
+        <StatusBar style="dark" />
+        <ImageBackground
+            source={{ uri: '/assets/images/media/slider/about.jpg' }}
+            style={styles.backgroundImage}
+        >
+          <View style={styles.content}>
+            <View style={styles.aboutText}>
+              <Title style={styles.title}>METRAVEL</Title>
+              <Paragraph style={styles.paragraph}>
+                MeTravel.by – это некоммерческий проект для путешественников.
+              </Paragraph>
+              <Paragraph style={styles.paragraph}>
+                Для того чтобы поделиться своими путешествиями:
+              </Paragraph>
+              <Paragraph style={styles.paragraph}>1) Регистрируемся</Paragraph>
+              <Paragraph style={styles.paragraph}>
+                2) Делимся своими воспоминаниями, создаем новое путешествие
+              </Paragraph>
+              <Paragraph style={styles.paragraph}>3) Ставим статус "Опубликовать".</Paragraph>
+              <Paragraph style={styles.paragraph}>
+                4) Ожидаем модерации (в течение 24 часов).
+              </Paragraph>
+              <Paragraph style={styles.paragraph}>
+                5) Если хотите, чтобы ваша статья была опубликована в нашем Instagram, пишите в директ. Старт проекта июнь 2020.
+              </Paragraph>
+              <Paragraph style={styles.paragraph}>
+                Использование материала и перепечатка возможны только с разрешения владельца статьи. Отзывы и любые идеи можно присылать на почту:
+              </Paragraph>
+              <TouchableOpacity onPress={sendMail}>
+                <Text style={styles.link}>info@metravel.by</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ImageBackground>
       </View>
-    </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row', // This makes the child elements (Image and Text) sit side by side
-    alignItems: 'center', // This vertically aligns the child items in the middle
-    padding: 50,
+    flex: 1,
   },
-  image: {
-    width: '50%',
-    height: 500,
-    marginRight: 10, // Adds some space between the image and the text
-  },
-  topImage: {
+  backgroundImage: {
+    flex: 1,
     width: '100%',
-    height: 300,
+    height: '100%',
+    justifyContent: 'center', // Centers the content vertically
+    padding: 20,
   },
-  text: {
+  content: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // White background with slight transparency
+    borderRadius: 10,
+    padding: 20,
+    marginBottom: 20, // Add margin bottom for spacing
+  },
+  aboutText: {
     padding: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  paragraph: {
     fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 10,
   },
   link: {
     color: '#4b7c6f',
     fontSize: 16,
+    textDecorationLine: 'underline',
   },
-  aboutText:{
-    padding:20,
-  }
-})
+});

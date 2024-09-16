@@ -3,7 +3,7 @@ import {
     StyleSheet,
     View,
     Dimensions,
-    Image,
+    ImageBackground,
     TextInput,
     TouchableOpacity,
     Text,
@@ -69,11 +69,11 @@ export default function Login() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <ScrollView contentContainerStyle={styles.scrollViewContent}>
-                <View style={styles.imageContainer}>
-                    <Image
-                        source={{ uri: '/assets/images/media/slider/about.jpg' }}
-                        style={styles.backgroundImage}
-                    />
+                <ImageBackground
+                    source={{ uri: '/assets/images/media/slider/about.jpg' }}
+                    style={styles.backgroundImage}
+                    blurRadius={3} // Размытие для фона
+                >
                     <View style={styles.formContainer}>
                         <Card style={styles.card}>
                             <Card.Content>
@@ -104,7 +104,7 @@ export default function Login() {
                             </Card.Content>
                         </Card>
                     </View>
-                </View>
+                </ImageBackground>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -113,43 +113,36 @@ export default function Login() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'white',
     },
     scrollViewContent: {
         flexGrow: 1,
     },
-    imageContainer: {
-        width: '100%',
-        height: height * 0.5, // Контейнер для изображения и формы занимает половину экрана
-        alignItems: 'center',
-        justifyContent: 'center', // Центрирование формы по вертикали
-        position: 'relative',
-    },
     backgroundImage: {
+        flex: 1,
+        justifyContent: 'center', // Центрирование формы по вертикали
+        alignItems: 'center', // Центрирование формы по горизонтали
         width: '100%',
-        height: '100%', // Изображение занимает весь контейнер
-        position: 'absolute', // Абсолютное позиционирование для наложения формы
-        top: 0,
-        left: 0,
+        height: height, // Высота изображения равна высоте экрана
     },
     formContainer: {
-        width: '50%', // Форму делаем немного уже, чтобы была по центру
+        width: '80%', // Уменьшаем ширину формы для центрирования
+        maxWidth: 400,
     },
     card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Полупрозрачный фон формы
-        borderRadius: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)', // Полупрозрачный фон формы
+        borderRadius: 12,
         padding: 20,
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3, // Для теней на Android
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 5, // Для теней на Android
     },
     input: {
-        marginBottom: 20,
+        marginBottom: 15,
         borderWidth: 1,
         borderColor: '#ddd',
-        borderRadius: 5,
-        padding: 10,
+        borderRadius: 8,
+        padding: 12,
         width: '100%',
         fontSize: 16,
         backgroundColor: '#fff',
@@ -157,16 +150,20 @@ const styles = StyleSheet.create({
     applyButton: {
         backgroundColor: '#6aaaaa',
         width: '100%',
+        paddingVertical: 12,
+        borderRadius: 8,
     },
     forgotPasswordText: {
         color: '#0066ff',
         textDecorationLine: 'underline',
-        marginTop: 10,
+        marginTop: 15,
         textAlign: 'center',
+        fontSize: 16,
     },
     errorText: {
         color: 'red',
-        marginBottom: 10,
+        marginBottom: 15,
         textAlign: 'center',
+        fontSize: 16,
     },
 });

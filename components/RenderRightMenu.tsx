@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Button, Menu } from 'react-native-paper';
+import { Button, Menu, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useFilters } from '@/providers/FiltersProvider';
@@ -10,34 +10,36 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 function RenderRightMenu() {
     const navigation = useNavigation();
     const [visible, setVisible] = useState(false);
-    const openMenu = () => setVisible(true);
-    const closeMenu = () => setVisible(false);
-    const { updateFilters } = useFilters();
     const [username, setUsername] = useState('');
     const { isAuthenticated, setIsAuthenticated, logout } = useAuth();
-
-    const checkAuthentication = async () => {
-        const token = await AsyncStorage.getItem('userToken');
-        setIsAuthenticated(!!token);
-    };
+    const { updateFilters } = useFilters();
 
     useEffect(() => {
-        checkAuthentication();
-    }, []);
-
-    useEffect(() => {
+        const checkAuthentication = async () => {
+            const token = await AsyncStorage.getItem('userToken');
+            setIsAuthenticated(!!token);
+        };
         const getUsername = async () => {
             const storedUsername = await AsyncStorage.getItem('userName');
             if (storedUsername) {
                 setUsername(storedUsername);
             }
         };
+        checkAuthentication();
         getUsername();
     }, []);
 
+    const openMenu = () => setVisible(true);
+    const closeMenu = () => setVisible(false);
+
     return (
         <View style={styles.container}>
-            {username && <Text style={styles.username}>{username}</Text>}
+            {username && (
+                <View style={styles.userContainer}>
+                    <Icon name="account-circle" size={24} color="#fff" />
+                    <Text style={styles.username}>{username}</Text>
+                </View>
+            )}
             <Menu
                 visible={visible}
                 onDismiss={closeMenu}
@@ -47,7 +49,7 @@ function RenderRightMenu() {
                     </Button>
                 }
             >
-                {!isAuthenticated && (
+                {!isAuthenticated ? (
                     <>
                         <Menu.Item
                             onPress={() => {
@@ -55,7 +57,7 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Войти"
-                            icon="login"
+                            icon={() => <Icon name="login" size={20} color="#000" />}
                         />
                         <Menu.Item
                             onPress={() => {
@@ -63,11 +65,10 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Зарегистрироваться"
-                            icon="account-plus"
+                            icon={() => <Icon name="account-plus" size={20} color="#000" />}
                         />
                     </>
-                )}
-                {isAuthenticated && (
+                ) : (
                     <>
                         <Menu.Item
                             onPress={() => {
@@ -76,16 +77,18 @@ function RenderRightMenu() {
                                 closeMenu();
                             }}
                             title="Мои путешествия"
-                            icon="earth"
+                            icon={() => <Icon name="earth" size={20} color="#000" />}
                         />
+                        <Divider />
                         <Menu.Item
                             onPress={() => {
                                 navigation.navigate('travel/new');
                                 closeMenu();
                             }}
                             title="Добавить путешествие"
-                            icon="map-plus"
+                            icon={() => <Icon name="map-plus" size={20} color="#000" />}
                         />
+                        <Divider />
                         <Menu.Item
                             onPress={async () => {
                                 await logout();
@@ -93,7 +96,7 @@ function RenderRightMenu() {
                                 navigation.navigate('index');
                             }}
                             title="Выход"
-                            icon="logout"
+                            icon={() => <Icon name="logout" size={20} color="#000" />}
                         />
                     </>
                 )}
@@ -109,10 +112,20 @@ const styles = StyleSheet.create({
         paddingRight: 10,
         alignItems: 'center',
     },
+    userContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#6aaaaa', // Цвет фона, можно заменить на цвет сайта
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 20,
+        marginRight: 10,
+    },
     username: {
         fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 10,
+        fontWeight: '600',
+        color: '#fff',
+        marginLeft: 5,
     },
     menuButton: {
         backgroundColor: '#f0f0f0',
