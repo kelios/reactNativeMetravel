@@ -5,7 +5,7 @@ import {
     View,
     ActivityIndicator,
     Dimensions,
-    Pressable,
+    Pressable, FlatList,
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
 import TravelListComponent from '@/components/TravelListComponent';
@@ -15,12 +15,13 @@ import {
     fetchTravels,
     fetchFilters,
     fetchFiltersTravel,
-    fetchFiltersCountry,
+    fetchFiltersCountry, deleteTravel,
 } from '@/src/api/travels';
 import { useLocalSearchParams } from 'expo-router';
 import { SearchBar, Button } from 'react-native-elements';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {useRoute} from "@react-navigation/native";
+import TravelListItem from "@/components/TravelListItem";
 
 export default function ListTravel() {
     const initialPage = 0;
@@ -107,6 +108,13 @@ export default function ListTravel() {
             }
         }
 
+        if(user_id){
+            param = {
+                ...param,  // Сохраняем все существующие свойства param
+                user_id: user_id // Добавляем или обновляем свойство user_id
+            };
+        }
+
         const newData = await fetchTravels(currentPage, itemsPerPage, search, param);
         setTravels(newData);
         setIsLoading(false);
@@ -183,6 +191,39 @@ export default function ListTravel() {
         setMenuVisible(false);
     };
 
+
+    const handleEdit = (id: string) => {
+        // Переход на страницу редактирования с передачей id путешествия
+        navigation.navigate('travel/'+id)
+    }
+
+    const handleDelete = async (id: string) => {
+        try {
+            // Подтверждение удаления
+            Alert.alert(
+                "Удаление",
+                "Вы уверены, что хотите удалить это путешествие?",
+                [
+                    {
+                        text: "Отмена",
+                        style: "cancel"
+                    },
+                    {
+                        text: "Удалить",
+                        onPress: async () => {
+                            // Вызов API для удаления путешествия
+                            await deleteTravel(id)
+                            // Обновление списка путешествий
+                            setTravels((prevTravels) => prevTravels.filter(travel => travel.id !== id))
+                        }
+                    }
+                ]
+            )
+        } catch (error) {
+            console.error("Ошибка при удалении путешествия:", error)
+        }
+    }
+
     if (!filters || !travels?.data) {
         return <ActivityIndicator />;
     }
@@ -246,11 +287,17 @@ export default function ListTravel() {
                             inputStyle={{ backgroundColor: 'white', fontSize: 14 }}
                         />
                     </View>
-                    <TravelListComponent
-                        travels={travels?.data}
-                        userId={user_id}
-                        handleEdit={(id) => {}}
-                        handleDelete={(id) => {}}
+                    <FlatList
+                        data={travels?.data}
+                        renderItem={({ item }) =>
+                            <TravelListItem
+                                travel={item}
+                                currentUserId={user_id}
+                                onEditPress={(id) => handleEdit(item.id.toString())}
+                                onDeletePress={(id) => handleDelete(item.id.toString())}
+                            />
+                        }
+                        keyExtractor={(item) => item.id.toString()}
                     />
                     <PaginationComponent
                         currentPage={currentPage}
