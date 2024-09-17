@@ -8,11 +8,14 @@ import { HEICConverter } from 'react-native-heic-converter';
 interface ImageUploadComponentProps {
     collection: string;
     idTravel: string;
+    oldImage?: string; // URL для старого изображения
 }
 
-const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection, idTravel }) => {
-    const [imageUri, setImageUri] = useState<string | null>(null);
+const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection, idTravel, oldImage }) => {
+    const [imageUri, setImageUri] = useState<string | null>(oldImage || null); // Используем oldImage для начального значения
     const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+
+    console.log('oldImage:', oldImage); // Логирование для отладки
 
     // Drag-and-Drop логика для веба
     const { getRootProps, getInputProps } = useDropzone({
@@ -34,7 +37,6 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                 }
             }
 
-            setImageUri(fileUri);
             await handleUploadImage(file); // Загружаем изображение на сервер
         },
         accept: 'image/*',
@@ -59,15 +61,11 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                     }
                 }
 
-                setImageUri(selectedImageUri);
-
-                // Загружаем изображение
-                const file = {
+                await handleUploadImage({
                     uri: selectedImageUri,
                     name: 'photo.jpg',
                     type: fileType || 'image/jpeg',
-                };
-                await handleUploadImage(file as any);
+                });
             }
         });
     };
@@ -83,8 +81,9 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
             // Отправляем данные через функцию `uploadImage`
             const response = await uploadImage(formData);
 
-            if (response?.data?.url) {
-                setUploadMessage("Image uploaded successfully: " + response.data.url);
+            if (response?.url) {
+                setUploadMessage("Image uploaded successfully.");
+                setImageUri(response.url); // Устанавливаем новый URL
             } else {
                 setUploadMessage("Upload failed.");
             }

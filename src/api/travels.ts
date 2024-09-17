@@ -667,7 +667,7 @@ export const saveFormData = async (data: TravelFormData): Promise<TravelFormData
     }
 };
 
-export const uploadImage = async (data: FormData): Promise<string> => {
+export const uploadImage = async (data: FormData): Promise<any> => {
     const token = await AsyncStorage.getItem('userToken'); // Получаем токен из AsyncStorage
 
     if (!token) {
@@ -683,7 +683,7 @@ export const uploadImage = async (data: FormData): Promise<string> => {
     });
 
     if (response.status === 200) {
-        return "Image uploaded successfully.";
+        return response;
     } else {
         return "Upload failed.";
     }

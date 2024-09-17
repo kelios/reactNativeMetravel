@@ -17,7 +17,7 @@ import {
 import {useRoute} from '@react-navigation/native';
 import {fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
 import MultiSelect from "react-native-multiple-select";
-import {TravelFormData, MarkerData} from "@/src/types/types";
+import {TravelFormData, MarkerData, TravelsForMap, Travel} from "@/src/types/types";
 import ArticleEditor from "@/components/ArticleEditor";
 import ImageUploadComponent from "@/components/ImageUploadComponent";
 import MapUploadComponent from "@/components/MapUploadComponent";
@@ -58,6 +58,7 @@ export default function UpsertTravel() {
 
     const {id} = useLocalSearchParams();
     const travelId = id || null;
+    const [travelDataOld, setTravelDataOld] = useState<Travel | null>(null);
 
     const [filters, setFilters] = useState<Filters>({
         countries: [],
@@ -106,6 +107,7 @@ export default function UpsertTravel() {
     const loadTravelData = async (id: string) => {
         try {
             const travelData = await fetchTravel(Number(id));
+            setTravelDataOld(travelData);
             setFormData({
                 id: travelData.id || '', // Значение по умолчанию
                 name: travelData.name || '',
@@ -328,7 +330,9 @@ export default function UpsertTravel() {
                     {formData.id && (
                         <SafeAreaView style={styles.container}>
                             <ImageUploadComponent collection='travelMainImage'
-                                                  idTravel={formData?.id}/>
+                                                  idTravel={formData?.id}
+                                                  oldImage = {travelDataOld?.travel_image_thumb_small_url}
+                            />
 
                         </SafeAreaView>
                     )}
