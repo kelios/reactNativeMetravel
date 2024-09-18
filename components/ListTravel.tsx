@@ -69,7 +69,7 @@ export default function ListTravel() {
         if (userId && isMeTravel) {
             fetchMore();
         }
-        else {
+        else if (!isMeTravel) {
             fetchMore();
         }
     }, [userId]);
@@ -78,7 +78,7 @@ export default function ListTravel() {
         if (userId && isMeTravel) {
             fetchMore();
         }
-        else{
+        else if (!isMeTravel) {
             fetchMore();
         }
     }, [currentPage, itemsPerPage, search, filterValue]);
