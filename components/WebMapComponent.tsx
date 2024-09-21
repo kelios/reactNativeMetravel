@@ -4,7 +4,8 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import ImageUploadComponent from '@/components/ImageUploadComponent';
 import MultiSelect from "react-native-multiple-select";
-import { MarkerData } from "@/src/types/types";
+import {MarkerData} from "@/src/types/types";
+
 
 interface WebMapComponentProps {
     markers: MarkerData[];
@@ -33,25 +34,46 @@ const MapClickHandler = ({ addMarker }) => {
     return null;
 };
 
-const WebMapComponent: React.FC<WebMapComponentProps> = ({
-                                                             markers,
-                                                             onMarkersChange,
-                                                             onCountrySelect,
-                                                             onCountryDeselect,
-                                                             categoryTravelAddress,
-                                                             countrylist
-                                                         }) => {
+// Функция для обратного геокодирования (определение адреса по координатам)
+const reverseGeocode = async (latlng) => {
+    const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`
+    );
+    const data = await response.json();
+    return data;
+};
+
+const WebMapComponent = ({
+                             markers,
+                             onMarkersChange,
+                             onCountrySelect,
+                             onCountryDeselect,
+                             categoryTravelAddress,
+                             countrylist
+                         }) => {
     const addMarker = async (latlng) => {
+        const geocodeData = await reverseGeocode(latlng);
+        const address = geocodeData?.display_name || '';
+        const country = geocodeData?.address?.country || '';
+
         const newMarker = {
             id: null, // Изначально id будет null
             lat: latlng.lat,
             lng: latlng.lng,
             country: null,
-            city: null,
-            address: '',
+            city: null, // Опционально
+            address: address,
             categories: [],
             image: null,
         };
+
+        if (country) {
+            const foundCountry = countrylist.find(c => c.title_ru === country);
+            if (foundCountry) {
+                newMarker.country = foundCountry.country_id;
+                onCountrySelect(foundCountry.country_id);
+            }
+        }
 
         onMarkersChange([...markers, newMarker]);
     };
@@ -130,6 +152,10 @@ const WebMapComponent: React.FC<WebMapComponentProps> = ({
                                                 onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                                 oldImage={marker.image}
                                             />
+
+                                            {marker.image && (
+                                                <img src={marker.image} alt="Превью" style={styles.imagePreview} />
+                                            )}
                                         </div>
                                     )}
                                     <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
@@ -174,14 +200,15 @@ const WebMapComponent: React.FC<WebMapComponentProps> = ({
                                     style={styles.input}
                                 />
                             </div>
+
                             {marker.id !== null && (
                                 <div style={styles.markerRow}>
                                     <label>Изображение:</label>
                                     <ImageUploadComponent
                                         collection="travelImageAddress"
-                                        idTravel={marker.id}
-                                        onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
+                                        idTravel  = {marker.id}
                                         oldImage={marker.image}
+                                        onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
                                     />
                                 </div>
                             )}

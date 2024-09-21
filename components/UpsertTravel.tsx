@@ -94,6 +94,7 @@ export default function UpsertTravel() {
         thumbs200ForCollectionArr: [],
         travelImageThumbUrlArr: [],
         travelImageAddress: [],
+        gallery: [],
     });
 
     useEffect(() => {
@@ -132,6 +133,7 @@ export default function UpsertTravel() {
                 thumbs200ForCollectionArr: travelData.thumbs200ForCollectionArr || [],
                 travelImageThumbUrlArr: travelData.travelImageThumbUrlArr || [],
                 travelImageAddress: travelData.travelImageAddress || [],
+                gallery: travelData.gallery || [],
             });
 
             // Заполняем маркеры на карте
@@ -625,9 +627,16 @@ export default function UpsertTravel() {
                             />
                         </SafeAreaView>
 
-                        {formData.id && (
-                        <ImageGalleryComponent collection='gallery' idTravel={formData?.id}>
-                        </ ImageGalleryComponent>
+                        {formData?.id && formData?.gallery && formData?.gallery.length > 0 ? (
+                            <>
+                                <ImageGalleryComponent
+                                    collection='gallery'
+                                    idTravel={formData?.id}
+                                    initialImages={formData?.gallery}
+                                />
+                            </>
+                        ) : (
+                            <Text>Loading images...</Text> // или любой другой индикатор загрузки
                         )}
 
                     </View>

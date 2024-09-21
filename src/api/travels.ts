@@ -52,6 +52,7 @@ if (IS_LOCAL_API == 'true') {
 }
 
 export const UPLOAD_IMAGE = `${URLAPI}/api/upload`
+const GALLERY = `${URLAPI}/api/gallery`
 const GET_TRAVELS = `${URLAPI}/api/travels`
 const GET_TRAVEL = `${URLAPI}/api/travel`
 const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`
@@ -687,6 +688,27 @@ export const uploadImage = async (data: FormData): Promise<any> => {
         return responseData;
     } else {
         return "Upload failed.";
+    }
+};
+
+export const deleteImage = async (imageId: string) => {
+    const token = await AsyncStorage.getItem('userToken'); // Получаем токен из AsyncStorage
+
+    if (!token) {
+        throw new Error('Пользователь не авторизован');
+    }
+
+    const response = await fetch(`${GALLERY}/${imageId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Token ${token}`,
+        },
+    });
+
+    if (response.status === 200) {
+        return response; // Успешный ответ
+    } else {
+        throw new Error('Ошибка удаления изображения');
     }
 };
 

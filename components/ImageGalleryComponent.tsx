@@ -1,19 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Platform, ScrollView, Dimensions } from 'react-native';
-import * as ImagePicker from 'react-native-image-picker';
-import { useDropzone } from 'react-dropzone';
-import { uploadImage } from '@/src/api/travels';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
+import { uploadImage, deleteImage } from '@/src/api/travels';
+
+interface Image {
+    id: string;
+    url: string;
+}
 
 interface GalleryUploadComponentProps {
     collection: string;
     idTravel: string;
+    initialImages: Image[]; // Передаем уже загруженные изображения
     maxImages?: number;
 }
 
-const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collection,idTravel, maxImages = 10 }) => {
-    const [images, setImages] = useState<string[]>([]);
+const ImageGalleryComponent: React.FC<GalleryUploadComponentProps> = ({ collection, idTravel, initialImages, maxImages = 10 }) => {
+    const [images, setImages] = useState<Image[]>(initialImages);
     const [loading, setLoading] = useState<boolean[]>(Array(maxImages).fill(false));
     const [uploadMessages, setUploadMessages] = useState<string[]>(Array(maxImages).fill(''));
+
+    console.log(images);
 
     const handleUploadImage = async (file: any, index: number) => {
         try {
@@ -30,17 +36,13 @@ const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collect
 
             const response = await uploadImage(formData);
 
-            if (response?.data?.url) {
+            if (response.url) {
                 setUploadMessages((prev) => {
                     const newMessages = [...prev];
                     newMessages[index] = 'Upload successful!';
                     return newMessages;
                 });
-                setImages((prev) => {
-                    const newImages = [...prev];
-                    newImages[index] = response.data.url;
-                    return newImages;
-                });
+                setImages((prev) => [...prev, { id: response.data.id, url: response.data.url }]);
             } else {
                 setUploadMessages((prev) => {
                     const newMessages = [...prev];
@@ -64,41 +66,13 @@ const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collect
         }
     };
 
-    // Drag-and-drop logic for web
-    const { getRootProps, getInputProps } = useDropzone({
-        onDrop: async (acceptedFiles) => {
-            const newImages = [...images];
-            acceptedFiles.forEach((file, index) => {
-                if (newImages.length < maxImages) {
-                    const fileUri = URL.createObjectURL(file);
-                    newImages.push(fileUri);
-                    handleUploadImage(file, newImages.length - 1);
-                }
-            });
-            setImages(newImages);
-        },
-        accept: 'image/*',
-    });
-
-    // Image picker logic for mobile
-    const pickImages = () => {
-        ImagePicker.launchImageLibrary({ mediaType: 'photo', selectionLimit: maxImages - images.length }, (response) => {
-            if (response.assets && response.assets.length > 0) {
-                const newImages = [...images];
-                response.assets.forEach((asset, index) => {
-                    if (newImages.length < maxImages) {
-                        const file = {
-                            uri: asset.uri,
-                            name: asset.fileName,
-                            type: asset.type,
-                        };
-                        newImages.push(asset.uri);
-                        handleUploadImage(file, newImages.length - 1);
-                    }
-                });
-                setImages(newImages);
-            }
-        });
+    const handleDeleteImage = async (imageId: string) => {
+        try {
+            await deleteImage(imageId); // Отправляем запрос на удаление изображения по id
+            setImages((prevImages) => prevImages.filter((image) => image.id !== imageId)); // Удаляем изображение из состояния
+        } catch (error) {
+            console.error('Ошибка при удалении изображения:', error);
+        }
     };
 
     const screenWidth = Dimensions.get('window').width;
@@ -106,29 +80,20 @@ const GalleryUploadComponent: React.FC<GalleryUploadComponentProps> = ({ collect
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Галерея</Text> {/* Добавленный заголовок */}
+            <Text style={styles.label}>Галерея</Text>
             <Text style={styles.galleryTitle}>Загружено {images.length} из {maxImages} изображений</Text>
             <View style={styles.galleryWrapper}>
-                {Platform.OS === 'web' ? (
-                    <div {...getRootProps({ className: 'dropzone' })} style={styles.dropzone}>
-                        <input {...getInputProps()} />
-                        <Text style={styles.placeholderText}>Перетащите сюда изображения или нажмите для выбора файлов</Text>
-                    </div>
-                ) : (
-                    <TouchableOpacity style={styles.uploadButton} onPress={pickImages}>
-                        <Text style={styles.buttonText}>Загрузить изображения</Text>
-                    </TouchableOpacity>
-                )}
-
                 <ScrollView contentContainerStyle={styles.imageContainer}>
-                    {images.map((uri, index) => (
-                        <View key={index} style={styles.imageWrapper}>
+                    {images.map((image, index) => (
+                        <View key={image.id} style={styles.imageWrapper}>
                             {loading[index] ? (
                                 <ActivityIndicator size="small" color="#0000ff" />
                             ) : (
                                 <>
-                                    <Image source={{ uri }} style={styles.image} />
-                                    {uploadMessages[index] && <Text style={styles.uploadMessage}>{uploadMessages[index]}</Text>}
+                                    <Image source={{ uri: image.url }} style={styles.image} />
+                                    <TouchableOpacity onPress={() => handleDeleteImage(image.id)} style={styles.deleteButton}>
+                                        <Text style={styles.deleteButtonText}>Удалить</Text>
+                                    </TouchableOpacity>
                                 </>
                             )}
                         </View>
@@ -173,30 +138,16 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 5,
         elevation: 5,
-        marginBottom: 20, // Отступ снизу
-    },
-    dropzone: {
-        width: '100%',
-        minHeight: 150,
-        borderWidth: 2,
-        borderColor: '#4b7c6f',
-        backgroundColor: '#dfe6e9',
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+        marginBottom: 20,
     },
     imageContainer: {
         flexDirection: 'row',
-        flexWrap: 'wrap',  // Обеспечивает перенос изображений на новую строку, если они не помещаются
+        flexWrap: 'wrap',
         justifyContent: 'flex-start',
         marginTop: 20,
-        marginBottom: 20,  // Отступ снизу для изображений
     },
     imageWrapper: {
-        margin: 5,  // Обеспечивает отступы между изображениями
+        margin: 5,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
@@ -210,33 +161,16 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 10,
     },
-    placeholderText: {
-        color: '#4b7c6f',
-        fontSize: 16,
-        textAlign: 'center',
+    deleteButton: {
+        backgroundColor: '#ff6347',
+        padding: 5,
+        borderRadius: 5,
+        marginTop: 5,
     },
-    uploadButton: {
-        backgroundColor: '#4b7c6f',
-        paddingVertical: 15,
-        paddingHorizontal: 30,
-        borderRadius: 25,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 5,
-        alignItems: 'center',
-    },
-    buttonText: {
+    deleteButtonText: {
         color: '#fff',
-        fontSize: 16,
-    },
-    uploadMessage: {
-        color: '#4b7c6f',
-        fontSize: 14,
-        textAlign: 'center',
-        marginTop: 10,
+        fontWeight: 'bold',
     },
 });
 
-export default GalleryUploadComponent;
+export default ImageGalleryComponent;
