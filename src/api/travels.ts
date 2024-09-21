@@ -683,7 +683,8 @@ export const uploadImage = async (data: FormData): Promise<any> => {
     });
 
     if (response.status === 200) {
-        return response;
+        const responseData = await response.json();
+        return responseData;
     } else {
         return "Upload failed.";
     }

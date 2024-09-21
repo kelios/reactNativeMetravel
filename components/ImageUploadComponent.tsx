@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import { useDropzone } from 'react-dropzone';
 import { uploadImage } from "@/src/api/travels";
@@ -9,13 +9,27 @@ interface ImageUploadComponentProps {
     collection: string;
     idTravel: string;
     oldImage?: string; // URL для старого изображения
+    onUpload?: (imageUrl: string) => void; // Callback для передачи URL загруженного изображения
 }
 
-const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection, idTravel, oldImage }) => {
-    const [imageUri, setImageUri] = useState<string | null>(oldImage || null); // Используем oldImage для начального значения
+const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection, idTravel, oldImage, onUpload }) => {
+    const [imageUri, setImageUri] = useState<string | null>(null); // Начальное значение
     const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false); // Добавляем состояние загрузки
 
-    console.log('oldImage:', oldImage); // Логирование для отладки
+    // Инициализируем imageUri с oldImage при монтировании компонента
+    useEffect(() => {
+        if (oldImage) {
+            setImageUri(oldImage);
+        }
+    }, [oldImage]);
+
+
+    useEffect(() => {
+        if (imageUri) {
+            console.log("Updated imageUri:", imageUri);
+        }
+    }, [imageUri]);
 
     // Drag-and-Drop логика для веба
     const { getRootProps, getInputProps } = useDropzone({
@@ -73,6 +87,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
     // Функция для загрузки изображения на сервер
     const handleUploadImage = async (file: any) => {
         try {
+            setLoading(true); // Начало загрузки
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
@@ -83,13 +98,21 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
 
             if (response?.url) {
                 setUploadMessage("Image uploaded successfully.");
+
                 setImageUri(response.url); // Устанавливаем новый URL
+
+                // Вызовем onUpload, чтобы передать URL в родительский компонент
+                if (onUpload) {
+                    onUpload(response.url);
+                }
             } else {
                 setUploadMessage("Upload failed.");
             }
         } catch (error) {
             console.error(error);
             setUploadMessage("An error occurred during upload.");
+        } finally {
+            setLoading(false); // Завершение загрузки
         }
     };
 
@@ -98,7 +121,9 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
             {Platform.OS === 'web' ? (
                 <div {...getRootProps({ className: 'dropzone' })} style={styles.dropzone}>
                     <input {...getInputProps()} />
-                    {imageUri ? (
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#fff" />
+                    ) : imageUri ? (
                         <Image source={{ uri: imageUri }} style={styles.roundedImage} />
                     ) : (
                         <Text style={styles.placeholderText}>Загрузите картинку</Text>
@@ -109,7 +134,9 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                     <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
                         <Text style={styles.buttonText}>Загрузить фото</Text>
                     </TouchableOpacity>
-                    {imageUri ? (
+                    {loading ? (
+                        <ActivityIndicator size="large" color="#4b7c6f" />
+                    ) : imageUri ? (
                         <Image source={{ uri: imageUri }} style={styles.roundedImage} />
                     ) : (
                         <Text style={styles.placeholderText}>Загрузите картинку</Text>
