@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     padding: wp(1.5),
     marginHorizontal: wp(1.5),
-    maxWidth: 600,
+    maxWidth: 500,
   },
   imageWrapper: {
     flex: width < 600 ? 0 : 1,
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   image: {
     aspectRatio: 1 / 1,
     width: '100%',
-    height: width < 600 ? 340 : 600,
+    height: width < 600 ? 340 : 500,
   },
   paragraphLeft: {
     marginLeft: wp(1.5),

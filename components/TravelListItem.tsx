@@ -51,12 +51,13 @@ const TravelListItem = ({
               <Card.Cover
                   source={{ uri: travel_image_thumb_url }}
                   style={styles.image}
+                  resizeMode="cover" // Чтобы изображение адаптировалось, сохраняя пропорции
               />
             </View>
-            <Card.Content>
-              <Title>{name}</Title>
-              <Paragraph>{countryName}</Paragraph>
-              <Paragraph>
+            <Card.Content style={styles.content}>
+              <Title numberOfLines={2} style={styles.title}>{name}</Title>
+              <Paragraph style={styles.countryText}>{countryName}</Paragraph>
+              <Paragraph style={styles.authorText}>
                 <Text>Автор - {userName}</Text>
                 <Text style={styles.paragraphLeft}>({countUnicIpView} 👀)</Text>
               </Paragraph>
@@ -87,27 +88,45 @@ const TravelListItem = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center', // Центрирование по горизонтали
-    justifyContent: 'center', // Центрирование по вертикали
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 20,
   },
   card: {
     borderRadius: 10,
     elevation: 2,
-    padding: wp(1.5),
+    width: wp('90%'), // Адаптивная ширина карточки
+    maxWidth: 500, // Максимальная ширина
+    height: 500,
     marginHorizontal: wp(1.5),
-    maxWidth: 600,
-    overflow: 'hidden', // Чтобы углы обрезались
+    overflow: 'hidden',
   },
   imageWrapper: {
-    flex: width < 600 ? 0 : 1,
+    width: '100%',
+    height: 350, // Адаптивная высота блока с изображением
     overflow: 'hidden',
-    alignItems: 'center',
   },
   image: {
-    aspectRatio: 1,
     width: '100%',
-    height: width < 600 ? wp(80) : 600, // Адаптивная высота
+    height: '100%',
+    resizeMode: 'cover', // Чтобы изображение заполняло контейнер
+  },
+  content: {
+    padding: 15,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  countryText: {
+    fontSize: 14,
+    color: '#6AAAAA',
+    marginBottom: 10,
+  },
+  authorText: {
+    fontSize: 13,
+    color: '#777',
   },
   paragraphLeft: {
     marginLeft: wp(1.5),

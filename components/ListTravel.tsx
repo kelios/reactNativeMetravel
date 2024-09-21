@@ -34,6 +34,7 @@ export default function ListTravel() {
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
 
     const isMobile = windowWidth <= 768;
+    const numColumns = isMobile ? 1 : 2;
     const initMenuVisible = !isMobile;
 
     const [menuVisible, setMenuVisible] = useState(initMenuVisible);
@@ -298,6 +299,8 @@ export default function ListTravel() {
                             />
                         }
                         keyExtractor={(item) => item.id.toString()}
+                        numColumns={numColumns}
+                        key={numColumns}
                     />
                     <PaginationComponent
                         currentPage={currentPage}
