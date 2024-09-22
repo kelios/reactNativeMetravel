@@ -147,8 +147,8 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                 hideTags
                 items={filters.companion}
                 uniqueKey="id"
-                onSelectedItemsChange={onSelectedItemsChange('companion')}
-                selectedItems={formData.companion}
+                onSelectedItemsChange={onSelectedItemsChange('companions')}
+                selectedItems={formData.companions}
                 selectText="Компаньоны..."
                 searchInputPlaceholderText="Поиск компаньонов..."
                 tagRemoveIconColor="#CCC"

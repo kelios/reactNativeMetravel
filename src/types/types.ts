@@ -18,6 +18,7 @@ export type Travel = {
     year: string
     monthName: string
     number_days: number
+    companions: String[]
 }
 
 export type TravelCoords = {
@@ -145,7 +146,7 @@ export interface TravelFormData {
     cities: string[];
     over_nights_stay: string[];
     complexity: string[];
-    companion: string[];
+    companions: string[];
     description?: string;
     plus?: string;
     minus?: string;
