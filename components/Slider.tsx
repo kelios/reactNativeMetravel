@@ -3,13 +3,12 @@ import { View, Image, TouchableOpacity, StyleSheet, useWindowDimensions } from '
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface SliderProps {
-  images: Record<string, string>;
+  images: { url: string; id: number }[]; // Изменение типа данных для массива изображений
   onLayout?: (event: any) => void;
 }
 
 const Slider: React.FC<SliderProps> = ({ images, onLayout }) => {
-  const imageKeys = Object.keys(images);
-  const countOfImages = imageKeys.length - 1;
+  const countOfImages = images.length - 1;
   const [currentIndex, setCurrentIndex] = useState(0);
   const windowDimensions = useWindowDimensions();
 
@@ -37,7 +36,7 @@ const Slider: React.FC<SliderProps> = ({ images, onLayout }) => {
             ]}
         >
           <Image
-              source={{ uri: images[imageKeys[currentIndex]] }}
+              source={{ uri: images[currentIndex].url }} // Используем поле url
               style={styles.image}
               resizeMode="contain"
           />

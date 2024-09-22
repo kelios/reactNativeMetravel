@@ -22,7 +22,6 @@ const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const { width } = useWindowDimensions();
   const isMobile = width <= 768;
-  const numCol = isMobile ? 1 : 3;
 
   useEffect(() => {
     setIsLoading(true); // Start loading
@@ -57,8 +56,7 @@ const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
             data={travelsNear}
             renderItem={({ item }) => <TravelTmlRound travel={item} />}
             keyExtractor={(item) => item.id.toString()}
-            numColumns={numCol}
-            key={numCol} // Это нужно для перерасчета колонок при изменении количества
+            numColumns={isMobile ? 1 : 3} // Прямо передаем количество колонок
         />
       </View>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     FlatList,
@@ -14,9 +14,10 @@ import { Title } from 'react-native-paper';
 
 type PopularTravelListProps = {
     onLayout?: (event: any) => void;
+    scrollToAnchor?: () => void;
 };
 
-const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
+const PopularTravelList = ({ onLayout, scrollToAnchor }: PopularTravelListProps) => {
     const [travelsPopular, setTravelsPopular] = useState<TravelsMap>({});
     const [isLoading, setIsLoading] = useState(true);
     const { width } = useWindowDimensions();
@@ -33,6 +34,13 @@ const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
                 setIsLoading(false);
             });
     }, []);
+
+    // Callback для обработки завершения рендеринга FlatList
+    const handleContentChange = useCallback(() => {
+        if (scrollToAnchor) {
+            scrollToAnchor(); // Прокрутка к якорю после полной загрузки контента
+        }
+    }, [scrollToAnchor]);
 
     if (isLoading) {
         return (
@@ -53,6 +61,7 @@ const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
                 renderItem={({ item }) => <TravelTmlRound travel={item} />}
                 keyExtractor={(item) => item.id.toString()}
                 numColumns={isMobile ? 1 : 3}
+                onContentSizeChange={handleContentChange} // Вызов после изменения размера списка
             />
         </View>
     );
@@ -61,7 +70,7 @@ const PopularTravelList = ({ onLayout }: PopularTravelListProps) => {
 const styles = StyleSheet.create({
     container: {
         marginTop: 20,
-        marginBottom: 20,
+        marginBottom: '20%',
         paddingHorizontal: 20,
         width: '100%',
     },

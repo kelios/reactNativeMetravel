@@ -25,7 +25,8 @@ import SideBarTravel from '@/components/SideBarTravel';
 import NearTravelList from '@/components/NearTravelList';
 import PopularTravelList from '@/components/PopularTravelList';
 
-const MapClientSideComponent = React.lazy(() => import('@/components/Map'));
+// Убираем асинхронную загрузку карты для улучшенной стабильности
+import MapClientSideComponent from '@/components/Map';
 
 const TravelDetails: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -110,23 +111,72 @@ const TravelDetails: React.FC = () => {
   const hasGallery = Array.isArray(gallery) && gallery.length > 0;
 
   const styleHtml = `
-    <style>
-    p {
-        margin-top: 0;
-        margin-bottom: 1rem;
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      line-height: 1.6;
+      font-size: 16px;
+      color: #333;
+      text-align: justify;
     }
-    p img {
-          vertical-align: middle;
-          padding: .25rem;
-          border: 1px solid #dee2e6;
-          border-radius: .25rem;
-          max-width: 100%;
-          height: auto;
-          max-height: 800px;
-          margin: 10px auto 20px;
-          display: block;
-      }
-    </style>`;
+
+    h1, h2, h3 {
+      color: #444;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    p {
+      margin: 1.5rem 0;
+      line-height: 1.7;
+      font-size: 18px;
+    }
+
+    img {
+      display: block;
+      margin: 20px auto;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.1);
+      max-width: 100%;
+      height: auto;
+    }
+
+    a {
+      color: #0066cc;
+      text-decoration: none;
+      border-bottom: 2px solid #0066cc;
+      transition: color 0.3s, border-bottom-color 0.3s;
+    }
+
+    a:hover {
+      color: #004499;
+      border-bottom-color: #004499;
+    }
+
+    p, a, h1, h2, h3 {
+      text-align: justify;
+    }
+
+    iframe {
+      width: 100%;
+      height: 500px;
+      border-radius: 12px;
+      border: none;
+      margin-top: 20px;
+    }
+
+    ul, ol {
+      padding-left: 20px;
+      margin: 1.5rem 0;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+  </style>`;
 
   return (
       <SafeAreaView style={{ flex: 1 }}>
@@ -170,11 +220,10 @@ const TravelDetails: React.FC = () => {
                     {hasGallery && (
                         <Slider images={gallery} onLayout={handleLayout('gallery')} />
                     )}
+
+                    {/* Только если есть описание, оно будет отображаться */}
                     {travel?.description && (
-                        <Card
-                            style={styles.card}
-                            onLayout={handleLayout('description')}
-                        >
+                        <Card style={styles.card}>
                           <Card.Content>
                             <Title>{travel.name}</Title>
 
@@ -190,32 +239,11 @@ const TravelDetails: React.FC = () => {
                                   <RenderHTML
                                       source={{ html: travel.description }}
                                       contentWidth={width - 50}
-                                      renderers={{
-                                        iframe: IframeRenderer,
-                                      }}
-                                      customHTMLElementModels={{
-                                        iframe: iframeModel,
-                                      }}
+                                      customHTMLElementModels={{ iframe: iframeModel }}
                                       WebView={WebView}
-                                      defaultWebViewProps={{}}
-                                      renderersProps={{
-                                        iframe: {
-                                          scalesPageToFit: true,
-                                          webViewProps: {
-                                            allowsFullScreen: true,
-                                          },
-                                        },
-                                      }}
                                       tagsStyles={{
                                         p: { marginTop: 15, marginBottom: 0 },
-                                        iframe: {
-                                          height: 1500,
-                                          width: '100%',
-                                          overflow: 'hidden',
-                                          marginTop: 15,
-                                          borderRadius: 5,
-                                          marginHorizontal: 0,
-                                        },
+                                        iframe: { height: 500, width: '100%' },
                                       }}
                                   />
                               ),
@@ -223,16 +251,23 @@ const TravelDetails: React.FC = () => {
                           </Card.Content>
                         </Card>
                     )}
-                    <View style={styles.mapBlock}>
-                      <Suspense fallback={<Text>Загрузка карты...</Text>}>
-                        <MapClientSideComponent travel={travel} />
-                      </Suspense>
-                    </View>
 
-                    {travel?.travelAddress && (
-                        <PointList points={travel.travelAddress} onLayout={handleLayout('map')} />
+                    {/* Карта */}
+                    {travel?.coordsMeTravel?.length > 0 && (
+                        <View style={styles.mapBlock}>
+                          <MapClientSideComponent travel={travel} />
+                        </View>
                     )}
 
+                    {/* Отображаем список точек если они есть */}
+                    {travel?.travelAddress && (
+                        <PointList
+                            points={travel.travelAddress}
+                            onLayout={handleLayout('map')}
+                        />
+                    )}
+
+                    {/* Отображаем похожие путешествия только если они есть */}
                     {travel?.travelAddress && (
                         <NearTravelList
                             travel={travel}
@@ -240,6 +275,7 @@ const TravelDetails: React.FC = () => {
                         />
                     )}
 
+                    {/* Популярные маршруты */}
                     <PopularTravelList onLayout={handleLayout('popular')} />
                   </View>
                 </ScrollView>
@@ -292,7 +328,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 800,
+    maxWidth: 900, // Увеличим максимальную ширину
     marginHorizontal: 'auto',
     padding: 20,
   },
@@ -315,7 +351,7 @@ const styles = StyleSheet.create({
   },
   sideMenu: {
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#f4f4f4', // Изменим цвет на более современный
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -341,7 +377,7 @@ const styles = StyleSheet.create({
   },
   menuButtonContainer: {
     width: '100%',
-    backgroundColor: '#6aaaaa',
+    backgroundColor: '#4CAF50', // Улучшаем стиль кнопки
     paddingVertical: 10,
     borderRadius: 5,
     marginBottom: 10,
