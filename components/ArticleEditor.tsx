@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Platform, TextInput } from 'react-native';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
@@ -9,22 +9,27 @@ interface ArticleEditorProps {
     label?: string;
     height?: number;
     uploadUrl: string;
-    idTravel?: string|null;
+    idTravel?: string | null;
 }
 
-const ArticleEditor: React.FC<ArticleEditorProps> = ({ content,
+const ArticleEditor: React.FC<ArticleEditorProps> = ({
+                                                         content = '',
                                                          onChange,
                                                          label,
-                                                         height = 300,
+                                                         height = 400, // Увеличим стандартную высоту до 400px
                                                          uploadUrl,
-                                                         idTravel
-}) => {
-    const [editorContent, setEditorContent] = useState<string>(content || '');
+                                                         idTravel,
+                                                     }) => {
+    const [editorContent, setEditorContent] = useState<string>(content);
 
-    const handleEditorChange = (data: string) => {
+    useEffect(() => {
+        setEditorContent(content || '');
+    }, [content]);
+
+    const handleEditorChange = useCallback((data: string) => {
         setEditorContent(data);
-        onChange && onChange(data);
-    };
+        onChange(data);
+    }, [onChange]);
 
     return (
         <View style={styles.container}>
@@ -37,15 +42,26 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ content,
                         data={editorContent}
                         config={{
                             extraPlugins: [MyCustomUploadAdapterPlugin],
+                            toolbar: [
+                                'heading', '|', 'bold', 'italic', 'link',
+                                'bulletedList', 'numberedList', 'blockQuote',
+                                '|', 'undo', 'redo', 'imageUpload'
+                            ],
+                            height: 'auto', // Автоматическая настройка высоты
+                            placeholder: 'Start typing your article here...', // Placeholder для UX
                         }}
                         onReady={(editor: any) => {
-                            editor.editing.view.change((writer:any) => {
+                            editor.editing.view.change((writer: any) => {
+                                // Устанавливаем минимальную высоту и скролл
                                 writer.setStyle(
-                                    "height",
+                                    'min-height',
                                     `${height}px`,
                                     editor.editing.view.document.getRoot()
                                 );
+                                writer.setStyle('overflow', 'auto', editor.editing.view.document.getRoot());
                             });
+
+                            // Подключаем адаптер для загрузки изображений
                             editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
                                 return new MyUploadAdapter(loader, uploadUrl, idTravel);
                             };
@@ -57,7 +73,14 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ content,
                     />
                 </div>
             ) : (
-                <Text>Mobile editor not implemented in this example</Text>
+                <TextInput
+                    style={{ ...styles.mobileEditor, height }}
+                    multiline
+                    numberOfLines={10}
+                    value={editorContent}
+                    onChangeText={handleEditorChange}
+                    placeholder="Введите контент..."
+                />
             )}
         </View>
     );
@@ -66,6 +89,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ content,
 const styles = StyleSheet.create({
     container: {
         padding: 10,
+        width: '100%',
     },
     label: {
         fontSize: 16,
@@ -76,18 +100,29 @@ const styles = StyleSheet.create({
         border: '1px solid #ccc',
         borderRadius: 4,
         overflow: 'hidden',
+        width: '100%',
+        backgroundColor: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    mobileEditor: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 4,
+        padding: 10,
+        textAlignVertical: 'top',
+        fontSize: 16,
+        backgroundColor: '#fff',
     },
 });
 
-export default ArticleEditor;
-
+// Upload adapter class for handling file uploads
 class MyUploadAdapter {
     private loader: any;
     private uploadUrl: string;
+    private idTravel?: string | null;
 
-    private idTravel? :string|null;
-
-    constructor(loader: any, uploadUrl: string, idTravel?:string|null ) {
+    constructor(loader: any, uploadUrl: string, idTravel?: string | null) {
         this.loader = loader;
         this.uploadUrl = uploadUrl;
         this.idTravel = idTravel;
@@ -100,7 +135,7 @@ class MyUploadAdapter {
                     const data = new FormData();
                     data.append('file', file);
                     data.append('collection', 'description');
-                    data.append('id', this.idTravel);
+                    if (this.idTravel) data.append('id', this.idTravel);
 
                     fetch(this.uploadUrl, {
                         method: 'POST',
@@ -108,10 +143,7 @@ class MyUploadAdapter {
                     })
                         .then(response => response.json())
                         .then(result => {
-                            // Resolve with the image URL that will be inserted into the editor
-                            resolve({
-                                default: result.url,
-                            });
+                            resolve({ default: result.url });
                         })
                         .catch(error => {
                             reject(error);
@@ -130,3 +162,5 @@ function MyCustomUploadAdapterPlugin(editor: any) {
         return new MyUploadAdapter(loader, editor.config.get('uploadUrl'));
     };
 }
+
+export default ArticleEditor;
