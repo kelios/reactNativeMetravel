@@ -66,6 +66,36 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({formData, se
                     uploadUrl={UPLOAD_IMAGE}
                 />
             </SafeAreaView>
+
+            <SafeAreaView>
+                <ArticleEditor
+                    label="Плюсы"
+                    height={400}
+                    content={formData.plus}
+                    onChange={(newContent: any) => handleChange('plus', newContent)}
+                    uploadUrl={UPLOAD_IMAGE}
+                />
+            </SafeAreaView>
+
+            <SafeAreaView>
+                <ArticleEditor
+                    label="Минусы"
+                    height={400}
+                    content={formData.minus}
+                    onChange={(newContent: any) => handleChange('minus', newContent)}
+                    uploadUrl={UPLOAD_IMAGE}
+                />
+            </SafeAreaView>
+
+            <SafeAreaView>
+                <ArticleEditor
+                    label="Рекомендации"
+                    height={400}
+                    content={formData.recommendation}
+                    onChange={(newContent: any) => handleChange('recommendation', newContent)}
+                    uploadUrl={UPLOAD_IMAGE}
+                />
+            </SafeAreaView>
         </View>
     );
 };

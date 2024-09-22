@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import { useDropzone } from 'react-dropzone';
 import { uploadImage } from "@/src/api/travels";
@@ -9,30 +9,21 @@ import { FontAwesome } from '@expo/vector-icons';
 interface ImageUploadComponentProps {
     collection: string;
     idTravel: string;
-    oldImage?: string; // URL для старого изображения
-    onUpload?: (imageUrl: string) => void; // Callback для передачи URL загруженного изображения
+    oldImage?: string;
+    onUpload?: (imageUrl: string) => void;
 }
 
 const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection, idTravel, oldImage, onUpload }) => {
-    const [imageUri, setImageUri] = useState<string | null>(null); // Начальное значение
+    const [imageUri, setImageUri] = useState<string | null>(null);
     const [uploadMessage, setUploadMessage] = useState<string | null>(null);
-    const [loading, setLoading] = useState(false); // Добавляем состояние загрузки
+    const [loading, setLoading] = useState(false);
 
-    // Инициализируем imageUri с oldImage при монтировании компонента
     useEffect(() => {
         if (oldImage) {
             setImageUri(oldImage);
         }
     }, [oldImage]);
 
-    // Log для обновленного imageUri
-    useEffect(() => {
-        if (imageUri) {
-            console.log("Updated imageUri:", imageUri);
-        }
-    }, [imageUri]);
-
-    // Drag-and-Drop логика для веба
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: async (acceptedFiles) => {
             const file = acceptedFiles[0];
@@ -40,7 +31,6 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
 
             let fileUri = URL.createObjectURL(file);
 
-            // Если файл формата HEIC, конвертируем его в JPEG
             if (fileType === 'image/heic' || fileType === 'image/heif') {
                 try {
                     const converted = await HEICConverter.convert({ path: fileUri });
@@ -52,19 +42,17 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                 }
             }
 
-            await handleUploadImage(file); // Загружаем изображение на сервер
+            await handleUploadImage(file);
         },
         accept: 'image/*',
     });
 
-    // Функция для выбора изображения из галереи для мобильных устройств
     const pickImage = () => {
         ImagePicker.launchImageLibrary({}, async (response) => {
             if (response.assets && response.assets.length > 0) {
                 let selectedImageUri = response.assets[0].uri;
                 const fileType = response.assets[0].type;
 
-                // Если файл формата HEIC, конвертируем его в JPEG
                 if (fileType === 'image/heic' || fileType === 'image/heif') {
                     try {
                         const converted = await HEICConverter.convert({ path: selectedImageUri });
@@ -85,24 +73,19 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
         });
     };
 
-    // Функция для загрузки изображения на сервер
     const handleUploadImage = async (file: any) => {
         try {
-            setLoading(true); // Начало загрузки
+            setLoading(true);
             const formData = new FormData();
             formData.append('file', file);
             formData.append('collection', collection);
             formData.append('id', idTravel);
 
-            // Отправляем данные через функцию `uploadImage`
             const response = await uploadImage(formData);
 
             if (response?.url) {
                 setUploadMessage("Image uploaded successfully.");
-
-                setImageUri(response.url); // Устанавливаем новый URL
-
-                // Вызовем onUpload, чтобы передать URL в родительский компонент
+                setImageUri(response.url);
                 if (onUpload) {
                     onUpload(response.url);
                 }
@@ -113,7 +96,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
             console.error(error);
             setUploadMessage("An error occurred during upload.");
         } finally {
-            setLoading(false); // Завершение загрузки
+            setLoading(false);
         }
     };
 
@@ -125,7 +108,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                     {loading ? (
                         <ActivityIndicator size="large" color="#fff" />
                     ) : imageUri ? (
-                        <Image source={{ uri: imageUri }} style={styles.roundedImage} />
+                        <Image source={{ uri: imageUri }} style={styles.largeImage} />
                     ) : (
                         <View style={styles.placeholderContainer}>
                             <FontAwesome name="cloud-upload" size={50} color="#4b7c6f" />
@@ -142,7 +125,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                     {loading ? (
                         <ActivityIndicator size="large" color="#4b7c6f" />
                     ) : imageUri ? (
-                        <Image source={{ uri: imageUri }} style={styles.roundedImage} />
+                        <Image source={{ uri: imageUri }} style={styles.largeImage} />
                     ) : (
                         <Text style={styles.placeholderText}>Загрузите картинку</Text>
                     )}
@@ -153,15 +136,18 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
     );
 };
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
+        width: '100%',
     },
     dropzone: {
-        width: 350,
+        width: width > 500 ? 350 : '100%',
         height: 250,
         borderWidth: 2,
         backgroundColor: '#f0f0f0',
@@ -180,10 +166,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#e0f7f4',
         borderColor: '#4b7c6f',
     },
-    roundedImage: {
-        width: 150,
-        height: 150,
-        borderRadius: 75,
+    largeImage: {
+        width: 250,  // Увеличена ширина изображения
+        height: 250, // Увеличена высота изображения
+        borderRadius: 125, // Радиус теперь соответствует новой ширине и высоте
         marginVertical: 20,
         borderColor: '#fff',
         borderWidth: 2,
@@ -195,13 +181,13 @@ const styles = StyleSheet.create({
     },
     placeholderText: {
         color: '#4b7c6f',
-        fontSize: 16,
+        fontSize: width > 500 ? 16 : 14,
         textAlign: 'center',
         marginTop: 10,
     },
     instructionsText: {
         color: '#4b7c6f',
-        fontSize: 14,
+        fontSize: width > 500 ? 14 : 12,
         textAlign: 'center',
         marginTop: 5,
     },
