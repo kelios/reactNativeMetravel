@@ -5,10 +5,9 @@ import {
     View,
     ActivityIndicator,
     Dimensions,
-    Pressable, FlatList, Alert,
+    Pressable, FlatList,
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
-import TravelListComponent from '@/components/TravelListComponent';
 import PaginationComponent from '@/components/PaginationComponent';
 import { Travels } from '@/src/types/types';
 import {
@@ -20,8 +19,9 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { SearchBar, Button } from 'react-native-elements';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {useRoute} from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 import TravelListItem from "@/components/TravelListItem";
+import Toast from 'react-native-toast-message';
 
 export default function ListTravel() {
     const initialPage = 0;
@@ -111,8 +111,8 @@ export default function ListTravel() {
 
         if(user_id){
             param = {
-                ...param,  // Сохраняем все существующие свойства param
-                user_id: user_id // Добавляем или обновляем свойство user_id
+                ...param,
+                user_id: user_id
             };
         }
 
@@ -198,32 +198,35 @@ export default function ListTravel() {
         navigation.navigate('travel/'+id)
     }
 
-    const handleDelete = async (id: string) => {
-        try {
-            // Подтверждение удаления
-            Alert.alert(
-                "Удаление",
-                "Вы уверены, что хотите удалить это путешествие?",
-                [
-                    {
-                        text: "Отмена",
-                        style: "cancel"
-                    },
-                    {
-                        text: "Удалить",
-                        onPress: async () => {
-                            // Вызов API для удаления путешествия
-                            await deleteTravel(id)
-                            // Обновление списка путешествий
-                            setTravels((prevTravels) => prevTravels.filter(travel => travel.id !== id))
-                        }
-                    }
-                ]
-            )
-        } catch (error) {
-            console.error("Ошибка при удалении путешествия:", error)
-        }
-    }
+        const handleDelete = async (id: string) => {
+            try {
+                // Показать уведомление о начале процесса удаления
+                Toast.show({
+                    type: 'info',
+                    text1: 'Удаление...',
+                });
+
+                // Ваш код для удаления
+                const response = await deleteTravel(id);
+                if (response.success) {
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Путешествие успешно удалено!',
+                    });
+                } else {
+                    Toast.show({
+                        type: 'error',
+                        text1: `Ошибка: ${response.message}`,
+                    });
+                }
+            } catch (error) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Произошла ошибка при удалении',
+                });
+            }
+        };
+
 
     if (!filters || !travels?.data) {
         return <ActivityIndicator />;

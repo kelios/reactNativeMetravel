@@ -717,7 +717,7 @@ export const deleteTravel = async (id: string) => {
         const response = await fetch(`${GET_TRAVELS}/${id}`, {
             method: 'DELETE',
         })
-        if (!response.ok) {
+        if (response.status !== 204) {
             throw new Error('Ошибка при удалении путешествия')
         }
     } catch (error) {
