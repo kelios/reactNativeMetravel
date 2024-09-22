@@ -75,6 +75,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     label="Описание"
                     height={400}
                     content={formData.description}
+                    idTravel = {formData?.id}
                     onChange={(newContent: any) => handleChange('description', newContent)}
                     uploadUrl={UPLOAD_IMAGE}
                 />
@@ -85,6 +86,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     label="Плюсы"
                     height={400}
                     content={formData.plus}
+                    idTravel = {formData?.id}
                     onChange={(newContent: any) => handleChange('plus', newContent)}
                     uploadUrl={UPLOAD_IMAGE}
                 />
@@ -95,6 +97,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     label="Минусы"
                     height={400}
                     content={formData.minus}
+                    idTravel = {formData?.id}
                     onChange={(newContent: any) => handleChange('minus', newContent)}
                     uploadUrl={UPLOAD_IMAGE}
                 />
@@ -105,6 +108,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     label="Рекомендации"
                     height={400}
                     content={formData.recommendation}
+                    idTravel = {formData?.id}
                     onChange={(newContent: any) => handleChange('recommendation', newContent)}
                     uploadUrl={UPLOAD_IMAGE}
                 />

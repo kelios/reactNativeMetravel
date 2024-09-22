@@ -4,14 +4,21 @@ import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
 interface ArticleEditorProps {
-    content: string;
+    content?: string;
     onChange: (content: string) => void;
     label?: string;
     height?: number;
     uploadUrl: string;
+    idTravel?: string|null;
 }
 
-const ArticleEditor: React.FC<ArticleEditorProps> = ({ content, onChange, label, height = 300, uploadUrl }) => {
+const ArticleEditor: React.FC<ArticleEditorProps> = ({ content,
+                                                         onChange,
+                                                         label,
+                                                         height = 300,
+                                                         uploadUrl,
+                                                         idTravel
+}) => {
     const [editorContent, setEditorContent] = useState<string>(content || '');
 
     const handleEditorChange = (data: string) => {
@@ -40,7 +47,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({ content, onChange, label,
                                 );
                             });
                             editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
-                                return new MyUploadAdapter(loader, uploadUrl);
+                                return new MyUploadAdapter(loader, uploadUrl, idTravel);
                             };
                         }}
                         onChange={(event: any, editor: any) => {
@@ -78,9 +85,12 @@ class MyUploadAdapter {
     private loader: any;
     private uploadUrl: string;
 
-    constructor(loader: any, uploadUrl: string) {
+    private idTravel? :string|null;
+
+    constructor(loader: any, uploadUrl: string, idTravel?:string|null ) {
         this.loader = loader;
         this.uploadUrl = uploadUrl;
+        this.idTravel = idTravel;
     }
 
     upload() {
@@ -89,6 +99,8 @@ class MyUploadAdapter {
                 new Promise((resolve, reject) => {
                     const data = new FormData();
                     data.append('file', file);
+                    data.append('collection', 'description');
+                    data.append('id', this.idTravel);
 
                     fetch(this.uploadUrl, {
                         method: 'POST',
