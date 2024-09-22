@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     galleryWrapper: {
-        flex: 1,  // Контент растягивается, чтобы не перекрывать футер
+        flex: 1,
         width: '100%',
         padding: 20,
         borderWidth: 2,
@@ -188,8 +188,8 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     imageWrapper: {
-        width: '30%',  // Использование процентов для адаптивности ширины
-        height: 300,  // Оптимальная высота для изображений
+        width: '48%',  // Ширина изображения
+        aspectRatio: 1,  // Устанавливаем соотношение сторон 1:1 (квадратное изображение)
         marginBottom: 20,
         justifyContent: 'center',
         alignItems: 'center',
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 10,
-        resizeMode: 'cover',
+        resizeMode: 'cover',  // Установлено cover для масштабирования изображения по контейнеру
     },
     deleteButton: {
         position: 'absolute',
@@ -278,5 +278,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
+
 
 export default ImageGalleryComponent;

@@ -1,66 +1,27 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import TextInputComponent from '@/components/TextInputComponent';
-import CheckboxComponent from '@/components/CheckboxComponent';
-import YoutubeLinkComponent from '@/components/YoutubeLinkComponent';
-
-import {
-    ScrollView,
-    StyleSheet,
-    View,
-    Text,
-    Dimensions,
-    TextInput,
-    TouchableOpacity,
-    ActivityIndicator,
-    SafeAreaView
-} from 'react-native';
+import {ScrollView, StyleSheet, View, Dimensions, ActivityIndicator, TouchableOpacity, Text} from 'react-native';
 import {useRoute} from '@react-navigation/native';
-import {fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData, UPLOAD_IMAGE} from "@/src/api/travels";
-import MultiSelect from "react-native-multiple-select";
-import {TravelFormData, MarkerData, TravelsForMap, Travel} from "@/src/types/types";
-import ArticleEditor from "@/components/ArticleEditor";
-import ImageUploadComponent from "@/components/ImageUploadComponent";
-import MapUploadComponent from "@/components/MapUploadComponent";
-import ImageGalleryComponent from "@/components/ImageGalleryComponent";
-import WebMapComponent from "@/components/WebMapComponent";
+import {fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData} from "@/src/api/travels";
+import {TravelFormData, MarkerData, Travel} from "@/src/types/types";
 import {useLocalSearchParams} from "expo-router";
-
-interface Category {
-    id: string
-    name: string
-}
-
-interface Filters {
-    countries: string[]
-    categories: string[]
-    companion: string[]
-    complexity: string[]
-    month: string[]
-    overNightStay: string[]
-    coordsMeTravel: string[]
-    transports: string[]
-}
-
+import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
+import ContentUpsertSection from '@/components/ContentUpsertSection';
+import GallerySection from '@/components/GallerySection';
 
 export default function UpsertTravel() {
-    const route = useRoute();
-    const windowWidth = Dimensions.get('window').width
-    const styles = getStyles(windowWidth)
-    const isMobile = windowWidth <= 768
-    const initMenuVisible = !isMobile
-
-
-    const [menuVisible, setMenuVisible] = useState(initMenuVisible)
-    const [isLoadingFilters, setIsLoadingFilters] = useState(false)
-    const [isSaving, setIsSaving] = useState(false); // Состояние для индикатора автосохранения
-
-    const [markers, setMarkers] = useState([]); // Хранение маркеров
+    const windowWidth = Dimensions.get('window').width;
+    const styles = getStyles(windowWidth);
+    const isMobile = windowWidth <= 768;
+    const [menuVisible, setMenuVisible] = useState(!isMobile);
+    const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [markers, setMarkers] = useState<MarkerData[]>([]);
 
     const {id} = useLocalSearchParams();
     const travelId = id || null;
     const [travelDataOld, setTravelDataOld] = useState<Travel | null>(null);
 
-    const [filters, setFilters] = useState<Filters>({
+    const [filters, setFilters] = useState({
         countries: [],
         categories: [],
         companion: [],
@@ -68,7 +29,7 @@ export default function UpsertTravel() {
         month: [],
         overNightStay: [],
         transports: [],
-    })
+    });
 
     const [formData, setFormData] = useState<TravelFormData>({
         id: travelId,
@@ -98,58 +59,27 @@ export default function UpsertTravel() {
     });
 
     useEffect(() => {
-        getFilters()
-        getFiltersCountry()
+        getFilters();
+        getFiltersCountry();
         if (travelId) {
             loadTravelData(travelId);
         }
-    }, [travelId])
+    }, [travelId]);
 
     const loadTravelData = async (id: string) => {
         try {
             const travelData = await fetchTravel(Number(id));
             setTravelDataOld(travelData);
             setFormData({
-                id: travelData.id || '', // Значение по умолчанию
+                id: travelData.id || '',
                 name: travelData.name || '',
-                categories: travelData.categories || [],
-                transports: travelData.transports || [],
-                month: travelData.month || [],
-                complexity: travelData.complexity || [],
-                over_nights_stay: travelData.over_nights_stay || [],
-                cities: travelData.cities || [],
-                countries: travelData.countries || [],
-                budget: travelData.budget || '',
-                year: travelData.year || '',
-                number_peoples: travelData.number_peoples || '',
-                number_days: travelData.number_days || '',
-                minus: travelData.minus || '',
-                plus: travelData.plus || '',
-                recommendation: travelData.recommendation || '',
-                description: travelData.description || '',
-                publish: travelData.publish || false,
-                visa: travelData.visa || false,
-                coordsMeTravel: travelData?.coordsMeTravel || [],
-                thumbs200ForCollectionArr: travelData.thumbs200ForCollectionArr || [],
-                travelImageThumbUrlArr: travelData.travelImageThumbUrlArr || [],
-                travelImageAddress: travelData.travelImageAddress || [],
-                gallery: travelData.gallery || [],
+                ...travelData,
             });
-
-            // Заполняем маркеры на карте
             setMarkers(travelData.coordsMeTravel || []);
         } catch (error) {
             console.error('Ошибка при загрузке данных путешествия:', error);
         }
     };
-
-    useEffect(() => {
-        const autoSaveTimeout = setTimeout(() => {
-            handleAutoSave();
-        }, 5000); // Автосохранение через 5 секунд после изменения
-
-        return () => clearTimeout(autoSaveTimeout); // Очистка таймера при каждом изменении
-    }, [formData]);
 
     const handleAutoSave = async () => {
         try {
@@ -159,7 +89,6 @@ export default function UpsertTravel() {
                 setFormData((prevData) => ({...prevData, id: savedData.id}));
             }
             setMarkers(savedData.coordsMeTravel);
-            console.log('Автосохранение прошло успешно!');
         } catch (error) {
             console.error('Ошибка при автосохранении:', error);
         } finally {
@@ -167,500 +96,55 @@ export default function UpsertTravel() {
         }
     };
 
-    const handleSubmit = async () => {
-        try {
-            const savedData = await saveFormDataWithId(formData);
-            if (!formData.id && savedData.id) {
-                setFormData((prevData) => ({...prevData, id: savedData.id}));
-            }
-            console.log('Форма отправлена успешно!');
-        } catch (error) {
-            console.error('Ошибка при отправке формы:', error);
-        }
-    };
-
     const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
-        const updatedData = {...data, id: data.id || null}; // Добавляем recordId в данные
-
-        return await saveFormData(cleanEmptyFields(updatedData));
+        return await saveFormData({...data, id: data.id || null});
     };
-
-    function cleanEmptyFields(obj: any): any {
-        const cleanedObj: any = {};
-
-        Object.keys(obj).forEach(key => {
-            const value = obj[key];
-
-            // Проверяем, является ли значение массивом
-            if (Array.isArray(value)) {
-                cleanedObj[key] = value;
-            } else if (value === '') {
-                // Заменяем пустые строки на null
-                cleanedObj[key] = null;
-            } else if (typeof value === 'object' && value !== null) {
-                // Рекурсивно очищаем вложенные объекты
-                cleanedObj[key] = cleanEmptyFields(value);
-            } else {
-                cleanedObj[key] = value;
-            }
-        });
-
-        return cleanedObj;
-    }
 
     const getFilters = useCallback(async () => {
-        if (isLoadingFilters) return
-        setIsLoadingFilters(true)
-        const newData = await fetchFilters()
+        if (isLoadingFilters) return;
+        setIsLoadingFilters(true);
+        const newData = await fetchFilters();
         setFilters((prevFilters) => ({
             ...prevFilters,
-            categories: newData?.categories || [],
-            categoryTravelAddress: newData?.categoryTravelAddress || [],
-            companion: newData?.companion || [],
-            complexity: newData?.complexity || [],
-            month: newData?.month || [],
-            overNightStay: newData?.overNightStay || [],
-            transports: newData?.transports || [],
-        }))
-        setIsLoadingFilters(false)
-    }, [isLoadingFilters, filters])
+            ...newData,
+        }));
+        setIsLoadingFilters(false);
+    }, [isLoadingFilters]);
 
     const getFiltersCountry = useCallback(async () => {
-        if (isLoadingFilters) return
-        setIsLoadingFilters(true)
-        const country = await fetchFiltersCountry()
+        if (isLoadingFilters) return;
+        setIsLoadingFilters(true);
+        const country = await fetchFiltersCountry();
         setFilters((prevFilters) => ({
             ...prevFilters,
             countries: country,
-        }))
-        setIsLoadingFilters(false)
-    }, [isLoadingFilters, filters])
-
-
-    const onSelectedItemsChange =
-        (field: keyof FormData) => (selectedItems: string[]) => {
-            setFormData({
-                ...formData,
-                [field]: selectedItems,
-            })
-        }
-
-    const handleTextFilterChange = (key: string, value: string) => {
-        setFormData({
-            ...formData,
-            [key]: value,
-        })
-    }
-
-
-    const handleChange = (name: keyof FormData, value: any) => {
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value,
         }));
-    };
+        setIsLoadingFilters(false);
+    }, [isLoadingFilters]);
+
     const toggleMenu = () => {
-        setMenuVisible(!menuVisible)
-    }
-
-    const closeMenu = () => {
-        setMenuVisible(false)
-    }
-
-    if (!filters) {
-        return <ActivityIndicator/>
-    }
-
-    const handleCountrySelect = (countryId) => {
-        if (countryId) {
-            setFormData(prevData => {
-                // Проверяем, есть ли страна уже в списке стран
-                if (!prevData.countries.includes(countryId)) {
-                    return {
-                        ...prevData,
-                        countries: [...prevData.countries, countryId],
-                    };
-                }
-                return prevData; // Если страна уже есть, ничего не делаем
-            });
-        }
+        setMenuVisible(!menuVisible);
     };
-
-    const handleCountryDeselect = (countryId) => {
-        setFormData(prevData => {
-            return {
-                ...prevData,
-                countries: prevData.countries.filter(id => id !== countryId),
-            };
-        });
-    };
-
-
-    const handleMarkersChange = (updatedMarkers: MarkerData[]) => {
-        setMarkers(updatedMarkers);
-        setFormData(prevData => ({
-            ...prevData,
-            coordsMeTravel: updatedMarkers.map(marker => ({
-                id: marker.id,
-                lat: marker.lat,
-                lng: marker.lng,
-                country: marker.country,
-                city: marker.city,
-                address: marker.address,
-                categories: marker.categories,
-                image: marker.image,
-            })),
-        }));
-    };
-
-    const renderFilters = () => {
-        if (menuVisible) {
-            return (
-                <View style={{backgroundColor: 'white'}}>
-                    {formData.id && (
-                        <TextInput
-                            style={styles.hiddenInput}
-                            value={formData.id}
-                            editable={false}
-                        />
-                    )}
-                    <CheckboxComponent
-                        label="Черновик"
-                        value={formData?.publish}
-                        onChange={(value) => handleChange('publish', value)}
-                    />
-                    {formData.id && (
-                        <SafeAreaView style={styles.container}>
-                            <ImageUploadComponent collection='travelMainImage'
-                                                  idTravel={formData?.id}
-                                                  oldImage = {travelDataOld?.travel_image_thumb_small_url}
-                            />
-
-                        </SafeAreaView>
-                    )}
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.countries || []}
-                        uniqueKey="country_id"
-                        onSelectedItemsChange={onSelectedItemsChange('countries')}
-                        selectedItems={formData?.countries}
-                        isLoading={isLoadingFilters}
-                        selectText="Выберите страны..."
-                        searchInputPlaceholderText="Выберите страны..."
-                        onChangeInput={(text) => console.log(text)}
-                        //  altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="title_ru"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.categories || []}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('categories')}
-                        selectedItems={formData?.categories}
-                        isLoading={isLoadingFilters}
-                        selectText="Категории..."
-                        searchInputPlaceholderText="Категории..."
-                        onChangeInput={(text) => console.log(text)}
-                        //   altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.transports}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('transports')}
-                        selectedItems={formData?.transports}
-                        isLoading={isLoadingFilters}
-                        selectText="Транспорт..."
-                        searchInputPlaceholderText="Транспорт..."
-                        onChangeInput={(text) => console.log(text)}
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.complexity}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('complexity')}
-                        selectedItems={formData?.complexity}
-                        isLoading={isLoadingFilters}
-                        selectText="Уровень физической подготовки..."
-                        searchInputPlaceholderText="Уровень физической подготовки..."
-                        onChangeInput={(text) => console.log(text)}
-                        // altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.companion}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('companion')}
-                        selectedItems={formData?.companion}
-                        isLoading={isLoadingFilters}
-                        selectText="Варианты отдыха с..."
-                        searchInputPlaceholderText="Варианты отдыха с..."
-                        onChangeInput={(text) => console.log(text)}
-                        //   altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.overNightStay}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
-                        selectedItems={formData?.over_nights_stay}
-                        isLoading={isLoadingFilters}
-                        selectText="Варианты ночлега..."
-                        searchInputPlaceholderText="Варианты ночлега..."
-                        onChangeInput={(text) => console.log(text)}
-                        // altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <MultiSelect
-                        hideTags
-                        items={filters?.month}
-                        uniqueKey="id"
-                        onSelectedItemsChange={onSelectedItemsChange('month')}
-                        selectedItems={formData?.month}
-                        isLoading={isLoadingFilters}
-                        selectText="Месяц..."
-                        searchInputPlaceholderText="Месяц..."
-                        onChangeInput={(text) => console.log(text)}
-                        //  altFontFamily="ProximaNova-Light"
-                        tagRemoveIconColor="#CCC"
-                        tagBorderColor="#CCC"
-                        tagTextColor="#CCC"
-                        selectedItemTextColor="#CCC"
-                        selectedItemIconColor="#CCC"
-                        itemTextColor="#000"
-                        displayKey="name"
-                        searchInputStyle={{color: '#CCC'}}
-                        submitButtonColor="#CCC"
-                        submitButtonText="Submit"
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Год"
-                        value={formData?.year}
-                        onChangeText={(value) => handleTextFilterChange('year', value)}
-                        keyboardType="numeric"
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Количество человек"
-                        value={formData?.number_peoples}
-                        onChangeText={(value) => handleTextFilterChange('number_peoples', value)}
-                        keyboardType="numeric"
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Количество потраченных средств $"
-                        value={formData?.budget}
-                        onChangeText={(value) => handleTextFilterChange('budget', value)}
-                        keyboardType="numeric"
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Количество дней"
-                        value={formData?.number_days}
-                        onChangeText={(value) => handleTextFilterChange('number_days', value)}
-                        keyboardType="numeric"
-                    />
-
-                    <CheckboxComponent
-                        label="Нужна виза"
-                        value={formData?.visa}
-                        onChange={(value) => handleChange('visa', value)}
-                    />
-
-                    {formData.id && (
-                    <MapUploadComponent collection='travelRoad' idTravel={formData?.id} >
-                    </ MapUploadComponent>
-                    )}
-
-
-                    <TouchableOpacity
-                        style={styles.applyButton}
-                        onPress={handleSubmit}
-                    >
-                        <Text style={styles.applyButtonText}>Сохранить</Text>
-                    </TouchableOpacity>
-                    {isMobile && (
-                        <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
-                            <Text style={styles.closeButtonText}>Закрыть</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-            )
-        }
-        return null
-    }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.formSection}>
-                {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
+                {isSaving && <ActivityIndicator size="small" color="#ff6347" />}
                 <View style={styles.formRow}>
-                    <View style={styles.leftColumn}>
-                        <TextInputComponent
-                            label="Название"
-                            value={formData.name}
-                            onChange={(value) => handleChange('name', value)}
-                        />
-
-                        <YoutubeLinkComponent
-                            label="Ссылка на Youtube"
-                            value={formData.youtubeLink}
-                            onChange={(value) => handleChange('youtubeLink', value)}
-                        />
-
-                        <WebMapComponent
-                            markers={markers}
-                            onMarkersChange={handleMarkersChange}
-                            onCountrySelect={handleCountrySelect}
-                            onCountryDeselect={handleCountryDeselect}
-                            categoryTravelAddress={filters.categoryTravelAddress}
-                            countrylist={filters.countries}
-                        />
-
-                        <SafeAreaView>
-                            <ArticleEditor
-                                label="Описание"
-                                height={400}  // Устанавливаем высоту окна редактора
-                                content={formData.description}
-                                onChange={(newContent: any) => handleChange('description', newContent)}
-                                uploadUrl={UPLOAD_IMAGE}
-                            />
-                        </SafeAreaView>
-
-                        <SafeAreaView>
-                            <ArticleEditor
-                                label="Плюсы"
-                                height={300}  // Устанавливаем высоту окна редактора
-                                content={formData.plus}
-                                onChange={(newContent: any) => handleChange('plus', newContent)}
-                                uploadUrl={UPLOAD_IMAGE}
-                            />
-                        </SafeAreaView>
-
-                        <SafeAreaView>
-                            <ArticleEditor
-                                label="Минусы"
-                                height={300}  // Устанавливаем высоту окна редактора
-                                content={formData.minus}
-                                onChange={(newContent: any) => handleChange('minus', newContent)}
-                                uploadUrl={UPLOAD_IMAGE}
-                            />
-                        </SafeAreaView>
-
-                        <SafeAreaView >
-                            <ArticleEditor
-                                label="Рекомендации"
-                                content={formData.minus}
-                                onChange={(newContent: any) => handleChange('recommendation', newContent)}
-                                uploadUrl={UPLOAD_IMAGE}
-                            />
-                        </SafeAreaView>
-
-                        {formData?.id ? (
-                            <>
-                                <ImageGalleryComponent
-                                    collection='gallery'
-                                    idTravel={formData?.id}
-                                    initialImages={formData?.gallery}
-                                />
-                            </>
-                        ) : (
-                            <Text>Loading images...</Text> // или любой другой индикатор загрузки
-                        )}
-
-                    </View>
-                    <View style={styles.rightColumn}>
-
-                        {isMobile ? (
-                            <View
-                                style={[
-                                    styles.sideMenu,
-                                    styles.mobileSideMenu,
-                                    menuVisible && styles.visibleMobileSideMenu,
-                                ]}
-                            >
-                                {renderFilters()}
-                            </View>
-                        ) : (
-                            <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-                                {renderFilters()}
-                            </View>
-                        )}
-
-                    </View>
+                    <ContentUpsertSection formData={formData} setFormData={setFormData} markers={markers} setMarkers={setMarkers} />
+                    {!isMobile && <FiltersUpsertComponent filters={filters} travelDataOld={travelDataOld} formData={formData} setFormData={setFormData} />}
                 </View>
+                {isMobile && (
+                    <>
+                        <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
+                            <Text style={styles.menuButtonText}>{menuVisible ? 'Скрыть фильтры' : 'Показать фильтры'}</Text>
+                        </TouchableOpacity>
+                        {menuVisible && <FiltersUpsertComponent filters={filters} formData={formData} setFormData={setFormData} />}
+                    </>
+                )}
+                <GallerySection formData={formData} travelDataOld={travelDataOld} />
             </View>
-            {isSaving && <ActivityIndicator size="small" color="#ff6347"/>}
+            {isSaving && <ActivityIndicator size="small" color="#ff6347" />}
         </ScrollView>
     );
 }
@@ -685,76 +169,20 @@ const getStyles = (windowWidth: number) => {
             shadowRadius: 8,
             elevation: 5,
         },
-        sectionTitle: {
-            fontSize: 24,
-            fontWeight: 'bold',
-            marginBottom: 20,
-            color: '#4b7c6f',
-        },
         formRow: {
             flexDirection: 'row',
             justifyContent: 'space-between',
         },
-        leftColumn: {
-            flex: 0.7,
-            marginRight: 10,
-        },
-        rightColumn: {
-            flex: 0.3,
-            marginLeft: 10,
-        },
-
-
-        input: {
-            marginBottom: 10,
-            borderWidth: 1,
-            borderColor: '#ccc',
-            padding: 8,
-            backgroundColor: 'white',
-        },
-        applyButton: {
-            backgroundColor: '#ff9f5a',
-            padding: 10,
-            alignItems: 'center',
-            borderRadius: 5,
-        },
-        applyButtonText: {
-            color: 'white',
-            fontWeight: 'bold',
-        },
-        closeButton: {
-            backgroundColor: 'gray',
-            padding: 10,
-            alignItems: 'center',
-            borderRadius: 5,
-            marginTop: 10,
-        },
-        closeButtonText: {
-            color: 'white',
-            fontWeight: 'bold',
-        },
-
-        menuButtonContainer: {
-            //alignSelf: 'flex-start', // Позиционирование кнопки
-            //flex:1,
-            width: 600,
-            // marginLeft: 20, // Отступ слева
-            // marginTop: 20, // Отступ сверху
-        },
         menuButton: {
-            // flex: 1,
             backgroundColor: '#6aaaaa',
-            // paddingHorizontal: 20,
-            //  paddingVertical: 10,
-            //  borderRadius: 5,
+            padding: 10,
+            alignItems: 'center',
+            borderRadius: 5,
+            marginTop: 20,
         },
         menuButtonText: {
             color: 'white',
             fontWeight: 'bold',
         },
-        hiddenInput: {
-            display: 'none', // Скрываем поле ID
-        },
     });
-}
-
+};
