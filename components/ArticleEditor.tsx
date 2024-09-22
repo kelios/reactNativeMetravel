@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
@@ -16,16 +16,13 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                                                          content = '',
                                                          onChange,
                                                          label,
-                                                         height = 800, // Увеличим высоту до 400px
+                                                         height = 400, // Увеличим высоту до 400px
                                                          uploadUrl,
                                                          idTravel,
                                                      }) => {
     const [editorContent, setEditorContent] = useState<string>(content);
 
-    useEffect(() => {
-        setEditorContent(content || '');
-    }, [content]);
-
+    // Используем useCallback для предотвращения ненужных рендеров
     const handleEditorChange = useCallback((data: string) => {
         setEditorContent(data);
         onChange(data);
@@ -51,7 +48,6 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                         }}
                         onReady={(editor: any) => {
                             editor.editing.view.change((writer: any) => {
-                                // Устанавливаем минимальную высоту и скролл внутри редактора
                                 writer.setStyle(
                                     'min-height',
                                     `${height}px`,
@@ -98,7 +94,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         overflow: 'auto', // Важное свойство для включения скроллинга внутри CKEditor
         width: '100%',
-        maxHeight: 1000, // Ограничение по высоте, чтобы текст не выходил за пределы видимой области
+        maxHeight: 500, // Ограничение по высоте, чтобы текст не выходил за пределы видимой области
         backgroundColor: '#fff',
         display: 'flex',
         flexDirection: 'column',
