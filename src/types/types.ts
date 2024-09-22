@@ -150,7 +150,7 @@ export interface TravelFormData {
     plus?: string;
     minus?: string;
     recommendation?: string;
-    youtubeLink?: string;
+    youtube_link?: string;
     categories: string[];
     countryIds: string[];
     travelAddressIds: string[];

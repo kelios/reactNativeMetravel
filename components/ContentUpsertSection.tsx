@@ -59,8 +59,8 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
             />
             <YoutubeLinkComponent
                 label="Ссылка на Youtube"
-                value={formData.youtubeLink}
-                onChange={(value) => handleChange('youtubeLink', value)}
+                value={formData.youtube_link}
+                onChange={(value) => handleChange('youtube_link', value)}
             />
             <WebMapComponent
                 markers={markers || []}

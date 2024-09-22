@@ -57,7 +57,7 @@ export default function UpsertTravel() {
         travelImageThumbUrlArr: [],
         travelImageAddress: [],
         gallery: [],
-        youtubeLink: '',
+        youtube_link: '',
     });
 
     // Загружаем фильтры и данные путешествия
@@ -98,7 +98,7 @@ export default function UpsertTravel() {
                 travelImageThumbUrlArr: travelData.travelImageThumbUrlArr || [],
                 travelImageAddress: travelData.travelImageAddress || [],
                 gallery: travelData.gallery || [],
-                youtubeLink: travelData.youtubeLink || [],
+                youtube_link: travelData.youtube_link || null,
             });
 
             // Устанавливаем маркеры и обновляем страны, если они пришли из маркеров
