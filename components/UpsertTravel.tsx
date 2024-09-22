@@ -1,9 +1,8 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {ScrollView, StyleSheet, View, Dimensions, ActivityIndicator, TouchableOpacity, Text} from 'react-native';
-import {useRoute} from '@react-navigation/native';
-import {fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData} from "@/src/api/travels";
-import {TravelFormData, MarkerData, Travel} from "@/src/types/types";
-import {useLocalSearchParams} from "expo-router";
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, View, Dimensions, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
+import { fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData } from "@/src/api/travels";
+import { TravelFormData, MarkerData, Travel } from "@/src/types/types";
+import { useLocalSearchParams } from "expo-router";
 import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
 import ContentUpsertSection from '@/components/ContentUpsertSection';
 import GallerySection from '@/components/GallerySection';
@@ -16,8 +15,9 @@ export default function UpsertTravel() {
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [markers, setMarkers] = useState<MarkerData[]>([]);
+    const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null); // Для хранения таймера автосохранения
 
-    const {id} = useLocalSearchParams();
+    const { id } = useLocalSearchParams();
     const travelId = id || null;
     const [travelDataOld, setTravelDataOld] = useState<Travel | null>(null);
 
@@ -58,6 +58,7 @@ export default function UpsertTravel() {
         gallery: [],
     });
 
+    // Загружаем фильтры и данные путешествия
     useEffect(() => {
         getFilters();
         getFiltersCountry();
@@ -71,9 +72,30 @@ export default function UpsertTravel() {
             const travelData = await fetchTravel(Number(id));
             setTravelDataOld(travelData);
             setFormData({
-                id: travelData.id || '',
+                id: travelData.id || '', // Значение по умолчанию
                 name: travelData.name || '',
-                ...travelData,
+                categories: travelData.categories || [],
+                transports: travelData.transports || [],
+                month: travelData.month || [],
+                complexity: travelData.complexity || [],
+                over_nights_stay: travelData.over_nights_stay || [],
+                cities: travelData.cities || [],
+                countries: travelData.countries || [],
+                budget: travelData.budget || '',
+                year: travelData.year || '',
+                number_peoples: travelData.number_peoples || '',
+                number_days: travelData.number_days || '',
+                minus: travelData.minus || null,
+                plus: travelData.plus || null,
+                recommendation: travelData.recommendation || '',
+                description: travelData.description || null,
+                publish: travelData.publish || false,
+                visa: travelData.visa || false,
+                coordsMeTravel: travelData?.coordsMeTravel || [],
+                thumbs200ForCollectionArr: travelData.thumbs200ForCollectionArr || [],
+                travelImageThumbUrlArr: travelData.travelImageThumbUrlArr || [],
+                travelImageAddress: travelData.travelImageAddress || [],
+                gallery: travelData.gallery || [],
             });
             setMarkers(travelData.coordsMeTravel || []);
         } catch (error) {
@@ -81,14 +103,33 @@ export default function UpsertTravel() {
         }
     };
 
+    // Автосохранение
+    useEffect(() => {
+        if (autoSaveTimeout) {
+            clearTimeout(autoSaveTimeout); // Очищаем таймер перед установкой нового
+        }
+
+        // Устанавливаем новый таймер автосохранения
+        const timeout = setTimeout(() => {
+            handleAutoSave();
+        }, 5000); // 5 секунд после изменения
+
+        setAutoSaveTimeout(timeout);
+
+        return () => {
+            clearTimeout(timeout); // Очищаем таймер при демонтировании
+        };
+    }, [formData]); // Автосохранение срабатывает при каждом изменении `formData`
+
     const handleAutoSave = async () => {
         try {
             setIsSaving(true);
             const savedData = await saveFormDataWithId(formData);
             if (!formData.id && savedData.id) {
-                setFormData((prevData) => ({...prevData, id: savedData.id}));
+                setFormData((prevData) => ({ ...prevData, id: savedData.id }));
             }
-            setMarkers(savedData.coordsMeTravel);
+            setMarkers(savedData.coordsMeTravel || []);
+            console.log('Автосохранение прошло успешно!');
         } catch (error) {
             console.error('Ошибка при автосохранении:', error);
         } finally {
@@ -97,7 +138,7 @@ export default function UpsertTravel() {
     };
 
     const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
-        return await saveFormData({...data, id: data.id || null});
+        return await saveFormData({ ...data, id: data.id || null });
     };
 
     const getFilters = useCallback(async () => {
@@ -164,7 +205,7 @@ const getStyles = (windowWidth: number) => {
             borderRadius: 8,
             padding: 20,
             shadowColor: '#000',
-            shadowOffset: {width: 0, height: 2},
+            shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 8,
             elevation: 5,
