@@ -617,10 +617,9 @@ export default function UpsertTravel() {
                             />
                         </SafeAreaView>
 
-                        <SafeAreaView style={{flex: 1}}>
+                        <SafeAreaView >
                             <ArticleEditor
                                 label="Рекомендации"
-                                height={300}  // Устанавливаем высоту окна редактора
                                 content={formData.minus}
                                 onChange={(newContent: any) => handleChange('recommendation', newContent)}
                                 uploadUrl={UPLOAD_IMAGE}
