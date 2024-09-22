@@ -72,7 +72,7 @@ export default function UpsertTravel() {
             const travelData = await fetchTravel(Number(id));
             setTravelDataOld(travelData);
             setFormData({
-                id: travelData.id || '', // Значение по умолчанию
+                id: travelData.id || '',
                 name: travelData.name || '',
                 categories: travelData.categories || [],
                 transports: travelData.transports || [],
@@ -97,7 +97,10 @@ export default function UpsertTravel() {
                 travelImageAddress: travelData.travelImageAddress || [],
                 gallery: travelData.gallery || [],
             });
+
+            // Устанавливаем маркеры и обновляем страны, если они пришли из маркеров
             setMarkers(travelData.coordsMeTravel || []);
+            updateCountriesFromMarkers(travelData.coordsMeTravel || []);
         } catch (error) {
             console.error('Ошибка при загрузке данных путешествия:', error);
         }
@@ -138,7 +141,9 @@ export default function UpsertTravel() {
     };
 
     const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
-        return await saveFormData({ ...data, id: data.id || null });
+        const updatedData = {...data, id: data.id || null}; // Добавляем recordId в данные
+
+        return await saveFormData(cleanEmptyFields(updatedData));
     };
 
     const getFilters = useCallback(async () => {
@@ -162,6 +167,39 @@ export default function UpsertTravel() {
         }));
         setIsLoadingFilters(false);
     }, [isLoadingFilters]);
+
+    function cleanEmptyFields(obj: any): any {
+        const cleanedObj: any = {};
+
+        Object.keys(obj).forEach(key => {
+            const value = obj[key];
+
+            // Проверяем, является ли значение массивом
+            if (Array.isArray(value)) {
+                cleanedObj[key] = value;
+            } else if (value === '') {
+                // Заменяем пустые строки на null
+                cleanedObj[key] = null;
+            } else if (typeof value === 'object' && value !== null) {
+                // Рекурсивно очищаем вложенные объекты
+                cleanedObj[key] = cleanEmptyFields(value);
+            } else {
+                cleanedObj[key] = value;
+            }
+        });
+
+        return cleanedObj;
+    }
+
+    // Обновляем выбранные страны на основе маркеров
+    const updateCountriesFromMarkers = (markers: MarkerData[]) => {
+        const countriesFromMarkers = markers.map(marker => marker.country).filter(Boolean);
+        const updatedCountries = [
+            ...formData.countries,
+            ...countriesFromMarkers.filter(countryId => !formData.countries.includes(countryId)),
+        ];
+        setFormData(prevFormData => ({ ...prevFormData, countries: updatedCountries }));
+    };
 
     const toggleMenu = () => {
         setMenuVisible(!menuVisible);
