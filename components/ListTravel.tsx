@@ -5,7 +5,7 @@ import {
     View,
     ActivityIndicator,
     Dimensions,
-    Pressable, FlatList,
+    Pressable, FlatList, Alert,
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
 import TravelListComponent from '@/components/TravelListComponent';

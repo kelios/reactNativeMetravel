@@ -1,9 +1,9 @@
 import React from 'react';
-import {View, StyleSheet, TextInput, SafeAreaView, TouchableOpacity, Text} from 'react-native';
+import { View, StyleSheet, TextInput, SafeAreaView, Text } from 'react-native';
 import MultiSelect from 'react-native-multiple-select';
 import CheckboxComponent from '@/components/CheckboxComponent';
 import ImageUploadComponent from '@/components/ImageUploadComponent';
-import {TravelFormData, TravelFilters, Travel} from '@/src/types/types';
+import { TravelFormData, TravelFilters, Travel } from '@/src/types/types';
 
 interface FiltersComponentProps {
     filters: TravelFilters;
@@ -12,10 +12,12 @@ interface FiltersComponentProps {
     travelDataOld?: Travel | null;
 }
 
-const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
+const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
+                                                                     filters,
                                                                      formData,
                                                                      setFormData,
-                                                                     travelDataOld}) => {
+                                                                     travelDataOld
+                                                                 }) => {
     const onSelectedItemsChange = (field: keyof TravelFormData) => (selectedItems: string[]) => {
         setFormData({
             ...formData,
@@ -43,7 +45,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
             <CheckboxComponent
                 label="Черновик"
                 value={formData?.publish}
-                onChange={(value) => setFormData({...formData, publish: value})}
+                onChange={(value) => setFormData({ ...formData, publish: value })}
             />
 
             {formData.id && (
@@ -51,7 +53,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                     <ImageUploadComponent
                         collection="travelMainImage"
                         idTravel={formData.id}
-                        oldImage={travelDataOld?.travel_image_thumb_small_url}
+                        oldImage={travelDataOld?.travel_image_thumb_small_url} // проверка на старое изображение
                     />
                 </SafeAreaView>
             )}
@@ -72,7 +74,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="title_ru"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -93,7 +95,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="name"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -114,7 +116,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="name"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -135,7 +137,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="name"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -156,7 +158,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="name"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -177,7 +179,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="name"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -198,7 +200,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
                 selectedItemIconColor="#CCC"
                 itemTextColor="#000"
                 displayKey="name"
-                searchInputStyle={{color: '#CCC'}}
+                searchInputStyle={{ color: '#CCC' }}
                 submitButtonColor="#CCC"
                 submitButtonText="OK"
             />
@@ -207,41 +209,53 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({filters,
             <CheckboxComponent
                 label="Нужна виза"
                 value={formData?.visa}
-                onChange={(value) => setFormData({...formData, visa: value})}
+                onChange={(value) => setFormData({ ...formData, visa: value })}
             />
 
-            {/* Дополнительные поля */}
-            <TextInput
-                style={styles.input}
-                placeholder="Год"
-                value={formData?.year}
-                onChangeText={(value) => handleTextFilterChange('year', value)}
-                keyboardType="numeric"
-            />
+            {/* Дополнительные поля с метками */}
+            <View style={styles.textField}>
+                <Text style={styles.label}>Год</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Введите год"
+                    value={formData?.year}
+                    onChangeText={(value) => handleTextFilterChange('year', value)}
+                    keyboardType="numeric"
+                />
+            </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Количество человек"
-                value={formData?.number_peoples}
-                onChangeText={(value) => handleTextFilterChange('number_peoples', value)}
-                keyboardType="numeric"
-            />
+            <View style={styles.textField}>
+                <Text style={styles.label}>Количество человек</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Введите количество человек"
+                    value={formData?.number_peoples}
+                    onChangeText={(value) => handleTextFilterChange('number_peoples', value)}
+                    keyboardType="numeric"
+                />
+            </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Количество дней"
-                value={formData?.number_days}
-                onChangeText={(value) => handleTextFilterChange('number_days', value)}
-                keyboardType="numeric"
-            />
+            <View style={styles.textField}>
+                <Text style={styles.label}>Количество дней</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Введите количество дней"
+                    value={formData?.number_days}
+                    onChangeText={(value) => handleTextFilterChange('number_days', value)}
+                    keyboardType="numeric"
+                />
+            </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Бюджет"
-                value={formData?.budget}
-                onChangeText={(value) => handleTextFilterChange('budget', value)}
-                keyboardType="numeric"
-            />
+            <View style={styles.textField}>
+                <Text style={styles.label}>Бюджет</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Введите бюджет"
+                    value={formData?.budget}
+                    onChangeText={(value) => handleTextFilterChange('budget', value)}
+                    keyboardType="numeric"
+                />
+            </View>
         </View>
     );
 };
@@ -265,6 +279,15 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         padding: 8,
         backgroundColor: 'white',
+    },
+    label: {
+        marginBottom: 5,
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+    },
+    textField: {
+        marginBottom: 15,
     },
 });
 
