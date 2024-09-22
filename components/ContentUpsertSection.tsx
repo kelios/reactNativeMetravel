@@ -73,7 +73,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
             <SafeAreaView>
                 <ArticleEditor
                     label="Описание"
-                    height={400}
+                    height={800}
                     content={formData.description}
                     idTravel = {formData?.id}
                     onChange={(newContent: any) => handleChange('description', newContent)}
