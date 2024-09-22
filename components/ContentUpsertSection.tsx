@@ -12,9 +12,20 @@ interface ContentUpsertSectionProps {
     setFormData: (data: TravelFormData) => void;
     markers: MarkerData[];
     setMarkers: (data: MarkerData[]) => void;
+    filters: any;  // Добавляем фильтры
+    handleCountrySelect: (countryId: string) => void;  // Добавляем функцию выбора страны
+    handleCountryDeselect: (countryId: string) => void;  // Добавляем функцию отмены выбора страны
 }
 
-const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({formData, setFormData, markers, setMarkers}) => {
+const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
+                                                                       formData,
+                                                                       setFormData,
+                                                                       markers,
+                                                                       setMarkers,
+                                                                       filters,  // Получаем фильтры из родителя
+                                                                       handleCountrySelect,  // Получаем функцию выбора страны
+                                                                       handleCountryDeselect,  // Получаем функцию отмены выбора страны
+                                                                   }) => {
     const handleChange = (name: keyof TravelFormData, value: any) => {
         setFormData((prevData) => ({
             ...prevData,
@@ -52,10 +63,12 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({formData, se
                 onChange={(value) => handleChange('youtubeLink', value)}
             />
             <WebMapComponent
-                markers={markers}
+                markers={markers || []}
                 onMarkersChange={handleMarkersChange}
-                categoryTravelAddress={formData.coordsMeTravel}
-                countrylist={formData.countries}
+                onCountrySelect={handleCountrySelect}  // Передаем функцию выбора страны
+                onCountryDeselect={handleCountryDeselect}  // Передаем функцию отмены выбора страны
+                categoryTravelAddress={filters.categoryTravelAddress}  // Передаем категории точек
+                countrylist={filters.countries}  // Передаем список стран
             />
             <SafeAreaView>
                 <ArticleEditor

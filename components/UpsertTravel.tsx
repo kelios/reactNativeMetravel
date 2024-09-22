@@ -29,6 +29,7 @@ export default function UpsertTravel() {
         month: [],
         overNightStay: [],
         transports: [],
+        categoryTravelAddress: [],  // Добавлено для категорий маркеров
     });
 
     const [formData, setFormData] = useState<TravelFormData>({
@@ -56,6 +57,7 @@ export default function UpsertTravel() {
         travelImageThumbUrlArr: [],
         travelImageAddress: [],
         gallery: [],
+        youtubeLink: '',
     });
 
     // Загружаем фильтры и данные путешествия
@@ -96,6 +98,7 @@ export default function UpsertTravel() {
                 travelImageThumbUrlArr: travelData.travelImageThumbUrlArr || [],
                 travelImageAddress: travelData.travelImageAddress || [],
                 gallery: travelData.gallery || [],
+                youtubeLink: travelData.youtubeLink || [],
             });
 
             // Устанавливаем маркеры и обновляем страны, если они пришли из маркеров
@@ -152,7 +155,13 @@ export default function UpsertTravel() {
         const newData = await fetchFilters();
         setFilters((prevFilters) => ({
             ...prevFilters,
-            ...newData,
+            categories: newData?.categories || [],
+            categoryTravelAddress: newData?.categoryTravelAddress || [],  // Категории для маркеров
+            companion: newData?.companion || [],
+            complexity: newData?.complexity || [],
+            month: newData?.month || [],
+            overNightStay: newData?.overNightStay || [],
+            transports: newData?.transports || [],
         }));
         setIsLoadingFilters(false);
     }, [isLoadingFilters]);
@@ -205,18 +214,59 @@ export default function UpsertTravel() {
         setMenuVisible(!menuVisible);
     };
 
+    const handleCountrySelect = (countryId) => {
+        if (countryId) {
+            setFormData(prevData => {
+                // Проверяем, есть ли страна уже в списке стран
+                if (!prevData.countries.includes(countryId)) {
+                    return {
+                        ...prevData,
+                        countries: [...prevData.countries, countryId],
+                    };
+                }
+                return prevData; // Если страна уже есть, ничего не делаем
+            });
+        }
+    };
+
+    const handleCountryDeselect = (countryId) => {
+        setFormData(prevData => {
+            return {
+                ...prevData,
+                countries: prevData.countries.filter(id => id !== countryId),
+            };
+        });
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.formSection}>
                 {isSaving && <ActivityIndicator size="small" color="#ff6347" />}
                 <View style={styles.formRow}>
-                    <ContentUpsertSection formData={formData} setFormData={setFormData} markers={markers} setMarkers={setMarkers} />
-                    {!isMobile && <FiltersUpsertComponent filters={filters} travelDataOld={travelDataOld} formData={formData} setFormData={setFormData} />}
+                    <ContentUpsertSection
+                        formData={formData}
+                        setFormData={setFormData}
+                        markers={markers}
+                        setMarkers={setMarkers}
+                        filters={filters}  // Передаем фильтры в компонент
+                        handleCountrySelect={handleCountrySelect}
+                        handleCountryDeselect={handleCountryDeselect}
+                    />
+                    {!isMobile && (
+                        <FiltersUpsertComponent
+                            filters={filters}
+                            travelDataOld={travelDataOld}
+                            formData={formData}
+                            setFormData={setFormData}
+                        />
+                    )}
                 </View>
                 {isMobile && (
                     <>
                         <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-                            <Text style={styles.menuButtonText}>{menuVisible ? 'Скрыть фильтры' : 'Показать фильтры'}</Text>
+                            <Text style={styles.menuButtonText}>
+                                {menuVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
+                            </Text>
                         </TouchableOpacity>
                         {menuVisible && <FiltersUpsertComponent filters={filters} formData={formData} setFormData={setFormData} />}
                     </>
