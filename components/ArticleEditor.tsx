@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         overflow: 'auto', // Важное свойство для включения скроллинга внутри CKEditor
         width: '100%',
-        maxHeight: 500, // Ограничение по высоте, чтобы текст не выходил за пределы видимой области
+        maxHeight: 1000, // Ограничение по высоте, чтобы текст не выходил за пределы видимой области
         backgroundColor: '#fff',
         display: 'flex',
         flexDirection: 'column',
