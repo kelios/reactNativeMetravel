@@ -58,7 +58,7 @@ export default function UpsertTravel() {
         travelImageAddress: [],
         gallery: [],
         youtube_link: '',
-        companion: []
+        companions: []
     });
 
     // Загружаем фильтры и данные путешествия
@@ -100,7 +100,7 @@ export default function UpsertTravel() {
                 travelImageAddress: travelData.travelImageAddress || [],
                 gallery: travelData.gallery || [],
                 youtube_link: travelData.youtube_link || null,
-                companion: travelData.companion || [],
+                companions: travelData.companions || [],
             });
 
             // Устанавливаем маркеры и обновляем страны, если они пришли из маркеров

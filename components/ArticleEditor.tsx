@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
@@ -16,7 +16,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                                                          content = '',
                                                          onChange,
                                                          label,
-                                                         height = 400, // Увеличим стандартную высоту до 400px
+                                                         height = 800, // Увеличим высоту до 400px
                                                          uploadUrl,
                                                          idTravel,
                                                      }) => {
@@ -47,14 +47,18 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                                 'bulletedList', 'numberedList', 'blockQuote',
                                 '|', 'undo', 'redo', 'imageUpload'
                             ],
-                            height: 'auto', // Автоматическая настройка высоты
-                            placeholder: 'Start typing your article here...', // Placeholder для UX
+                            placeholder: 'Start typing your article here...',
                         }}
                         onReady={(editor: any) => {
                             editor.editing.view.change((writer: any) => {
-                                // Устанавливаем минимальную высоту и скролл
+                                // Устанавливаем минимальную высоту и скролл внутри редактора
                                 writer.setStyle(
                                     'min-height',
+                                    `${height}px`,
+                                    editor.editing.view.document.getRoot()
+                                );
+                                writer.setStyle(
+                                    'max-height',
                                     `${height}px`,
                                     editor.editing.view.document.getRoot()
                                 );
@@ -73,14 +77,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                     />
                 </div>
             ) : (
-                <TextInput
-                    style={{ ...styles.mobileEditor, height }}
-                    multiline
-                    numberOfLines={10}
-                    value={editorContent}
-                    onChangeText={handleEditorChange}
-                    placeholder="Введите контент..."
-                />
+                <Text style={styles.mobileText}>Mobile editor not implemented</Text>
             )}
         </View>
     );
@@ -99,20 +96,17 @@ const styles = StyleSheet.create({
     ckeditorContainer: {
         border: '1px solid #ccc',
         borderRadius: 4,
-        overflow: 'hidden',
+        overflow: 'auto', // Важное свойство для включения скроллинга внутри CKEditor
         width: '100%',
+        maxHeight: 1000, // Ограничение по высоте, чтобы текст не выходил за пределы видимой области
         backgroundColor: '#fff',
         display: 'flex',
         flexDirection: 'column',
     },
-    mobileEditor: {
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        padding: 10,
-        textAlignVertical: 'top',
-        fontSize: 16,
-        backgroundColor: '#fff',
+    mobileText: {
+        color: '#999',
+        textAlign: 'center',
+        paddingVertical: 20,
     },
 });
 
