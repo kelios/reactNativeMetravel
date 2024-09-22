@@ -5,6 +5,7 @@ import L from 'leaflet';
 import ImageUploadComponent from '@/components/ImageUploadComponent';
 import MultiSelect from "react-native-multiple-select";
 import {MarkerData} from "@/src/types/types";
+import {View} from "react-native";
 
 
 interface WebMapComponentProps {
@@ -122,6 +123,7 @@ const WebMapComponent = ({
                                     <h4>Информация о точке</h4>
                                     <div style={styles.popupRow}>
                                         <label>Категории:</label>
+                                        <View style = {styles.multiselector}>
                                         <MultiSelect
                                             hideTags
                                             items={categoryTravelAddress}
@@ -132,6 +134,7 @@ const WebMapComponent = ({
                                             searchInputPlaceholderText="Выберите категории"
                                             style={styles.input}
                                         />
+                                        </View>
                                     </div>
                                     <div style={styles.popupRow}>
                                         <label>Адрес:</label>
@@ -179,6 +182,7 @@ const WebMapComponent = ({
                             <p>Координаты: {marker.lat}, {marker.lng}</p>
                             <div style={styles.markerRow}>
                                 <label>Категории:</label>
+                                <View style = {styles.multiselector}>
                                 <MultiSelect
                                     hideTags
                                     items={categoryTravelAddress}
@@ -189,6 +193,7 @@ const WebMapComponent = ({
                                     searchInputPlaceholderText="Выберите категории"
                                     style={styles.input}
                                 />
+                            </View>
                             </div>
                             <div style={styles.markerRow}>
                                 <label>Адрес:</label>
@@ -264,7 +269,7 @@ const styles = {
         marginBottom: '10px',
     },
     input: {
-        width: '100%',
+        width: '98%',
         padding: '8px',
         borderRadius: '6px',
         border: '1px solid #ccc',
@@ -286,6 +291,9 @@ const styles = {
         border: '1px solid #ccc',
         borderRadius: '6px',
     },
+    multiselector: {
+        marginTop: 10
+    }
 };
 
 export default WebMapComponent;

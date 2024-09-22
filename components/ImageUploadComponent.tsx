@@ -4,6 +4,7 @@ import * as ImagePicker from 'react-native-image-picker';
 import { useDropzone } from 'react-dropzone';
 import { uploadImage } from "@/src/api/travels";
 import { HEICConverter } from 'react-native-heic-converter';
+import { FontAwesome } from '@expo/vector-icons';
 
 interface ImageUploadComponentProps {
     collection: string;
@@ -24,7 +25,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
         }
     }, [oldImage]);
 
-
+    // Log для обновленного imageUri
     useEffect(() => {
         if (imageUri) {
             console.log("Updated imageUri:", imageUri);
@@ -32,7 +33,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
     }, [imageUri]);
 
     // Drag-and-Drop логика для веба
-    const { getRootProps, getInputProps } = useDropzone({
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: async (acceptedFiles) => {
             const file = acceptedFiles[0];
             const fileType = file.type;
@@ -119,14 +120,18 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
     return (
         <View style={styles.container}>
             {Platform.OS === 'web' ? (
-                <div {...getRootProps({ className: 'dropzone' })} style={styles.dropzone}>
+                <div {...getRootProps({ className: 'dropzone' })} style={isDragActive ? styles.dropzoneActive : styles.dropzone}>
                     <input {...getInputProps()} />
                     {loading ? (
                         <ActivityIndicator size="large" color="#fff" />
                     ) : imageUri ? (
                         <Image source={{ uri: imageUri }} style={styles.roundedImage} />
                     ) : (
-                        <Text style={styles.placeholderText}>Загрузите картинку</Text>
+                        <View style={styles.placeholderContainer}>
+                            <FontAwesome name="cloud-upload" size={50} color="#4b7c6f" />
+                            <Text style={styles.placeholderText}>Перетащите сюда изображение</Text>
+                            <Text style={styles.instructionsText}>или нажмите для выбора файла</Text>
+                        </View>
                     )}
                 </div>
             ) : (
@@ -156,18 +161,24 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     dropzone: {
-        width: 300,
-        height: 200,
+        width: 350,
+        height: 250,
         borderWidth: 2,
-        backgroundColor: '#4b7c6f',
-        borderRadius: 10,
+        backgroundColor: '#f0f0f0',
+        borderColor: '#4b7c6f',
+        borderRadius: 15,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         paddingVertical: 10,
         paddingHorizontal: 20,
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-        transition: 'background-color 0.3s ease',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        transition: 'background-color 0.3s ease, border-color 0.3s ease',
+        cursor: 'pointer',
+    },
+    dropzoneActive: {
+        backgroundColor: '#e0f7f4',
+        borderColor: '#4b7c6f',
     },
     roundedImage: {
         width: 150,
@@ -177,11 +188,22 @@ const styles = StyleSheet.create({
         borderColor: '#fff',
         borderWidth: 2,
     },
+    placeholderContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     placeholderText: {
-        color: '#fff',
+        color: '#4b7c6f',
         fontSize: 16,
         textAlign: 'center',
-        marginTop: 20,
+        marginTop: 10,
+    },
+    instructionsText: {
+        color: '#4b7c6f',
+        fontSize: 14,
+        textAlign: 'center',
+        marginTop: 5,
     },
     buttonText: {
         color: '#fff',

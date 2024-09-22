@@ -705,7 +705,7 @@ export const deleteImage = async (imageId: string) => {
         },
     });
 
-    if (response.status === 200) {
+    if (response.status === 204) {
         return response; // Успешный ответ
     } else {
         throw new Error('Ошибка удаления изображения');

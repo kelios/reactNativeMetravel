@@ -627,7 +627,7 @@ export default function UpsertTravel() {
                             />
                         </SafeAreaView>
 
-                        {formData?.id && formData?.gallery && formData?.gallery.length > 0 ? (
+                        {formData?.id ? (
                             <>
                                 <ImageGalleryComponent
                                     collection='gallery'
