@@ -94,10 +94,10 @@ export default function ListTravel() {
             countries: [],
             categories: [],
             categoryTravelAddress: [],
-            companion: [],
+            companions: [],
             complexity: [],
             month: [],
-            overNightStay: [],
+            over_nights_stay: [],
             transports: [],
             year: '',
         });
@@ -156,10 +156,10 @@ export default function ListTravel() {
             ...prevFilters,
             categories: newData?.categories || [],
             categoryTravelAddress: newData?.categoryTravelAddress || [],
-            companion: newData?.companion || [],
+            companions: newData?.companions || [],
             complexity: newData?.complexity || [],
             month: newData?.month || [],
-            overNightStay: newData?.overNightStay || [],
+            over_nights_stay: newData?.over_nights_stay || [],
             transports: newData?.transports || [],
         }));
         setIsLoadingFilters(false);

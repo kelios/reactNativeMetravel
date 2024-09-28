@@ -145,7 +145,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             {/* Фильтр: Компаньоны */}
             <MultiSelect
                 hideTags
-                items={filters.companion}
+                items={filters.companions}
                 uniqueKey="id"
                 onSelectedItemsChange={onSelectedItemsChange('companions')}
                 selectedItems={formData.companions}
@@ -166,7 +166,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             {/* Фильтр: Варианты ночлега */}
             <MultiSelect
                 hideTags
-                items={filters.overNightStay}
+                items={filters.over_nights_stay}
                 uniqueKey="id"
                 onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
                 selectedItems={formData.over_nights_stay}

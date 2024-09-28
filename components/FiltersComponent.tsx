@@ -15,20 +15,20 @@ interface FiltersComponentProps {
         countries: any[];
         categories: any[];
         categoryTravelAddress: any[];
-        companion: any[];
+        companions: any[];
         complexity: any[];
         month: any[];
-        overNightStay: any[];
+        over_nights_stay: any[];
         transports: any[];
     };
     filterValue: {
         countries: string[];
         categories: string[];
         categoryTravelAddress: string[];
-        companion: string[];
+        companions: string[];
         complexity: string[];
         month: string[];
-        overNightStay: string[];
+        over_nights_stay: string[];
         transports: string[];
         year: string;
     };
@@ -59,8 +59,8 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
             { label: 'Объекты', values: filterValue.categoryTravelAddress || [] },
             { label: 'Транспорт', values: filterValue.transports || [] },
             { label: 'Уровень физической подготовки', values: filterValue.complexity || [] },
-            { label: 'Варианты отдыха', values: filterValue.companion || [] },
-            { label: 'Ночлег', values: filterValue.overNightStay || [] },
+            { label: 'Варианты отдыха', values: filterValue.companions || [] },
+            { label: 'Ночлег', values: filterValue.over_nights_stay || [] },
             { label: 'Месяц', values: filterValue.month || [] },
             { label: 'Год', values: filterValue.year ? [filterValue.year] : [] },
         ];
@@ -201,10 +201,10 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                         {/* Варианты отдыха */}
                         <MultiSelect
                             hideTags
-                            items={filters?.companion || []}
+                            items={filters?.companions || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('companion')}
-                            selectedItems={filterValue?.companion}
+                            onSelectedItemsChange={onSelectedItemsChange('companions')}
+                            selectedItems={filterValue?.companions}
                             selectText="Выберите варианты отдыха с..."
                             searchInputPlaceholderText="Введите вариант отдыха..."
                             styleListContainer={styles.multiSelectList}
@@ -222,10 +222,10 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                         {/* Варианты ночлега */}
                         <MultiSelect
                             hideTags
-                            items={filters?.overNightStay || []}
+                            items={filters?.over_nights_stay || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('overNightStay')}
-                            selectedItems={filterValue?.overNightStay}
+                            onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
+                            selectedItems={filterValue?.over_nights_stay}
                             selectText="Выберите варианты ночлега..."
                             searchInputPlaceholderText="Введите вариант ночлега..."
                             styleListContainer={styles.multiSelectList}

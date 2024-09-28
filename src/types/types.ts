@@ -101,18 +101,10 @@ export type ArticleType = {
 }
 
 export type Filters = {
-    /* categories: string[]
-     categoryTravelAddress: string[]
-     companion: string[]
-     complexity: string[]
-     month: string[]
-     overNightStay: string[]
-     transports: string[]
-     user_id?:number*/
     countries: string[]
     categories: string[]
     categoryTravelAddress: string[]
-    companion: string[]
+    companions: string[]
     complexity: string[]
     month: string[]
     overNightStay: string[]

@@ -421,10 +421,10 @@ export const fetchFiltersTravel = async (
                 countries: filter?.countries,
                 categories: filter?.categories,
                 categoryTravelAddress: filter?.categoryTravelAddress,
-                companion: filter?.companion,
+                companions: filter?.companions,
                 complexity: filter?.complexity,
                 month: filter?.month,
-                overNightStay: filter?.overNightStay,
+                over_nights_stay: filter?.over_nights_stay,
                 transports: filter?.transports,
                 year: filter?.year,
             }),
@@ -494,32 +494,6 @@ export const fetchTravelsPopular = async (): Promise<TravelsMap> => {
         console.log('Error fetching fetchTravelsNear: ')
     }
 }
-
-/*filter: {},
-) => {
-  try {
-    const params = {
-      page: page + 1,
-      perPage: itemsPerPage,
-      query: search,
-      where: JSON.stringify({
-        publish: 1,
-        moderation: 1,
-        countries: filter?.countries,
-        categories: filter?.categories,
-        categoryTravelAddress: filter?.categoryTravelAddress,
-        companion: filter?.companion,
-        complexity: filter?.complexity,
-        month: filter?.month,
-        overNightStay: filter?.overNightStay,
-        transports: filter?.transports,
-        year: filter?.year,
-      }),
-    }
-    const urlTravel = queryString.stringifyUrl({
-      url: GET_FILTERS_TRAVEL,
-      query: params,
-    }) */
 
 export const fetchTravelsForMap = async (
     page: number,

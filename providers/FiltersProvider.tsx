@@ -20,7 +20,7 @@ export const FiltersProvider: React.FC<FiltersProviderProps> = ({ children }) =>
         countries: [],
         categories: [],
         categoryTravelAddress: [],
-        companion: [],
+        companions: [],
         complexity: [],
         month: [],
         overNightStay: [],
