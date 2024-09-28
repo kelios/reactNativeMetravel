@@ -14,7 +14,6 @@ import { Travels } from '@/src/types/types';
 import {
     fetchTravels,
     fetchFilters,
-    fetchFiltersTravel,
     fetchFiltersCountry,
     deleteTravel,
 } from '@/src/api/travels';
@@ -69,27 +68,14 @@ export default function ListTravel() {
     }, []);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (userId && isMeTravel) {
-                fetchMore();
-            } else if (!isMeTravel) {
-                fetchMore();
-            }
-        };
-        fetchData();
-    }, [userId]);
-
-    // Вызов fetchMore при изменении страницы, количества элементов или поискового запроса
-    useEffect(() => {
         fetchMore();
-    }, [currentPage, itemsPerPage, search, filterValue]); // Добавили filterValue
+    }, [currentPage, itemsPerPage, search, filterValue]);
 
     useEffect(() => {
         setCurrentPage(0);
     }, [itemsPerPage, search, filterValue, userId]);
 
     const resetAllFilters = () => {
-        // Сбрасываем все фильтры к их начальному состоянию
         setFilterValue({
             countries: [],
             categories: [],
@@ -101,9 +87,7 @@ export default function ListTravel() {
             transports: [],
             year: '',
         });
-
-        // Перезагружаем данные с новыми (пустыми) фильтрами
-        fetchMore();
+        fetchMore(); // Запрашиваем данные с новыми (пустыми) фильтрами
     };
 
     const fetchMore = async () => {
@@ -128,13 +112,14 @@ export default function ListTravel() {
             };
         }
 
-        // Добавляем фильтры
-        if (filterValue) {
-            param = {
-                ...param,
-                ...filterValue,
-            };
-        }
+        // Очищаем фильтры от пустых значений
+        const cleanedFilters = cleanFilters(filterValue);
+
+        // Добавляем очищенные фильтры
+        param = {
+            ...param,
+            ...cleanedFilters,
+        };
 
         if (user_id) {
             param = {
@@ -146,6 +131,19 @@ export default function ListTravel() {
         const newData = await fetchTravels(currentPage, itemsPerPage, search, param);
         setTravels(newData);
         setIsLoading(false);
+    };
+
+    const cleanFilters = (filters) => {
+        const cleanedFilters = {};
+        Object.keys(filters).forEach(key => {
+            const value = filters[key];
+            if (Array.isArray(value) && value.length > 0) {
+                cleanedFilters[key] = value; // Оставляем массивы, если они не пустые
+            } else if (typeof value === 'string' && value.trim() !== '') {
+                cleanedFilters[key] = value; // Оставляем строки, если они не пустые
+            }
+        });
+        return cleanedFilters;
     };
 
     const getFilters = useCallback(async () => {
@@ -178,7 +176,7 @@ export default function ListTravel() {
 
     const handleApplyFilters = async () => {
         setCurrentPage(0);
-        fetchMore(); // Вызываем fetchMore для применения фильтров
+        fetchMore(); // Применяем фильтры и обновляем данные
     };
 
     const updateSearch = (search: string) => {
@@ -186,15 +184,14 @@ export default function ListTravel() {
         setSearch(search);
     };
 
-    const onSelectedItemsChange =
-        (field: string) => (selectedItems: string[]) => {
-            setFilterValue({
-                ...filterValue,
-                [field]: selectedItems,
-            });
-        };
+    const onSelectedItemsChange = (field: string, selectedItems: string[]) => {
+        setFilterValue({
+            ...filterValue,
+            [field]: selectedItems,
+        });
+    };
 
-    const handleTextFilterChange = (value: string) => {
+    const handleTextFilterChange = (value?: string) => {
         setFilterValue({
             ...filterValue,
             year: value,
@@ -210,18 +207,18 @@ export default function ListTravel() {
     };
 
     const handlePageChange = (newPage) => {
-        setCurrentPage(newPage); // Обновляем страницу
+        setCurrentPage(newPage);
         fetchMore(); // Запрашиваем данные с текущими фильтрами
     };
 
     const handleItemsPerPageChange = (newItemsPerPage) => {
-        setItemsPerPage(newItemsPerPage); // Изменяем количество элементов на странице
-        setCurrentPage(0); // Возвращаемся на первую страницу
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(0);
         fetchMore(); // Запрашиваем данные с текущими фильтрами
     };
 
     const handleEdit = (id: string) => {
-        navigation.navigate('travel/' + id); // Переход на страницу редактирования
+        navigation.navigate('travel/' + id);
     };
 
     const handleDelete = async (id: string) => {
@@ -289,6 +286,7 @@ export default function ListTravel() {
                             isLoadingFilters={isLoadingFilters}
                             onSelectedItemsChange={onSelectedItemsChange}
                             handleTextFilterChange={handleTextFilterChange}
+                            resetFilters={resetAllFilters}
                             handleApplyFilters={handleApplyFilters}
                             closeMenu={closeMenu}
                             isMobile={isMobile}
@@ -349,44 +347,25 @@ const getStyles = (windowWidth: number) => {
     return StyleSheet.create({
         container: {
             flex: 1,
-            flexDirection: 'row',
-            width: '100%',
-            backgroundColor: 'white',
-        },
-        content: {
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
+            flexDirection: windowWidth <= 1024 ? 'column' : 'row', // На планшетах и мобильных фильтры сверху
             width: '100%',
             backgroundColor: 'white',
         },
         sideMenu: {
             padding: 20,
             backgroundColor: 'white',
+            width: windowWidth <= 1024 ? '100%' : '25%',  // Фильтры занимают всю ширину на мобильных
+            minWidth: 250,  // Минимальная ширина для десктопов
+            borderRightWidth: windowWidth > 1024 ? 1 : 0,  // Добавляем границу только на десктопах
+            borderColor: '#ddd',
         },
-        mobileSideMenu: {
+        content: {
+            flex: 1,
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
             width: '100%',
-            position: 'absolute',
             backgroundColor: 'white',
-            zIndex: 999,
-            elevation: 2,
-            top: 0,
-            left: 0,
-            transform: [{ translateX: -1000 }],
-        },
-        visibleMobileSideMenu: {
-            transform: [{ translateX: 0 }],
-        },
-        desktopSideMenu: {
-            width: 300,
-            backgroundColor: 'white',
-        },
-        containerSearch: {
-            marginTop: 10,
             paddingHorizontal: 10,
-            backgroundColor: 'white',
-            color: 'black',
-            width: '100%',
         },
         searchBarContainer: {
             backgroundColor: 'white',
@@ -398,7 +377,7 @@ const getStyles = (windowWidth: number) => {
             borderTopColor: 'transparent',
         },
         menuButtonContainer: {
-            width: 600,
+            width: windowWidth <= 1024 ? '100%' : 600,  // На планшетах кнопка занимает всю ширину
         },
         menuButton: {
             backgroundColor: '#6aaaaa',

@@ -107,7 +107,7 @@ export type Filters = {
     companions: string[]
     complexity: string[]
     month: string[]
-    overNightStay: string[]
+    over_nights_stay: string[]
     transports: string[]
     year: string
     user_id?: number

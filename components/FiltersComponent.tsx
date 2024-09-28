@@ -33,7 +33,7 @@ interface FiltersComponentProps {
         year: string;
     };
     isLoadingFilters: boolean;
-    onSelectedItemsChange: (field: string) => (selectedItems: string[]) => void;
+    onSelectedItemsChange: (field: string, selectedItems: string[]) => void;
     handleTextFilterChange: (value: string) => void;
     handleApplyFilters: () => void;
     closeMenu: () => void;
@@ -52,26 +52,105 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                                                                isMobile,
                                                                resetFilters,
                                                            }) => {
+    const removeSelectedItem = (field: string, value: string) => {
+        const currentItems = filterValue[field];
+        if (Array.isArray(currentItems)) {
+            // Для стран нужно использовать country_id для удаления, а не title_ru
+            let idToRemove;
+
+            // Если удаляем страну, ищем по title_ru, иначе оставляем как есть
+            if (field === 'countries') {
+                idToRemove = filters[field]?.find(item => item.title_ru === value)?.country_id || value;
+            } else {
+                idToRemove = filters[field]?.find(item => item.name === value)?.id || value;
+            }
+
+            const updatedItems = currentItems.filter((item: string) => item !== idToRemove);
+            onSelectedItemsChange(field, updatedItems);
+        }
+    };
+
     const renderSelectedFilters = () => {
+        if (!filters) return null;
+
         const selectedFilters = [
-            { label: 'Страны', values: filterValue.countries || [] },
-            { label: 'Категории', values: filterValue.categories || [] },
-            { label: 'Объекты', values: filterValue.categoryTravelAddress || [] },
-            { label: 'Транспорт', values: filterValue.transports || [] },
-            { label: 'Уровень физической подготовки', values: filterValue.complexity || [] },
-            { label: 'Варианты отдыха', values: filterValue.companions || [] },
-            { label: 'Ночлег', values: filterValue.over_nights_stay || [] },
-            { label: 'Месяц', values: filterValue.month || [] },
-            { label: 'Год', values: filterValue.year ? [filterValue.year] : [] },
+            {
+                label: 'Страны',
+                field: 'countries',
+                values: (filterValue.countries || []).map(id =>
+                    filters.countries?.find(country => country.country_id === id)?.title_ru || id
+                ),
+            },
+            {
+                label: 'Категории',
+                field: 'categories',
+                values: (filterValue.categories || []).map(id =>
+                    filters.categories?.find(category => category.id === id)?.name || id
+                ),
+            },
+
+            {
+                label: 'Объекты',
+                field: 'categoryTravelAddress',
+                values: (filterValue.categoryTravelAddress || []).map(id =>
+                    filters.categoryTravelAddress?.find(category => category.id === id)?.name || id
+                ),
+            },
+            {
+                label: 'Транспорт',
+                field: 'transports',
+                values: (filterValue.transports || []).map(id =>
+                    filters.transports?.find(transport => transport.id === id)?.name || id
+                ),
+            },
+            {
+                label: 'Уровень физической подготовки',
+                field: 'complexity',
+                values: (filterValue.complexity || []).map(id =>
+                    filters.complexity?.find(level => level.id === id)?.name || id
+                ),
+            },
+            {
+                label: 'Варианты отдыха',
+                field: 'companions',
+                values: (filterValue.companions || []).map(id =>
+                    filters.companions?.find(companion => companion.id === id)?.name || id
+                ),
+            },
+            {
+                label: 'Ночлег',
+                field: 'over_nights_stay',
+                values: (filterValue.over_nights_stay || []).map(id =>
+                    filters.over_nights_stay?.find(stay => stay.id === id)?.name || id
+                ),
+            },
+            {
+                label: 'Месяц',
+                field: 'month',
+                values: (filterValue.month || []).map(id =>
+                    filters.month?.find(month => month.id === id)?.name || id
+                ),
+            },
+            {
+                label: 'Год',
+                field: 'year',
+                values: filterValue.year ? [filterValue.year] : [],
+            },
         ];
 
         return selectedFilters
             .filter(item => item.values.length > 0)
             .map((item, index) => (
                 <View key={index} style={styles.selectedFilter}>
-                    <Text style={styles.selectedFilterLabel}>
-                        {item.label}: {item.values.join(', ')}
-                    </Text>
+                    <Text style={styles.selectedFilterLabel}>{item.label}:</Text>
+                    {item.values.map((value, idx) => (
+                        <View key={idx} style={styles.filterTag}>
+                            <Text>{value}</Text>
+                            <TouchableOpacity onPress={() => removeSelectedItem(item.field, value)}>
+                                <Text style={styles.removeIcon}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ))}
                 </View>
             ));
     };
@@ -83,26 +162,21 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                     <ActivityIndicator size="large" color="#007bff" />
                 ) : (
                     <>
-                        {/* Отображение выбранных фильтров */}
                         <View style={styles.selectedFiltersContainer}>
                             <Text style={styles.selectedFiltersTitle}>Выбранные фильтры:</Text>
-                            {renderSelectedFilters().length > 0 ? (
-                                renderSelectedFilters()
-                            ) : (
-                                <Text style={styles.noSelectedFilters}>Нет выбранных фильтров</Text>
-                            )}
+                            {renderSelectedFilters()}
                         </View>
 
                         {/* Страны */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.countries || []}
                             uniqueKey="country_id"
-                            onSelectedItemsChange={onSelectedItemsChange('countries')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('countries', selectedItems)}
                             selectedItems={filterValue?.countries}
                             selectText="Выберите страны..."
                             searchInputPlaceholderText="Введите страну..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 400 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -116,14 +190,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {/* Категории */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.categories || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('categories')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('categories', selectedItems)}
                             selectedItems={filterValue?.categories}
                             selectText="Выберите категории..."
                             searchInputPlaceholderText="Введите категорию..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 400 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -140,11 +214,11 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             hideTags
                             items={filters?.categoryTravelAddress || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('categoryTravelAddress')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('categoryTravelAddress', selectedItems)}
                             selectedItems={filterValue?.categoryTravelAddress}
                             selectText="Выберите объекты..."
                             searchInputPlaceholderText="Введите объект..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 400 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -158,14 +232,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {/* Транспорт */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.transports || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('transports')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('transports', selectedItems)}
                             selectedItems={filterValue?.transports}
                             selectText="Выберите транспорт..."
                             searchInputPlaceholderText="Введите транспорт..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 300 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -179,14 +253,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {/* Уровень физической подготовки */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.complexity || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('complexity')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('complexity', selectedItems)}
                             selectedItems={filterValue?.complexity}
                             selectText="Выберите уровень физической подготовки..."
                             searchInputPlaceholderText="Введите уровень..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 300 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -200,14 +274,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {/* Варианты отдыха */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.companions || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('companions')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('companions', selectedItems)}
                             selectedItems={filterValue?.companions}
                             selectText="Выберите варианты отдыха с..."
                             searchInputPlaceholderText="Введите вариант отдыха..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 300 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -221,14 +295,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {/* Варианты ночлега */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.over_nights_stay || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('over_nights_stay')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('over_nights_stay', selectedItems)}
                             selectedItems={filterValue?.over_nights_stay}
                             selectText="Выберите варианты ночлега..."
                             searchInputPlaceholderText="Введите вариант ночлега..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 300 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -242,14 +316,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {/* Месяц */}
                         <MultiSelect
-                            hideTags
+                            hideTags={false}
                             items={filters?.month || []}
                             uniqueKey="id"
-                            onSelectedItemsChange={onSelectedItemsChange('month')}
+                            onSelectedItemsChange={(selectedItems) => onSelectedItemsChange('month', selectedItems)}
                             selectedItems={filterValue?.month}
                             selectText="Выберите месяц..."
                             searchInputPlaceholderText="Введите месяц..."
-                            styleListContainer={styles.multiSelectList}
+                            styleListContainer={{ ...styles.multiSelectList, height: 300 }}
                             tagRemoveIconColor="#999"
                             tagBorderColor="#999"
                             tagTextColor="#666"
@@ -284,7 +358,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                     </>
                 )}
             </View>
-
         </ScrollView>
     );
 };
@@ -304,12 +377,46 @@ const styles = StyleSheet.create({
         elevation: 5,
         margin: 10,
     },
-    multiSelectList: {
-        height: 200,
-        borderColor: '#ddd',
+    selectedFiltersContainer: {
+        marginBottom: 15,
+    },
+    selectedFiltersTitle: {
+        fontWeight: 'bold',
+        marginBottom: 5,
+        fontSize: 16,
+        color: '#333',
+    },
+    noSelectedFilters: {
+        fontSize: 14,
+        color: '#999',
+    },
+    selectedFilter: {
+        marginBottom: 10,
+    },
+    selectedFilterLabel: {
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 5,
+    },
+    filterTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f1f1f1',
+        padding: 5,
+        borderRadius: 5,
+        marginRight: 5,
+        marginBottom: 5,
+    },
+    removeIcon: {
+        marginLeft: 5,
+        color: '#ff0000',
+        fontWeight: 'bold',
     },
     searchInput: {
         color: '#333',
+    },
+    multiSelectList: {
+        borderColor: '#ddd',
     },
     input: {
         marginVertical: 10,
@@ -346,39 +453,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    applyButton: {
-        backgroundColor: '#28a745',
-        padding: 15,
-        borderRadius: 5,
-        margin: 10,
-    },
-    applyButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    selectedFiltersContainer: {
-        marginBottom: 15,
-    },
-    selectedFiltersTitle: {
-        fontWeight: 'bold',
-        marginBottom: 5,
-        fontSize: 16,
-        color: '#333',
-    },
-    noSelectedFilters: {
-        fontSize: 14,
-        color: '#999',
-    },
-    selectedFilter: {
-        backgroundColor: '#f1f1f1',
-        padding: 5,
-        borderRadius: 5,
-        marginBottom: 5,
-    },
-    selectedFilterLabel: {
-        color: '#333',
     },
 });
 
