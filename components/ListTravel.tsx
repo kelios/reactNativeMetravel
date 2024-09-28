@@ -5,8 +5,8 @@ import {
     View,
     ActivityIndicator,
     Dimensions,
-    Pressable,
     FlatList,
+    ScrollView,
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
 import PaginationComponent from '@/components/PaginationComponent';
@@ -34,9 +34,9 @@ export default function ListTravel() {
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
 
     const isMobile = windowWidth <= 768;
-    const isTablet = windowWidth > 768 && windowWidth <= 1024;
-    const numColumns = isMobile ? 1 : 2;
-    const [menuVisible, setMenuVisible] = useState(!isMobile); // Изначально меню открыто только на десктопах
+    const isTablet = windowWidth > 768 && windowWidth <= 1400;
+    const numColumns = isMobile || isTablet ? 1 : 2;
+    const [menuVisible, setMenuVisible] = useState(false);
     const [travels, setTravels] = useState<Travels[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -110,20 +110,11 @@ export default function ListTravel() {
             };
         }
 
-        // Очищаем фильтры от пустых значений
         const cleanedFilters = cleanFilters(filterValue);
-
-        // Добавляем очищенные фильтры
-        param = {
-            ...param,
-            ...cleanedFilters,
-        };
+        param = { ...param, ...cleanedFilters };
 
         if (user_id) {
-            param = {
-                ...param,
-                user_id: user_id,
-            };
+            param = { ...param, user_id: user_id };
         }
 
         const newData = await fetchTravels(currentPage, itemsPerPage, search, param);
@@ -136,9 +127,9 @@ export default function ListTravel() {
         Object.keys(filters).forEach((key) => {
             const value = filters[key];
             if (Array.isArray(value) && value.length > 0) {
-                cleanedFilters[key] = value; // Оставляем массивы, если они не пустые
+                cleanedFilters[key] = value;
             } else if (typeof value === 'string' && value.trim() !== '') {
-                cleanedFilters[key] = value; // Оставляем строки, если они не пустые
+                cleanedFilters[key] = value;
             }
         });
         return cleanedFilters;
@@ -174,7 +165,7 @@ export default function ListTravel() {
 
     const handleApplyFilters = async () => {
         setCurrentPage(0);
-        fetchMore(); // Применяем фильтры и обновляем данные
+        fetchMore();
     };
 
     const updateSearch = (search: string) => {
@@ -206,13 +197,13 @@ export default function ListTravel() {
 
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
-        fetchMore(); // Запрашиваем данные с текущими фильтрами
+        fetchMore();
     };
 
     const handleItemsPerPageChange = (newItemsPerPage) => {
         setItemsPerPage(newItemsPerPage);
         setCurrentPage(0);
-        fetchMore(); // Запрашиваем данные с текущими фильтрами
+        fetchMore();
     };
 
     const handleEdit = (id: string) => {
@@ -253,44 +244,43 @@ export default function ListTravel() {
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.container}>
-                {isMobile && menuVisible && (
-                    <Pressable onPress={closeMenu} style={styles.overlay} />
-                )}
-                {isMobile || isTablet ? (
-                    <View
-                        style={[
-                            styles.sideMenu,
-                            styles.mobileSideMenu,
-                            menuVisible && styles.visibleMobileSideMenu,
-                        ]}
-                    >
-                        <FiltersComponent
-                            filters={filters}
-                            filterValue={filterValue}
-                            isLoadingFilters={isLoadingFilters}
-                            onSelectedItemsChange={onSelectedItemsChange}
-                            handleTextFilterChange={handleTextFilterChange}
-                            resetFilters={resetAllFilters}
-                            handleApplyFilters={handleApplyFilters}
-                            closeMenu={closeMenu}
-                            isMobile={isMobile}
-                        />
-                    </View>
+                {isMobile ? (
+                    <ScrollView style={menuVisible ? styles.scrollContainer : null}>
+                        <View
+                            style={[
+                                styles.sideMenu,
+                                styles.mobileSideMenu,
+                                menuVisible && styles.visibleMobileSideMenu,
+                            ]}
+                        >
+                            <FiltersComponent
+                                filters={filters}
+                                filterValue={filterValue}
+                                isLoadingFilters={isLoadingFilters}
+                                onSelectedItemsChange={onSelectedItemsChange}
+                                handleTextFilterChange={handleTextFilterChange}
+                                resetFilters={resetAllFilters}
+                                handleApplyFilters={handleApplyFilters}
+                                closeMenu={closeMenu}
+                                isMobile={isMobile}
+                            />
+                        </View>
+                    </ScrollView>
                 ) : (
                     <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-                        <FiltersComponent
-                            filters={filters}
-                            filterValue={filterValue}
-                            isLoadingFilters={isLoadingFilters}
-                            onSelectedItemsChange={onSelectedItemsChange}
-                            handleTextFilterChange={handleTextFilterChange}
-                            resetFilters={resetAllFilters}
-                            handleApplyFilters={handleApplyFilters}
-                            closeMenu={closeMenu}
-                            isMobile={isMobile}
-                        />
+                    <FiltersComponent
+                    filters={filters}
+                    filterValue={filterValue}
+                    isLoadingFilters={isLoadingFilters}
+                    onSelectedItemsChange={onSelectedItemsChange}
+                    handleTextFilterChange={handleTextFilterChange}
+                    resetFilters={resetAllFilters}
+                    handleApplyFilters={handleApplyFilters}
+                    closeMenu={closeMenu}
+                    isMobile={isMobile}
+                    />
                     </View>
-                )}
+                    )}
                 <View style={styles.content}>
                     {isMobile && !menuVisible && (
                         <Button
@@ -325,7 +315,6 @@ export default function ListTravel() {
                         )}
                         keyExtractor={(item) => item.id.toString()}
                         numColumns={numColumns}
-                        columnWrapperStyle={isTablet ? styles.tabletColumnWrapper : undefined}
                         key={numColumns}
                     />
                     <View style={styles.paginationWrapper}>
@@ -348,16 +337,20 @@ const getStyles = (windowWidth: number) => {
     return StyleSheet.create({
         container: {
             flex: 1,
-            flexDirection: windowWidth <= 1024 ? 'column' : 'row', // Фильтры сверху на мобильных устройствах
+            flexDirection: windowWidth <= 1024 ? 'column' : 'row',
             width: '100%',
             backgroundColor: 'white',
+        },
+        scrollContainer: {
+            flex: 1, // Устанавливаем высоту скролл-контейнера
+            maxHeight: '90vh', // Ограничиваем высоту скролл-контейнера
         },
         sideMenu: {
             padding: 20,
             backgroundColor: 'white',
-            width: windowWidth <= 1024 ? '100%' : '25%',  // Фильтры занимают всю ширину на мобильных и планшетах
-            minWidth: 250,  // Минимальная ширина для десктопов
-            borderRightWidth: windowWidth > 1024 ? 1 : 0,  // Граница только на десктопах
+            width: windowWidth <= 1024 ? '100%' : '25%',
+            minWidth: 250,
+            borderRightWidth: windowWidth > 1024 ? 1 : 0,
             borderColor: '#ddd',
         },
         mobileSideMenu: {
@@ -368,24 +361,24 @@ const getStyles = (windowWidth: number) => {
             backgroundColor: 'white',
             zIndex: 999,
             elevation: 2,
-            transform: [{ translateX: -1000 }], // Прячем меню
+            transform: [{ translateX: -1000 }],
         },
         visibleMobileSideMenu: {
-            transform: [{ translateX: 0 }], // Показываем меню
+            transform: [{ translateX: 0 }],
         },
         content: {
             flex: 1,
             justifyContent: 'flex-start',
-            alignItems: 'center',  // Центрируем контент
+            alignItems: 'center',
             width: '100%',
             backgroundColor: 'white',
             paddingHorizontal: 10,
         },
         containerSearch: {
-            width: '100%', // Поиск на всю ширину
-            maxWidth: 1200, // Ограничение ширины на больших экранах
-            alignSelf: 'center', // Центрирование поиска на больших экранах
-            marginBottom: 20, // Отступ внизу
+            width: '100%',
+            maxWidth: 1200,
+            alignSelf: 'center',
+            marginBottom: 20,
         },
         searchBarContainer: {
             backgroundColor: 'white',
@@ -394,14 +387,10 @@ const getStyles = (windowWidth: number) => {
             alignItems: 'center',
             borderBottomColor: 'transparent',
             borderTopColor: 'transparent',
-            paddingHorizontal: 10, // Отступы по бокам
-        },
-        tabletColumnWrapper: {
-            justifyContent: 'space-between', // Равномерное распределение колонок на планшетах
             paddingHorizontal: 10,
         },
         menuButtonContainer: {
-            width: '100%',  // Кнопка занимает всю ширину
+            width: '100%',
             justifyContent: 'center',
             marginBottom: 20,
         },
@@ -414,8 +403,8 @@ const getStyles = (windowWidth: number) => {
         },
         paginationWrapper: {
             width: '100%',
-            alignItems: 'center',  // Центрируем внутри контейнера
-            justifyContent: 'center', // Центрируем по горизонтали
+            alignItems: 'center',
+            justifyContent: 'center',
         },
     });
 };

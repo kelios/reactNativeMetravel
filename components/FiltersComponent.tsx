@@ -105,6 +105,18 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                     <ActivityIndicator size="large" color="#007bff" />
                 ) : (
                     <>
+
+                        {/* Для мобильных и планшетов */}
+                        {isMobile && (
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
+                                    <Text style={styles.closeButtonText}>Закрыть</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
+                                    <Text style={styles.resetButtonText}>Сбросить фильтры</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                         <View style={styles.selectedFiltersContainer}>
                             <Text style={styles.selectedFiltersTitle}>Выбранные фильтры:</Text>
                             {renderSelectedFilters()}
