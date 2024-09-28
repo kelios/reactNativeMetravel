@@ -5,7 +5,8 @@ import {
     View,
     ActivityIndicator,
     Dimensions,
-    Pressable, FlatList,
+    Pressable,
+    FlatList
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
 import PaginationComponent from '@/components/PaginationComponent';
@@ -14,13 +15,14 @@ import {
     fetchTravels,
     fetchFilters,
     fetchFiltersTravel,
-    fetchFiltersCountry, deleteTravel,
+    fetchFiltersCountry,
+    deleteTravel,
 } from '@/src/api/travels';
 import { useLocalSearchParams } from 'expo-router';
 import { SearchBar, Button } from 'react-native-elements';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRoute } from "@react-navigation/native";
-import TravelListItem from "@/components/TravelListItem";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute } from '@react-navigation/native';
+import TravelListItem from '@/components/TravelListItem';
 import Toast from 'react-native-toast-message';
 
 export default function ListTravel() {
@@ -67,52 +69,77 @@ export default function ListTravel() {
     }, []);
 
     useEffect(() => {
-        if (userId && isMeTravel) {
-            fetchMore();
-        }
-        else if (!isMeTravel) {
-            fetchMore();
-        }
+        const fetchData = async () => {
+            if (userId && isMeTravel) {
+                fetchMore();
+            } else if (!isMeTravel) {
+                fetchMore();
+            }
+        };
+        fetchData();
     }, [userId]);
 
+    // Вызов fetchMore при изменении страницы, количества элементов или поискового запроса
     useEffect(() => {
-        if (userId && isMeTravel) {
-            fetchMore();
-        }
-        else if (!isMeTravel) {
-            fetchMore();
-        }
-    }, [currentPage, itemsPerPage, search, filterValue]);
+        fetchMore();
+    }, [currentPage, itemsPerPage, search, filterValue]); // Добавили filterValue
 
     useEffect(() => {
         setCurrentPage(0);
-    }, [itemsPerPage, search, userId]);
+    }, [itemsPerPage, search, filterValue, userId]);
+
+    const resetAllFilters = () => {
+        // Сбрасываем все фильтры к их начальному состоянию
+        setFilterValue({
+            countries: [],
+            categories: [],
+            categoryTravelAddress: [],
+            companion: [],
+            complexity: [],
+            month: [],
+            overNightStay: [],
+            transports: [],
+            year: '',
+        });
+
+        // Перезагружаем данные с новыми (пустыми) фильтрами
+        fetchMore();
+    };
 
     const fetchMore = async () => {
         if (isLoading) return;
         setIsLoading(true);
+
         let param = {};
         if (isMeTravel) {
             param = {
                 user_id: userId || null,
-            }
+            };
         } else if (isTravelBy) {
             param = {
                 moderation: 1,
                 publish: 1,
                 countries: [3],
-            }
+            };
         } else {
             param = {
                 moderation: 1,
                 publish: 1,
-            }
+            };
         }
 
-        if(user_id){
+        // Добавляем фильтры
+        if (filterValue) {
             param = {
                 ...param,
-                user_id: user_id
+                ...filterValue,
+            };
+        }
+
+        if (user_id) {
+            param = {
+                ...param,
+                user_id: user_id,
             };
         }
 
@@ -150,22 +177,12 @@ export default function ListTravel() {
     }, [isLoadingFilters]);
 
     const handleApplyFilters = async () => {
-        if (isLoading) return;
-        setIsLoading(true);
-        const newData = await fetchFiltersTravel(
-            currentPage,
-            itemsPerPage,
-            search,
-            filterValue
-        );
-        setTravels(newData);
-        setIsLoading(false);
-        if (isMobile) {
-            closeMenu();
-        }
+        setCurrentPage(0);
+        fetchMore(); // Вызываем fetchMore для применения фильтров
     };
 
     const updateSearch = (search: string) => {
+        setCurrentPage(0);
         setSearch(search);
     };
 
@@ -192,41 +209,47 @@ export default function ListTravel() {
         setMenuVisible(false);
     };
 
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage); // Обновляем страницу
+        fetchMore(); // Запрашиваем данные с текущими фильтрами
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage) => {
+        setItemsPerPage(newItemsPerPage); // Изменяем количество элементов на странице
+        setCurrentPage(0); // Возвращаемся на первую страницу
+        fetchMore(); // Запрашиваем данные с текущими фильтрами
+    };
 
     const handleEdit = (id: string) => {
-        // Переход на страницу редактирования с передачей id путешествия
-        navigation.navigate('travel/'+id)
-    }
+        navigation.navigate('travel/' + id); // Переход на страницу редактирования
+    };
 
-        const handleDelete = async (id: string) => {
-            try {
-                // Показать уведомление о начале процесса удаления
+    const handleDelete = async (id: string) => {
+        try {
+            Toast.show({
+                type: 'info',
+                text1: 'Удаление...',
+            });
+
+            const response = await deleteTravel(id);
+            if (response.success) {
                 Toast.show({
-                    type: 'info',
-                    text1: 'Удаление...',
+                    type: 'success',
+                    text1: 'Путешествие успешно удалено!',
                 });
-
-                // Ваш код для удаления
-                const response = await deleteTravel(id);
-                if (response.success) {
-                    Toast.show({
-                        type: 'success',
-                        text1: 'Путешествие успешно удалено!',
-                    });
-                } else {
-                    Toast.show({
-                        type: 'error',
-                        text1: `Ошибка: ${response.message}`,
-                    });
-                }
-            } catch (error) {
+            } else {
                 Toast.show({
                     type: 'error',
-                    text1: 'Произошла ошибка при удалении',
+                    text1: `Ошибка: ${response.message}`,
                 });
             }
-        };
-
+        } catch (error) {
+            Toast.show({
+                type: 'error',
+                text1: 'Произошла ошибка при удалении',
+            });
+        }
+    };
 
     if (!filters || !travels?.data) {
         return <ActivityIndicator />;
@@ -235,7 +258,9 @@ export default function ListTravel() {
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.container}>
-                {isMobile && menuVisible && <Pressable onPress={closeMenu} style={styles.overlay} />}
+                {isMobile && menuVisible && (
+                    <Pressable onPress={closeMenu} style={styles.overlay} />
+                )}
                 {isMobile ? (
                     <View
                         style={[
@@ -250,6 +275,7 @@ export default function ListTravel() {
                             isLoadingFilters={isLoadingFilters}
                             onSelectedItemsChange={onSelectedItemsChange}
                             handleTextFilterChange={handleTextFilterChange}
+                            resetFilters={resetAllFilters}
                             handleApplyFilters={handleApplyFilters}
                             closeMenu={closeMenu}
                             isMobile={isMobile}
@@ -293,14 +319,14 @@ export default function ListTravel() {
                     </View>
                     <FlatList
                         data={travels?.data}
-                        renderItem={({ item }) =>
+                        renderItem={({ item }) => (
                             <TravelListItem
                                 travel={item}
                                 currentUserId={user_id}
                                 onEditPress={(id) => handleEdit(item.id.toString())}
                                 onDeletePress={(id) => handleDelete(item.id.toString())}
                             />
-                        }
+                        )}
                         keyExtractor={(item) => item.id.toString()}
                         numColumns={numColumns}
                         key={numColumns}
@@ -309,9 +335,9 @@ export default function ListTravel() {
                         currentPage={currentPage}
                         totalItems={travels?.total}
                         itemsPerPage={itemsPerPage}
-                        onPageChange={setCurrentPage}
+                        onPageChange={handlePageChange}
                         itemsPerPageOptions={itemsPerPageOptions}
-                        onItemsPerPageChange={setItemsPerPage}
+                        onItemsPerPageChange={handleItemsPerPageChange}
                     />
                 </View>
             </View>
