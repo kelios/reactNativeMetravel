@@ -6,7 +6,7 @@ import {
     ActivityIndicator,
     Dimensions,
     Pressable,
-    FlatList
+    FlatList,
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
 import PaginationComponent from '@/components/PaginationComponent';
@@ -29,16 +29,14 @@ export default function ListTravel() {
     const windowWidth = Dimensions.get('window').width;
     const styles = getStyles(windowWidth);
     const [search, setSearch] = useState('');
-
     const [filters, setFilters] = useState({});
     const [filterValue, setFilterValue] = useState({});
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
 
     const isMobile = windowWidth <= 768;
+    const isTablet = windowWidth > 768 && windowWidth <= 1024;
     const numColumns = isMobile ? 1 : 2;
-    const initMenuVisible = !isMobile;
-
-    const [menuVisible, setMenuVisible] = useState(initMenuVisible);
+    const [menuVisible, setMenuVisible] = useState(!isMobile); // Изначально меню открыто только на десктопах
     const [travels, setTravels] = useState<Travels[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -135,7 +133,7 @@ export default function ListTravel() {
 
     const cleanFilters = (filters) => {
         const cleanedFilters = {};
-        Object.keys(filters).forEach(key => {
+        Object.keys(filters).forEach((key) => {
             const value = filters[key];
             if (Array.isArray(value) && value.length > 0) {
                 cleanedFilters[key] = value; // Оставляем массивы, если они не пустые
@@ -258,7 +256,7 @@ export default function ListTravel() {
                 {isMobile && menuVisible && (
                     <Pressable onPress={closeMenu} style={styles.overlay} />
                 )}
-                {isMobile ? (
+                {isMobile || isTablet ? (
                     <View
                         style={[
                             styles.sideMenu,
@@ -327,16 +325,19 @@ export default function ListTravel() {
                         )}
                         keyExtractor={(item) => item.id.toString()}
                         numColumns={numColumns}
+                        columnWrapperStyle={isTablet ? styles.tabletColumnWrapper : undefined}
                         key={numColumns}
                     />
-                    <PaginationComponent
-                        currentPage={currentPage}
-                        totalItems={travels?.total}
-                        itemsPerPage={itemsPerPage}
-                        onPageChange={handlePageChange}
-                        itemsPerPageOptions={itemsPerPageOptions}
-                        onItemsPerPageChange={handleItemsPerPageChange}
-                    />
+                    <View style={styles.paginationWrapper}>
+                        <PaginationComponent
+                            currentPage={currentPage}
+                            totalItems={travels?.total}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            itemsPerPageOptions={itemsPerPageOptions}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
+                    </View>
                 </View>
             </View>
         </SafeAreaView>
@@ -347,37 +348,62 @@ const getStyles = (windowWidth: number) => {
     return StyleSheet.create({
         container: {
             flex: 1,
-            flexDirection: windowWidth <= 1024 ? 'column' : 'row', // На планшетах и мобильных фильтры сверху
+            flexDirection: windowWidth <= 1024 ? 'column' : 'row', // Фильтры сверху на мобильных устройствах
             width: '100%',
             backgroundColor: 'white',
         },
         sideMenu: {
             padding: 20,
             backgroundColor: 'white',
-            width: windowWidth <= 1024 ? '100%' : '25%',  // Фильтры занимают всю ширину на мобильных
+            width: windowWidth <= 1024 ? '100%' : '25%',  // Фильтры занимают всю ширину на мобильных и планшетах
             minWidth: 250,  // Минимальная ширина для десктопов
-            borderRightWidth: windowWidth > 1024 ? 1 : 0,  // Добавляем границу только на десктопах
+            borderRightWidth: windowWidth > 1024 ? 1 : 0,  // Граница только на десктопах
             borderColor: '#ddd',
+        },
+        mobileSideMenu: {
+            width: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            backgroundColor: 'white',
+            zIndex: 999,
+            elevation: 2,
+            transform: [{ translateX: -1000 }], // Прячем меню
+        },
+        visibleMobileSideMenu: {
+            transform: [{ translateX: 0 }], // Показываем меню
         },
         content: {
             flex: 1,
             justifyContent: 'flex-start',
-            alignItems: 'flex-start',
+            alignItems: 'center',  // Центрируем контент
             width: '100%',
             backgroundColor: 'white',
             paddingHorizontal: 10,
+        },
+        containerSearch: {
+            width: '100%', // Поиск на всю ширину
+            maxWidth: 1200, // Ограничение ширины на больших экранах
+            alignSelf: 'center', // Центрирование поиска на больших экранах
+            marginBottom: 20, // Отступ внизу
         },
         searchBarContainer: {
             backgroundColor: 'white',
             flexDirection: 'row',
             justifyContent: 'center',
             alignItems: 'center',
-            alignContent: 'center',
             borderBottomColor: 'transparent',
             borderTopColor: 'transparent',
+            paddingHorizontal: 10, // Отступы по бокам
+        },
+        tabletColumnWrapper: {
+            justifyContent: 'space-between', // Равномерное распределение колонок на планшетах
+            paddingHorizontal: 10,
         },
         menuButtonContainer: {
-            width: windowWidth <= 1024 ? '100%' : 600,  // На планшетах кнопка занимает всю ширину
+            width: '100%',  // Кнопка занимает всю ширину
+            justifyContent: 'center',
+            marginBottom: 20,
         },
         menuButton: {
             backgroundColor: '#6aaaaa',
@@ -385,6 +411,11 @@ const getStyles = (windowWidth: number) => {
         menuButtonText: {
             color: 'white',
             fontWeight: 'bold',
+        },
+        paginationWrapper: {
+            width: '100%',
+            alignItems: 'center',  // Центрируем внутри контейнера
+            justifyContent: 'center', // Центрируем по горизонтали
         },
     });
 };

@@ -55,16 +55,12 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
     const removeSelectedItem = (field: string, value: string) => {
         const currentItems = filterValue[field];
         if (Array.isArray(currentItems)) {
-            // Для стран нужно использовать country_id для удаления, а не title_ru
             let idToRemove;
-
-            // Если удаляем страну, ищем по title_ru, иначе оставляем как есть
             if (field === 'countries') {
                 idToRemove = filters[field]?.find(item => item.title_ru === value)?.country_id || value;
             } else {
                 idToRemove = filters[field]?.find(item => item.name === value)?.id || value;
             }
-
             const updatedItems = currentItems.filter((item: string) => item !== idToRemove);
             onSelectedItemsChange(field, updatedItems);
         }
@@ -74,68 +70,15 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
         if (!filters) return null;
 
         const selectedFilters = [
-            {
-                label: 'Страны',
-                field: 'countries',
-                values: (filterValue.countries || []).map(id =>
-                    filters.countries?.find(country => country.country_id === id)?.title_ru || id
-                ),
-            },
-            {
-                label: 'Категории',
-                field: 'categories',
-                values: (filterValue.categories || []).map(id =>
-                    filters.categories?.find(category => category.id === id)?.name || id
-                ),
-            },
-
-            {
-                label: 'Объекты',
-                field: 'categoryTravelAddress',
-                values: (filterValue.categoryTravelAddress || []).map(id =>
-                    filters.categoryTravelAddress?.find(category => category.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Транспорт',
-                field: 'transports',
-                values: (filterValue.transports || []).map(id =>
-                    filters.transports?.find(transport => transport.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Уровень физической подготовки',
-                field: 'complexity',
-                values: (filterValue.complexity || []).map(id =>
-                    filters.complexity?.find(level => level.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Варианты отдыха',
-                field: 'companions',
-                values: (filterValue.companions || []).map(id =>
-                    filters.companions?.find(companion => companion.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Ночлег',
-                field: 'over_nights_stay',
-                values: (filterValue.over_nights_stay || []).map(id =>
-                    filters.over_nights_stay?.find(stay => stay.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Месяц',
-                field: 'month',
-                values: (filterValue.month || []).map(id =>
-                    filters.month?.find(month => month.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Год',
-                field: 'year',
-                values: filterValue.year ? [filterValue.year] : [],
-            },
+            { label: 'Страны', field: 'countries', values: (filterValue.countries || []).map(id => filters.countries?.find(country => country.country_id === id)?.title_ru || id) },
+            { label: 'Категории', field: 'categories', values: (filterValue.categories || []).map(id => filters.categories?.find(category => category.id === id)?.name || id) },
+            { label: 'Объекты', field: 'categoryTravelAddress', values: (filterValue.categoryTravelAddress || []).map(id => filters.categoryTravelAddress?.find(category => category.id === id)?.name || id) },
+            { label: 'Транспорт', field: 'transports', values: (filterValue.transports || []).map(id => filters.transports?.find(transport => transport.id === id)?.name || id) },
+            { label: 'Уровень физической подготовки', field: 'complexity', values: (filterValue.complexity || []).map(id => filters.complexity?.find(level => level.id === id)?.name || id) },
+            { label: 'Варианты отдыха', field: 'companions', values: (filterValue.companions || []).map(id => filters.companions?.find(companion => companion.id === id)?.name || id) },
+            { label: 'Ночлег', field: 'over_nights_stay', values: (filterValue.over_nights_stay || []).map(id => filters.over_nights_stay?.find(stay => stay.id === id)?.name || id) },
+            { label: 'Месяц', field: 'month', values: (filterValue.month || []).map(id => filters.month?.find(month => month.id === id)?.name || id) },
+            { label: 'Год', field: 'year', values: filterValue.year ? [filterValue.year] : [] },
         ];
 
         return selectedFilters
@@ -167,7 +110,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             {renderSelectedFilters()}
                         </View>
 
-                        {/* Страны */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.countries || []}
@@ -188,7 +130,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Категории */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.categories || []}
@@ -209,7 +150,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Объекты */}
                         <MultiSelect
                             hideTags
                             items={filters?.categoryTravelAddress || []}
@@ -230,7 +170,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Транспорт */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.transports || []}
@@ -251,7 +190,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Уровень физической подготовки */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.complexity || []}
@@ -272,7 +210,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Варианты отдыха */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.companions || []}
@@ -293,7 +230,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Варианты ночлега */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.over_nights_stay || []}
@@ -314,7 +250,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Месяц */}
                         <MultiSelect
                             hideTags={false}
                             items={filters?.month || []}
@@ -335,7 +270,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             fixedHeight
                         />
 
-                        {/* Год */}
                         <TextInput
                             style={styles.input}
                             placeholder="Введите год"
@@ -344,12 +278,21 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                             keyboardType="numeric"
                         />
 
-                        {/* Кнопка Закрыть и Сброс фильтров */}
+                        {/* Для мобильных и планшетов */}
                         {isMobile && (
                             <View style={styles.buttonContainer}>
                                 <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
                                     <Text style={styles.closeButtonText}>Закрыть</Text>
                                 </TouchableOpacity>
+                                <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
+                                    <Text style={styles.resetButtonText}>Сбросить фильтры</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Для десктопов - всегда отображать кнопку сброса фильтров */}
+                        {!isMobile && (
+                            <View style={styles.buttonContainer}>
                                 <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
                                     <Text style={styles.resetButtonText}>Сбросить фильтры</Text>
                                 </TouchableOpacity>
@@ -385,10 +328,6 @@ const styles = StyleSheet.create({
         marginBottom: 5,
         fontSize: 16,
         color: '#333',
-    },
-    noSelectedFilters: {
-        fontSize: 14,
-        color: '#999',
     },
     selectedFilter: {
         marginBottom: 10,
