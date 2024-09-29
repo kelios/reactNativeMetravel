@@ -4,9 +4,9 @@ import {
     StyleSheet,
     View,
     ActivityIndicator,
-    Dimensions,
     FlatList,
-    ScrollView,
+    useWindowDimensions,
+    Text,
 } from 'react-native';
 import FiltersComponent from '@/components/FiltersComponent';
 import PaginationComponent from '@/components/PaginationComponent';
@@ -20,33 +20,32 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { SearchBar, Button } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import TravelListItem from '@/components/TravelListItem';
 import Toast from 'react-native-toast-message';
 
 export default function ListTravel() {
-    const initialPage = 0;
-    const windowWidth = Dimensions.get('window').width;
+    const { width: windowWidth } = useWindowDimensions();
     const styles = getStyles(windowWidth);
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({});
     const [filterValue, setFilterValue] = useState({});
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
-
-    const isMobile = windowWidth <= 768;
-    const isTablet = windowWidth > 768 && windowWidth <= 1400;
-    const numColumns = isMobile || isTablet ? 1 : 2;
     const [menuVisible, setMenuVisible] = useState(false);
     const [travels, setTravels] = useState<Travels[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-
-    const itemsPerPageOptions = [10, 20, 30, 50, 100];
-    const [currentPage, setCurrentPage] = useState(initialPage);
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2]);
-    const { user_id } = useLocalSearchParams();
     const [userId, setUserId] = useState('');
 
+    const isMobile = windowWidth <= 768;
+    const numColumns = isMobile ? 1 : 2;
+
+    const itemsPerPageOptions = [10, 20, 30, 50, 100];
+    const [currentPage, setCurrentPage] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2]);
+    const { user_id } = useLocalSearchParams();
     const route = useRoute();
+    const navigation = useNavigation();
+
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
 
@@ -66,26 +65,16 @@ export default function ListTravel() {
     }, []);
 
     useEffect(() => {
-        fetchMore();
-    }, [currentPage, itemsPerPage, search, filterValue]);
-
-    useEffect(() => {
         setCurrentPage(0);
     }, [itemsPerPage, search, filterValue, userId]);
 
+    useEffect(() => {
+        fetchMore();
+    }, [currentPage, itemsPerPage, search, filterValue]);
+
     const resetAllFilters = () => {
-        setFilterValue({
-            countries: [],
-            categories: [],
-            categoryTravelAddress: [],
-            companions: [],
-            complexity: [],
-            month: [],
-            over_nights_stay: [],
-            transports: [],
-            year: '',
-        });
-        fetchMore(); // Запрашиваем данные с новыми (пустыми) фильтрами
+        setFilterValue({});
+        fetchMore();
     };
 
     const fetchMore = async () => {
@@ -163,14 +152,14 @@ export default function ListTravel() {
         setIsLoadingFilters(false);
     }, [isLoadingFilters]);
 
-    const handleApplyFilters = async () => {
+    const handleApplyFilters = () => {
         setCurrentPage(0);
         fetchMore();
     };
 
-    const updateSearch = (search: string) => {
+    const updateSearch = (searchText: string) => {
         setCurrentPage(0);
-        setSearch(search);
+        setSearch(searchText);
     };
 
     const onSelectedItemsChange = (field: string, selectedItems: string[]) => {
@@ -223,6 +212,7 @@ export default function ListTravel() {
                     type: 'success',
                     text1: 'Путешествие успешно удалено!',
                 });
+                fetchMore(); // Обновляем список после удаления
             } else {
                 Toast.show({
                     type: 'error',
@@ -238,51 +228,33 @@ export default function ListTravel() {
     };
 
     if (!filters || !travels?.data) {
-        return <ActivityIndicator />;
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#6aaaaa" />
+            </View>
+        );
     }
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <View style={styles.container}>
-                {isMobile ? (
-                    <ScrollView style={menuVisible ? styles.scrollContainer : null}>
-                        <View
-                            style={[
-                                styles.sideMenu,
-                                styles.mobileSideMenu,
-                                menuVisible && styles.visibleMobileSideMenu,
-                            ]}
-                        >
-                            <FiltersComponent
-                                filters={filters}
-                                filterValue={filterValue}
-                                isLoadingFilters={isLoadingFilters}
-                                onSelectedItemsChange={onSelectedItemsChange}
-                                handleTextFilterChange={handleTextFilterChange}
-                                resetFilters={resetAllFilters}
-                                handleApplyFilters={handleApplyFilters}
-                                closeMenu={closeMenu}
-                                isMobile={isMobile}
-                            />
-                        </View>
-                    </ScrollView>
-                ) : (
-                    <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-                    <FiltersComponent
-                    filters={filters}
-                    filterValue={filterValue}
-                    isLoadingFilters={isLoadingFilters}
-                    onSelectedItemsChange={onSelectedItemsChange}
-                    handleTextFilterChange={handleTextFilterChange}
-                    resetFilters={resetAllFilters}
-                    handleApplyFilters={handleApplyFilters}
-                    closeMenu={closeMenu}
-                    isMobile={isMobile}
-                    />
+                {(!isMobile || menuVisible) && (
+                    <View style={[styles.sideMenu, menuVisible && styles.sideMenuVisible]}>
+                        <FiltersComponent
+                            filters={filters}
+                            filterValue={filterValue}
+                            isLoadingFilters={isLoadingFilters}
+                            onSelectedItemsChange={onSelectedItemsChange}
+                            handleTextFilterChange={handleTextFilterChange}
+                            resetFilters={resetAllFilters}
+                            handleApplyFilters={handleApplyFilters}
+                            closeMenu={closeMenu}
+                            isMobile={isMobile}
+                        />
                     </View>
-                    )}
+                )}
                 <View style={styles.content}>
-                    {isMobile && !menuVisible && (
+                    {isMobile && (
                         <Button
                             title="Фильтры"
                             onPress={toggleMenu}
@@ -291,7 +263,7 @@ export default function ListTravel() {
                             titleStyle={styles.menuButtonText}
                         />
                     )}
-                    <View style={styles.containerSearch}>
+                    <View style={styles.searchContainer}>
                         <SearchBar
                             placeholder="Введите ключевые слова..."
                             onChangeText={updateSearch}
@@ -299,24 +271,34 @@ export default function ListTravel() {
                             lightTheme
                             round
                             containerStyle={styles.searchBarContainer}
-                            inputContainerStyle={{ backgroundColor: 'white' }}
-                            inputStyle={{ backgroundColor: 'white', fontSize: 14 }}
+                            inputContainerStyle={styles.searchInputContainer}
+                            inputStyle={styles.searchInput}
                         />
                     </View>
-                    <FlatList
-                        data={travels?.data}
-                        renderItem={({ item }) => (
-                            <TravelListItem
-                                travel={item}
-                                currentUserId={user_id}
-                                onEditPress={(id) => handleEdit(item.id.toString())}
-                                onDeletePress={(id) => handleDelete(item.id.toString())}
-                            />
-                        )}
-                        keyExtractor={(item) => item.id.toString()}
-                        numColumns={numColumns}
-                        key={numColumns}
-                    />
+                    {isLoading ? (
+                        <ActivityIndicator size="large" color="#6aaaaa" />
+                    ) : (
+                        <FlatList
+                            key={`flatlist-columns-${numColumns}`} // Добавлено это свойство
+                            data={travels?.data}
+                            renderItem={({ item }) => (
+                                <TravelListItem
+                                    travel={item}
+                                    currentUserId={user_id}
+                                    onEditPress={() => handleEdit(item.id.toString())}
+                                    onDeletePress={() => handleDelete(item.id.toString())}
+                                />
+                            )}
+                            keyExtractor={(item) => item.id.toString()}
+                            numColumns={numColumns}
+                            contentContainerStyle={styles.listContent}
+                            ListEmptyComponent={() => (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>Нет данных для отображения</Text>
+                                </View>
+                            )}
+                        />
+                    )}
                     <View style={styles.paginationWrapper}>
                         <PaginationComponent
                             currentPage={currentPage}
@@ -334,65 +316,44 @@ export default function ListTravel() {
 }
 
 const getStyles = (windowWidth: number) => {
+    const isMobile = windowWidth <= 768;
+
     return StyleSheet.create({
         container: {
             flex: 1,
-            flexDirection: windowWidth <= 1024 ? 'column' : 'row',
-            width: '100%',
-            backgroundColor: 'white',
+            flexDirection: isMobile ? 'column' : 'row',
+            backgroundColor: '#f5f5f5',
         },
-        scrollContainer: {
-            flex: 1, // Устанавливаем высоту скролл-контейнера
-            maxHeight: '90vh', // Ограничиваем высоту скролл-контейнера
+        loaderContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
         },
         sideMenu: {
-            padding: 20,
-            backgroundColor: 'white',
-            width: windowWidth <= 1024 ? '100%' : '25%',
-            minWidth: 250,
-            borderRightWidth: windowWidth > 1024 ? 1 : 0,
+            width: isMobile ? '100%' : '25%',
+            backgroundColor: '#fff',
+            borderRightWidth: isMobile ? 0 : 1,
             borderColor: '#ddd',
-        },
-        mobileSideMenu: {
-            width: '100%',
-            position: 'absolute',
+            position: isMobile ? 'absolute' : 'relative',
+            zIndex: 10,
             top: 0,
-            left: 0,
-            backgroundColor: 'white',
-            zIndex: 999,
-            elevation: 2,
-            transform: [{ translateX: -1000 }],
+            left: isMobile ? -windowWidth : 0,
+            height: '100%',
+            paddingTop: isMobile ? 50 : 0,
         },
-        visibleMobileSideMenu: {
-            transform: [{ translateX: 0 }],
+        sideMenuVisible: {
+            left: 0,
+            elevation: 5,
         },
         content: {
             flex: 1,
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            width: '100%',
-            backgroundColor: 'white',
-            paddingHorizontal: 10,
-        },
-        containerSearch: {
-            width: '100%',
-            maxWidth: 1200,
-            alignSelf: 'center',
-            marginBottom: 20,
-        },
-        searchBarContainer: {
-            backgroundColor: 'white',
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            borderBottomColor: 'transparent',
-            borderTopColor: 'transparent',
+            backgroundColor: '#fff',
             paddingHorizontal: 10,
         },
         menuButtonContainer: {
             width: '100%',
             justifyContent: 'center',
-            marginBottom: 20,
+            marginVertical: 10,
         },
         menuButton: {
             backgroundColor: '#6aaaaa',
@@ -401,10 +362,40 @@ const getStyles = (windowWidth: number) => {
             color: 'white',
             fontWeight: 'bold',
         },
+        searchContainer: {
+            width: '100%',
+            marginBottom: 10,
+        },
+        searchBarContainer: {
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            borderBottomWidth: 0,
+            paddingHorizontal: 0,
+        },
+        searchInputContainer: {
+            backgroundColor: '#e9e9e9',
+        },
+        searchInput: {
+            fontSize: 14,
+        },
+        listContent: {
+            paddingBottom: 20,
+        },
+        emptyContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 50,
+        },
+        emptyText: {
+            fontSize: 16,
+            color: '#777',
+        },
         paginationWrapper: {
             width: '100%',
             alignItems: 'center',
             justifyContent: 'center',
+            paddingVertical: 10,
         },
     });
 };

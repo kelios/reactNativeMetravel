@@ -3,11 +3,11 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
+  Text,
   Dimensions,
 } from 'react-native';
 import * as Linking from 'expo-linking';
-import { Card, Title, Paragraph, Text } from 'react-native-paper';
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen';
+import { Card, Title, Paragraph } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import { Travel } from '@/src/types/types';
 
@@ -17,8 +17,6 @@ type TravelListItemProps = {
   onEditPress: (id: string) => void;
   onDeletePress: (id: string) => void;
 };
-
-const { width } = Dimensions.get('window');
 
 const TravelListItem = ({
                           travel,
@@ -45,21 +43,18 @@ const TravelListItem = ({
 
   return (
       <View style={styles.container}>
-        <TouchableOpacity onPress={() => Linking.openURL(Urltravel)} activeOpacity={0.8}>
+        <TouchableOpacity onPress={() => Linking.openURL(Urltravel)} activeOpacity={0.9}>
           <Card style={styles.card}>
-            <View style={styles.imageWrapper}>
-              <Card.Cover
-                  source={{ uri: travel_image_thumb_url }}
-                  style={styles.image}
-                  resizeMode="cover" // Чтобы изображение адаптировалось, сохраняя пропорции
-              />
-            </View>
+            <Card.Cover
+                source={{ uri: travel_image_thumb_url }}
+                style={styles.image}
+            />
             <Card.Content style={styles.content}>
               <Title numberOfLines={2} style={styles.title}>{name}</Title>
               <Paragraph style={styles.countryText}>{countryName}</Paragraph>
               <Paragraph style={styles.authorText}>
-                <Text>Автор - {userName}</Text>
-                <Text style={styles.paragraphLeft}>({countUnicIpView} 👀)</Text>
+                Автор - {userName}{' '}
+                <Text style={styles.viewsText}>({countUnicIpView} 👀)</Text>
               </Paragraph>
 
               {isButtonVisible && (
@@ -85,75 +80,68 @@ const TravelListItem = ({
   );
 };
 
+const { width } = Dimensions.get('window');
+const cardWidth = width * 0.9 > 500 ? 500 : width * 0.9;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingVertical: 15,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
   },
   card: {
-    borderRadius: 10,
-    elevation: 2,
-    width: wp('90%'), // Адаптивная ширина карточки
-    maxWidth: 500, // Максимальная ширина
-    height: 500,
-    marginHorizontal: wp(1.5),
+    borderRadius: 15,
     overflow: 'hidden',
-  },
-  imageWrapper: {
-    width: '100%',
-    height: 350, // Адаптивная высота блока с изображением
-    overflow: 'hidden',
+    elevation: 5,
+    backgroundColor: '#fff',
+    width: cardWidth,
+    height: 550, // Зафиксированная увеличенная высота карточки
   },
   image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover', // Чтобы изображение заполняло контейнер
+    height: 350,
   },
   content: {
-    padding: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
   },
   title: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 5,
   },
   countryText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#6AAAAA',
-    marginBottom: 10,
+    marginBottom: 5,
   },
   authorText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#777',
   },
-  paragraphLeft: {
-    marginLeft: wp(1.5),
+  viewsText: {
+    color: '#777',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 10,
+    marginTop: 15,
   },
   editButton: {
     backgroundColor: '#6AAAAA',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 5,
-    marginHorizontal: 5,
+    marginRight: 10,
   },
   deleteButton: {
     backgroundColor: '#f44336',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 5,
-    marginHorizontal: 5,
   },
   buttonText: {
     color: 'white',
-    fontWeight: 'bold',
-    textAlign: 'center',
     fontSize: 18,
   },
 });
