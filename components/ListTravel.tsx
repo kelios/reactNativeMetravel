@@ -19,7 +19,7 @@ import {
     deleteTravel,
 } from '@/src/api/travels';
 import {useLocalSearchParams, useRouter} from 'expo-router';
-import {SearchBar} from 'react-native-elements';
+import {SearchBar, Button} from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useRoute, useNavigation} from '@react-navigation/native';
 import TravelListItem from '@/components/TravelListItem';
@@ -398,7 +398,7 @@ const getStyles = (windowWidth: number) => {
             marginVertical: 10,
         },
         menuButton: {
-            backgroundColor: '#6aaaaa',
+            backgroundColor: '#6AAAAA',
         },
         menuButtonText: {
             color: 'white',
@@ -438,6 +438,7 @@ const getStyles = (windowWidth: number) => {
             alignItems: 'center',
             justifyContent: 'center',
             paddingVertical: 10,
+            alignSelf: 'center',  // Центрирование на мобильных устройствах
         },
     });
 };

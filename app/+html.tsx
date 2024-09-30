@@ -1,8 +1,6 @@
 import { ScrollViewStyleReset } from 'expo-router/html'
 import CookiePopup from "@/components/CookiePopup";
 import React from "react";
-import Breadcrumbs from "@/components/Breadcrumbs";
-import {useRouter} from "expo-router";
 
 // This file is web-only and used to configure the root HTML for every
 // web page during static rendering.

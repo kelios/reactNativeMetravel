@@ -5,7 +5,7 @@ import {
     StyleSheet,
     TouchableOpacity,
     Image,
-    Platform,
+    Platform, useWindowDimensions,
 } from 'react-native';
 import { Menu, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -20,6 +20,9 @@ function RenderRightMenu() {
     const [username, setUsername] = useState('');
     const { isAuthenticated, setIsAuthenticated, logout } = useAuth();
     const { updateFilters } = useFilters();
+
+    const { width } = useWindowDimensions()
+    const isMobile = width <= 768
 
     useEffect(() => {
         const checkAuthentication = async () => {
@@ -56,7 +59,7 @@ function RenderRightMenu() {
             </View>
 
             <View style={styles.rightContainer}>
-                {username && (
+                {username && !isMobile && (
                     <View style={styles.userContainer}>
                         <Icon name="account-circle" size={24} color="#fff" />
                         <Text style={styles.username}>{username}</Text>

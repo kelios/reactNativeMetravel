@@ -116,7 +116,7 @@ const TravelDetails: React.FC = () => {
     body {
       font-family: 'Arial', sans-serif;
       line-height: 1.6;
-      font-size: 16px;
+      fontSize: '16px';
       color: #333;
       text-align: justify;
     }
