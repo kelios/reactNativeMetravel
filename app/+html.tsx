@@ -1,5 +1,4 @@
 import { ScrollViewStyleReset } from 'expo-router/html'
-import CookiePopup from "@/components/CookiePopup";
 import React from "react";
 
 // This file is web-only and used to configure the root HTML for every
@@ -34,8 +33,6 @@ export default function Root({ children }: { children: React.ReactNode }) {
             <link rel="icon" href="/favicon.ico" />
         </head>
         <body>
-        <CookiePopup />
-
         {children}
         </body>
         </html>

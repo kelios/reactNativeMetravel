@@ -10,6 +10,7 @@ import {
 import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
+import CookiePopup from "@/components/CookiePopup";
 
 export {
     // Catch any errors thrown by the Layout component.
@@ -68,6 +69,7 @@ function RootLayoutNav() {
                     </Stack>
                 </FiltersProvider>
             </AuthProvider>
+            <CookiePopup />
         </PaperProvider>
     );
 }

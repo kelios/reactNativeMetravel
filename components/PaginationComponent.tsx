@@ -31,6 +31,13 @@ const PaginationComponent: React.FC<PaginationComponentProps> = ({
                     numberOfItemsPerPageList={itemsPerPageOptions}
                     numberOfItemsPerPage={itemsPerPage}
                     onItemsPerPageChange={onItemsPerPageChange}
+                    style={styles.pagination}  // Добавляем кастомные стили
+                    theme={{
+                        colors: {
+                            primary: 'orange', // Цвет иконок пагинации
+                            text: 'white', // Цвет текста в пагинации
+                        },
+                    }}
                 />
             </DataTable>
         </View>
