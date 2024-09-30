@@ -1,10 +1,11 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome'
-import {Tabs} from 'expo-router'
+import {Tabs, useRouter} from 'expo-router'
 import {Image, useColorScheme, useWindowDimensions} from 'react-native'
 import Footer from '@/components/Footer'
 import RenderRightMenu from '@/components/RenderRightMenu';
 import NewTravelScreen from "@/app/(tabs)/travel/new";
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 /**
  * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -18,6 +19,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
     const colorScheme = useColorScheme()
     const width = useWindowDimensions().width
+
     return (
         <>
             <Tabs
@@ -34,7 +36,7 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="index"
                     options={{
-                        title: 'Все путешествия',
+                        title: '',
                         //tabBarIcon: ({ color }) => <TabBarIcon image="/assets/icons/logo_yellow" color={color} />,
                         tabBarIcon: ({size, focused, color}) => {
                             return (
@@ -53,7 +55,7 @@ export default function TabLayout() {
                     name="travelsby"
                     options={{
                         tabBarIconStyle: {display: 'none'},
-                        title: 'Путешествуем по Беларуси',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -61,7 +63,7 @@ export default function TabLayout() {
                     name="map"
                     options={{
                         tabBarIconStyle: {display: 'none'},
-                        title: 'Карта путешествий',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -69,7 +71,7 @@ export default function TabLayout() {
                     name="travels/439"
                     options={{
                         tabBarIconStyle: {display: 'none'},
-                        title: 'Аккаунты в instagram о путешествиях по Беларуси',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                         href: {
                             pathname: '/travels/439',
@@ -81,7 +83,7 @@ export default function TabLayout() {
                     name="travels/[id]"
                     options={{
                         tabBarIconStyle: {display: 'none'},
-                        title: 'Аккаунты в instagram о путешествиях по Беларуси',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                         href: {
                             pathname: '/travels/439',
@@ -94,7 +96,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'О сайте',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -104,7 +106,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Новости/Розогрыши',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -114,7 +116,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Обратная связь',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -123,7 +125,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Новость',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -133,7 +135,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Войти',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -143,7 +145,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Зарегистрироваться',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -153,7 +155,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Установить пароль',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -163,7 +165,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Новое путешествие',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -173,7 +175,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Редактировать путешествие',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -183,7 +185,7 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Мои путешествия',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
@@ -193,13 +195,12 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
-                        title: 'Подтвердить регистрацию',
+                        title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
 
             </Tabs>
-
             <Footer/>
         </>
     )

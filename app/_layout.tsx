@@ -1,22 +1,22 @@
-import React from 'react'
-import '@expo/metro-runtime'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
-import {useFonts} from 'expo-font'
-import {SplashScreen, Stack} from 'expo-router'
-import {useEffect} from 'react'
-import CookiePopup from '@/components/CookiePopup'
+import React, { useEffect } from 'react';
+import '@expo/metro-runtime';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useFonts } from 'expo-font';
+import { SplashScreen, Stack, useRouter } from 'expo-router';  // Updated here
+import CookiePopup from '@/components/CookiePopup';
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
-} from 'react-native-paper'
-import {PlayfairDisplay_400Regular} from '@expo-google-fonts/playfair-display'
-import {FiltersProvider} from "@/providers/FiltersProvider";
-import {AuthProvider} from "@/context/AuthContext";
+} from 'react-native-paper';
+import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
+import { FiltersProvider } from '@/providers/FiltersProvider';
+import { AuthProvider } from '@/context/AuthContext';
+import Breadcrumbs from '@/components/Breadcrumbs';  // Assuming you have Breadcrumbs ready
 
 export {
     // Catch any errors thrown by the Layout component.
     ErrorBoundary,
-} from 'expo-router'
+} from 'expo-router';
 
 const theme = {
     ...DefaultTheme,
@@ -25,53 +25,50 @@ const theme = {
         primary: 'tomato',
         secondary: 'yellow',
     },
-}
+};
 
 export const unstable_settings = {
     // Ensure that reloading on `/modal` keeps a back button present.
     initialRouteName: '(tabs)',
-}
+};
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync()
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
     const [loaded, error] = useFonts({
         PlayfairDisplay_400Regular,
         ...FontAwesome.font,
-    })
+    });
 
     // Expo Router uses Error Boundaries to catch errors in the navigation tree.
     useEffect(() => {
-        if (error) throw error
-    }, [error])
+        if (error) throw error;
+    }, [error]);
 
     useEffect(() => {
         if (loaded) {
-            SplashScreen.hideAsync()
+            SplashScreen.hideAsync();
         }
-    }, [loaded])
+    }, [loaded]);
 
     if (!loaded) {
-        return null
+        return null;
     }
 
-    return <RootLayoutNav/>
+    return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
-    //  const colorScheme = useColorScheme()
-
     return (
         <PaperProvider theme={theme}>
             <AuthProvider>
                 <FiltersProvider>
                     <Stack>
-                        <Stack.Screen name="(tabs)" options={{headerShown: false}}/>
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false, headerTitle: '' }} />
                     </Stack>
-                    <CookiePopup/>
                 </FiltersProvider>
             </AuthProvider>
         </PaperProvider>
-    )
+    );
 }

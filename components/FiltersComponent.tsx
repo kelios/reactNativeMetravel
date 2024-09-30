@@ -204,7 +204,6 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                 ) : (
                     <>
                         <View style={styles.header}>
-                            <Text style={styles.title}>Фильтры</Text>
                             {isMobile && (
                                 <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
                                     <Ionicons name="close" size={24} color="#333" />
@@ -308,13 +307,13 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                         <View style={styles.buttonContainer}>
                             {isMobile && (
                                 <TouchableOpacity style={styles.applyButton} onPress={closeMenu}>
-                                    <Ionicons name="search" size={24} color="white" />
+                                    <Ionicons name="search" size={12} color="white" />
                                     <Text style={styles.resetButtonText}>Поиск</Text>
                                 </TouchableOpacity>
                             )}
                             <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
-                                <Ionicons name="refresh" size={24} color="white" />
-                                <Text style={styles.resetButtonText}>Сбросить</Text>
+                                <Ionicons name="refresh" size={12} color="white" />
+                                <Text style={styles.resetButtonText}>Очистить фильтры</Text>
                             </TouchableOpacity>
                         </View>
                     </>
@@ -339,7 +338,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     title: {
-        fontSize: 24,
+        fontSize: 12,
         fontWeight: 'bold',
         color: '#333',
     },
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 5,
-        fontSize: 16,
+        fontSize: 12,
     },
     filterTagsContainer: {
         flexDirection: 'row',
@@ -377,7 +376,7 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     filterLabel: {
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: '600',
         color: '#333',
         marginBottom: 5,
@@ -416,7 +415,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         marginLeft: 5,
-        fontSize: 16,
+        fontSize: 12,
     },
     resetButton: {
         backgroundColor: '#ff9800',
@@ -431,7 +430,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         marginLeft: 5,
-        fontSize: 16,
+        fontSize: 12,
     },
 });
 

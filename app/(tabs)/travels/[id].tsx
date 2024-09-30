@@ -11,7 +11,7 @@ import {
   Text,
   Platform,
 } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import {Stack, useLocalSearchParams, useRouter} from 'expo-router';
 import { Travel } from '@/src/types/types';
 import IframeRenderer, { iframeModel } from '@native-html/iframe-plugin';
 import RenderHTML from 'react-native-render-html';
@@ -27,6 +27,7 @@ import PopularTravelList from '@/components/PopularTravelList';
 
 // Убираем асинхронную загрузку карты для улучшенной стабильности
 import MapClientSideComponent from '@/components/Map';
+import Breadcrumbs from "@/components/Breadcrumbs";
 
 const TravelDetails: React.FC = () => {
   const [isMounted, setIsMounted] = useState(false);
@@ -178,6 +179,8 @@ const TravelDetails: React.FC = () => {
     }
   </style>`;
 
+
+
   return (
       <SafeAreaView style={{ flex: 1 }}>
         {isMounted && (
@@ -201,7 +204,7 @@ const TravelDetails: React.FC = () => {
                   </View>
               )}
               <View style={styles.content}>
-                {isMobile && !menuVisible && (
+                 {isMobile && !menuVisible && (
                     <TouchableOpacity
                         style={styles.menuButtonContainer}
                         onPress={toggleMenu}
@@ -215,7 +218,6 @@ const TravelDetails: React.FC = () => {
                     ref={scrollRef}
                     contentContainerStyle={styles.contentContainer}
                 >
-                  <Stack.Screen options={{ headerTitle: travel.name }} />
                   <View style={styles.centeredContainer}>
                     {hasGallery && (
                         <Slider images={gallery} onLayout={handleLayout('gallery')} />
