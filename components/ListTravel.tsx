@@ -39,7 +39,7 @@ export default function ListTravel() {
     const [currentDeleteId, setCurrentDeleteId] = useState<string | null>(null); // Для хранения ID удаляемого элемента
 
     const isMobile = windowWidth <= 768;
-    const numColumns = isMobile ? 1 : 2;
+    const numColumns = windowWidth <= 1400 ? 1 : 2;
 
     const itemsPerPageOptions = [10, 20, 30, 50, 100];
     const [currentPage, setCurrentPage] = useState(0);
