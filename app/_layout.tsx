@@ -3,7 +3,6 @@ import '@expo/metro-runtime';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter } from 'expo-router';  // Updated here
-import CookiePopup from '@/components/CookiePopup';
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
@@ -11,7 +10,6 @@ import {
 import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
-import Breadcrumbs from '@/components/Breadcrumbs';  // Assuming you have Breadcrumbs ready
 
 export {
     // Catch any errors thrown by the Layout component.
@@ -60,6 +58,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+
     return (
         <PaperProvider theme={theme}>
             <AuthProvider>

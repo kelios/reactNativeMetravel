@@ -501,7 +501,6 @@ export const fetchTravelsForMap = async (
     filter: {},
 ): Promise<TravelsForMap> => {
     try {
-        console.log(filter)
         const radius = filter?.radius[0] ?? 60
         const whereObject = {
             publish: 1,
@@ -512,7 +511,6 @@ export const fetchTravelsForMap = async (
             categories: [],
             address: null,
         }
-        console.log(radius)
         if (filter?.categories?.length > 0) {
             filter?.categories.forEach((category, index) => {
                 whereObject.categories[index] = {id: category, name: category}
@@ -694,6 +692,7 @@ export const deleteTravel = async (id: string) => {
         if (response.status !== 204) {
             throw new Error('Ошибка при удалении путешествия')
         }
+        return response;
     } catch (error) {
         console.error('Ошибка при удалении путешествия:', error)
         throw error

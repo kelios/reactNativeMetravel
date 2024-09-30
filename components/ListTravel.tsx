@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
     SafeAreaView,
     StyleSheet,
@@ -8,24 +8,24 @@ import {
     useWindowDimensions,
     Text,
 } from 'react-native';
+import {Provider as PaperProvider, Dialog, Portal, Button as PaperButton} from 'react-native-paper';
 import FiltersComponent from '@/components/FiltersComponent';
 import PaginationComponent from '@/components/PaginationComponent';
-import { Travels } from '@/src/types/types';
+import {Travels} from '@/src/types/types';
 import {
     fetchTravels,
     fetchFilters,
     fetchFiltersCountry,
     deleteTravel,
 } from '@/src/api/travels';
-import { useLocalSearchParams } from 'expo-router';
-import { SearchBar, Button } from 'react-native-elements';
+import {useLocalSearchParams, useRouter} from 'expo-router';
+import {SearchBar} from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import {useRoute, useNavigation} from '@react-navigation/native';
 import TravelListItem from '@/components/TravelListItem';
-import Toast from 'react-native-toast-message';
 
 export default function ListTravel() {
-    const { width: windowWidth } = useWindowDimensions();
+    const {width: windowWidth} = useWindowDimensions();
     const styles = getStyles(windowWidth);
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({});
@@ -35,6 +35,8 @@ export default function ListTravel() {
     const [travels, setTravels] = useState<Travels[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [userId, setUserId] = useState('');
+    const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+    const [currentDeleteId, setCurrentDeleteId] = useState<string | null>(null); // Для хранения ID удаляемого элемента
 
     const isMobile = windowWidth <= 768;
     const numColumns = isMobile ? 1 : 2;
@@ -42,9 +44,8 @@ export default function ListTravel() {
     const itemsPerPageOptions = [10, 20, 30, 50, 100];
     const [currentPage, setCurrentPage] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2]);
-    const { user_id } = useLocalSearchParams();
+    const {user_id} = useLocalSearchParams();
     const route = useRoute();
-    const navigation = useNavigation();
 
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
@@ -60,17 +61,31 @@ export default function ListTravel() {
     }, []);
 
     useEffect(() => {
-        getFilters();
-        getFiltersCountry();
-    }, []);
-
-    useEffect(() => {
         setCurrentPage(0);
     }, [itemsPerPage, search, filterValue, userId]);
 
     useEffect(() => {
-        fetchMore();
-    }, [currentPage, itemsPerPage, search, filterValue]);
+        if (userId && isMeTravel) {
+            fetchMore();
+        }
+        else if(!isMeTravel) {
+            fetchMore();
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (isMeTravel && userId) {
+            // Если это страница metravel и userId получен, загружаем данные
+            getFilters();
+            getFiltersCountry();
+            fetchMore();
+        } else if (!isMeTravel) {
+            // На других страницах загружаем данные сразу
+            getFilters();
+            getFiltersCountry();
+            fetchMore();
+        }
+    }, [itemsPerPage, search, filterValue, isMeTravel]);
 
     const resetAllFilters = () => {
         setFilterValue({});
@@ -100,10 +115,10 @@ export default function ListTravel() {
         }
 
         const cleanedFilters = cleanFilters(filterValue);
-        param = { ...param, ...cleanedFilters };
+        param = {...param, ...cleanedFilters};
 
         if (user_id) {
-            param = { ...param, user_id: user_id };
+            param = {...param, user_id: user_id};
         }
 
         const newData = await fetchTravels(currentPage, itemsPerPage, search, param);
@@ -196,122 +211,149 @@ export default function ListTravel() {
     };
 
     const handleEdit = (id: string) => {
-        navigation.navigate('travel/' + id);
+        const router = useRouter();
+        router.push(`/travel/${id}`);
     };
 
-    const handleDelete = async (id: string) => {
-        try {
-            Toast.show({
-                type: 'info',
-                text1: 'Удаление...',
-            });
+    const handleDelete = async () => {
+        if (!currentDeleteId) return;
 
-            const response = await deleteTravel(id);
-            if (response.success) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Путешествие успешно удалено!',
+        try {
+              const response = await deleteTravel(currentDeleteId);
+
+            if (response.status === 204) {
+                console.log("Путешествие успешно удалено!");
+
+                // Обновляем список путешествий
+                setTravels((prevTravels) => {
+                    if (prevTravels && prevTravels.data && Array.isArray(prevTravels.data)) {
+                        const updatedTravels = prevTravels.data.filter((travel) => {
+                            return String(travel.id) !== String(currentDeleteId); // Сравнение как строки
+                        });
+
+                        return {
+                            ...prevTravels,
+                            data: updatedTravels,  // Обновляем только поле data
+                        };
+                    }
+                    return prevTravels;
                 });
-                fetchMore(); // Обновляем список после удаления
             } else {
-                Toast.show({
-                    type: 'error',
-                    text1: `Ошибка: ${response.message}`,
-                });
+                console.log(`Ошибка удаления: ${response.message}`);
             }
         } catch (error) {
-            Toast.show({
-                type: 'error',
-                text1: 'Произошла ошибка при удалении',
-            });
+            console.log('Произошла ошибка при удалении');
+        } finally {
+            setDeleteDialogVisible(false); // Закрываем диалог
         }
+    };
+
+    const openDeleteDialog = (id: string) => {
+        setCurrentDeleteId(id); // Сохраняем ID удаляемого элемента
+        setDeleteDialogVisible(true); // Открываем диалог
     };
 
     if (!filters || !travels?.data) {
         return (
             <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#6aaaaa" />
+                <ActivityIndicator size="large" color="#6aaaaa"/>
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={styles.container}>
-                {(!isMobile || menuVisible) && (
-                    <View style={[styles.sideMenu, menuVisible && styles.sideMenuVisible]}>
-                        <FiltersComponent
-                            filters={filters}
-                            filterValue={filterValue}
-                            isLoadingFilters={isLoadingFilters}
-                            onSelectedItemsChange={onSelectedItemsChange}
-                            handleTextFilterChange={handleTextFilterChange}
-                            resetFilters={resetAllFilters}
-                            handleApplyFilters={handleApplyFilters}
-                            closeMenu={closeMenu}
-                            isMobile={isMobile}
-                        />
-                    </View>
-                )}
-                <View style={styles.content}>
-                    {isMobile && (
-                        <Button
-                            title="Фильтры"
-                            onPress={toggleMenu}
-                            containerStyle={styles.menuButtonContainer}
-                            buttonStyle={styles.menuButton}
-                            titleStyle={styles.menuButtonText}
-                        />
+        <PaperProvider>
+            <SafeAreaView style={{flex: 1}}>
+                <View style={styles.container}>
+                    {(!isMobile || menuVisible) && (
+                        <View style={[styles.sideMenu, menuVisible && styles.sideMenuVisible]}>
+                            <FiltersComponent
+                                filters={filters}
+                                filterValue={filterValue}
+                                isLoadingFilters={isLoadingFilters}
+                                onSelectedItemsChange={onSelectedItemsChange}
+                                handleTextFilterChange={handleTextFilterChange}
+                                resetFilters={resetAllFilters}
+                                handleApplyFilters={handleApplyFilters}
+                                closeMenu={closeMenu}
+                                isMobile={isMobile}
+                            />
+                        </View>
                     )}
-                    <View style={styles.searchContainer}>
-                        <SearchBar
-                            placeholder="Введите ключевые слова..."
-                            onChangeText={updateSearch}
-                            value={search}
-                            lightTheme
-                            round
-                            containerStyle={styles.searchBarContainer}
-                            inputContainerStyle={styles.searchInputContainer}
-                            inputStyle={styles.searchInput}
-                        />
-                    </View>
-                    {isLoading ? (
-                        <ActivityIndicator size="large" color="#6aaaaa" />
-                    ) : (
-                        <FlatList
-                            key={`flatlist-columns-${numColumns}`} // Добавлено это свойство
-                            data={travels?.data}
-                            renderItem={({ item }) => (
-                                <TravelListItem
-                                    travel={item}
-                                    currentUserId={user_id}
-                                    onEditPress={() => handleEdit(item.id.toString())}
-                                    onDeletePress={() => handleDelete(item.id.toString())}
-                                />
-                            )}
-                            keyExtractor={(item) => item.id.toString()}
-                            numColumns={numColumns}
-                            contentContainerStyle={styles.listContent}
-                            ListEmptyComponent={() => (
-                                <View style={styles.emptyContainer}>
-                                    <Text style={styles.emptyText}>Нет данных для отображения</Text>
-                                </View>
-                            )}
-                        />
-                    )}
-                    <View style={styles.paginationWrapper}>
-                        <PaginationComponent
-                            currentPage={currentPage}
-                            totalItems={travels?.total}
-                            itemsPerPage={itemsPerPage}
-                            onPageChange={handlePageChange}
-                            itemsPerPageOptions={itemsPerPageOptions}
-                            onItemsPerPageChange={handleItemsPerPageChange}
-                        />
+                    <View style={styles.content}>
+                        {isMobile && (
+                            <Button
+                                title="Фильтры"
+                                onPress={toggleMenu}
+                                containerStyle={styles.menuButtonContainer}
+                                buttonStyle={styles.menuButton}
+                                titleStyle={styles.menuButtonText}
+                            />
+                        )}
+                        <View style={styles.searchContainer}>
+                            <SearchBar
+                                placeholder="Введите ключевые слова..."
+                                onChangeText={updateSearch}
+                                value={search}
+                                lightTheme
+                                round
+                                containerStyle={styles.searchBarContainer}
+                                inputContainerStyle={styles.searchInputContainer}
+                                inputStyle={styles.searchInput}
+                            />
+                        </View>
+                        {isLoading ? (
+                            <ActivityIndicator size="large" color="#6aaaaa"/>
+                        ) : (
+                            <FlatList
+                                key={`flatlist-columns-${numColumns}`}
+                                data={travels?.data}
+                                renderItem={({item}) => (
+                                    <TravelListItem
+                                        travel={item}
+                                        currentUserId={user_id}
+                                        onEditPress={() => handleEdit(item.id.toString())}
+                                        onDeletePress={() => openDeleteDialog(item.id.toString())} // Открываем диалог
+                                    />
+                                )}
+                                keyExtractor={(item) => item.id.toString()}
+                                numColumns={numColumns}
+                                contentContainerStyle={styles.listContent}
+                                ListEmptyComponent={() => (
+                                    <View style={styles.emptyContainer}>
+                                        <Text style={styles.emptyText}>Нет данных для отображения</Text>
+                                    </View>
+                                )}
+                            />
+                        )}
+                        <View style={styles.paginationWrapper}>
+                            <PaginationComponent
+                                currentPage={currentPage}
+                                totalItems={travels?.total}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={handlePageChange}
+                                itemsPerPageOptions={itemsPerPageOptions}
+                                onItemsPerPageChange={handleItemsPerPageChange}
+                            />
+                        </View>
                     </View>
                 </View>
-            </View>
-        </SafeAreaView>
+
+                {/* Диалоговое окно для подтверждения удаления */}
+                <Portal>
+                    <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+                        <Dialog.Title>Подтверждение удаления</Dialog.Title>
+                        <Dialog.Content>
+                            <Text>Вы уверены, что хотите удалить это путешествие?</Text>
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <PaperButton onPress={() => setDeleteDialogVisible(false)}>Отмена</PaperButton>
+                            <PaperButton onPress={handleDelete}>Удалить</PaperButton>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
+            </SafeAreaView>
+        </PaperProvider>
     );
 }
 
