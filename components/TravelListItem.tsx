@@ -4,7 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Text,
-  Dimensions,
+  Dimensions, Image,
 } from 'react-native';
 import * as Linking from 'expo-linking';
 import { Card, Title, Paragraph } from 'react-native-paper';
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 15,
     alignItems: 'center',
+    justifyContent: 'center',  // Центровка карточек
   },
   card: {
     borderRadius: 15,
@@ -99,6 +100,7 @@ const styles = StyleSheet.create({
   },
   image: {
     height: 350,
+    resizeMode: 'contain',  // Изображение вписывается в контейнер
   },
   content: {
     paddingVertical: 10,
@@ -109,22 +111,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 5,
+    textAlign: 'center', // Центровка текста заголовка
   },
   countryText: {
     fontSize: 16,
     color: '#6AAAAA',
     marginBottom: 5,
+    textAlign: 'center',  // Центровка текста
   },
   authorText: {
     fontSize: 14,
     color: '#777',
+    textAlign: 'center',  // Центровка текста
   },
   viewsText: {
     color: '#777',
+    flexDirection: 'row',
+    alignItems: 'center', // Чтобы текст и иконка были на одной линии
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',  // Центровка кнопок
     marginTop: 15,
   },
   editButton: {
@@ -144,6 +151,12 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
   },
+  ico:{
+    width: 15, // Размер иконки
+    height: 15,
+    marginLeft: 5, // Отступ слева от количества просмотров
+    resizeMode: 'contain', // Иконка полностью вписывается в контейнер
+  }
 });
 
 export default TravelListItem;

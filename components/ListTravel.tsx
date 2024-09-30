@@ -309,12 +309,14 @@ export default function ListTravel() {
                                 key={`flatlist-columns-${numColumns}`}
                                 data={travels?.data}
                                 renderItem={({item}) => (
+                                    <View style={styles.itemContainer}>
                                     <TravelListItem
                                         travel={item}
                                         currentUserId={user_id}
                                         onEditPress={() => handleEdit(item.id.toString())}
                                         onDeletePress={() => openDeleteDialog(item.id.toString())} // Открываем диалог
                                     />
+                                    </View>
                                 )}
                                 keyExtractor={(item) => item.id.toString()}
                                 numColumns={numColumns}
@@ -421,6 +423,7 @@ const getStyles = (windowWidth: number) => {
             fontSize: 14,
         },
         listContent: {
+            justifyContent: 'center',
             paddingBottom: 20,
         },
         emptyContainer: {
@@ -440,5 +443,10 @@ const getStyles = (windowWidth: number) => {
             paddingVertical: 10,
             alignSelf: 'center',  // Центрирование на мобильных устройствах
         },
+        itemContainer:{
+            flex: 1,
+            alignItems: 'center',         // Центрирование каждого элемента внутри своего контейнера
+            marginHorizontal: 10,
+        }
     });
 };
