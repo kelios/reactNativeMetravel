@@ -84,7 +84,7 @@ const NearTravelList: React.FC<NearTravelListProps> = memo(({ travel, onLayout }
 const styles = StyleSheet.create({
   container: {
     marginTop: 20,
-    marginBottom: 20,
+    marginBottom: '20%',
     paddingHorizontal: 20,
     width: '100%',
   },

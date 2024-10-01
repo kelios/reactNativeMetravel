@@ -88,7 +88,7 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(({ onLayout, sc
 const styles = StyleSheet.create({
     container: {
         marginTop: 20,
-        marginBottom: 20,
+        marginBottom: '20%',
         paddingHorizontal: 20,
         width: '100%',
     },

@@ -238,7 +238,6 @@ const TravelDetails: React.FC = () => {
                     accessibilityRole="button"
                     accessibilityLabel="Открыть меню"
                 >
-                  <Icon name="menu" size={24} color="#fff" /> {/* Иконка меню */}
                   <Text style={styles.menuButtonText}>Меню</Text>
                 </TouchableOpacity>
             )}
@@ -398,25 +397,22 @@ const styles = StyleSheet.create({
     elevation: 2,
     top: 0,
     left: 0,
+    transform: [{ translateX: -1000 }],
   },
   visibleMobileSideMenu: {
-    // Здесь можно добавить анимацию появления меню
+    transform: [{ translateX: 0 }],
   },
   desktopSideMenu: {
     width: 300,
     backgroundColor: '#fff',
   },
   menuButtonContainer: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
+    width: '100%',
     backgroundColor: '#6B4F4F', // Цвет фона кнопки
     paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 30, // Круглая форма
-    flexDirection: 'row',
+    marginBottom: 10,
     alignItems: 'center',
-    zIndex: 1000, // Высокий zIndex для поверхностного расположения
+    zIndex: 10000,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
