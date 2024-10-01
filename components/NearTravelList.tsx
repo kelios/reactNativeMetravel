@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+// NearTravelList.tsx
+
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import {
   View,
   FlatList,
@@ -17,29 +19,41 @@ type NearTravelListProps = {
   onLayout?: (event: any) => void;
 };
 
-const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
+const NearTravelList: React.FC<NearTravelListProps> = memo(({ travel, onLayout }) => {
   const [travelsNear, setTravelsNear] = useState<Travel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { width } = useWindowDimensions();
   const isMobile = width <= 768;
 
+  const numColumns = isMobile ? 1 : 3;
+
+  const fetchNearbyTravels = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const travelData = await fetchTravelsNear(Number(travel.id));
+      setTravelsNear(travelData);
+    } catch (error) {
+      console.error('Failed to fetch travel data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [travel.id]);
+
   useEffect(() => {
-    setIsLoading(true); // Start loading
-    fetchTravelsNear(Number(travel.id))
-        .then((travelData) => {
-          setTravelsNear(travelData);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error('Failed to fetch travel data:', error);
-          setIsLoading(false);
-        });
-  }, [travel]);
+    fetchNearbyTravels();
+  }, [fetchNearbyTravels]);
+
+  const renderItem = useCallback(
+      ({ item }: { item: Travel }) => <TravelTmlRound travel={item} onPress={() => {}} />,
+      []
+  );
+
+  const keyExtractor = useCallback((item: Travel) => item.id.toString(), []);
 
   if (isLoading) {
     return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#935233" />
+          <ActivityIndicator size="large" color="#6B4F4F" />
           <Text style={styles.loadingText}>Загрузка маршрутов рядом...</Text>
         </View>
     );
@@ -51,16 +65,21 @@ const NearTravelList = ({ travel, onLayout }: NearTravelListProps) => {
           Рядом (~60км) можно еще посмотреть...
         </Title>
         <FlatList
+            key={numColumns}
             contentContainerStyle={styles.flatListContent}
-            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
             data={travelsNear}
-            renderItem={({ item }) => <TravelTmlRound travel={item} />}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={isMobile ? 1 : 3} // Прямо передаем количество колонок
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            numColumns={numColumns}
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            removeClippedSubviews={true}
         />
       </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -70,7 +89,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -78,20 +96,21 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#333',
+    color: '#333333',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#935233',
+    color: '#6B4F4F',
     marginBottom: 20,
     textAlign: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: '#935233',
+    borderBottomColor: '#6B4F4F',
     paddingBottom: 10,
+    fontFamily: 'Georgia',
   },
   flatListContent: {
-    justifyContent: 'space-between',
+    paddingBottom: 20,
   },
 });
 
