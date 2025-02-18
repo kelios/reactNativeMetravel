@@ -20,7 +20,6 @@ import { WebView } from 'react-native-webview';
 import { Card, Title, useTheme } from 'react-native-paper';
 import Slider from '@/components/Slider';
 import PointList from '@/components/PointList';
-import { IS_LOCAL_API } from '@env';
 import { fetchTravel } from '@/src/api/travels';
 import SideBarTravel from '@/components/SideBarTravel';
 import NearTravelList from '@/components/NearTravelList';
@@ -102,7 +101,7 @@ const TravelDetails: React.FC = () => {
   }
 
   const gallery =
-      IS_LOCAL_API === 'true'
+      process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true'
           ? travel.gallery
           : (travel.gallery || []).map((item) => item?.url);
 

@@ -19,7 +19,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
     const colorScheme = useColorScheme()
     const width = useWindowDimensions().width
-
+console.log('TabLayout');
     return (
         <>
             <Tabs
@@ -42,9 +42,7 @@ export default function TabLayout() {
                             return (
                                 <Image
                                     style={{width: 10, height: 10}}
-                                    source={{
-                                        uri: '/assets/icons/logo_yellow.ico',
-                                    }}
+                                    source={require('@/assets/icons/logo_yellow.ico')}
                                 />
                             )
                         },
@@ -65,29 +63,6 @@ export default function TabLayout() {
                         tabBarIconStyle: {display: 'none'},
                         title: '',
                         headerRight: () => <RenderRightMenu />,
-                    }}
-                />
-                <Tabs.Screen
-                    name="travels/439"
-                    options={{
-                        tabBarIconStyle: {display: 'none'},
-                        title: '',
-                        headerRight: () => <RenderRightMenu />,
-                        href: {
-                            pathname: '/travels/439',
-                        },
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="travels/[id]"
-                    options={{
-                        tabBarIconStyle: {display: 'none'},
-                        title: '',
-                        headerRight: () => <RenderRightMenu />,
-                        href: {
-                            pathname: '/travels/439',
-                        },
                     }}
                 />
 
@@ -175,6 +150,15 @@ export default function TabLayout() {
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         href: null,
+                        title: '',
+                        headerRight: () => <RenderRightMenu />,
+                    }}
+                />
+
+                <Tabs.Screen
+                    name="travels/[id]"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}

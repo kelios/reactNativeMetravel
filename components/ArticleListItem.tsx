@@ -9,6 +9,8 @@ import {
   useFonts,
   PlayfairDisplay_400Regular,
 } from '@expo-google-fonts/playfair-display'
+import {useRoute} from "@react-navigation/native";
+import {router} from "expo-router";
 
 type ArticleListItemProps = {
   article: Article
@@ -25,11 +27,9 @@ const ArticleListItem = ({ article }: ArticleListItemProps) => {
     article_type,
   } = article
 
-  const Urltravel = Linking.createURL(`article/${id}`)
-
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => Linking.openURL(Urltravel)}>
+      <Pressable onPress={() => router.push(`/article/${id}`)}>
         <Card style={styles.card}>
           <View style={styles.imageWrapper}>
             <Card.Cover

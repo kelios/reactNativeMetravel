@@ -43,7 +43,7 @@ const RegisterForm = () => {
 
     return (
         <ImageBackground
-            source={{ uri: '/assets/images/media/slider/about.jpg' }}
+            source={require('@/assets/images/media/slider/about.jpg' )}
             style={styles.backgroundImage}
         >
             <Formik<FormValues>

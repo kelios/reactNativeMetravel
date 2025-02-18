@@ -14,6 +14,8 @@ import {
   useFonts,
   PlayfairDisplay_400Regular,
 } from '@expo-google-fonts/playfair-display'
+import {useRoute} from "@react-navigation/native";
+import {router} from "expo-router";
 
 type TravelTmlRoundProps = {
   travel: Travel
@@ -34,10 +36,6 @@ const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
     countUnicIpView,
   } = travel
 
-  const Urltravel = Linking.createURL(`travels/${slug}`, {
-    queryParams: { id: id },
-  })
-
   const windowDimensions = useWindowDimensions()
   const isLargeScreen = useMemo(
     () => windowDimensions.width > 768,
@@ -50,7 +48,7 @@ const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => Linking.openURL(Urltravel)}>
+      <Pressable onPress={() => router.push(`/travels/${id}`)}>
         <View style={pointContentStyle}>
           <View style={styles.imageWrapper}>
             <Card.Cover

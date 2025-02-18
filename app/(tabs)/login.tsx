@@ -70,7 +70,7 @@ export default function Login() {
         >
             <ScrollView contentContainerStyle={styles.scrollViewContent}>
                 <ImageBackground
-                    source={{ uri: '/assets/images/media/slider/about.jpg' }}
+                    source={require('@/assets/images/media/slider/about.jpg' )}
                     style={styles.backgroundImage}
                     blurRadius={3} // Размытие для фона
                 >

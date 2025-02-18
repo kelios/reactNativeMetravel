@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { RichEditor, RichToolbar } from 'react-native-pell-rich-editor';
+//import { CKEditor } from '@ckeditor/ckeditor5-react';
+//import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
 interface ArticleEditorProps {
     content?: string;
@@ -16,17 +17,85 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
                                                          content = '',
                                                          onChange,
                                                          label,
-                                                         height = 400, // Увеличим высоту до 400px
+                                                         height = 400,
                                                          uploadUrl,
                                                          idTravel,
                                                      }) => {
     const [editorContent, setEditorContent] = useState<string>(content);
+    const richText = useRef<any>(null);
 
     // Используем useCallback для предотвращения ненужных рендеров
-    const handleEditorChange = useCallback((data: string) => {
-        setEditorContent(data);
-        onChange(data);
+    const handleEditorChange = useCallback((html: string) => {
+        setEditorContent(html);
+        onChange(html);
     }, [onChange]);
+
+    // Обработка загрузки изображений для мобильных платформ
+    const handleImageUpload = async (file: any) => {
+        const data = new FormData();
+        data.append('file', file);
+        data.append('collection', 'description');
+        if (idTravel) data.append('id', idTravel);
+
+        try {
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                body: data,
+            });
+            const result = await response.json();
+            return result.url; // Возвращаем URL загруженного изображения
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            return null;
+        }
+    };
+
+    // Адаптер для загрузки изображений в CKEditor
+    class MyUploadAdapter {
+        private loader: any;
+        private uploadUrl: string;
+        private idTravel?: string | null;
+
+        constructor(loader: any, uploadUrl: string, idTravel?: string | null) {
+            this.loader = loader;
+            this.uploadUrl = uploadUrl;
+            this.idTravel = idTravel;
+        }
+
+        upload() {
+            return this.loader.file.then(
+                (file: File) =>
+                    new Promise((resolve, reject) => {
+                        const data = new FormData();
+                        data.append('file', file);
+                        data.append('collection', 'description');
+                        if (this.idTravel) data.append('id', this.idTravel);
+
+                        fetch(this.uploadUrl, {
+                            method: 'POST',
+                            body: data,
+                        })
+                            .then(response => response.json())
+                            .then(result => {
+                                resolve({ default: result.url });
+                            })
+                            .catch(error => {
+                                reject(error);
+                            });
+                    })
+            );
+        }
+
+        abort() {
+            // Abort the upload process if needed
+        }
+    }
+
+    function MyCustomUploadAdapterPlugin(editor: any) {
+        editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
+            return new MyUploadAdapter(loader, uploadUrl, idTravel);
+        };
+    }
 
     return (
         <View style={styles.container}>
@@ -34,46 +103,39 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
 
             {Platform.OS === 'web' ? (
                 <div style={{ ...styles.ckeditorContainer, height }}>
-                    <CKEditor
-                        editor={ClassicEditor}
-                        data={editorContent}
-                        config={{
-                            extraPlugins: [MyCustomUploadAdapterPlugin],
-                            toolbar: [
-                                'heading', '|', 'bold', 'italic', 'link',
-                                'bulletedList', 'numberedList', 'blockQuote',
-                                '|', 'undo', 'redo', 'imageUpload'
-                            ],
-                            placeholder: 'Start typing your article here...',
-                        }}
-                        onReady={(editor: any) => {
-                            editor.editing.view.change((writer: any) => {
-                                writer.setStyle(
-                                    'min-height',
-                                    `${height}px`,
-                                    editor.editing.view.document.getRoot()
-                                );
-                                writer.setStyle(
-                                    'max-height',
-                                    `${height}px`,
-                                    editor.editing.view.document.getRoot()
-                                );
-                                writer.setStyle('overflow', 'auto', editor.editing.view.document.getRoot());
-                            });
 
-                            // Подключаем адаптер для загрузки изображений
-                            editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
-                                return new MyUploadAdapter(loader, uploadUrl, idTravel);
-                            };
-                        }}
-                        onChange={(event: any, editor: any) => {
-                            const data = editor.getData();
-                            handleEditorChange(data);
-                        }}
-                    />
+
                 </div>
             ) : (
-                <Text style={styles.mobileText}>Mobile editor not implemented</Text>
+                <View style={{ ...styles.editorContainer, height }}>
+                    <RichEditor
+                        ref={richText}
+                        initialContentHTML={editorContent}
+                        onChange={handleEditorChange}
+                        style={styles.editor}
+                        placeholder="Start typing your article here..."
+                        androidHardwareAccelerationDisabled={true} // Для улучшения производительности на Android
+                        useContainer={true}
+                        initialHeight={height}
+                        onMessage={(message) => {
+                            if (message.type === 'image') {
+                                handleImageUpload(message.data).then((url) => {
+                                    if (url) {
+                                        richText.current?.insertImage(url);
+                                    }
+                                });
+                            }
+                        }}
+                    />
+                    <RichToolbar
+                        editor={richText}
+                        actions={[
+                            'bold', 'italic', 'underline', 'insertImage', 'insertLink',
+                            'undo', 'redo', 'blockquote', 'orderedList', 'unorderedList',
+                        ]}
+                        style={styles.toolbar}
+                    />
+                </View>
             )}
         </View>
     );
@@ -81,6 +143,7 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         padding: 10,
         width: '100%',
     },
@@ -92,65 +155,29 @@ const styles = StyleSheet.create({
     ckeditorContainer: {
         border: '1px solid #ccc',
         borderRadius: 4,
-        overflow: 'auto', // Важное свойство для включения скроллинга внутри CKEditor
+        overflow: 'auto',
         width: '100%',
-        maxHeight: 1000, // Ограничение по высоте, чтобы текст не выходил за пределы видимой области
+        maxHeight: 1000,
         backgroundColor: '#fff',
         display: 'flex',
         flexDirection: 'column',
     },
-    mobileText: {
-        color: '#999',
-        textAlign: 'center',
-        paddingVertical: 20,
+    editorContainer: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 4,
+        overflow: 'hidden',
+        width: '100%',
+        backgroundColor: '#fff',
+    },
+    editor: {
+        flex: 1,
+    },
+    toolbar: {
+        backgroundColor: '#f8f8f8',
+        borderTopWidth: 1,
+        borderTopColor: '#ccc',
     },
 });
-
-// Upload adapter class for handling file uploads
-class MyUploadAdapter {
-    private loader: any;
-    private uploadUrl: string;
-    private idTravel?: string | null;
-
-    constructor(loader: any, uploadUrl: string, idTravel?: string | null) {
-        this.loader = loader;
-        this.uploadUrl = uploadUrl;
-        this.idTravel = idTravel;
-    }
-
-    upload() {
-        return this.loader.file.then(
-            (file: File) =>
-                new Promise((resolve, reject) => {
-                    const data = new FormData();
-                    data.append('file', file);
-                    data.append('collection', 'description');
-                    if (this.idTravel) data.append('id', this.idTravel);
-
-                    fetch(this.uploadUrl, {
-                        method: 'POST',
-                        body: data,
-                    })
-                        .then(response => response.json())
-                        .then(result => {
-                            resolve({ default: result.url });
-                        })
-                        .catch(error => {
-                            reject(error);
-                        });
-                })
-        );
-    }
-
-    abort() {
-        // Abort the upload process if needed
-    }
-}
-
-function MyCustomUploadAdapterPlugin(editor: any) {
-    editor.plugins.get('FileRepository').createUploadAdapter = (loader: any) => {
-        return new MyUploadAdapter(loader, editor.config.get('uploadUrl'));
-    };
-}
 
 export default ArticleEditor;

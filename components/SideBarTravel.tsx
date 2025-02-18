@@ -5,7 +5,6 @@ import { View, TouchableOpacity, StyleSheet, Linking, Image } from 'react-native
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Travel } from '@/src/types/types';
-import { IS_LOCAL_API } from '@env';
 
 type SideBarTravelProps = {
     handlePress: (ref: React.RefObject<View>) => () => void;
@@ -32,7 +31,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
     }, [travel.userIds]);
 
     const gallery =
-        IS_LOCAL_API === 'true'
+        process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true'
             ? travel.gallery
             : (travel.gallery || []).map((item) => item?.url);
 

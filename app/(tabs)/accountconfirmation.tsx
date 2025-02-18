@@ -38,7 +38,7 @@ export default function AccountConfirmation() {
     return (
         <View style={styles.container}>
             <Image
-                source={{ uri: '/assets/images/media/slider/about.jpg' }}
+                source={require('@/assets/images/media/slider/about.jpg' )}
                 style={styles.backgroundImage}
             />
             <View style={styles.contentContainer}>

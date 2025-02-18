@@ -10,6 +10,7 @@ import * as Linking from 'expo-linking';
 import { Card, Title, Paragraph } from 'react-native-paper';
 import { useRoute } from '@react-navigation/native';
 import { Travel } from '@/src/types/types';
+import {router} from "expo-router";
 
 type TravelListItemProps = {
   travel: Travel;
@@ -37,13 +38,9 @@ const TravelListItem = ({
   const route = useRoute();
   const isButtonVisible = route.name === 'metravel';
 
-  const Urltravel = Linking.createURL(`travels/${slug}`, {
-    queryParams: { id: id },
-  });
-
   return (
       <View style={styles.container}>
-        <TouchableOpacity onPress={() => Linking.openURL(Urltravel)} activeOpacity={0.9}>
+        <TouchableOpacity  onPress={() => router.push(`/travels/${id}`)} activeOpacity={0.9}>
           <Card style={styles.card}>
             <Card.Cover
                 source={{ uri: travel_image_thumb_url }}

@@ -1,14 +1,14 @@
 import React from 'react';
-import { StatusBar } from 'expo-status-bar';
 import {
-  StyleSheet,
-  Text,
   View,
-  Dimensions,
-  Linking,
-  ImageBackground,
+  Text,
+  StyleSheet,
   TouchableOpacity,
+  Dimensions,
+  ImageBackground,
+  Linking,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Title, Paragraph } from 'react-native-paper';
 
 const { width } = Dimensions.get('window');
@@ -25,7 +25,7 @@ export default function AboutScreen() {
           if (supported) {
             return Linking.openURL(url);
           } else {
-            console.log("Don't know how to open this URL:", url);
+            console.log(`Don't know how to open this URL: ${url}`);
           }
         })
         .catch((err) => console.error('An error occurred', err));
@@ -33,14 +33,17 @@ export default function AboutScreen() {
 
   return (
       <View style={styles.container}>
+        {/* Темный/светлый статус-бар */}
         <StatusBar style="dark" />
+
         <ImageBackground
-            source={{ uri: '/assets/images/media/slider/about.jpg' }}
+            source={require('@/assets/images/media/slider/about.jpg')}
             style={styles.backgroundImage}
         >
           <View style={styles.content}>
             <View style={styles.aboutText}>
               <Title style={styles.title}>METRAVEL</Title>
+
               <Paragraph style={styles.paragraph}>
                 MeTravel.by – это некоммерческий проект для путешественников.
               </Paragraph>
@@ -51,16 +54,19 @@ export default function AboutScreen() {
               <Paragraph style={styles.paragraph}>
                 2) Делимся своими воспоминаниями, создаем новое путешествие
               </Paragraph>
-              <Paragraph style={styles.paragraph}>3) Ставим статус "Опубликовать".</Paragraph>
+              <Paragraph style={styles.paragraph}>
+                3) Ставим статус «Опубликовать».
+              </Paragraph>
               <Paragraph style={styles.paragraph}>
                 4) Ожидаем модерации (в течение 24 часов).
               </Paragraph>
               <Paragraph style={styles.paragraph}>
-                5) Если хотите, чтобы ваша статья была опубликована в нашем Instagram, пишите в директ. Старт проекта июнь 2020.
+                5) Если хотите, чтобы ваша статья была опубликована в нашем Instagram, пишите в директ. Старт проекта — июнь 2020.
               </Paragraph>
               <Paragraph style={styles.paragraph}>
                 Использование материала и перепечатка возможны только с разрешения владельца статьи. Отзывы и любые идеи можно присылать на почту:
               </Paragraph>
+
               <TouchableOpacity onPress={sendMail}>
                 <Text style={styles.link}>info@metravel.by</Text>
               </TouchableOpacity>
@@ -79,14 +85,14 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    justifyContent: 'center', // Centers the content vertically
+    justifyContent: 'center',
     padding: 20,
   },
   content: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // White background with slight transparency
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 10,
     padding: 20,
-    marginBottom: 20, // Add margin bottom for spacing
+    marginBottom: 20,
   },
   aboutText: {
     padding: 10,

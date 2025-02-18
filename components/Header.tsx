@@ -15,23 +15,22 @@ export default function Home() {
         <View style={styles.container}>
             <Stack.Screen
                 options={{
-                    // Заголовок экрана
                     title: 'Главная страница',
-                    // Стилизация заголовка
                     headerStyle: { backgroundColor: '#4b7c6f' },
                     headerTintColor: '#fff',
                     headerTitleStyle: {
                         fontWeight: 'bold',
                         fontSize: 18,
                     },
-                    // Замена заголовка на кастомный компонент
                     headerTitle: (props) => <LogoTitle {...props} />,
                 }}
             />
             <Text style={styles.welcomeText}>Добро пожаловать на главную страницу!</Text>
-            <Link href="/details" style={styles.link}>
-                Перейти к деталям
-            </Link>
+            <Text>
+                <Link href="/details" style={styles.link}>
+                    Перейти к деталям
+                </Link>
+            </Text>
         </View>
     );
 }
