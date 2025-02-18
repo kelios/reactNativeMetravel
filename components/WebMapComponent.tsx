@@ -1,39 +1,9 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import { MarkerData } from "@/src/types/types";
-import { View } from "react-native";
-import MultiSelect from "react-native-multiple-select";
+import { View, StyleSheet, TextInput, Button, Image } from 'react-native';
+import MapView, { Marker, Callout } from '@teovilla/react-native-web-maps';
+import MultiSelect from 'react-native-multiple-select';
 import MarkersListComponent from './MarkersListComponent'; // Импорт компонента списка маркеров
 import ImageUploadComponent from '@/components/ImageUploadComponent';
-
-// Иконка маркера
-const markerIcon = new L.Icon({
-    iconUrl: '/assets/icons/logo_yellow.ico',
-    iconSize: [27, 30],
-    iconAnchor: [13, 30],
-    popupAnchor: [0, -30],
-});
-
-// Компонент для обработки кликов на карте
-const MapClickHandler = ({ addMarker }) => {
-    useMapEvents({
-        click(e) {
-            addMarker(e.latlng); // Добавление маркера при клике на карту
-        }
-    });
-    return null;
-};
-
-// Функция для обратного геокодирования (определение адреса по координатам)
-const reverseGeocode = async (latlng) => {
-    const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`
-    );
-    const data = await response.json();
-    return data;
-};
 
 const WebMapComponent = ({
                              markers,
@@ -44,16 +14,22 @@ const WebMapComponent = ({
                              countrylist
                          }) => {
     const [showMarkersList, setShowMarkersList] = useState(true); // Состояние для управления списком маркеров
-
-    const addMarker = async (latlng) => {
-        const geocodeData = await reverseGeocode(latlng);
+    const reverseGeocode = async (coordinate) => {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinate.latitude}&lon=${coordinate.longitude}&addressdetails=1`
+        );
+        const data = await response.json();
+        return data;
+    };
+    const addMarker = async (coordinate) => {
+        const geocodeData = await reverseGeocode(coordinate);
         const address = geocodeData?.display_name || '';
         const country = geocodeData?.address?.country || '';
 
         const newMarker = {
             id: null,
-            lat: latlng.lat,
-            lng: latlng.lng,
+            lat: coordinate.latitude,
+            lng: coordinate.longitude,
             country: null,
             city: null,
             address: address,
@@ -106,54 +82,52 @@ const WebMapComponent = ({
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.mapSection}>
-                <MapContainer center={[51.505, -0.09]} zoom={13} style={styles.map}>
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution="&copy; OpenStreetMap contributors"
-                    />
-                    <MapClickHandler addMarker={addMarker} />
+        <View style={styles.container}>
+            <View style={styles.mapSection}>
+                <MapView
+                    style={styles.map}
+                    initialRegion={{
+                        latitude: 51.505,
+                        longitude: -0.09,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421,
+                    }}
+                    onPress={(e) => addMarker(e.nativeEvent.coordinate)} // Добавление маркера при нажатии на карту
+                >
                     {markers.map((marker, idx) => (
                         <Marker
                             key={idx}
-                            position={[marker.lat, marker.lng]}
-                            icon={markerIcon}
-                            eventHandlers={{
-                                click: () => toggleMarkersList(), // Переключаем список маркеров при клике на маркер
-                            }}
+                            coordinate={{ latitude: marker.lat, longitude: marker.lng }}
+                            onPress={toggleMarkersList} // Переключаем список маркеров при нажатии на маркер
                         >
-                            <Popup>
-                                <div style={styles.popupContent}>
-                                    <h4>Информация о точке</h4>
-                                    <div style={styles.popupRow}>
-                                        <label>Категории:</label>
-                                        <View style={styles.multiselector}>
-                                            <MultiSelect
-                                                hideTags
-                                                items={categoryTravelAddress}
-                                                uniqueKey="id"
-                                                onSelectedItemsChange={(selectedItems) => handleMarkerChange(idx, 'categories', selectedItems)}
-                                                selectedItems={marker.categories}
-                                                selectText="Выберите категории"
-                                                searchInputPlaceholderText="Выберите категории"
-                                                style={styles.input}
-                                            />
-                                        </View>
-                                    </div>
-                                    <div style={styles.popupRow}>
-                                        <label>Адрес:</label>
-                                        <input
-                                            type="text"
+                            <Callout>
+                                <View style={styles.popupContent}>
+                                    <Text style={styles.popupTitle}>Информация о точке</Text>
+                                    <View style={styles.popupRow}>
+                                        <Text>Категории:</Text>
+                                        <MultiSelect
+                                            hideTags
+                                            items={categoryTravelAddress}
+                                            uniqueKey="id"
+                                            onSelectedItemsChange={(selectedItems) => handleMarkerChange(idx, 'categories', selectedItems)}
+                                            selectedItems={marker.categories}
+                                            selectText="Выберите категории"
+                                            searchInputPlaceholderText="Выберите категории"
+                                            style={styles.input}
+                                        />
+                                    </View>
+                                    <View style={styles.popupRow}>
+                                        <Text>Адрес:</Text>
+                                        <TextInput
                                             value={marker.address || ''}
-                                            onChange={(e) => handleMarkerChange(idx, 'address', e.target.value)}
+                                            onChangeText={(text) => handleMarkerChange(idx, 'address', text)}
                                             placeholder="Введите адрес"
                                             style={styles.input}
                                         />
-                                    </div>
+                                    </View>
                                     {marker.id !== null && (
-                                        <div style={styles.popupRow}>
-                                            <label>Изображение:</label>
+                                        <View style={styles.popupRow}>
+                                            <Text>Изображение:</Text>
                                             <ImageUploadComponent
                                                 collection="travelImageAddress"
                                                 idTravel={marker.id}
@@ -161,24 +135,28 @@ const WebMapComponent = ({
                                                 oldImage={marker.image}
                                             />
                                             {marker.image && (
-                                                <img src={marker.image} alt="Превью" style={styles.imagePreview} />
+                                                <Image source={{ uri: marker.image }} style={styles.imagePreview} />
                                             )}
-                                        </div>
+                                        </View>
                                     )}
-                                    <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
-                                        Удалить точку
-                                    </button>
-                                </div>
-                            </Popup>
+                                    <Button
+                                        title="Удалить точку"
+                                        onPress={() => handleMarkerRemove(idx)}
+                                        color="#ff4444"
+                                    />
+                                </View>
+                            </Callout>
                         </Marker>
                     ))}
-                </MapContainer>
-            </div>
+                </MapView>
+            </View>
 
             {/* Кнопка для переключения отображения списка маркеров */}
-            <button onClick={toggleMarkersList} style={styles.toggleButton}>
-                {showMarkersList ? 'Скрыть точки' : 'Показать точки'}
-            </button>
+            <Button
+                title={showMarkersList ? 'Скрыть точки' : 'Показать точки'}
+                onPress={toggleMarkersList}
+                color="#4b7c6f"
+            />
 
             {showMarkersList && (
                 <MarkersListComponent
@@ -189,39 +167,54 @@ const WebMapComponent = ({
                     handleMarkerRemove={handleMarkerRemove}
                 />
             )}
-        </div>
+        </View>
     );
 };
 
-const styles = {
+const styles = StyleSheet.create({
     container: {
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '20px',
+        flex: 1,
+        padding: 20,
         backgroundColor: '#f8f8f8',
     },
     mapSection: {
-        marginBottom: '20px',
-        borderRadius: '10px',
+        marginBottom: 20,
+        borderRadius: 10,
         overflow: 'hidden',
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 3,
     },
     map: {
-        height: '500px',
+        height: 500,
         width: '100%',
-        borderRadius: '10px',
+        borderRadius: 10,
     },
-    toggleButton: {
-        backgroundColor: '#4b7c6f',
-        color: 'white',
-        border: 'none',
-        padding: '10px 15px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        marginBottom: '20px',
-        alignSelf: 'center',
-        fontSize: '16px',
+    popupContent: {
+        width: 250,
+        padding: 10,
     },
-};
+    popupTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    popupRow: {
+        marginBottom: 10,
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 5,
+    },
+    imagePreview: {
+        width: 100,
+        height: 100,
+        marginTop: 10,
+    },
+});
 
 export default WebMapComponent;
