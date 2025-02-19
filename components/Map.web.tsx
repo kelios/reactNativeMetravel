@@ -1,220 +1,149 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, Button, Image } from 'react-native';
-import MapView, { Marker, Callout } from '@teovilla/react-native-web-maps';
-import MultiSelect from 'react-native-multiple-select';
-import MarkersListComponent from './MarkersListComponent'; // Импорт компонента списка маркеров
-import ImageUploadComponent from '@/components/ImageUploadComponent';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 
-const WebMapComponent = ({
-                           markers,
-                           onMarkersChange,
-                           onCountrySelect,
-                           onCountryDeselect,
-                           categoryTravelAddress,
-                           countrylist
-                         }) => {
-  const [showMarkersList, setShowMarkersList] = useState(true); // Состояние для управления списком маркеров
-  const reverseGeocode = async (coordinate) => {
-    const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coordinate.latitude}&lon=${coordinate.longitude}&addressdetails=1`
-    );
-    const data = await response.json();
-    return data;
-  };
-  const addMarker = async (coordinate) => {
-    const geocodeData = await reverseGeocode(coordinate);
-    const address = geocodeData?.display_name || '';
-    const country = geocodeData?.address?.country || '';
+// Проверяем, есть ли `window`, чтобы избежать ошибки
+const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 
-    const newMarker = {
-      id: null,
-      lat: coordinate.latitude,
-      lng: coordinate.longitude,
-      country: null,
-      city: null,
-      address: address,
-      categories: [],
-      image: null,
-    };
+let MapContainer, TileLayer, Marker, Popup, useMapEvents, L, Icon;
+if (isWeb) {
+  MapContainer = require('react-leaflet').MapContainer;
+  TileLayer = require('react-leaflet').TileLayer;
+  Marker = require('react-leaflet').Marker;
+  Popup = require('react-leaflet').Popup;
+  useMapEvents = require('react-leaflet').useMapEvents;
+  L = require('leaflet');
+  Icon = require('leaflet').Icon;
+  require('leaflet/dist/leaflet.css');
+}
 
-    // Определяем страну маркера
-    if (country) {
-      const foundCountry = countrylist.find(c => c.title_ru === country);
-      if (foundCountry) {
-        newMarker.country = foundCountry.country_id;
-        onCountrySelect(foundCountry.country_id); // Добавляем страну в фильтры
-      }
+import LabelText from './LabelText';
+
+type Point = {
+  id: number;
+  coord: string;
+  address: string;
+  travelImageThumbUrl: string;
+  categoryName: string;
+  articleUrl?: string;
+  urlTravel?: string;
+};
+
+type TravelPropsType = {
+  data?: Point[];
+};
+
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+interface TravelProps {
+  travel: TravelPropsType;
+  coordinates: Coordinates | null;
+}
+
+const getLatLng = (latlng: string): [number, number] | null => {
+  const [lat, lng] = latlng.split(',').map((coord) => parseFloat(coord.trim()));
+  if (!isNaN(lat) && !isNaN(lng)) {
+    return [lat, lng];
+  }
+  return null;
+};
+
+const Map: React.FC<TravelProps> = ({ travel, coordinates: propCoordinates }) => {
+  if (!isWeb) {
+    return <Text>Карта доступна только в веб-версии</Text>;
+  }
+
+  const travelAddress = travel?.data || [];
+  const [localCoordinates, setLocalCoordinates] = useState<Coordinates | null>(propCoordinates);
+
+  useEffect(() => {
+    if (!localCoordinates) {
+      setLocalCoordinates({ latitude: 53.8828449, longitude: 27.7273595 });
     }
+  }, [localCoordinates]);
 
-    onMarkersChange([...markers, newMarker]);
-  };
+  const meTravelIcon = useMemo(
+      () =>
+          new Icon({
+            iconUrl: '/assets/icons/logo_yellow.ico',
+            iconSize: [27, 30],
+            iconAnchor: [13, 30],
+            popupAnchor: [0, -30],
+          }),
+      []
+  );
 
-  const toggleMarkersList = () => {
-    setShowMarkersList(!showMarkersList); // Переключение видимости списка маркеров
-  };
-
-  const handleMarkerChange = (index, field, value) => {
-    const updatedMarkers = [...markers];
-    updatedMarkers[index] = {
-      ...updatedMarkers[index],
-      [field]: value || '',
-    };
-    onMarkersChange(updatedMarkers);
-  };
-
-  const handleImageUpload = (index, imageUrl) => {
-    const updatedMarkers = [...markers];
-    updatedMarkers[index].image = imageUrl;
-    onMarkersChange(updatedMarkers);
-  };
-
-  const handleMarkerRemove = (index) => {
-    const removedMarker = markers[index];
-    const updatedMarkers = markers.filter((_, idx) => idx !== index);
-    onMarkersChange(updatedMarkers);
-
-    if (removedMarker.country) {
-      const hasOtherMarkersWithSameCountry = updatedMarkers.some(marker => marker.country === removedMarker.country);
-      if (!hasOtherMarkersWithSameCountry) {
-        onCountryDeselect(removedMarker.country); // Удаляем страну из фильтров, если маркеров с этой страной больше нет
-      }
+  const handlePress = (point: Point) => {
+    const url = point.articleUrl || point.urlTravel;
+    if (url) {
+      Linking.openURL(url);
     }
   };
 
   return (
-      <View style={styles.container}>
-        <View style={styles.mapSection}>
-          <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: 51.505,
-                longitude: -0.09,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-              }}
-              onPress={(e) => addMarker(e.nativeEvent.coordinate)} // Добавление маркера при нажатии на карту
-          >
-            {markers.map((marker, idx) => (
-                <Marker
-                    key={idx}
-                    coordinate={{ latitude: marker.lat, longitude: marker.lng }}
-                    onPress={toggleMarkersList} // Переключаем список маркеров при нажатии на маркер
-                >
-                  <Callout>
-                    <View style={styles.popupContent}>
-                      <Text style={styles.popupTitle}>Информация о точке</Text>
-                      <View style={styles.popupRow}>
-                        <Text>Категории:</Text>
-                        <MultiSelect
-                            hideTags
-                            items={categoryTravelAddress}
-                            uniqueKey="id"
-                            onSelectedItemsChange={(selectedItems) => handleMarkerChange(idx, 'categories', selectedItems)}
-                            selectedItems={marker.categories}
-                            selectText="Выберите категории"
-                            searchInputPlaceholderText="Выберите категории"
-                            style={styles.input}
-                        />
-                      </View>
-                      <View style={styles.popupRow}>
-                        <Text>Адрес:</Text>
-                        <TextInput
-                            value={marker.address || ''}
-                            onChangeText={(text) => handleMarkerChange(idx, 'address', text)}
-                            placeholder="Введите адрес"
-                            style={styles.input}
-                        />
-                      </View>
-                      {marker.id !== null && (
-                          <View style={styles.popupRow}>
-                            <Text>Изображение:</Text>
-                            <ImageUploadComponent
-                                collection="travelImageAddress"
-                                idTravel={marker.id}
-                                onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
-                                oldImage={marker.image}
-                            />
-                            {marker.image && (
-                                <Image source={{ uri: marker.image }} style={styles.imagePreview} />
-                            )}
-                          </View>
+      <MapContainer
+          center={localCoordinates ? [localCoordinates.latitude, localCoordinates.longitude] : [53.8828449, 27.7273595]}
+          zoom={7}
+          style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {travelAddress.map((point, index) => {
+          const latLng = getLatLng(point.coord);
+          if (latLng) {
+            return (
+                <Marker key={index} position={latLng} icon={meTravelIcon}>
+                  <Popup>
+                    <Pressable onPress={() => handlePress(point)} style={styles.popupContent}>
+                      {point.travelImageThumbUrl ? (
+                          <Image source={{ uri: point.travelImageThumbUrl }} style={styles.pointImage} />
+                      ) : (
+                          <Text style={styles.linkText}>Перейти к статье</Text>
                       )}
-                      <Button
-                          title="Удалить точку"
-                          onPress={() => handleMarkerRemove(idx)}
-                          color="#ff4444"
-                      />
-                    </View>
-                  </Callout>
+                      <View style={styles.textContainer}>
+                        {point.address && <LabelText label="Адрес:" text={point.address} />}
+                        {point.coord && <LabelText label="Координаты:" text={point.coord} />}
+                        {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
+                      </View>
+                    </Pressable>
+                  </Popup>
                 </Marker>
-            ))}
-          </MapView>
-        </View>
-
-        {/* Кнопка для переключения отображения списка маркеров */}
-        <Button
-            title={showMarkersList ? 'Скрыть точки' : 'Показать точки'}
-            onPress={toggleMarkersList}
-            color="#4b7c6f"
-        />
-
-        {showMarkersList && (
-            <MarkersListComponent
-                markers={markers}
-                categoryTravelAddress={categoryTravelAddress}
-                handleMarkerChange={handleMarkerChange}
-                handleImageUpload={handleImageUpload}
-                handleMarkerRemove={handleMarkerRemove}
-            />
-        )}
-      </View>
+            );
+          }
+          return null;
+        })}
+      </MapContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f8f8',
-  },
-  mapSection: {
-    marginBottom: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  map: {
-    height: 500,
-    width: '100%',
-    borderRadius: 10,
+  pointImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 8,
   },
   popupContent: {
-    width: 250,
-    padding: 10,
-  },
-  popupTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  popupRow: {
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
     padding: 5,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+    alignItems: 'flex-start',
+    maxWidth: 250,
   },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    marginTop: 10,
+  textContainer: {
+    paddingHorizontal: 10,
+  },
+  linkText: {
+    color: '#007bff',
+    textDecorationLine: 'underline',
+    marginBottom: 8,
   },
 });
 
-export default WebMapComponent;
+export default Map;

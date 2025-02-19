@@ -5,7 +5,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     Image,
-    Platform, useWindowDimensions,
+    Platform,
+    useWindowDimensions
 } from 'react-native';
 import { Menu, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -21,22 +22,33 @@ function RenderRightMenu() {
     const { isAuthenticated, setIsAuthenticated, logout } = useAuth();
     const { updateFilters } = useFilters();
 
-    const { width } = useWindowDimensions()
-    const isMobile = width <= 768
+    // Безопасный вызов useWindowDimensions()
+    const width = typeof window !== 'undefined' ? useWindowDimensions().width : 375;
+    const isMobile = width <= 768;
 
     useEffect(() => {
+        let isMounted = true;
+
         const checkAuthentication = async () => {
             const token = await AsyncStorage.getItem('userToken');
-            setIsAuthenticated(!!token);
-        };
-        const getUsername = async () => {
-            const storedUsername = await AsyncStorage.getItem('userName');
-            if (storedUsername) {
-                setUsername(storedUsername);
+            if (isMounted) {
+                setIsAuthenticated(!!token);
             }
         };
+
+        const getUsername = async () => {
+            const storedUsername = await AsyncStorage.getItem('userName');
+            if (isMounted) {
+                setUsername(storedUsername?.trim() || ''); // Убедимся, что username не содержит пробелов
+            }
+        };
+
         checkAuthentication();
         getUsername();
+
+        return () => {
+            isMounted = false; // Отмена обновлений состояния при размонтировании
+        };
     }, []);
 
     const openMenu = () => setVisible(true);
@@ -46,86 +58,85 @@ function RenderRightMenu() {
         <View style={styles.container}>
             <View style={styles.leftContainer}>
                 {/* Кнопка на главную страницу */}
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('index')}
-                    style={styles.homeButton}
-                >
-                    <Image
-                        source={require('../assets/icons/logo_yellow.png')}
-                        style={styles.logo}
-                    />
+                <TouchableOpacity onPress={() => navigation.navigate('index')} style={styles.homeButton}>
+                    <Image source={require('../assets/icons/logo_yellow.png')} style={styles.logo} />
                     <Text style={styles.homeButtonText}>MeTravel</Text>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.rightContainer}>
-                {username && !isMobile && (
+                {/* Условный рендеринг username */}
+                {username?.trim() && !isMobile ? (
                     <View style={styles.userContainer}>
                         <Icon name="account-circle" size={24} color="#fff" />
                         <Text style={styles.username}>{username}</Text>
                     </View>
-                )}
-                <Menu
-                    visible={visible}
-                    onDismiss={closeMenu}
-                    anchor={
-                        <TouchableOpacity onPress={openMenu} style={styles.menuButton}>
-                            <Icon name="menu" size={24} color="#333" />
-                        </TouchableOpacity>
-                    }
-                >
-                    {!isAuthenticated ? (
-                        <>
-                            <Menu.Item
-                                onPress={() => {
-                                    navigation.navigate('login');
-                                    closeMenu();
-                                }}
-                                title="Войти"
-                                icon={() => <Icon name="login" size={20} color="#333" />}
-                            />
-                            <Menu.Item
-                                onPress={() => {
-                                    navigation.navigate('registration');
-                                    closeMenu();
-                                }}
-                                title="Зарегистрироваться"
-                                icon={() => <Icon name="account-plus" size={20} color="#333" />}
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <Menu.Item
-                                onPress={() => {
-                                    updateFilters({ user_id: 1 });
-                                    navigation.navigate('metravel');
-                                    closeMenu();
-                                }}
-                                title="Мои путешествия"
-                                icon={() => <Icon name="earth" size={20} color="#333" />}
-                            />
-                            <Divider />
-                            <Menu.Item
-                                onPress={() => {
-                                    navigation.navigate('travel/new');
-                                    closeMenu();
-                                }}
-                                title="Добавить путешествие"
-                                icon={() => <Icon name="map-plus" size={20} color="#333" />}
-                            />
-                            <Divider />
-                            <Menu.Item
-                                onPress={async () => {
-                                    await logout();
-                                    closeMenu();
-                                    navigation.navigate('index');
-                                }}
-                                title="Выход"
-                                icon={() => <Icon name="logout" size={20} color="#333" />}
-                            />
-                        </>
-                    )}
-                </Menu>
+                ) : null}
+
+                {/* Меню */}
+                <View>
+                    <Menu
+                        visible={visible}
+                        onDismiss={closeMenu}
+                        anchor={
+                            <TouchableOpacity onPress={openMenu} style={styles.menuButton}>
+                                <Icon name="menu" size={24} color="#333" />
+                            </TouchableOpacity>
+                        }
+                    >
+                        {!isAuthenticated ? (
+                            <>
+                                <Menu.Item
+                                    onPress={() => {
+                                        navigation.navigate('login');
+                                        closeMenu();
+                                    }}
+                                    title="Войти"
+                                    icon={() => <Icon name="login" size={20} color="#333" />}
+                                />
+                                <Menu.Item
+                                    onPress={() => {
+                                        navigation.navigate('registration');
+                                        closeMenu();
+                                    }}
+                                    title="Зарегистрироваться"
+                                    icon={() => <Icon name="account-plus" size={20} color="#333" />}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <Menu.Item
+                                    onPress={() => {
+                                        updateFilters({ user_id: 1 });
+                                        navigation.navigate('metravel');
+                                        closeMenu();
+                                    }}
+                                    title="Мои путешествия"
+                                    icon={() => <Icon name="earth" size={20} color="#333" />}
+                                />
+                                <Divider />
+                                <Menu.Item
+                                    onPress={() => {
+                                        navigation.navigate('travel/new');
+                                        closeMenu();
+                                    }}
+                                    title="Добавить путешествие"
+                                    icon={() => <Icon name="map-plus" size={20} color="#333" />}
+                                />
+                                <Divider />
+                                <Menu.Item
+                                    onPress={async () => {
+                                        await logout();
+                                        closeMenu();
+                                        navigation.navigate('index');
+                                    }}
+                                    title="Выход"
+                                    icon={() => <Icon name="logout" size={20} color="#333" />}
+                                />
+                            </>
+                        )}
+                    </Menu>
+                </View>
             </View>
         </View>
     );
@@ -159,7 +170,7 @@ const styles = StyleSheet.create({
     homeButtonText: {
         fontSize: 20,
         fontWeight: '400',
-        color: '#6aaaaa', // Применен ваш цвет
+        color: '#6aaaaa',
         fontFamily: Platform.select({
             ios: 'HelveticaNeue-Light',
             android: 'sans-serif-light',
@@ -170,7 +181,7 @@ const styles = StyleSheet.create({
     userContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#6aaaaa', // Применен ваш цвет
+        backgroundColor: '#6aaaaa',
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 20,
@@ -190,7 +201,7 @@ const styles = StyleSheet.create({
     logo: {
         width: 30,
         height: 30,
-        resizeMode: 'contain', // Убедитесь, что иконка не обрезается
+        resizeMode: 'contain',
     },
 });
 
