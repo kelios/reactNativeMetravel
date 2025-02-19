@@ -37,7 +37,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
 
     return (
         <View style={styles.sideMenu}>
-            {gallery.length > 0 && (
+            {gallery?.length > 0 && (
                 <TouchableOpacity
                     style={styles.linkButton}
                     onPress={() => {

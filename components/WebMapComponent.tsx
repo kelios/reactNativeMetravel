@@ -10,7 +10,7 @@ import ImageUploadComponent from '@/components/ImageUploadComponent';
 
 // Иконка маркера
 const markerIcon = new L.Icon({
-    iconUrl: '/assets/icons/logo_yellow.ico',
+    iconUrl: require('@/assets/icons/logo_yellow.ico'),
     iconSize: [27, 30],
     iconAnchor: [13, 30],
     popupAnchor: [0, -30],
