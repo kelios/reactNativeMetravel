@@ -22,7 +22,6 @@ type SideBarTravelProps = {
 };
 
 const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMenu, isMobile, travel, refs }) => {
-    console.log('SideBarTravel рендерится');
     const theme = useTheme();
 
     const handlePressUserTravel = useCallback(() => {

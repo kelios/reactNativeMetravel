@@ -80,8 +80,7 @@ const TravelDetails: React.FC = () => {
         ref.current?.measureLayout(
             scrollRef.current?.getInnerViewNode(),
             (x, y) => {
-              console.log(`Scrolling to y: ${y}`);
-              scrollRef.current?.scrollTo({ y: y, animated: true });
+                scrollRef.current?.scrollTo({ y: y, animated: true });
             },
             (error) => {
               console.warn('Failed to measure layout:', error);
@@ -105,7 +104,7 @@ const TravelDetails: React.FC = () => {
           ? travel.gallery
           : (travel.gallery || []).map((item) => item?.url);
 
-  const hasGallery = Array.isArray(gallery) && gallery.length > 0;
+  const hasGallery = Array.isArray(gallery) && gallery?.length > 0;
 
   const styleHtml = `
   <style>

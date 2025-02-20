@@ -19,7 +19,7 @@ function TabBarIcon(props: {
 export default function TabLayout() {
     const colorScheme = useColorScheme()
     const width = useWindowDimensions().width
-console.log('TabLayout');
+
     return (
         <>
             <Tabs
