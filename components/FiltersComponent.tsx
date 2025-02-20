@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -36,7 +36,7 @@ interface FiltersComponentProps {
     isLoadingFilters: boolean;
     onSelectedItemsChange: (field: string, selectedItems: string[]) => void;
     handleTextFilterChange: (value: string) => void;
-    handleApplyFilters: () => void;
+    handleApplyFilters: (yearInput?: string) => void;
     closeMenu: () => void;
     isMobile: boolean;
     resetFilters: () => void;
@@ -53,17 +53,14 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
                                                                isMobile,
                                                                resetFilters,
                                                            }) => {
+    const [yearInput, setYearInput] = useState(filterValue.year || ''); // Локальное состояние для года
+
     const removeSelectedItem = (field: string, value: string) => {
         const currentItems = filterValue[field];
         if (Array.isArray(currentItems)) {
-            let idToRemove;
-            if (field === 'countries') {
-                idToRemove =
-                    filters[field]?.find((item) => item.title_ru === value)?.country_id || value;
-            } else {
-                idToRemove =
-                    filters[field]?.find((item) => item.name === value)?.id || value;
-            }
+            const idToRemove = field === 'countries'
+                ? filters[field]?.find((item) => item.title_ru === value)?.country_id || value
+                : filters[field]?.find((item) => item.name === value)?.id || value;
             const updatedItems = currentItems.filter((item: string) => item !== idToRemove);
             onSelectedItemsChange(field, updatedItems);
         }
@@ -73,77 +70,19 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
         if (!filters) return null;
 
         const selectedFilters = [
-            {
-                label: 'Страны',
-                field: 'countries',
-                values: (filterValue.countries || []).map(
-                    (id) =>
-                        filters.countries?.find((country) => country.country_id === id)?.title_ru ||
-                        id
-                ),
-            },
-            {
-                label: 'Категории',
-                field: 'categories',
-                values: (filterValue.categories || []).map(
-                    (id) =>
-                        filters.categories?.find((category) => category.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Объекты',
-                field: 'categoryTravelAddress',
-                values: (filterValue.categoryTravelAddress || []).map(
-                    (id) =>
-                        filters.categoryTravelAddress?.find((category) => category.id === id)
-                            ?.name || id
-                ),
-            },
-            {
-                label: 'Транспорт',
-                field: 'transports',
-                values: (filterValue.transports || []).map(
-                    (id) =>
-                        filters.transports?.find((transport) => transport.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Уровень физической подготовки',
-                field: 'complexity',
-                values: (filterValue.complexity || []).map(
-                    (id) =>
-                        filters.complexity?.find((level) => level.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Варианты отдыха',
-                field: 'companions',
-                values: (filterValue.companions || []).map(
-                    (id) =>
-                        filters.companions?.find((companion) => companion.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Ночлег',
-                field: 'over_nights_stay',
-                values: (filterValue.over_nights_stay || []).map(
-                    (id) =>
-                        filters.over_nights_stay?.find((stay) => stay.id === id)?.name || id
-                ),
-            },
-            {
-                label: 'Месяц',
-                field: 'month',
-                values: (filterValue.month || []).map(
-                    (id) =>
-                        filters.month?.find((month) => month.id === id)?.name || id
-                ),
-            },
+            { label: 'Страны', field: 'countries', values: filterValue.countries?.map((id) => filters.countries?.find((c) => c.country_id === id)?.title_ru || id) },
+            { label: 'Категории', field: 'categories', values: filterValue.categories?.map((id) => filters.categories?.find((c) => c.id === id)?.name || id) },
+            { label: 'Объекты', field: 'categoryTravelAddress', values: filterValue.categoryTravelAddress?.map((id) => filters.categoryTravelAddress?.find((c) => c.id === id)?.name || id) },
+            { label: 'Транспорт', field: 'transports', values: filterValue.transports?.map((id) => filters.transports?.find((t) => t.id === id)?.name || id) },
+            { label: 'Уровень подготовки', field: 'complexity', values: filterValue.complexity?.map((id) => filters.complexity?.find((l) => l.id === id)?.name || id) },
+            { label: 'Варианты отдыха', field: 'companions', values: filterValue.companions?.map((id) => filters.companions?.find((c) => c.id === id)?.name || id) },
+            { label: 'Ночлег', field: 'over_nights_stay', values: filterValue.over_nights_stay?.map((id) => filters.over_nights_stay?.find((s) => s.id === id)?.name || id) },
+            { label: 'Месяц', field: 'month', values: filterValue.month?.map((id) => filters.month?.find((m) => m.id === id)?.name || id) },
             { label: 'Год', field: 'year', values: filterValue.year ? [filterValue.year] : [] },
         ];
 
         return selectedFilters
-            .filter((item) => item.values.length > 0)
+            .filter((item) => item.values?.length > 0)
             .map((item, index) => (
                 <View key={index} style={styles.selectedFilter}>
                     <Text style={styles.selectedFilterLabel}>{item.label}:</Text>
@@ -196,6 +135,21 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
         </View>
     );
 
+    const handleYearChange = (text: string) => {
+        // Обновляем локальное состояние при любом вводе
+        setYearInput(text);
+
+        // Если введено 4 символа или поле очищено, обновляем фильтр
+        if (text.length === 4 || text.length === 0) {
+            handleTextFilterChange(text);
+        }
+    };
+
+    const handleApply = () => {
+        // Передаем текущее значение года в handleApplyFilters
+        handleApplyFilters(yearInput);
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.filterContainer}>
@@ -213,100 +167,30 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 
                         {renderSelectedFilters()}
 
-                        {renderFilterSection(
-                            'Страны',
-                            'countries',
-                            filters?.countries || [],
-                            'country_id',
-                            'title_ru',
-                            'Выберите страны...',
-                            'Введите страну...'
-                        )}
-
-                        {renderFilterSection(
-                            'Категории',
-                            'categories',
-                            filters?.categories || [],
-                            'id',
-                            'name',
-                            'Выберите категории...',
-                            'Введите категорию...'
-                        )}
-
-                        {renderFilterSection(
-                            'Объекты',
-                            'categoryTravelAddress',
-                            filters?.categoryTravelAddress || [],
-                            'id',
-                            'name',
-                            'Выберите объекты...',
-                            'Введите объект...'
-                        )}
-
-                        {renderFilterSection(
-                            'Транспорт',
-                            'transports',
-                            filters?.transports || [],
-                            'id',
-                            'name',
-                            'Выберите транспорт...',
-                            'Введите транспорт...'
-                        )}
-
-                        {renderFilterSection(
-                            'Уровень физической подготовки',
-                            'complexity',
-                            filters?.complexity || [],
-                            'id',
-                            'name',
-                            'Выберите уровень...',
-                            'Введите уровень...'
-                        )}
-
-                        {renderFilterSection(
-                            'Варианты отдыха',
-                            'companions',
-                            filters?.companions || [],
-                            'id',
-                            'name',
-                            'Выберите варианты отдыха...',
-                            'Введите вариант отдыха...'
-                        )}
-
-                        {renderFilterSection(
-                            'Ночлег',
-                            'over_nights_stay',
-                            filters?.over_nights_stay || [],
-                            'id',
-                            'name',
-                            'Выберите варианты ночлега...',
-                            'Введите вариант ночлега...'
-                        )}
-
-                        {renderFilterSection(
-                            'Месяц',
-                            'month',
-                            filters?.month || [],
-                            'id',
-                            'name',
-                            'Выберите месяц...',
-                            'Введите месяц...'
-                        )}
+                        {renderFilterSection('Страны', 'countries', filters.countries, 'country_id', 'title_ru', 'Выберите страны...', 'Введите страну...')}
+                        {renderFilterSection('Категории', 'categories', filters.categories, 'id', 'name', 'Выберите категории...', 'Введите категорию...')}
+                        {renderFilterSection('Объекты', 'categoryTravelAddress', filters.categoryTravelAddress, 'id', 'name', 'Выберите объекты...', 'Введите объект...')}
+                        {renderFilterSection('Транспорт', 'transports', filters.transports, 'id', 'name', 'Выберите транспорт...', 'Введите транспорт...')}
+                        {renderFilterSection('Уровень подготовки', 'complexity', filters.complexity, 'id', 'name', 'Выберите уровень...', 'Введите уровень...')}
+                        {renderFilterSection('Варианты отдыха', 'companions', filters.companions, 'id', 'name', 'Выберите варианты отдыха...', 'Введите вариант отдыха...')}
+                        {renderFilterSection('Ночлег', 'over_nights_stay', filters.over_nights_stay, 'id', 'name', 'Выберите варианты ночлега...', 'Введите вариант ночлега...')}
+                        {renderFilterSection('Месяц', 'month', filters.month, 'id', 'name', 'Выберите месяц...', 'Введите месяц...')}
 
                         <View style={styles.filterSection}>
                             <Text style={styles.filterLabel}>Год</Text>
                             <TextInput
                                 style={styles.input}
                                 placeholder="Введите год"
-                                value={filterValue.year || ''}
-                                onChangeText={handleTextFilterChange}
+                                value={yearInput}
+                                onChangeText={handleYearChange}
                                 keyboardType="numeric"
+                                maxLength={4}
                             />
                         </View>
 
                         <View style={styles.buttonContainer}>
                             {isMobile && (
-                                <TouchableOpacity style={styles.applyButton} onPress={closeMenu}>
+                                <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
                                     <Ionicons name="search" size={12} color="white" />
                                     <Text style={styles.resetButtonText}>Поиск</Text>
                                 </TouchableOpacity>
@@ -324,11 +208,11 @@ const FiltersComponent: React.FC<FiltersComponentProps> = ({
 };
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        paddingBottom: 20,
-    },
     filterContainer: {
-        padding: 15,
+        paddingRight: 15,
+        paddingLeft: 15,
+        paddingBottom: 20,
+        paddingTop: 20,
         backgroundColor: '#fafafa',
     },
     header: {
@@ -336,14 +220,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 15,
-    },
-    title: {
-        fontSize: 12,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    closeButton: {
-        padding: 5,
     },
     selectedFilter: {
         marginBottom: 10,
@@ -399,7 +275,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: 20,
-        marginBottom: '25%',
+        marginBottom: '5%',
     },
     applyButton: {
         backgroundColor: '#6aaaaa',

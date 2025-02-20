@@ -46,7 +46,6 @@ const PaginationComponent: React.FC<PaginationComponentProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 120,
         backgroundColor: 'white',
     },
 });

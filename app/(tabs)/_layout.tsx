@@ -1,32 +1,30 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome'
-import {Tabs, useRouter} from 'expo-router'
-import {Image, useColorScheme, useWindowDimensions} from 'react-native'
-import Footer from '@/components/Footer'
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Tabs, useRouter } from 'expo-router';
+import { Image, useColorScheme, useWindowDimensions, View, StyleSheet } from 'react-native';
+import Footer from '@/components/Footer';
 import RenderRightMenu from '@/components/RenderRightMenu';
 import NewTravelScreen from "@/app/(tabs)/travel/new";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
-/**
- * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
- */
 function TabBarIcon(props: {
-    name: React.ComponentProps<typeof FontAwesome>['name']
-    color: string
+    name: React.ComponentProps<typeof FontAwesome>['name'];
+    color: string;
 }) {
-    return <FontAwesome size={28} style={{marginBottom: -3}} {...props} />
+    return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
+
 export default function TabLayout() {
-    const colorScheme = useColorScheme()
-    const width = useWindowDimensions().width
+    const colorScheme = useColorScheme();
+    const width = useWindowDimensions().width;
 
     return (
-        <>
+        <View style={styles.container}>
             <Tabs
                 screenOptions={{
                     tabBarStyle: {
                         width: '100%',
-                        padding:  0,
+                        padding: 0,
                         position: 'absolute',
                         bottom: 0,
                         height: 0,
@@ -37,7 +35,6 @@ export default function TabLayout() {
                     name="index"
                     options={{
                         title: '',
-                        //tabBarIcon: ({ color }) => <TabBarIcon image="/assets/icons/logo_yellow" color={color} />,
                         tabBarIcon: ({size, focused, color}) => {
                             return (
                                 <Image
@@ -185,7 +182,13 @@ export default function TabLayout() {
                 />
 
             </Tabs>
-            <Footer/>
-        </>
-    )
+            <Footer />
+        </View>
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+});

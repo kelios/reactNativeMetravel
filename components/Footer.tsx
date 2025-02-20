@@ -9,12 +9,12 @@ import {
     Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {Link, Href} from 'expo-router';
+import { Link, Href } from 'expo-router';
 
 type LinkItem = {
     name: string;
     label: string;
-    route: Href; // Используем string, а не keyof RootStackParamList
+    route: Href;
 };
 
 const Footer: React.FC = () => {
@@ -22,12 +22,12 @@ const Footer: React.FC = () => {
     const styles = getStyles(windowsWidth);
 
     const links: LinkItem[] = [
-        {name: 'home', label: 'Путешествия', route: '/'},
-        {name: 'globe', label: 'Беларусь', route: '/travelsby'},
-        {name: 'map', label: 'Карта', route: '/map'},
-        {name: 'instagram', label: 'Аккаунты в Instagram', route: '/travels/439'},
-        {name: 'envelope', label: 'Обратная связь', route: '/contact'},
-        {name: 'info-circle', label: 'О сайте', route: '/about'},
+        { name: 'home', label: 'Путешествия', route: '/' },
+        { name: 'globe', label: 'Беларусь', route: '/travelsby' },
+        { name: 'map', label: 'Карта', route: '/map' },
+        { name: 'instagram', label: 'Аккаунты в Instagram', route: '/travels/439' },
+        { name: 'envelope', label: 'Обратная связь', route: '/contact' },
+        { name: 'info-circle', label: 'О сайте', route: '/about' },
     ];
 
     return (
@@ -39,7 +39,7 @@ const Footer: React.FC = () => {
                         href={link.route}
                         style={styles.link}
                     >
-                        <Icon name={link.name} size={20} color="#ff9f5a"/>
+                        <Icon name={link.name} size={20} color="#ff9f5a" />
                         <Text style={styles.linkText}>{link.label}</Text>
                     </Link>
                 ))}
@@ -62,13 +62,13 @@ const Footer: React.FC = () => {
                         onPress={() => Linking.openURL('https://www.instagram.com/metravelby/')}
                         style={styles.socialLink}
                     >
-                        <Icon name="instagram" size={20} color="#ff9f5a"/>
+                        <Icon name="instagram" size={20} color="#ff9f5a" />
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => Linking.openURL('https://www.youtube.com/@metravelby')}
                         style={styles.socialLink}
                     >
-                        <Icon name="youtube" size={20} color="#ff9f5a"/>
+                        <Icon name="youtube" size={20} color="#ff9f5a" />
                     </TouchableOpacity>
                 </View>
 
@@ -91,8 +91,6 @@ const getStyles = (windowsWidth: number) => {
             backgroundColor: '#333',
             paddingVertical: windowsWidth > 500 ? 15 : 10,
             paddingHorizontal: 20,
-            position: 'absolute',
-            bottom: 0,
             borderTopWidth: 1,
             borderTopColor: '#444',
         },
