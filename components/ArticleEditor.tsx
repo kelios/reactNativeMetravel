@@ -1,186 +1,164 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Platform, TextInput, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    SafeAreaView,
+    TouchableOpacity,
+    ScrollView,
+    TextInput,
+    Alert,
+    StatusBar,
+    Dimensions,
+    Platform,
+    Modal
+} from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as ImagePicker from 'expo-image-picker';
+import RenderHtml from 'react-native-render-html';
+import { uploadImage } from "@/src/api/travels";
 
-interface ArticleEditorProps {
-    content?: string;
+interface UniversalEditorProps {
+    initialContent?: string;
     onChange: (content: string) => void;
     label?: string;
-    height?: number;
-    uploadUrl: string; // URL для загрузки изображений
+    uploadUrl?: string;
+    idTravel?: string;
 }
 
-const ArticleEditor: React.FC<ArticleEditorProps> = ({
-                                                         content = '',
-                                                         onChange,
-                                                         label,
-                                                         height = 200,
-                                                         uploadUrl,
-                                                     }) => {
-    const [editorContent, setEditorContent] = useState(content);
-    const [showHtml, setShowHtml] = useState(false); // Показ HTML-кода
-    const [isFullScreen, setIsFullScreen] = useState(false); // Полноэкранный режим
-    const editorRef = useRef(null);
+const ArticleEditor: React.FC<UniversalEditorProps> = ({
+                                                           initialContent = '',
+                                                           onChange,
+                                                           label = 'Редактор',
+                                                           uploadUrl,
+                                                           idTravel
+                                                       }) => {
+    const [editorContent, setEditorContent] = useState(initialContent);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [showHtml, setShowHtml] = useState(false);
+    const editorRef = useRef<TextInput | null>(null);
 
-    const handleEditorChange = (text: string) => {
+    const handleEditorChange = useCallback((text: string) => {
         setEditorContent(text);
         onChange(text);
+    }, [onChange]);
+
+    const applyTag = (tag: string, wrapper = false) => {
+        const wrappedText = wrapper
+            ? `<${tag}>${editorContent}</${tag}>`
+            : `<${tag} />`;
+        handleEditorChange(editorContent + wrappedText);
     };
 
-    const applyFormat = (command: string, value?: string) => {
-        if (Platform.OS === 'web') {
-            document.execCommand(command, false, value);
-        } else {
-            // Для мобильных платформ можно добавить кастомное форматирование
-            if (command === 'bold') {
-                setEditorContent((prev) => `<b>${prev}</b>`);
-            }
+    const insertLink = () => {
+        const url = prompt('Введите URL:');
+        if (url) {
+            applyTag(`a href="${url}"`, true);
         }
     };
 
-    const handleImageUpload = async () => {
-        if (Platform.OS === 'web') {
-            // Для веб-платформы используем input[type="file"]
+    const changeTextColor = () => {
+        const color = prompt('Введите цвет (например, red или #ff0000):');
+        if (color) {
+            applyTag(`span style="color:${color};"`, true);
+        }
+    };
+
+    const toggleFullScreen = () => {
+        setIsFullScreen(!isFullScreen);
+    };
+
+    const handleImageUpload = useCallback(() => {
+        if (uploadUrl) {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
-            input.onchange = async (e) => {
+            input.onchange = async (e: any) => {
                 const file = e.target.files[0];
                 if (file) {
                     const formData = new FormData();
                     formData.append('file', file);
+                    formData.append('collection', 'description');
+                    formData.append('id', idTravel);
 
-                    try {
-                        const response = await fetch(uploadUrl, {
-                            method: 'POST',
-                            body: formData,
-                        });
-                        const data = await response.json();
-                        const imageUrl = data.url; // Предполагаем, что сервер возвращает URL изображения
-                        document.execCommand('insertImage', false, imageUrl);
-                    } catch (error) {
-                        Alert.alert('Ошибка', 'Не удалось загрузить изображение');
+                    const response = await uploadImage(formData);
+
+                    if (response.url) {
+                        applyTag(`img src="${response.url}"`);
+                    } else {
+                        Alert.alert('Ошибка', 'Сервер не вернул URL изображения');
                     }
                 }
             };
             input.click();
         } else {
-            // Для мобильных платформ используем react-native-image-picker
-            Alert.alert('Информация', 'Загрузка изображений на мобильных платформах требует дополнительной настройки.');
+            Alert.alert('Ошибка', 'uploadUrl не указан');
         }
-    };
+    }, [uploadUrl, handleEditorChange]);
 
-    const clearFormatting = () => {
-        if (Platform.OS === 'web') {
-            document.execCommand('removeFormat');
-        } else {
-            // Для мобильных платформ можно очистить форматирование
-            setEditorContent((prev) => prev.replace(/<[^>]+>/g, ''));
-        }
-    };
-
-    const toggleHtmlView = () => {
-        setShowHtml((prev) => !prev);
-    };
-
-    const toggleFullScreen = () => {
-        setIsFullScreen((prev) => !prev);
-    };
-
-    const insertLink = () => {
-        const url = prompt('Введите URL ссылки:');
-        if (url) {
-            if (Platform.OS === 'web') {
-                document.execCommand('createLink', false, url);
-            } else {
-                setEditorContent((prev) => `<a href="${url}">${prev}</a>`);
-            }
-        }
-    };
+    const renderToolbar = () => (
+        <View style={styles.toolbar}>
+            {[
+                { icon: 'format-bold', title: 'Жирный', action: () => applyTag('b', true) },
+                { icon: 'format-italic', title: 'Курсив', action: () => applyTag('i', true) },
+                { icon: 'format-underline', title: 'Подчеркнутый', action: () => applyTag('u', true) },
+                { icon: 'format-align-center', title: 'Центрировать', action: () => applyTag('div style="text-align:center;"', true) },
+                { icon: 'link', title: 'Добавить ссылку', action: insertLink },
+                { icon: 'palette', title: 'Цвет текста', action: changeTextColor },
+                { icon: 'image', title: 'Изображение', action: handleImageUpload },
+                { icon: 'code', title: 'HTML', action: () => setShowHtml(!showHtml) },
+                { icon: isFullScreen ? 'fullscreen-exit' : 'fullscreen', title: 'На весь экран', action: toggleFullScreen },
+            ].map(({ icon, action }) => (
+                <TouchableOpacity key={icon} onPress={action} style={styles.toolbarButton}>
+                    <MaterialIcons name={icon} size={24} color="#333" />
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
 
     return (
-        <SafeAreaView style={[styles.container, isFullScreen && styles.fullScreenContainer]}>
-            {label && <Text style={styles.label}>{label}</Text>}
-
-            {/* Панель инструментов */}
-            <View style={styles.toolbar}>
-                <TouchableOpacity onPress={() => applyFormat('bold')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>B</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('italic')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>I</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('underline')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>U</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('insertUnorderedList')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>•</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('insertOrderedList')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>1.</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('justifyLeft')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>◀️</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('justifyCenter')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>🔘</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => applyFormat('justifyRight')} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>▶️</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={clearFormatting} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>🧹</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleImageUpload} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>📷</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={insertLink} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>🔗</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={toggleHtmlView} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>{showHtml ? '👁️' : '</>'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={toggleFullScreen} style={styles.toolbarButton}>
-                    <Text style={styles.toolbarButtonText}>{isFullScreen ? '⬜' : '⬛'}</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Редактор */}
-            {Platform.OS === 'web' ? (
-                showHtml ? (
-                    <textarea
-                        style={{ ...styles.webEditor, height: isFullScreen ? Dimensions.get('window').height - 100 : height }}
-                        value={editorContent}
-                        onChange={(e) => handleEditorChange(e.target.value)}
-                    />
+        <SafeAreaView style={styles.container}>
+            <Text style={styles.label}>{label}</Text>
+            <View style={styles.separator} />
+            {renderToolbar()}
+            <ScrollView contentContainerStyle={styles.scrollView}>
+                {showHtml ? (
+                    <RenderHtml contentWidth={Dimensions.get('window').width} source={{ html: editorContent }} />
                 ) : (
-                    <div
+                    <TextInput
                         ref={editorRef}
-                        contentEditable
-                        style={{ ...styles.webEditor, height: isFullScreen ? Dimensions.get('window').height - 100 : height }}
-                        onInput={(e) => handleEditorChange(e.currentTarget.innerHTML)}
-                        dangerouslySetInnerHTML={{ __html: editorContent }}
-                        dir="auto" // Указываем направление текста
+                        style={styles.textEditor}
+                        multiline
+                        value={editorContent}
+                        onChangeText={handleEditorChange}
                     />
-                )
-            ) : (
-                <TextInput
-                    style={{ ...styles.mobileEditor, height: isFullScreen ? Dimensions.get('window').height - 100 : height }}
-                    multiline
-                    value={editorContent}
-                    onChangeText={handleEditorChange}
-                    placeholder="Начните писать..."
-                    textAlignVertical="top" // Выравнивание текста по верхнему краю
-                    textAlign="left" // Выравнивание текста по левому краю
-                />
-            )}
+                )}
+            </ScrollView>
 
-            {/* Показ отформатированного HTML на веб-платформе */}
-            {Platform.OS === 'web' && !showHtml && (
-                <View style={styles.preview}>
-                    <Text style={styles.previewLabel}>Предпросмотр:</Text>
-                    <div dangerouslySetInnerHTML={{ __html: editorContent }} />
-                </View>
-            )}
+            {/* Полноэкранный режим */}
+            <Modal visible={isFullScreen} animationType="slide" presentationStyle="fullScreen">
+                <SafeAreaView style={styles.fullScreenContainer}>
+                    <View style={styles.fullScreenToolbar}>
+                        <TouchableOpacity onPress={toggleFullScreen} style={styles.closeButton}>
+                            <MaterialIcons name="close" size={24} color="#333" />
+                        </TouchableOpacity>
+                    </View>
+                    {renderToolbar()}
+                    <ScrollView contentContainerStyle={styles.scrollView}>
+                        {showHtml ? (
+                            <RenderHtml contentWidth={Dimensions.get('window').width} source={{ html: editorContent }} />
+                        ) : (
+                            <TextInput
+                                ref={editorRef}
+                                style={styles.fullScreenEditor}
+                                multiline
+                                value={editorContent}
+                                onChangeText={handleEditorChange}
+                            />
+                        )}
+                    </ScrollView>
+                </SafeAreaView>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -188,74 +166,63 @@ const ArticleEditor: React.FC<ArticleEditorProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
-        width: '100%',
-        backgroundColor: '#f9f9f9',
+        padding: 16,
+        backgroundColor: '#fff'
     },
-    fullScreenContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-        backgroundColor: '#fff',
+    separator: {
+        height: 1,
+        backgroundColor: '#ddd',
+        marginVertical: 10
     },
     label: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#333',
-    },
-    mobileEditor: {
-        width: '100%',
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        padding: 10,
-        fontSize: 16,
-        textAlign: 'left', // Выравнивание текста по левому краю
-        backgroundColor: '#fff',
-    },
-    webEditor: {
-        width: '100%',
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
-        padding: 10,
-        fontSize: 16,
-        fontFamily: 'Arial, sans-serif',
-        textAlign: 'left', // Выравнивание текста по левому краю
-        backgroundColor: '#fff',
+        marginBottom: 8
     },
     toolbar: {
         flexDirection: 'row',
+        justifyContent: 'space-around',
+        backgroundColor: '#f4f4f4',
+        padding: 10,
+        borderRadius: 8,
         marginBottom: 10,
-        flexWrap: 'wrap',
-        gap: 5,
     },
     toolbarButton: {
-        padding: 8,
-        backgroundColor: '#e0e0e0',
-        borderRadius: 4,
-        justifyContent: 'center',
+        padding: 10,
+        borderRadius: 8,
+        width: 50,
+        height: 50,
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    toolbarButtonText: {
+    scrollView: {
+        flexGrow: 1,
+    },
+    textEditor: {
+        minHeight: 300,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
         fontSize: 16,
-        color: '#333',
     },
-    preview: {
-        marginTop: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#ccc',
-        paddingTop: 10,
+    fullScreenContainer: {
+        flex: 1,
+        backgroundColor: '#fff',
     },
-    previewLabel: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#333',
+    fullScreenToolbar: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        padding: 16,
+        backgroundColor: '#f4f4f4',
+    },
+    closeButton: {
+        padding: 10,
+    },
+    fullScreenEditor: {
+        flex: 1,
+        padding: 16,
+        fontSize: 18,
     },
 });
 

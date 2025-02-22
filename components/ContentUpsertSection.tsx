@@ -95,25 +95,25 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                 />
             </View>
 
-            <View style={styles.section}>
+            <View style={styles.sectionEditor}>
                 {renderArticleEditor('Описание', formData.description, (newContent) =>
                     handleChange('description', newContent))
                 }
             </View>
 
-            <View style={styles.section}>
+            <View style={styles.sectionEditor}>
                 {renderArticleEditor('Плюсы', formData.plus, (newContent) =>
                     handleChange('plus', newContent))
                 }
             </View>
 
-            <View style={styles.section}>
+            <View style={styles.sectionEditor}>
                 {renderArticleEditor('Минусы', formData.minus, (newContent) =>
                     handleChange('minus', newContent))
                 }
             </View>
 
-            <View style={styles.section}>
+            <View style={styles.sectionEditor}>
                 {renderArticleEditor('Рекомендации', formData.recommendation, (newContent) =>
                     handleChange('recommendation', newContent))
                 }
@@ -138,6 +138,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 5,
+    },
+    sectionEditor: {
+        //flex: 1,
     },
     editorContainer: {
         marginTop: 10,
