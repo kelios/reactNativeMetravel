@@ -40,6 +40,7 @@ export default function ListTravel() {
 
     const isMobile = windowWidth <= 768;
     const numColumns = windowWidth <= 1400 ? 1 : 2;
+    const router = useRouter();
 
     const itemsPerPageOptions = [10, 20, 30, 50, 100];
     const [currentPage, setCurrentPage] = useState(0);
@@ -220,7 +221,6 @@ export default function ListTravel() {
     };
 
     const handleEdit = (id: string) => {
-        const router = useRouter();
         router.push(`/travel/${id}`);
     };
 

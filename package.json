@@ -14,8 +14,6 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-build-classic": "^44.2.0",
-    "@ckeditor/ckeditor5-react": "^9.5.0",
     "@expo-google-fonts/playfair-display": "^0.2.3",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "^14.0.2",
@@ -44,12 +42,14 @@
     "expo-web-browser": "~14.0.2",
     "format": "^0.2.2",
     "formik": "^2.4.5",
+    "leaflet": "^1.9.4",
     "lint": "^1.1.2",
     "pretty-format": "^29.7.0",
     "react": "18.3.1",
     "react-cookie-consent": "^9.0.0",
     "react-dom": "18.3.1",
     "react-dropzone": "^14.2.3",
+    "react-leaflet": "^4.2.1",
     "react-native": "0.76.7",
     "react-native-document-picker": "^9.3.0",
     "react-native-dotenv": "^3.4.9",
@@ -62,7 +62,6 @@
     "react-native-maps": "1.18.0",
     "react-native-multiple-select": "^0.5.12",
     "react-native-paper": "^5.13.1",
-    "react-native-pell-rich-editor": "^1.9.0",
     "react-native-reanimated": "~3.16.1",
     "react-native-render-html": "^6.3.4",
     "react-native-responsive-screen": "^1.4.2",
@@ -73,9 +72,7 @@
     "react-native-vector-icons": "^10.0.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "yup": "^1.4.0",
-    "leaflet": "^1.9.4",
-    "react-leaflet": "^4.2.1"
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
