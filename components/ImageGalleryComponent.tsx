@@ -1,114 +1,184 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    ScrollView,
+    ActivityIndicator,
+    Alert,
+    Platform,
+} from 'react-native';
 import { useDropzone } from 'react-dropzone';
-import { uploadImage, deleteImage } from '@/src/api/travels'; // Не забудьте добавить ваш путь к API
+import { uploadImage, deleteImage } from '@/src/api/travels';
 
-interface Image {
+// Тип для одного изображения в галерее
+interface GalleryItem {
     id: string;
     url: string;
 }
 
-interface GalleryUploadComponentProps {
-    collection: string;
-    idTravel: string;
-    initialImages: Image[];
-    maxImages?: number;
+interface ImageGalleryComponentProps {
+    collection: string;      // Название коллекции (например, "gallery")
+    idTravel: string;        // ID путешествия
+    initialImages: GalleryItem[];  // Начальные изображения
+    maxImages?: number;      // Максимальное число изображений (по умолч. 10)
 }
 
-const ImageGalleryComponent: React.FC<GalleryUploadComponentProps> = ({
-                                                                          collection,
-                                                                          idTravel,
-                                                                          initialImages,
-                                                                          maxImages = 10,
-                                                                      }) => {
-    const [images, setImages] = useState<Image[]>([]);
+const ImageGalleryComponent: React.FC<ImageGalleryComponentProps> = ({
+                                                                         collection,
+                                                                         idTravel,
+                                                                         initialImages,
+                                                                         maxImages = 10,
+                                                                     }) => {
+    const [images, setImages] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState<boolean[]>([]);
     const [isUploading, setIsUploading] = useState<boolean>(false);
     const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
 
-    // Загрузка начальных изображений
+    /**
+     * -------------------------
+     *  1. ЗАГРУЗКА НАЧАЛЬНЫХ ИЗОБРАЖЕНИЙ
+     * -------------------------
+     */
     useEffect(() => {
         if (initialImages && initialImages.length > 0) {
             setImages(initialImages);
+            // Массив "loading" для каждого изображения
             const initialLoadingState = initialImages.map(() => false);
             setLoading(initialLoadingState);
         }
         setIsInitialLoading(false);
     }, [initialImages]);
 
-    // Лимит изображений
-    const handleUploadImages = async (files: File[]) => {
-        if (images.length + files.length > maxImages) {
-            Alert.alert('Ошибка', `Максимум можно загрузить ${maxImages} изображений.`);
-            return;
-        }
-
-        setIsUploading(true);
-        const newLoading = [...loading];
-
-        const uploads = files.map(async (file, index) => {
-            const currentIndex = images.length + index;
-            newLoading[currentIndex] = true;
-            setLoading([...newLoading]);
-
-            try {
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('collection', collection);
-                formData.append('id', idTravel);
-
-                const response = await uploadImage(formData);
-
-                if (response.url) {
-                    setImages((prev) => [...prev, { id: response.id, url: response.url }]);
-                } else {
-                    Alert.alert('Ошибка', 'Не удалось загрузить изображение.');
-                }
-            } catch (error) {
-                Alert.alert('Ошибка', 'Ошибка загрузки изображения.');
-            } finally {
-                newLoading[currentIndex] = false;
-                setLoading([...newLoading]);
+    /**
+     * -------------------------
+     *  2. UPLOAD ЧЕРЕЗ REACT-DROPZONE (WEB)
+     * -------------------------
+     * Принимаем файлы и отправляем их на сервер.
+     */
+    const handleUploadImages = useCallback(
+        async (files: File[]) => {
+            // Проверка лимита
+            if (images.length + files.length > maxImages) {
+                Alert.alert(
+                    'Ошибка',
+                    `Максимум можно загрузить ${maxImages} изображений.`
+                );
+                return;
             }
-        });
 
-        await Promise.all(uploads);
-        setIsUploading(false);
-    };
+            setIsUploading(true);
 
-    const { getRootProps, getInputProps } = useDropzone({
-        accept: 'image/*',
+            const newLoading = [...loading];
+
+            // Загружаем файлы последовательно или параллельно
+            const uploads = files.map(async (file, index) => {
+                const currentIndex = images.length + index;
+                newLoading[currentIndex] = true;
+                setLoading([...newLoading]);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('collection', collection);
+                    formData.append('id', idTravel);
+
+                    // uploadImage должен вернуть { id: string, url: string } при успехе
+                    const response = await uploadImage(formData);
+
+                    if (response?.url) {
+                        setImages((prev) => [
+                            ...prev,
+                            { id: response.id, url: response.url },
+                        ]);
+                    } else {
+                        Alert.alert('Ошибка', 'Не удалось загрузить изображение.');
+                    }
+                } catch (error) {
+                    Alert.alert('Ошибка', 'Ошибка загрузки изображения.');
+                } finally {
+                    newLoading[currentIndex] = false;
+                    setLoading([...newLoading]);
+                }
+            });
+
+            await Promise.all(uploads);
+            setIsUploading(false);
+        },
+        [images, loading, collection, idTravel, maxImages]
+    );
+
+    /**
+     * -------------------------
+     *  3. ИНИЦИАЛИЗАЦИЯ useDropzone (ТОЛЬКО WEB)
+     * -------------------------
+     * На мобильных платформах drag&drop не работает, поэтому
+     * стоит либо скрывать этот блок, либо использовать file picker.
+     */
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        accept: { 'image/*': [] },
         multiple: true,
+        disabled: Platform.OS !== 'web', // отключаем dnd, если не web
         onDrop: (acceptedFiles) => {
+            // acceptedFiles — это тип File[] (только на web)
             handleUploadImages(acceptedFiles);
         },
     });
 
-    // Удаление изображения
+    /**
+     * -------------------------
+     *  4. УДАЛЕНИЕ ИЗОБРАЖЕНИЯ
+     * -------------------------
+     */
     const handleDeleteImage = async (imageId: string) => {
         try {
             await deleteImage(imageId);
-            setImages((prevImages) => prevImages.filter((image) => image.id !== imageId));
+            setImages((prevImages) => prevImages.filter((img) => img.id !== imageId));
         } catch (error) {
             Alert.alert('Ошибка', 'Ошибка удаления изображения.');
         }
     };
 
+    /**
+     * -------------------------
+     *  RENDER
+     * -------------------------
+     */
     return (
         <View style={styles.container}>
             <Text style={styles.label}>Галерея</Text>
-            <Text style={styles.galleryTitle}>Загружено {images.length} из {maxImages} изображений</Text>
+            <Text style={styles.galleryTitle}>
+                Загружено {images.length} из {maxImages} изображений
+            </Text>
 
-            <div {...getRootProps()} style={styles.dropzone}>
-                <input {...getInputProps()} />
-                <Text style={styles.dropzoneText}>Перетащите сюда изображения или нажмите для выбора</Text>
-            </div>
+            {/* Dropzone (только на web). На мобильных можно скрыть */}
+            {Platform.OS === 'web' && (
+                <View
+                    {...getRootProps()}
+                    style={[
+                        styles.dropzone,
+                        isDragActive && { borderColor: '#66cdaa' },
+                    ]}
+                >
+                    <input {...getInputProps()} />
+                    <Text style={styles.dropzoneText}>
+                        {isDragActive
+                            ? 'Отпустите файлы здесь...'
+                            : 'Перетащите сюда изображения или нажмите для выбора'}
+                    </Text>
+                </View>
+            )}
 
             {isInitialLoading ? (
                 <ActivityIndicator size="large" color="#4b7c6f" style={styles.loader} />
             ) : images.length > 0 ? (
                 <View style={styles.galleryWrapper}>
-                    <ScrollView contentContainerStyle={styles.imageContainer}>
+                    <ScrollView
+                        contentContainerStyle={styles.imageContainer}
+                        nestedScrollEnabled
+                    >
                         {images.map((image, index) => (
                             <View key={image.id} style={styles.imageWrapper}>
                                 {loading[index] ? (
@@ -119,7 +189,10 @@ const ImageGalleryComponent: React.FC<GalleryUploadComponentProps> = ({
                                 ) : (
                                     <>
                                         <Image source={{ uri: image.url }} style={styles.image} />
-                                        <TouchableOpacity onPress={() => handleDeleteImage(image.id)} style={styles.deleteButton}>
+                                        <TouchableOpacity
+                                            onPress={() => handleDeleteImage(image.id)}
+                                            style={styles.deleteButton}
+                                        >
                                             <Text style={styles.deleteButtonText}>✖</Text>
                                         </TouchableOpacity>
                                     </>
@@ -132,7 +205,7 @@ const ImageGalleryComponent: React.FC<GalleryUploadComponentProps> = ({
                 <Text style={styles.noImagesText}>Нет загруженных изображений</Text>
             )}
 
-            {/* Общий лоадер для загрузки изображений */}
+            {/* Общий лоадер, если идёт массовая загрузка */}
             {isUploading && (
                 <View style={styles.uploadingOverlay}>
                     <ActivityIndicator size="large" color="#4b7c6f" />
@@ -142,32 +215,49 @@ const ImageGalleryComponent: React.FC<GalleryUploadComponentProps> = ({
         </View>
     );
 };
+
+export default ImageGalleryComponent;
+
 const styles = StyleSheet.create({
     container: {
-        flex: 1,  // Контейнер будет занимать всю доступную высоту экрана
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-        paddingBottom: 100,  // Увеличенный отступ снизу для избежания перекрытия футера
         width: '100%',
+        padding: 20,
+        position: 'relative',
     },
     label: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 15,
+        marginBottom: 10,
         color: '#4b7c6f',
-        textAlign: 'left',
-        width: '100%',
     },
     galleryTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 20,
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 10,
         color: '#4b7c6f',
+    },
+    dropzone: {
+        width: '100%',
+        padding: 40,
+        borderWidth: 2,
+        borderRadius: 5,
+        borderColor: '#4b7c6f',
+        backgroundColor: '#f0f0f0',
+        textAlign: 'center',
+        marginBottom: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        cursor: 'pointer', // web-стиль
+    },
+    dropzoneText: {
+        color: '#4b7c6f',
+        fontSize: 16,
         textAlign: 'center',
     },
+    loader: {
+        marginTop: 20,
+    },
     galleryWrapper: {
-        flex: 1,
         width: '100%',
         padding: 20,
         borderWidth: 2,
@@ -180,31 +270,29 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 5,
         marginBottom: 30,
+        position: 'relative',
     },
     imageContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginTop: 20,
     },
     imageWrapper: {
-        width: '48%',  // Ширина изображения
-        aspectRatio: 1,  // Устанавливаем соотношение сторон 1:1 (квадратное изображение)
+        width: '48%',
+        aspectRatio: 1,
         marginBottom: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
         borderWidth: 1,
         borderColor: '#4b7c6f',
         borderRadius: 10,
-        padding: 5,
         backgroundColor: '#fff',
         position: 'relative',
+        overflow: 'hidden',
     },
     image: {
         width: '100%',
         height: '100%',
         borderRadius: 10,
-        resizeMode: 'cover',  // Установлено cover для масштабирования изображения по контейнеру
+        resizeMode: 'cover',
     },
     deleteButton: {
         position: 'absolute',
@@ -222,31 +310,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
-    dropzone: {
-        width: '100%',
-        padding: 40,
-        borderWidth: 2,
-        borderRadius: 5,
-        borderColor: '#4b7c6f',
-        backgroundColor: '#f0f0f0',
-        textAlign: 'center',
-        marginBottom: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    dropzoneText: {
-        color: '#4b7c6f',
-        fontSize: 16,
-        textAlign: 'center',
-    },
     loadingOverlay: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: 10,
     },
     loadingText: {
         marginTop: 10,
@@ -259,15 +327,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
     },
-    loader: {
-        marginTop: 20,
-    },
     uploadingOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -278,6 +339,3 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
-
-
-export default ImageGalleryComponent;
