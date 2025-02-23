@@ -27,30 +27,39 @@ import TravelListItem from '@/components/TravelListItem';
 export default function ListTravel() {
     const { width: windowWidth } = useWindowDimensions();
     const styles = getStyles(windowWidth);
+
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({});
     const [filterValue, setFilterValue] = useState({});
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+
     const [menuVisible, setMenuVisible] = useState(false);
-    const [travels, setTravels] = useState<Travels[]>([]);
+    const [travels, setTravels] = useState<Travels | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
     const [userId, setUserId] = useState('');
     const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
     const [currentDeleteId, setCurrentDeleteId] = useState<string | null>(null);
 
     const isMobile = windowWidth <= 768;
     const numColumns = windowWidth <= 1400 ? 1 : 2;
+
     const router = useRouter();
-
-    const itemsPerPageOptions = [10, 20, 30, 50, 100];
-    const [currentPage, setCurrentPage] = useState(0);
-    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2]);
-    const { user_id } = useLocalSearchParams();
     const route = useRoute();
+    const { user_id } = useLocalSearchParams();
 
+    // Определяем, на какой экран зашли
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
 
+    // Параметры пагинации
+    const itemsPerPageOptions = [10, 20, 30, 50, 100];
+    const [currentPage, setCurrentPage] = useState(0);
+    const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2]); // Значение по умолчанию = 30
+
+    /**
+     * Получаем userId из AsyncStorage
+     */
     useEffect(() => {
         const getUserId = async () => {
             const storedUserId = await AsyncStorage.getItem('userId');
@@ -61,73 +70,67 @@ export default function ListTravel() {
         getUserId();
     }, []);
 
+    /**
+     * Загружаем фильтры один раз при монтировании экрана.
+     * ВАЖНО: пустой массив зависимостей [] — вызовется ровно один раз.
+     */
+    useEffect(() => {
+        const loadFilters = async () => {
+            try {
+                setIsLoadingFilters(true);
+                // Параллельная загрузка основных фильтров и стран.
+                const [filtersData, countryData] = await Promise.all([
+                    fetchFilters(),
+                    fetchFiltersCountry(),
+                ]);
+
+                setFilters({
+                    categories: filtersData?.categories || [],
+                    categoryTravelAddress: filtersData?.categoryTravelAddress || [],
+                    companions: filtersData?.companions || [],
+                    complexity: filtersData?.complexity || [],
+                    month: filtersData?.month || [],
+                    over_nights_stay: filtersData?.over_nights_stay || [],
+                    transports: filtersData?.transports || [],
+                    countries: countryData || [],
+                });
+            } catch (error) {
+                console.log('Ошибка при загрузке фильтров:', error);
+            } finally {
+                setIsLoadingFilters(false);
+            }
+        };
+
+        loadFilters();
+    }, []);
+
+    /**
+     * Каждый раз, когда меняются критичные параметры (фильтры, поиск, количество на странице),
+     * сбрасываем страницу на 0. Затем отдельный эффект (ниже) будет вызывать `fetchMore`.
+     */
     useEffect(() => {
         setCurrentPage(0);
     }, [itemsPerPage, search, filterValue, userId]);
 
+    /**
+     * Когда изменяется страница, userId, фильтры, поиск — выполняем запрос данных
+     * (учитывая, что для `metravel` необходимо дождаться userId).
+     */
     useEffect(() => {
-        if (userId && isMeTravel) {
-            fetchMore();
-        } else if (!isMeTravel) {
-            fetchMore();
+        if (isMeTravel && !userId) {
+            // Если на metravel и userId ещё не получен — не делаем запрос, ждём userId
+            return;
         }
-    }, [userId]);
-
-    useEffect(() => {
-        if (isMeTravel && userId) {
-            getFilters();
-            getFiltersCountry();
-            fetchMore();
-        } else if (!isMeTravel) {
-            getFilters();
-            getFiltersCountry();
-            fetchMore();
-        }
-    }, [itemsPerPage, search, filterValue, isMeTravel]);
-
-    const resetAllFilters = () => {
-        setFilterValue({});
         fetchMore();
-    };
+    }, [currentPage, itemsPerPage, search, filterValue, userId, isMeTravel]);
 
-    const fetchMore = async (filtersToUse = filterValue) => {
-        if (isLoading) return;
-        setIsLoading(true);
-
-        let param = {};
-        if (isMeTravel) {
-            param = {
-                user_id: userId || null,
-            };
-        } else if (isTravelBy) {
-            param = {
-                moderation: 1,
-                publish: 1,
-                countries: [3],
-            };
-        } else {
-            param = {
-                moderation: 1,
-                publish: 1,
-            };
-        }
-
-        const cleanedFilters = cleanFilters(filtersToUse);
-        param = { ...param, ...cleanedFilters };
-
-        if (user_id) {
-            param = { ...param, user_id: user_id };
-        }
-
-        const newData = await fetchTravels(currentPage, itemsPerPage, search, param);
-        setTravels(newData);
-        setIsLoading(false);
-    };
-
-    const cleanFilters = (filters) => {
-        const cleanedFilters = {};
-        Object.keys(filters).forEach((key) => {
-            const value = filters[key];
+    /**
+     * Функция очистки и подготовки фильтров
+     */
+    const cleanFilters = (filtersObject: Record<string, any>) => {
+        const cleanedFilters: Record<string, any> = {};
+        Object.keys(filtersObject).forEach((key) => {
+            const value = filtersObject[key];
             if (Array.isArray(value) && value.length > 0) {
                 cleanedFilters[key] = value;
             } else if (typeof value === 'string' && value.trim() !== '') {
@@ -137,56 +140,81 @@ export default function ListTravel() {
         return cleanedFilters;
     };
 
-    const getFilters = useCallback(async () => {
-        if (isLoadingFilters) return;
-        setIsLoadingFilters(true);
-        const newData = await fetchFilters();
-        setFilters((prevFilters) => ({
-            ...prevFilters,
-            categories: newData?.categories || [],
-            categoryTravelAddress: newData?.categoryTravelAddress || [],
-            companions: newData?.companions || [],
-            complexity: newData?.complexity || [],
-            month: newData?.month || [],
-            over_nights_stay: newData?.over_nights_stay || [],
-            transports: newData?.transports || [],
-        }));
-        setIsLoadingFilters(false);
-    }, [isLoadingFilters]);
+    /**
+     * Основная функция для получения данных (списка путешествий)
+     */
+    const fetchMore = async () => {
+        if (isLoading) return;
+        setIsLoading(true);
 
-    const getFiltersCountry = useCallback(async () => {
-        if (isLoadingFilters) return;
-        setIsLoadingFilters(true);
-        const country = await fetchFiltersCountry();
-        setFilters((prevFilters) => ({
-            ...prevFilters,
-            countries: country,
-        }));
-        setIsLoadingFilters(false);
-    }, [isLoadingFilters]);
+        try {
+            let param: any = {};
 
+            if (isMeTravel) {
+                // Путешествия текущего пользователя
+                param.user_id = userId;
+            } else if (isTravelBy) {
+                // Например, travelsby = только модерированные и опубликованные + конкретные страны
+                param = {
+                    moderation: 1,
+                    publish: 1,
+                    countries: [3],
+                };
+            } else {
+                // Обычный сценарий
+                param = {
+                    moderation: 1,
+                    publish: 1,
+                };
+            }
+
+            // Пришёл ли user_id из параметров маршрута (например, /travelsby?user_id=...)
+            if (user_id) {
+                param.user_id = user_id;
+            }
+
+            // Добавляем очищенные фильтры
+            const cleaned = cleanFilters(filterValue);
+            param = { ...param, ...cleaned };
+
+            // Делаем запрос
+            const newData = await fetchTravels(currentPage, itemsPerPage, search, param);
+            setTravels(newData);
+        } catch (error) {
+            console.log('Ошибка при загрузке путешествий:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    /**
+     * Сброс всех фильтров
+     */
+    const resetAllFilters = () => {
+        setFilterValue({});
+    };
+
+    /**
+     * Применение фильтров (можно задать год)
+     */
     const handleApplyFilters = (yearInput?: string) => {
-        // Создаем копию текущего filterValue
         const updatedFilters = { ...filterValue };
-
-        // Если передано значение года, обновляем его в фильтрах
         if (yearInput !== undefined) {
             updatedFilters.year = yearInput;
         }
-
-        // Обновляем состояние filterValue
         setFilterValue(updatedFilters);
-
-        // Запускаем поиск с актуальными фильтрами
-        setCurrentPage(0);
-        fetchMore(updatedFilters); // Передаем обновленные фильтры в fetchMore
     };
 
+    /**
+     * Обновление строки поиска
+     */
     const updateSearch = (searchText: string) => {
-        setCurrentPage(0);
         setSearch(searchText);
     };
 
+    /**
+     * Выбор значений из мульти-селектов
+     */
     const onSelectedItemsChange = (field: string, selectedItems: string[]) => {
         setFilterValue({
             ...filterValue,
@@ -194,6 +222,9 @@ export default function ListTravel() {
         });
     };
 
+    /**
+     * Изменение текстового значения (например, для года)
+     */
     const handleTextFilterChange = (value?: string) => {
         setFilterValue({
             ...filterValue,
@@ -201,69 +232,81 @@ export default function ListTravel() {
         });
     };
 
+    /**
+     * Показ/скрытие бокового меню на мобильных
+     */
     const toggleMenu = () => {
         setMenuVisible(!menuVisible);
     };
-
     const closeMenu = () => {
         setMenuVisible(false);
     };
 
-    const handlePageChange = (newPage) => {
+    /**
+     * Переход по страницам
+     */
+    const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
-        fetchMore();
     };
 
-    const handleItemsPerPageChange = (newItemsPerPage) => {
+    /**
+     * Изменение количества элементов на странице
+     */
+    const handleItemsPerPageChange = (newItemsPerPage: number) => {
         setItemsPerPage(newItemsPerPage);
-        setCurrentPage(0);
-        fetchMore();
     };
 
+    /**
+     * Обработка редактирования путешествия
+     */
     const handleEdit = (id: string) => {
         router.push(`/travel/${id}`);
     };
 
+    /**
+     * Удаление путешествия
+     */
     const handleDelete = async () => {
         if (!currentDeleteId) return;
 
         try {
             const response = await deleteTravel(currentDeleteId);
-
             if (response.status === 204) {
-                console.log("Путешествие успешно удалено!");
                 setTravels((prevTravels) => {
-                    if (prevTravels && prevTravels.data && Array.isArray(prevTravels.data)) {
-                        const updatedTravels = prevTravels.data.filter((travel) => {
-                            return String(travel.id) !== String(currentDeleteId);
-                        });
-
-                        return {
-                            ...prevTravels,
-                            data: updatedTravels,
-                        };
-                    }
-                    return prevTravels;
+                    if (!prevTravels || !Array.isArray(prevTravels.data)) return prevTravels;
+                    const updatedData = prevTravels.data.filter(
+                        (t) => String(t.id) !== String(currentDeleteId)
+                    );
+                    return {
+                        ...prevTravels,
+                        data: updatedData,
+                    };
                 });
             } else {
                 console.log(`Ошибка удаления: ${response.message}`);
             }
         } catch (error) {
-            console.log('Произошла ошибка при удалении');
+            console.log('Произошла ошибка при удалении', error);
         } finally {
             setDeleteDialogVisible(false);
         }
     };
 
+    /**
+     * Открытие диалога подтверждения удаления
+     */
     const openDeleteDialog = (id: string) => {
         setCurrentDeleteId(id);
         setDeleteDialogVisible(true);
     };
 
-    if (!filters || !travels?.data) {
+    /**
+     * Если фильтры ещё грузятся (первый рендер) — покажем лоадер
+     */
+    if (isLoadingFilters && !Object.keys(filters).length) {
         return (
             <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#6aaaaa"/>
+                <ActivityIndicator size="large" color="#6aaaaa" />
             </View>
         );
     }
@@ -272,6 +315,7 @@ export default function ListTravel() {
         <PaperProvider>
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.container}>
+                    {/* Боковое меню фильтров */}
                     {(!isMobile || menuVisible) && (
                         <View style={[styles.sideMenu, menuVisible && styles.sideMenuVisible]}>
                             <FiltersComponent
@@ -287,6 +331,8 @@ export default function ListTravel() {
                             />
                         </View>
                     )}
+
+                    {/* Основная часть со списком */}
                     <View style={styles.content}>
                         {isMobile && (
                             <Button
@@ -309,36 +355,41 @@ export default function ListTravel() {
                                 inputStyle={styles.searchInput}
                             />
                         </View>
+
                         {isLoading ? (
-                            <ActivityIndicator size="large" color="#6aaaaa"/>
+                            <ActivityIndicator size="large" color="#6aaaaa" />
                         ) : (
                             <FlatList
                                 key={`flatlist-columns-${numColumns}`}
-                                data={travels?.data}
+                                data={travels?.data || []}
                                 renderItem={({ item }) => (
                                     <View style={styles.itemContainer}>
                                         <TravelListItem
                                             travel={item}
                                             currentUserId={user_id}
-                                            onEditPress={() => handleEdit(item.id.toString())}
-                                            onDeletePress={() => openDeleteDialog(item.id.toString())}
+                                            onEditPress={() => handleEdit(String(item.id))}
+                                            onDeletePress={() => openDeleteDialog(String(item.id))}
                                         />
                                     </View>
                                 )}
-                                keyExtractor={(item) => item.id.toString()}
+                                keyExtractor={(item) => String(item.id)}
                                 numColumns={numColumns}
                                 contentContainerStyle={styles.listContent}
                                 ListEmptyComponent={() => (
                                     <View style={styles.emptyContainer}>
-                                        <Text style={styles.emptyText}>Нет данных для отображения</Text>
+                                        <Text style={styles.emptyText}>
+                                            Нет данных для отображения
+                                        </Text>
                                     </View>
                                 )}
                             />
                         )}
+
+                        {/* Компонент пагинации */}
                         <View style={styles.paginationWrapper}>
                             <PaginationComponent
                                 currentPage={currentPage}
-                                totalItems={travels?.total}
+                                totalItems={travels?.total || 0}
                                 itemsPerPage={itemsPerPage}
                                 onPageChange={handlePageChange}
                                 itemsPerPageOptions={itemsPerPageOptions}
@@ -348,14 +399,20 @@ export default function ListTravel() {
                     </View>
                 </View>
 
+                {/* Диалог удаления */}
                 <Portal>
-                    <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+                    <Dialog
+                        visible={deleteDialogVisible}
+                        onDismiss={() => setDeleteDialogVisible(false)}
+                    >
                         <Dialog.Title>Подтверждение удаления</Dialog.Title>
                         <Dialog.Content>
                             <Text>Вы уверены, что хотите удалить это путешествие?</Text>
                         </Dialog.Content>
                         <Dialog.Actions>
-                            <PaperButton onPress={() => setDeleteDialogVisible(false)}>Отмена</PaperButton>
+                            <PaperButton onPress={() => setDeleteDialogVisible(false)}>
+                                Отмена
+                            </PaperButton>
                             <PaperButton onPress={handleDelete}>Удалить</PaperButton>
                         </Dialog.Actions>
                     </Dialog>
@@ -453,6 +510,6 @@ const getStyles = (windowWidth: number) => {
             flex: 1,
             alignItems: 'center',
             marginHorizontal: 10,
-        }
+        },
     });
 };
