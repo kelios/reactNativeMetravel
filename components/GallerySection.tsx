@@ -1,24 +1,46 @@
 import React from 'react';
-import {View, StyleSheet, Text} from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import ImageGalleryComponent from '@/components/ImageGalleryComponent';
-import {TravelFormData, Travel} from '@/src/types/types';
+import { TravelFormData, Travel } from '@/src/types/types';
 
 interface GallerySectionProps {
-    formData: TravelFormData;
-    travelDataOld: Travel | null;
+    formData: TravelFormData | null;
+    travelDataOld?: Travel | null;
 }
 
-const GallerySection: React.FC<GallerySectionProps> = ({formData, travelDataOld}) => {
+const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
+    // Если formData ещё не загружен, можно показать лоадер или иной fallback
+    if (!formData) {
+        return (
+            <View style={styles.galleryContainer}>
+                <ActivityIndicator size="large" color="#6aaaaa" />
+                <Text>Загрузка данных...</Text>
+            </View>
+        );
+    }
+
+    // Если у путешествия ещё нет id, значит галерею пока нельзя привязать
+    if (!formData.id) {
+        return (
+            <View style={styles.galleryContainer}>
+                <Text>Галерея станет доступна после сохранения путешествия.</Text>
+            </View>
+        );
+    }
+
+    // Если есть id, но галерея пуста, можно вывести сообщение
+    const isGalleryEmpty = !formData.gallery || formData.gallery.length === 0;
+
     return (
         <View style={styles.galleryContainer}>
-            {formData?.id ? (
+            {isGalleryEmpty ? (
+                <Text>Пока нет изображений в галерее.</Text>
+            ) : (
                 <ImageGalleryComponent
                     collection="gallery"
-                    idTravel={formData?.id}
-                    initialImages={formData?.gallery}
+                    idTravel={formData.id}
+                    initialImages={formData.gallery}
                 />
-            ) : (
-                <Text>Загрузка изображений...</Text>
             )}
         </View>
     );
@@ -27,6 +49,9 @@ const GallerySection: React.FC<GallerySectionProps> = ({formData, travelDataOld}
 const styles = StyleSheet.create({
     galleryContainer: {
         marginTop: 20,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 8,
     },
 });
 

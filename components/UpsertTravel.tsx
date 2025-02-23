@@ -1,26 +1,47 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View, Dimensions, ActivityIndicator, Platform, Text } from 'react-native';
+import {
+    ScrollView,
+    StyleSheet,
+    View,
+    Dimensions,
+    ActivityIndicator,
+    Text,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchFilters, fetchFiltersCountry, fetchTravel, saveFormData } from "@/src/api/travels";
-import { TravelFormData, MarkerData, Travel } from "@/src/types/types";
-import { useLocalSearchParams } from "expo-router";
+import { Button, Snackbar } from 'react-native-paper';
+
+import {
+    fetchFilters,
+    fetchFiltersCountry,
+    fetchTravel,
+    saveFormData,
+} from '@/src/api/travels';
+import { TravelFormData, MarkerData, Travel } from '@/src/types/types';
+import { useLocalSearchParams } from 'expo-router';
+
 import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
 import ContentUpsertSection from '@/components/ContentUpsertSection';
 import GallerySection from '@/components/GallerySection';
-import { Button, Snackbar } from 'react-native-paper';
 
 export default function UpsertTravel() {
     const windowWidth = Dimensions.get('window').width;
     const isMobile = windowWidth <= 768;
-    const styles = getStyles(windowWidth);
+
+    // Стили (с учётом mobile / desktop)
+    const styles = getStyles(isMobile);
+
+    // Параметры из URL
     const { id } = useLocalSearchParams();
     const travelId = id || null;
 
+    // Локальные состояния
     const [menuVisible, setMenuVisible] = useState(!isMobile);
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [markers, setMarkers] = useState<MarkerData[]>([]);
-    const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+    const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(
+        null
+    );
     const [travelDataOld, setTravelDataOld] = useState<Travel | null>(null);
     const [filters, setFilters] = useState({
         countries: [],
@@ -58,11 +79,12 @@ export default function UpsertTravel() {
         travelImageAddress: [],
         gallery: [],
         youtube_link: '',
-        companions: []
+        companions: [],
     });
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
+    // Загружаем фильтры и данные путешествия
     useEffect(() => {
         getFilters();
         getFiltersCountry();
@@ -71,6 +93,7 @@ export default function UpsertTravel() {
         }
     }, [travelId]);
 
+    // Функция загрузки данных путешествия
     const loadTravelData = async (id: string) => {
         try {
             const travelData = await fetchTravel(Number(id));
@@ -122,12 +145,13 @@ export default function UpsertTravel() {
         return () => clearTimeout(timeout);
     }, [formData]);
 
+    // Логика автосохранения
     const handleAutoSave = async () => {
         try {
             setIsSaving(true);
             const savedData = await saveFormDataWithId(formData);
             if (!formData.id && savedData.id) {
-                setFormData(prevData => ({ ...prevData, id: savedData.id }));
+                setFormData((prevData) => ({ ...prevData, id: savedData.id }));
             }
             setMarkers(savedData.coordsMeTravel || []);
             setSnackbarMessage('Автосохранение прошло успешно!');
@@ -141,16 +165,19 @@ export default function UpsertTravel() {
         }
     };
 
-    const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
+    const saveFormDataWithId = async (
+        data: TravelFormData
+    ): Promise<TravelFormData> => {
         const updatedData = { ...data, id: data.id || null };
         return await saveFormData(cleanEmptyFields(updatedData));
     };
 
+    // Загрузка общих фильтров
     const getFilters = useCallback(async () => {
         if (isLoadingFilters) return;
         setIsLoadingFilters(true);
         const newData = await fetchFilters();
-        setFilters(prevFilters => ({
+        setFilters((prevFilters) => ({
             ...prevFilters,
             categories: newData?.categories || [],
             categoryTravelAddress: newData?.categoryTravelAddress || [],
@@ -163,20 +190,22 @@ export default function UpsertTravel() {
         setIsLoadingFilters(false);
     }, [isLoadingFilters]);
 
+    // Загрузка фильтров стран
     const getFiltersCountry = useCallback(async () => {
         if (isLoadingFilters) return;
         setIsLoadingFilters(true);
         const country = await fetchFiltersCountry();
-        setFilters(prevFilters => ({
+        setFilters((prevFilters) => ({
             ...prevFilters,
             countries: country,
         }));
         setIsLoadingFilters(false);
     }, [isLoadingFilters]);
 
+    // Очистка пустых полей
     function cleanEmptyFields(obj: any): any {
         const cleanedObj: any = {};
-        Object.keys(obj).forEach(key => {
+        Object.keys(obj).forEach((key) => {
             const value = obj[key];
             if (Array.isArray(value)) {
                 cleanedObj[key] = value;
@@ -193,21 +222,28 @@ export default function UpsertTravel() {
 
     // Обновление стран на основе маркеров
     const updateCountriesFromMarkers = (markers: MarkerData[]) => {
-        const countriesFromMarkers = markers.map(marker => marker.country).filter(Boolean);
+        const countriesFromMarkers = markers.map((marker) => marker.country).filter(Boolean);
         const updatedCountries = [
             ...formData.countries,
-            ...countriesFromMarkers.filter(countryId => !formData.countries.includes(countryId)),
+            ...countriesFromMarkers.filter(
+                (countryId) => !formData.countries.includes(countryId)
+            ),
         ];
-        setFormData(prevFormData => ({ ...prevFormData, countries: updatedCountries }));
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            countries: updatedCountries,
+        }));
     };
 
+    // Показ/скрытие боковой панели на мобильном
     const toggleMenu = useCallback(() => {
-        setMenuVisible(prev => !prev);
+        setMenuVisible((prev) => !prev);
     }, []);
 
-    const handleCountrySelect = (countryId) => {
+    // Пример: добавление страны
+    const handleCountrySelect = (countryId: string) => {
         if (countryId) {
-            setFormData(prevData => {
+            setFormData((prevData) => {
                 if (!prevData.countries.includes(countryId)) {
                     return {
                         ...prevData,
@@ -219,24 +255,29 @@ export default function UpsertTravel() {
         }
     };
 
-    const handleCountryDeselect = (countryId) => {
-        setFormData(prevData => ({
+    // Пример: удаление страны
+    const handleCountryDeselect = (countryId: string) => {
+        setFormData((prevData) => ({
             ...prevData,
-            countries: prevData.countries.filter(id => id !== countryId),
+            countries: prevData.countries.filter((id) => id !== countryId),
         }));
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={styles.container}>
-                <View style={styles.formSection}>
-                    {isSaving && (
-                        <View style={styles.savingIndicator}>
-                            <ActivityIndicator size="small" color="#ff6347" />
-                            <Text style={styles.savingText}>Сохранение...</Text>
-                        </View>
-                    )}
-                    <View style={styles.formRow}>
+        <SafeAreaView style={styles.safeContainer}>
+            {/* Если идёт автосохранение, показываем индикатор */}
+            {isSaving && (
+                <View style={styles.savingIndicator}>
+                    <ActivityIndicator size="small" color="#ff6347" />
+                    <Text style={styles.savingText}>Сохранение...</Text>
+                </View>
+            )}
+
+            {/* Основная обёртка: две колонки на desktop, одна на mobile */}
+            <View style={styles.mainWrapper}>
+                {/* Левая колонка: контент (форма, карта, галерея) */}
+                <View style={styles.contentColumn}>
+                    <ScrollView contentContainerStyle={styles.scrollContent}>
                         <ContentUpsertSection
                             formData={formData}
                             setFormData={setFormData}
@@ -246,34 +287,48 @@ export default function UpsertTravel() {
                             handleCountrySelect={handleCountrySelect}
                             handleCountryDeselect={handleCountryDeselect}
                         />
-                        {!isMobile && (
+
+                        <GallerySection formData={formData} travelDataOld={travelDataOld} />
+                    </ScrollView>
+                </View>
+
+                {/* Правая колонка: боковая панель (фильтры) - показываем только на desktop/tablet */}
+                {!isMobile && (
+                    <View style={styles.filtersColumn}>
+                        <FiltersUpsertComponent
+                            filters={filters}
+                            travelDataOld={travelDataOld}
+                            formData={formData}
+                            setFormData={setFormData}
+                        />
+                    </View>
+                )}
+            </View>
+
+            {/* На мобильном выводим кнопку + панель внизу контента */}
+            {isMobile && (
+                <View style={styles.mobileFiltersWrapper}>
+                    <Button
+                        mode="contained"
+                        onPress={toggleMenu}
+                        style={styles.menuButton}
+                    >
+                        {menuVisible ? 'Скрыть боковую панель' : 'Показать боковую панель'}
+                    </Button>
+                    {menuVisible && (
+                        <View style={styles.mobileFilters}>
                             <FiltersUpsertComponent
                                 filters={filters}
-                                travelDataOld={travelDataOld}
                                 formData={formData}
                                 setFormData={setFormData}
+                                travelDataOld={travelDataOld}
                             />
-                        )}
-                    </View>
-                    {isMobile && (
-                        <>
-                            <Button mode="contained" onPress={toggleMenu} style={styles.menuButton}>
-                                {menuVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
-                            </Button>
-                            {menuVisible && (
-                                <View style={styles.mobileFilters}>
-                                    <FiltersUpsertComponent
-                                        filters={filters}
-                                        formData={formData}
-                                        setFormData={setFormData}
-                                    />
-                                </View>
-                            )}
-                        </>
+                        </View>
                     )}
-                    <GallerySection formData={formData} travelDataOld={travelDataOld} />
                 </View>
-            </ScrollView>
+            )}
+
+            {/* Snackbar для уведомлений (автосохранение и т.п.) */}
             <Snackbar
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
@@ -286,43 +341,51 @@ export default function UpsertTravel() {
     );
 }
 
-const getStyles = (windowWidth: number) => {
-    const isMobile = windowWidth <= 768;
+/** Стили, адаптированные под mobile/desktop */
+function getStyles(isMobile: boolean) {
     return StyleSheet.create({
-        container: {
-            flexGrow: 1,
-            padding: 20,
-            justifyContent: 'center',
-            alignItems: 'center',
+        safeContainer: {
+            flex: 1,
             backgroundColor: '#f9f9f9',
-            paddingBottom: windowWidth > 500 ? '7%' : '20%',
         },
-        formSection: {
-            width: '100%',
+        mainWrapper: {
+            flex: 1,
+            flexDirection: isMobile ? 'column' : 'row', // на desktop -> 2 колонки
+        },
+        contentColumn: {
+            flex: 1,
             backgroundColor: '#fff',
-            borderRadius: 8,
-            padding: 20,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 5,
+            padding: 10,
         },
-        formRow: {
-            flexDirection: isMobile ? 'column' : 'row',
-            justifyContent: 'space-between',
+        filtersColumn: {
+            width: 320, // фиксированная ширина панели
+            backgroundColor: '#fff',
+            borderLeftWidth: 1,
+            borderColor: '#ddd',
+            padding: 10,
+        },
+        scrollContent: {
+            paddingBottom: 100,
+        },
+        // Мобильные фильтры (кнопка + панель)
+        mobileFiltersWrapper: {
+            backgroundColor: '#fff',
+            padding: 10,
         },
         menuButton: {
-            marginTop: 20,
             backgroundColor: '#6aaaaa',
         },
         mobileFilters: {
             marginTop: 10,
+            backgroundColor: '#fff',
+            padding: 10,
+            borderRadius: 8,
         },
+        // Сохранение
         savingIndicator: {
             flexDirection: 'row',
             alignItems: 'center',
-            marginBottom: 10,
+            padding: 10,
         },
         savingText: {
             marginLeft: 10,
@@ -331,6 +394,6 @@ const getStyles = (windowWidth: number) => {
         },
         snackbar: {
             backgroundColor: '#323232',
-        }
+        },
     });
-};
+}

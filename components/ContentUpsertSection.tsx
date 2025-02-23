@@ -67,7 +67,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+       <View contentContainerStyle={styles.container}>
             <View style={styles.section}>
                 <TextInputComponent
                     label="Название"
@@ -118,7 +118,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     handleChange('recommendation', newContent))
                 }
             </View>
-        </ScrollView>
+       </View>
     );
 };
 
