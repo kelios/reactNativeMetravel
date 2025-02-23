@@ -31,6 +31,7 @@
     "eslint-config-prettier": "^10.0.1",
     "expo": "^52.0.35",
     "expo-blur": "~14.0.3",
+    "expo-clipboard": "^7.0.1",
     "expo-constants": "~17.0.5",
     "expo-dev-client": "~5.0.10",
     "expo-font": "~13.0.3",
