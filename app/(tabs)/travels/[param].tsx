@@ -20,7 +20,7 @@ import { WebView } from 'react-native-webview';
 import { Card, Title, useTheme } from 'react-native-paper';
 import Slider from '@/components/Slider';
 import PointList from '@/components/PointList';
-import { fetchTravel } from '@/src/api/travels';
+import {fetchTravel, fetchTravelBySlug} from '@/src/api/travels';
 import SideBarTravel from '@/components/SideBarTravel';
 import NearTravelList from '@/components/NearTravelList';
 import PopularTravelList from '@/components/PopularTravelList';
@@ -28,7 +28,12 @@ import MapClientSideComponent from '@/components/Map';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Импорт иконок
 
 const TravelDetails: React.FC = () => {
-  const { id } = useLocalSearchParams();
+  const { param } = useLocalSearchParams();
+  console.log('param');
+
+  const numericId = Number(param);
+  const isNumeric = !isNaN(numericId);
+
   const [travel, setTravel] = useState<Travel | null>(null);
   const { width } = useWindowDimensions();
   const isMobile = width <= 768;
@@ -66,14 +71,22 @@ const TravelDetails: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const travelData = await fetchTravel(Number(id));
+        let travelData: Travel;
+        if (isNumeric) {
+          // Если param — число, грузим по ID
+          travelData = await fetchTravel(numericId);
+        } else {
+          // Иначе грузим по slug
+          travelData = await fetchTravelBySlug(param as string);
+        }
+
         setTravel(travelData);
       } catch (error) {
         console.log('Failed to fetch travel data:', error);
       }
     };
     fetchData();
-  }, [id]);
+  }, [param]);
 
   const handlePress = useCallback(
       (ref: React.RefObject<View>) => () => {
