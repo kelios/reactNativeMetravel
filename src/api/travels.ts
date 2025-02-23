@@ -56,6 +56,7 @@ if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
 export const UPLOAD_IMAGE = `${URLAPI}/api/upload`;
 const GALLERY = `${URLAPI}/api/gallery`;
 const GET_TRAVELS = `${URLAPI}/api/travels`;
+const GET_TRAVELS_BY_SLUG = `${URLAPI}/api/travels/by-slug`;
 const GET_TRAVEL = `${URLAPI}/api/travel`;
 const GET_FILTERS_TRAVEL = `${URLAPI}/api/searchextended`;
 const GET_TRAVELS_NEAR = `${URLAPI}/api/travelsNear`;
@@ -330,6 +331,18 @@ export const fetchTravel = async (id: number): Promise<Travel> => {
             return await res.json();
         } else {
             const res = await fetch(`${GET_TRAVEL}?id=${id}`);
+            return await res.json();
+        }
+    } catch (e) {
+        console.log('Error fetching Travel:', e);
+        return travelDef;
+    }
+};
+
+export const fetchTravelBySlug = async (slug: string): Promise<Travel> => {
+    try {
+        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
+            const res = await fetch(`${GET_TRAVELS_BY_SLUG}/${slug}`);
             return await res.json();
         }
     } catch (e) {

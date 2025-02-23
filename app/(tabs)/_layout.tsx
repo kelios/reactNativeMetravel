@@ -153,7 +153,7 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
-                    name="travels/[id]"
+                    name="travels/[param]"
                     options={{
                         tabBarIconStyle: {display: 'none'},
                         title: '',

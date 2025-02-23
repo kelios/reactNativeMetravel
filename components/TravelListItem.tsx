@@ -40,7 +40,7 @@ const TravelListItem = ({
 
   return (
       <View style={styles.container}>
-        <TouchableOpacity  onPress={() => router.push(`/travels/${id}`)} activeOpacity={0.9}>
+        <TouchableOpacity  onPress={() => router.push(`/travels/${slug}`)} activeOpacity={0.9}>
           <Card style={styles.card}>
             <Card.Cover
                 source={{ uri: travel_image_thumb_url }}

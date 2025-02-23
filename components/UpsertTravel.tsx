@@ -150,10 +150,17 @@ export default function UpsertTravel() {
         try {
             setIsSaving(true);
             const savedData = await saveFormDataWithId(formData);
-            if (!formData.id && savedData.id) {
-                setFormData((prevData) => ({ ...prevData, id: savedData.id }));
+
+            // Сравниваем текущее formData и savedData
+            const oldString = JSON.stringify(formData);
+            const newString = JSON.stringify(savedData);
+
+            if (oldString !== newString) {
+                // Только если что-то действительно изменилось, обновляем состояние
+                setFormData(savedData);
+                setMarkers(savedData.coordsMeTravel || []);
             }
-            setMarkers(savedData.coordsMeTravel || []);
+
             setSnackbarMessage('Автосохранение прошло успешно!');
             setSnackbarVisible(true);
         } catch (error) {
