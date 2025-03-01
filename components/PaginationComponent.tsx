@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { DataTable } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { DataTable, Text } from 'react-native-paper';
 
 type Props = {
     currentPage: number;
@@ -27,26 +27,38 @@ const PaginationComponent: React.FC<Props> = ({
     };
 
     return (
-        <DataTable style={styles.container}>
-            <DataTable.Pagination
-                page={currentPage}
-                numberOfPages={totalPages || 1}
-                onPageChange={onPageChange}
-                label={`${currentPage + 1} из ${totalPages || 1}`}
-                numberOfItemsPerPage={itemsPerPage}
-                onItemsPerPageChange={handleItemsPerPageChange}
-                showFastPaginationControls
-                selectPageDropdownLabel="Элементов на странице"
-                optionsPerPage={itemsPerPageOptions}
-            />
-        </DataTable>
+        <View style={styles.wrapper}>
+            <DataTable style={styles.container}>
+                <DataTable.Pagination
+                    page={currentPage}
+                    numberOfPages={totalPages || 1}
+                    onPageChange={onPageChange}
+                    label={`${currentPage + 1} из ${totalPages || 1}`}
+                    numberOfItemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                    showFastPaginationControls
+                    selectPageDropdownLabel="Элементов на странице"
+                    optionsPerPage={itemsPerPageOptions}
+                />
+            </DataTable>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
+    wrapper: {
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 10,
+    },
     container: {
-        marginTop: 10,
-        alignSelf: 'flex-end',
+        alignSelf: 'center',
+        backgroundColor: '#f9f9f9',
+        borderRadius: 8,
+        overflow: 'hidden',
+        elevation: 2,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
     },
 });
 

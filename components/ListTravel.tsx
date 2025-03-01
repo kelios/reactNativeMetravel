@@ -4,9 +4,11 @@ import {
     View,
     ActivityIndicator,
     FlatList,
+    Text,
     useWindowDimensions,
+    StyleSheet,
 } from 'react-native';
-import { Button as PaperButton, useTheme } from 'react-native-paper';
+import { Button as PaperButton } from 'react-native-paper';
 import FiltersComponent from '../components/FiltersComponent';
 import PaginationComponent from '../components/PaginationComponent';
 import { fetchTravels, fetchFilters, fetchFiltersCountry, deleteTravel } from '@/src/api/travels';
@@ -20,7 +22,8 @@ import ConfirmDialog from '../components/ConfirmDialog';
 export default function ListTravel() {
     const { width } = useWindowDimensions();
     const isMobile = width <= 768;
-    const numColumns = isMobile ? 1 : width > 1200 ? 3 : 2; // теперь это фиксируется при первом рендере
+    const cardWidth = isMobile ? width * 0.9 : 600;
+    const numColumns = isMobile ? 1 : 2;
 
     const router = useRouter();
     const route = useRoute();
@@ -72,7 +75,7 @@ export default function ListTravel() {
             const [filtersData, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
             setFilters({ ...filtersData, countries });
         } catch (error) {
-            console.log('Ошибка при загрузке фильтров:', error);
+            console.error('Ошибка при загрузке фильтров:', error);
         } finally {
             setIsLoadingFilters(false);
         }
@@ -125,7 +128,7 @@ export default function ListTravel() {
         <SafeAreaView style={{ flex: 1 }}>
             <View style={{ flexDirection: isMobile ? 'column' : 'row', flex: 1 }}>
                 {(menuVisible || !isMobile) && (
-                    <View style={{ width: isMobile ? '100%' : 320, padding: 10, backgroundColor: '#f8f8f8' }}>
+                    <View style={styles.sidebar}>
                         <FiltersComponent
                             filters={filters}
                             filterValue={filterValue}
@@ -139,13 +142,9 @@ export default function ListTravel() {
                         />
                     </View>
                 )}
-                <View style={{ flex: 1, padding: 10 }}>
+                <View style={styles.content}>
                     {isMobile && (
-                        <PaperButton
-                            mode="contained"
-                            onPress={() => setMenuVisible(true)}
-                            style={{ marginBottom: 12, backgroundColor: '#ff7f50' }}
-                        >
+                        <PaperButton mode="contained" onPress={() => setMenuVisible(true)} style={styles.filterButton}>
                             ФИЛЬТРЫ
                         </PaperButton>
                     )}
@@ -155,21 +154,34 @@ export default function ListTravel() {
                         onChangeText={setSearch}
                         value={search}
                         lightTheme
-                        containerStyle={{ backgroundColor: 'transparent', marginBottom: 16 }}
-                        inputContainerStyle={{ backgroundColor: '#fff', borderRadius: 8, height: 42 }}
-                        inputStyle={{ fontSize: 16 }}
+                        containerStyle={styles.searchBar}
+                        inputContainerStyle={styles.searchInputContainer}
+                        inputStyle={styles.searchInput}
                     />
 
                     {isLoading ? (
-                        <ActivityIndicator size="large" />
+                        <View style={styles.loaderWrapper}>
+                            <ActivityIndicator size="large" color="#ff7f50" />
+                            <Text style={styles.loaderText}>Загрузка путешествий...</Text>
+                        </View>
+                    ) : travels?.data?.length === 0 ? (
+                        <View style={styles.noDataWrapper}>
+                            <Text style={styles.noDataText}>Путешествий не найдено</Text>
+                            <PaperButton onPress={() => setFilterValue({})}>Сбросить фильтры</PaperButton>
+                        </View>
                     ) : (
                         <FlatList
-                            key={`list-cols-${numColumns}`} // Важно! Меняем key при смене кол-ва колонок
+                            key={`list-cols-${numColumns}`}
                             numColumns={numColumns}
-                            columnWrapperStyle={numColumns > 1 ? { gap: 16 } : undefined}
+                            columnWrapperStyle={numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined}
                             data={travels?.data || []}
                             renderItem={({ item }) => (
-                                <View style={{ flex: 1 / numColumns, paddingBottom: 16 }}>
+                                <View style={{
+                                    flex: 1,
+                                    maxWidth: 600, // Сделать карточки шире
+                                    alignSelf: 'center',
+                                    marginBottom: 16,
+                                }}>
                                     <TravelListItem
                                         travel={item}
                                         currentUserId={userId ?? ''}
@@ -182,14 +194,16 @@ export default function ListTravel() {
                             keyExtractor={item => String(item.id)}
                         />
                     )}
-                    <PaginationComponent
-                        currentPage={currentPage}
-                        itemsPerPage={itemsPerPage}
-                        itemsPerPageOptions={itemsPerPageOptions}
-                        onPageChange={setCurrentPage}   // Важно: onPageChange
-                        onItemsPerPageChange={setItemsPerPage}  // Важно: onItemsPerPageChange
-                        totalItems={travels?.total}
-                    />
+                    <View style={styles.paginationWrapper}>
+                        <PaginationComponent
+                            currentPage={currentPage}
+                            itemsPerPage={itemsPerPage}
+                            itemsPerPageOptions={itemsPerPageOptions}
+                            onPageChange={setCurrentPage}
+                            onItemsPerPageChange={setItemsPerPage}
+                            totalItems={travels?.total}
+                        />
+                    </View>
                 </View>
             </View>
             <ConfirmDialog
@@ -198,9 +212,17 @@ export default function ListTravel() {
                 onConfirm={handleDelete}
                 title="Удаление"
                 message="Удалить это путешествие?"
-                confirmText="Удалить"
-                cancelText="Отмена"
             />
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    sidebar: { width: 300, padding: 10, backgroundColor: '#f8f8f8' },
+    content: { flex: 1, padding: 20 },
+    filterButton: { marginBottom: 12, backgroundColor: '#ff7f50' },
+    searchBar: { backgroundColor: 'transparent', marginBottom: 16 },
+    searchInputContainer: { backgroundColor: '#fff', borderRadius: 8, height: 42 },
+    searchInput: { fontSize: 16 },
+    paginationWrapper: { alignItems: 'center', marginTop: 20 },
+});
