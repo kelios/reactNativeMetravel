@@ -1,70 +1,53 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { DataTable } from 'react-native-paper';
 
-interface PaginationComponentProps {
+type Props = {
     currentPage: number;
-    totalItems: number;
     itemsPerPage: number;
-    onPageChange: (page: number) => void;
     itemsPerPageOptions: number[];
-    onItemsPerPageChange: (itemsPerPage: number) => void;
-}
+    onPageChange: (page: number) => void;
+    onItemsPerPageChange: (items: number) => void;
+    totalItems?: number;
+};
 
-const PaginationComponent: React.FC<PaginationComponentProps> = ({
-                                                                     currentPage,
-                                                                     totalItems,
-                                                                     itemsPerPage,
-                                                                     onPageChange,
-                                                                     itemsPerPageOptions,
-                                                                     onItemsPerPageChange,
-                                                                 }) => {
+const PaginationComponent: React.FC<Props> = ({
+                                                  currentPage,
+                                                  itemsPerPage,
+                                                  itemsPerPageOptions,
+                                                  onPageChange,
+                                                  onItemsPerPageChange,
+                                                  totalItems = 0,
+                                              }) => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
 
+    const handleItemsPerPageChange = (items: number) => {
+        onItemsPerPageChange(items);
+        onPageChange(0); // Сброс на первую страницу при смене кол-ва элементов на странице
+    };
+
     return (
-        <View style={styles.container}>
+        <DataTable style={styles.container}>
             <DataTable.Pagination
                 page={currentPage}
-                numberOfPages={Math.ceil(totalItems / itemsPerPage)}
+                numberOfPages={totalPages || 1}
                 onPageChange={onPageChange}
-                label={`${currentPage + 1} из ${Math.ceil(totalItems / itemsPerPage)}`}
-                showFastPaginationControls
-                numberOfItemsPerPageList={itemsPerPageOptions}
+                label={`${currentPage + 1} из ${totalPages || 1}`}
                 numberOfItemsPerPage={itemsPerPage}
-                onItemsPerPageChange={onItemsPerPageChange}
-                style={{ backgroundColor: 'white' }}
-                theme={{
-                    colors: { primary: '#FF7A00', text: '#333' }
-                }}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                showFastPaginationControls
+                selectPageDropdownLabel="Элементов на странице"
+                optionsPerPage={itemsPerPageOptions}
             />
-        </View>
+        </DataTable>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#f8f9fa',
-        paddingVertical: 8,
-    },
-    pagination: {
-        backgroundColor: 'transparent',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    paginationButton: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        backgroundColor: '#fff',
-        marginHorizontal: 4,
-    },
-    paginationText: {
-        fontSize: 14,
-        color: '#555',
+        marginTop: 10,
+        alignSelf: 'flex-end',
     },
 });
-
 
 export default PaginationComponent;

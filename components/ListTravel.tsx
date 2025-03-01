@@ -1,34 +1,30 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView,
     View,
     ActivityIndicator,
     FlatList,
     useWindowDimensions,
-    Text,
-    StyleSheet,
 } from 'react-native';
-import {Dialog, Portal, Button as PaperButton, useTheme} from 'react-native-paper';
+import { Button as PaperButton, useTheme } from 'react-native-paper';
 import FiltersComponent from '../components/FiltersComponent';
 import PaginationComponent from '../components/PaginationComponent';
-import {fetchTravels, fetchFilters, fetchFiltersCountry, deleteTravel} from '@/src/api/travels';
-import {useLocalSearchParams, useRouter} from 'expo-router';
-import {SearchBar} from 'react-native-elements';
+import { fetchTravels, fetchFilters, fetchFiltersCountry, deleteTravel } from '@/src/api/travels';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { SearchBar } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useRoute} from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import TravelListItem from '../components/TravelListItem';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function ListTravel() {
-    const {width} = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const isMobile = width <= 768;
-    const numColumns = isMobile ? 1 : 2;
-
-    const {colors} = useTheme(); // Тема подтянется от глобального PaperProvider
+    const numColumns = isMobile ? 1 : width > 1200 ? 3 : 2; // теперь это фиксируется при первом рендере
 
     const router = useRouter();
     const route = useRoute();
-    const {user_id} = useLocalSearchParams();
+    const { user_id } = useLocalSearchParams();
 
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
@@ -74,7 +70,7 @@ export default function ListTravel() {
         setIsLoadingFilters(true);
         try {
             const [filtersData, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
-            setFilters({...filtersData, countries});
+            setFilters({ ...filtersData, countries });
         } catch (error) {
             console.log('Ошибка при загрузке фильтров:', error);
         } finally {
@@ -85,11 +81,11 @@ export default function ListTravel() {
     const fetchMore = async () => {
         setIsLoading(true);
         try {
-            const params = {...cleanFilters(filterValue)};
+            const params = { ...cleanFilters(filterValue) };
 
             if (isMeTravel) params.user_id = userId;
-            else if (isTravelBy) Object.assign(params, {countries: [3], publish: 1, moderation: 1});
-            else Object.assign(params, {publish: 1, moderation: 1});
+            else if (isTravelBy) Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
+            else Object.assign(params, { publish: 1, moderation: 1 });
 
             if (user_id) params.user_id = user_id;
 
@@ -126,26 +122,30 @@ export default function ListTravel() {
     };
 
     return (
-        <SafeAreaView style={{flex: 1}}>
-            <View style={{flexDirection: isMobile ? 'column' : 'row', flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flexDirection: isMobile ? 'column' : 'row', flex: 1 }}>
                 {(menuVisible || !isMobile) && (
-                    <View style={styles.sidebar}>
+                    <View style={{ width: isMobile ? '100%' : 320, padding: 10, backgroundColor: '#f8f8f8' }}>
                         <FiltersComponent
                             filters={filters}
                             filterValue={filterValue}
                             isLoadingFilters={isLoadingFilters}
-                            onSelectedItemsChange={(field, items) => setFilterValue({...filterValue, [field]: items})}
-                            handleTextFilterChange={(year) => setFilterValue({...filterValue, year})}
+                            onSelectedItemsChange={(field, items) => setFilterValue({ ...filterValue, [field]: items })}
+                            handleTextFilterChange={(year) => setFilterValue({ ...filterValue, year })}
                             resetFilters={() => setFilterValue({})}
-                            handleApplyFilters={(year) => setFilterValue(prev => ({...prev, year}))}
+                            handleApplyFilters={(year) => setFilterValue(prev => ({ ...prev, year }))}
                             closeMenu={() => setMenuVisible(false)}
                             isMobile={isMobile}
                         />
                     </View>
                 )}
-                <View style={styles.content}>
+                <View style={{ flex: 1, padding: 10 }}>
                     {isMobile && (
-                        <PaperButton mode="contained" onPress={() => setMenuVisible(true)} style={styles.filterButton}>
+                        <PaperButton
+                            mode="contained"
+                            onPress={() => setMenuVisible(true)}
+                            style={{ marginBottom: 12, backgroundColor: '#ff7f50' }}
+                        >
                             ФИЛЬТРЫ
                         </PaperButton>
                     )}
@@ -155,38 +155,41 @@ export default function ListTravel() {
                         onChangeText={setSearch}
                         value={search}
                         lightTheme
-                        containerStyle={styles.searchBar}
-                        inputContainerStyle={styles.searchInputContainer}
-                        inputStyle={styles.searchInput}
+                        containerStyle={{ backgroundColor: 'transparent', marginBottom: 16 }}
+                        inputContainerStyle={{ backgroundColor: '#fff', borderRadius: 8, height: 42 }}
+                        inputStyle={{ fontSize: 16 }}
                     />
 
                     {isLoading ? (
-                        <ActivityIndicator size="large"/>
+                        <ActivityIndicator size="large" />
                     ) : (
                         <FlatList
+                            key={`list-cols-${numColumns}`} // Важно! Меняем key при смене кол-ва колонок
                             numColumns={numColumns}
-                            columnWrapperStyle={numColumns > 1 ? {justifyContent: 'space-between'} : undefined}
+                            columnWrapperStyle={numColumns > 1 ? { gap: 16 } : undefined}
                             data={travels?.data || []}
-                            renderItem={({item}) => (
-                                <TravelListItem
-                                    travel={item}
-                                    currentUserId={userId ?? ''}
-                                    isSuperuser={isSuperuser}
-                                    onEditPress={() => router.push(`/travel/${item.id}`)}
-                                    onDeletePress={() => openDeleteDialog(String(item.id))}
-                                />
+                            renderItem={({ item }) => (
+                                <View style={{ flex: 1 / numColumns, paddingBottom: 16 }}>
+                                    <TravelListItem
+                                        travel={item}
+                                        currentUserId={userId ?? ''}
+                                        isSuperuser={isSuperuser}
+                                        onEditPress={() => router.push(`/travel/${item.id}`)}
+                                        onDeletePress={() => openDeleteDialog(String(item.id))}
+                                    />
+                                </View>
                             )}
                             keyExtractor={item => String(item.id)}
                         />
                     )}
-                    <PaginationComponent {...{
-                        currentPage,
-                        itemsPerPage,
-                        itemsPerPageOptions,
-                        setCurrentPage,
-                        setItemsPerPage,
-                        totalItems: travels?.total
-                    }} />
+                    <PaginationComponent
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        itemsPerPageOptions={itemsPerPageOptions}
+                        onPageChange={setCurrentPage}   // Важно: onPageChange
+                        onItemsPerPageChange={setItemsPerPage}  // Важно: onItemsPerPageChange
+                        totalItems={travels?.total}
+                    />
                 </View>
             </View>
             <ConfirmDialog
@@ -201,58 +204,3 @@ export default function ListTravel() {
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    sidebar: {width: 300, padding: 10, backgroundColor: '#f8f8f8'},
-    content: {flex: 1, padding: 10},
-    filterButton: {marginVertical: 10, backgroundColor: '#555'},
-    searchBar: {backgroundColor: 'transparent'},
-    searchInputContainer: {backgroundColor: '#fff', borderRadius: 8, height: 40},
-    searchInput: {fontSize: 16},
-    dialog: {
-        width: '90%',
-        maxWidth: 380,
-        alignSelf: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        paddingVertical: 20,
-        paddingHorizontal: 24,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-    },
-    dialogTitle: {
-        fontWeight: '600',
-        fontSize: 18,
-        color: '#444',
-        marginBottom: 8,
-    },
-    dialogText: {
-        fontSize: 16,
-        color: '#555',
-        marginBottom: 20,
-    },
-    actionContainer: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 12,
-    },
-    cancelButton: {
-        color: '#666',
-        fontSize: 14,
-        textTransform: 'uppercase',
-        fontWeight: '500',
-    },
-    deleteButton: {
-        backgroundColor: '#ff7f50',
-        color: '#fff',
-        fontWeight: 'bold',
-        paddingVertical: 8,
-        paddingHorizontal: 18,
-        borderRadius: 8,
-        textTransform: 'uppercase',
-        fontSize: 14,
-    }
-});
