@@ -19,35 +19,52 @@ const PaginationComponent: React.FC<PaginationComponentProps> = ({
                                                                      itemsPerPageOptions,
                                                                      onItemsPerPageChange,
                                                                  }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
     return (
         <View style={styles.container}>
-            <DataTable>
-                <DataTable.Pagination
-                    page={currentPage}
-                    numberOfPages={Math.ceil(totalItems / itemsPerPage)}
-                    onPageChange={onPageChange}
-                    label={`${currentPage + 1} из ${Math.ceil(totalItems / itemsPerPage)}`}
-                    showFastPaginationControls
-                    numberOfItemsPerPageList={itemsPerPageOptions}
-                    numberOfItemsPerPage={itemsPerPage}
-                    onItemsPerPageChange={onItemsPerPageChange}
-                    style={styles.pagination}  // Добавляем кастомные стили
-                    theme={{
-                        colors: {
-                            primary: 'orange', // Цвет иконок пагинации
-                            text: 'white', // Цвет текста в пагинации
-                        },
-                    }}
-                />
-            </DataTable>
+            <DataTable.Pagination
+                page={currentPage}
+                numberOfPages={Math.ceil(totalItems / itemsPerPage)}
+                onPageChange={onPageChange}
+                label={`${currentPage + 1} из ${Math.ceil(totalItems / itemsPerPage)}`}
+                showFastPaginationControls
+                numberOfItemsPerPageList={itemsPerPageOptions}
+                numberOfItemsPerPage={itemsPerPage}
+                onItemsPerPageChange={onItemsPerPageChange}
+                style={{ backgroundColor: 'white' }}
+                theme={{
+                    colors: { primary: '#FF7A00', text: '#333' }
+                }}
+            />
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'white',
+        backgroundColor: '#f8f9fa',
+        paddingVertical: 8,
+    },
+    pagination: {
+        backgroundColor: 'transparent',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    paginationButton: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: '#fff',
+        marginHorizontal: 4,
+    },
+    paginationText: {
+        fontSize: 14,
+        color: '#555',
     },
 });
+
 
 export default PaginationComponent;

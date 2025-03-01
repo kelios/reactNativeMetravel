@@ -127,7 +127,7 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
                     />
                 ) : (
                     <Image
-                        source={require('@/assets/placeholder.svg')}
+                        source={require('@/assets/no-data.png')}
                         style={styles.image}
                         resizeMode="cover"
                     />

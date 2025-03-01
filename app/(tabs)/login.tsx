@@ -25,10 +25,7 @@ export default function Login() {
     const navigation = useNavigation();
     const { login, sendPassword } = useAuth();
 
-    const isValidEmail = (email: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-        return emailRegex.test(email);
-    };
+    const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
     const handleResetPassword = async () => {
         if (isValidEmail(email)) {
@@ -39,41 +36,26 @@ export default function Login() {
                 setError(err.message || 'Ошибка при сбросе пароля.');
             }
         } else {
-            setError('Введите корректный email адрес.');
+            setError('Введите корректный email.');
         }
     };
 
     const handleLogin = async () => {
-        setError(''); // сбросить ошибку перед попыткой входа
+        setError('');
         try {
             const success = await login(email, password, navigation);
             if (!success) {
                 setError('Неверный email или пароль.');
             }
         } catch (err: any) {
-            setError(err.message || 'Ошибка при входе в систему.');
+            setError(err.message || 'Ошибка при входе.');
         }
     };
 
-    const ForgotPasswordLink = ({ onPress }) => {
-        return (
-            <TouchableOpacity onPress={onPress}>
-                <Text style={styles.forgotPasswordText}>Забыли пароль?</Text>
-            </TouchableOpacity>
-        );
-    };
-
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <ScrollView contentContainerStyle={styles.scrollViewContent}>
-                <ImageBackground
-                    source={require('@/assets/images/media/slider/about.jpg' )}
-                    style={styles.backgroundImage}
-                    blurRadius={3} // Размытие для фона
-                >
+                <ImageBackground source={require('@/assets/images/media/slider/about.jpg')} style={styles.backgroundImage} blurRadius={3}>
                     <View style={styles.formContainer}>
                         <Card style={styles.card}>
                             <Card.Content>
@@ -95,12 +77,10 @@ export default function Login() {
                                     style={styles.input}
                                     placeholderTextColor="#888"
                                 />
-                                <Button
-                                    title="Войти"
-                                    buttonStyle={styles.applyButton}
-                                    onPress={handleLogin}
-                                />
-                                <ForgotPasswordLink onPress={handleResetPassword} />
+                                <Button title="Войти" buttonStyle={styles.applyButton} onPress={handleLogin} />
+                                <TouchableOpacity onPress={handleResetPassword}>
+                                    <Text style={styles.forgotPasswordText}>Забыли пароль?</Text>
+                                </TouchableOpacity>
                             </Card.Content>
                         </Card>
                     </View>
@@ -111,59 +91,13 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollViewContent: {
-        flexGrow: 1,
-    },
-    backgroundImage: {
-        flex: 1,
-        justifyContent: 'center', // Центрирование формы по вертикали
-        alignItems: 'center', // Центрирование формы по горизонтали
-        width: '100%',
-        height: height, // Высота изображения равна высоте экрана
-    },
-    formContainer: {
-        width: '80%', // Уменьшаем ширину формы для центрирования
-        maxWidth: 400,
-    },
-    card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)', // Полупрозрачный фон формы
-        borderRadius: 12,
-        padding: 20,
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 5, // Для теней на Android
-    },
-    input: {
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        width: '100%',
-        fontSize: 16,
-        backgroundColor: '#fff',
-    },
-    applyButton: {
-        backgroundColor: '#6aaaaa',
-        width: '100%',
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    forgotPasswordText: {
-        color: '#0066ff',
-        textDecorationLine: 'underline',
-        marginTop: 15,
-        textAlign: 'center',
-        fontSize: 16,
-    },
-    errorText: {
-        color: 'red',
-        marginBottom: 15,
-        textAlign: 'center',
-        fontSize: 16,
-    },
+    container: { flex: 1 },
+    scrollViewContent: { flexGrow: 1 },
+    backgroundImage: { flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height },
+    formContainer: { width: '80%', maxWidth: 400 },
+    card: { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: 12, padding: 20, elevation: 5 },
+    input: { marginBottom: 15, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#fff' },
+    applyButton: { backgroundColor: '#6aaaaa', paddingVertical: 12, borderRadius: 8 },
+    forgotPasswordText: { color: '#0066ff', textDecorationLine: 'underline', marginTop: 15, textAlign: 'center', fontSize: 16 },
+    errorText: { color: 'red', marginBottom: 15, textAlign: 'center', fontSize: 16 },
 });

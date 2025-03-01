@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -13,130 +13,96 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useFilters } from '@/providers/FiltersProvider';
 import { useAuth } from '@/context/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function RenderRightMenu() {
     const navigation = useNavigation();
-    const [visible, setVisible] = useState(false);
-    const [username, setUsername] = useState('');
-    const { isAuthenticated, setIsAuthenticated, logout } = useAuth();
+    const { isAuthenticated, username, logout } = useAuth();
     const { updateFilters } = useFilters();
 
-    // Безопасный вызов useWindowDimensions()
-    const width = typeof window !== 'undefined' ? useWindowDimensions().width : 375;
+    const [visible, setVisible] = useState(false);
+
+    const width = useWindowDimensions().width;
     const isMobile = width <= 768;
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const checkAuthentication = async () => {
-            const token = await AsyncStorage.getItem('userToken');
-            if (isMounted) {
-                setIsAuthenticated(!!token);
-            }
-        };
-
-        const getUsername = async () => {
-            const storedUsername = await AsyncStorage.getItem('userName');
-            if (isMounted) {
-                setUsername(storedUsername?.trim() || ''); // Убедимся, что username не содержит пробелов
-            }
-        };
-
-        checkAuthentication();
-        getUsername();
-
-        return () => {
-            isMounted = false; // Отмена обновлений состояния при размонтировании
-        };
-    }, []);
 
     const openMenu = () => setVisible(true);
     const closeMenu = () => setVisible(false);
 
     return (
         <View style={styles.container}>
-            <View style={styles.leftContainer}>
-                {/* Кнопка на главную страницу */}
-                <TouchableOpacity onPress={() => navigation.navigate('index')} style={styles.homeButton}>
-                    <Image source={require('../assets/icons/logo_yellow.png')} style={styles.logo} />
-                    <Text style={styles.homeButtonText}>MeTravel</Text>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('index')} style={styles.homeButton}>
+                <Image source={require('../assets/icons/logo_yellow.png')} style={styles.logo} />
+                <Text style={styles.homeButtonText}>MeTravel</Text>
+            </TouchableOpacity>
 
             <View style={styles.rightContainer}>
-                {/* Условный рендеринг username */}
-                {username?.trim() && !isMobile ? (
+                {username && !isMobile && (
                     <View style={styles.userContainer}>
-                        <Icon name="account-circle" size={24} color="#fff" />
+                        <Icon name="account-circle" size={24} color="#333" />
                         <Text style={styles.username}>{username}</Text>
                     </View>
-                ) : null}
+                )}
 
-                {/* Меню */}
-                <View>
-                    <Menu
-                        visible={visible}
-                        onDismiss={closeMenu}
-                        anchor={
-                            <TouchableOpacity onPress={openMenu} style={styles.menuButton}>
-                                <Icon name="menu" size={24} color="#333" />
-                            </TouchableOpacity>
-                        }
-                    >
-                        {!isAuthenticated ? (
-                            <>
-                                <Menu.Item
-                                    onPress={() => {
-                                        navigation.navigate('login');
-                                        closeMenu();
-                                    }}
-                                    title="Войти"
-                                    icon={() => <Icon name="login" size={20} color="#333" />}
-                                />
-                                <Menu.Item
-                                    onPress={() => {
-                                        navigation.navigate('registration');
-                                        closeMenu();
-                                    }}
-                                    title="Зарегистрироваться"
-                                    icon={() => <Icon name="account-plus" size={20} color="#333" />}
-                                />
-                            </>
-                        ) : (
-                            <>
-                                <Menu.Item
-                                    onPress={() => {
-                                        updateFilters({ user_id: 1 });
-                                        navigation.navigate('metravel');
-                                        closeMenu();
-                                    }}
-                                    title="Мои путешествия"
-                                    icon={() => <Icon name="earth" size={20} color="#333" />}
-                                />
-                                <Divider />
-                                <Menu.Item
-                                    onPress={() => {
-                                        navigation.navigate('travel/new');
-                                        closeMenu();
-                                    }}
-                                    title="Добавить путешествие"
-                                    icon={() => <Icon name="map-plus" size={20} color="#333" />}
-                                />
-                                <Divider />
-                                <Menu.Item
-                                    onPress={async () => {
-                                        await logout();
-                                        closeMenu();
-                                        navigation.navigate('index');
-                                    }}
-                                    title="Выход"
-                                    icon={() => <Icon name="logout" size={20} color="#333" />}
-                                />
-                            </>
-                        )}
-                    </Menu>
-                </View>
+                <Menu
+                    visible={visible}
+                    onDismiss={closeMenu}
+                    anchor={
+                        <TouchableOpacity onPress={openMenu} style={styles.menuButton}>
+                            <Icon name="menu" size={24} color="#333" />
+                        </TouchableOpacity>
+                    }
+                >
+                    {!isAuthenticated ? (
+                        <>
+                            <Menu.Item
+                                onPress={() => {
+                                    navigation.navigate('login');
+                                    closeMenu();
+                                }}
+                                title="Войти"
+                                leadingIcon="login"
+                            />
+                            <Menu.Item
+                                onPress={() => {
+                                    navigation.navigate('registration');
+                                    closeMenu();
+                                }}
+                                title="Зарегистрироваться"
+                                leadingIcon="account-plus"
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <Menu.Item
+                                onPress={() => {
+                                    updateFilters({ user_id: 1 });
+                                    navigation.navigate('metravel');
+                                    closeMenu();
+                                }}
+                                title="Мои путешествия"
+                                leadingIcon="earth"
+                            />
+                            <Divider />
+                            <Menu.Item
+                                onPress={() => {
+                                    navigation.navigate('travel/new');
+                                    closeMenu();
+                                }}
+                                title="Добавить путешествие"
+                                leadingIcon="map-plus"
+                            />
+                            <Divider />
+                            <Menu.Item
+                                onPress={async () => {
+                                    await logout();
+                                    closeMenu();
+                                    navigation.navigate('index');
+                                }}
+                                title="Выход"
+                                leadingIcon="logout"
+                            />
+                        </>
+                    )}
+                </Menu>
             </View>
         </View>
     );
@@ -154,15 +120,6 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e0e0e0',
         width: '100%',
     },
-    leftContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    rightContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
     homeButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -171,17 +128,18 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '400',
         color: '#6aaaaa',
-        fontFamily: Platform.select({
-            ios: 'HelveticaNeue-Light',
-            android: 'sans-serif-light',
-            default: 'System',
-        }),
         marginLeft: 8,
+    },
+    rightContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     userContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#6aaaaa',
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#ddd',
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 20,
@@ -189,8 +147,7 @@ const styles = StyleSheet.create({
     },
     username: {
         fontSize: 16,
-        fontWeight: '400',
-        color: '#ffffff',
+        color: '#333',
         marginLeft: 5,
     },
     menuButton: {

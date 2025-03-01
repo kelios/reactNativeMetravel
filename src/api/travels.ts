@@ -79,7 +79,13 @@ const travelDef: Travel = {
 
 // ============ АВТОРИЗАЦИЯ ============
 
-export const loginApi = async (email: string, password: string): Promise<boolean> => {
+export const loginApi = async (email: string, password: string): Promise<{
+    token: string;
+    name: string;
+    email: string;
+    id: string;
+    is_superuser: boolean;
+} | null> => {
     try {
         const response = await fetch(`${LOGIN}`, {
             method: 'POST',
@@ -88,22 +94,19 @@ export const loginApi = async (email: string, password: string): Promise<boolean
         });
 
         if (!response.ok) {
-            throw new Error('Network response was not ok.');
+            throw new Error('Неверный email или пароль');
         }
 
         const json = await response.json();
         if (json.token) {
-            await AsyncStorage.setItem('userToken', json.token);
-            await AsyncStorage.setItem('userName', json.name);
-            await AsyncStorage.setItem('userId', json.id);
-            return true;
+            return json; // Тут весь ответ возвращаем
         }
-        return false;
+        return null;
 
     } catch (error) {
         console.error(error);
         Alert.alert('Ошибка', 'Не удалось выполнить вход');
-        return false;
+        return null;
     }
 };
 
