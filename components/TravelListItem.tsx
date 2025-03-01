@@ -21,7 +21,6 @@ type Props = {
     onDeletePress: (id: string) => void;
 };
 
-// Заглушка-картинка (можно заменить на любую свою)
 const placeholderImage = 'https://via.placeholder.com/400x200?text=Нет+фото';
 
 const TravelListItem = ({
@@ -48,7 +47,6 @@ const TravelListItem = ({
     const canEditOrDelete = isMetravel || isSuperuser;
 
     const countries = (countryName || '').split(',').map((c) => c.trim());
-
     const imageSource = travel_image_thumb_url ? { uri: travel_image_thumb_url } : { uri: placeholderImage };
 
     return (
@@ -76,7 +74,7 @@ const TravelListItem = ({
                             ))}
                         </View>
 
-                        <Text style={styles.title}>{name}</Text>
+                        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{name}</Text>
 
                         <View style={styles.metaRow}>
                             <Text style={styles.meta}>
@@ -104,17 +102,30 @@ const formatDate = (dateString?: string) => {
 };
 
 const { width } = Dimensions.get('window');
-const cardWidth = width <= 768 ? width * 0.9 : 400;
+
+// Определяем ширину и высоту карточки в зависимости от устройства
+let cardWidth = width * 0.9; // по умолчанию для мобильных
+let imageHeight = 200; // дефолтная высота картинки
+let contentHeight = 120; // фиксированная высота белой плашки
+
+if (width > 768 && width <= 1200) {
+    // Планшеты
+    cardWidth = (width - 400) / 2; // 2 карточки в ряд
+    imageHeight = 250;
+} else if (width > 1200) {
+    // Десктопы
+    cardWidth = (width - 550) / 2; // 2 карточки в ряд
+    imageHeight = 350;
+}
 
 const styles = StyleSheet.create({
     cardContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: cardWidth,
+        alignSelf: 'center',
         marginBottom: 15,
     },
     card: {
-        width: cardWidth,
+        width: '100%',
         backgroundColor: '#fff',
         borderRadius: 12,
         overflow: 'hidden',
@@ -123,15 +134,14 @@ const styles = StyleSheet.create({
         borderColor: '#e0e0e0',
     },
     imageContainer: {
-        position: 'relative',
+        width: '100%',
+        height: imageHeight,
+        overflow: 'hidden',
     },
     image: {
         width: '100%',
-        height: 200,
+        height: '100%',
         resizeMode: 'cover',
-        backgroundColor: '#f5f5f5',
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
     },
     actionsAbsolute: {
         position: 'absolute',
@@ -151,14 +161,16 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
     },
     content: {
+        height: contentHeight, // фиксированная высота белой плашки
         paddingHorizontal: 16,
         paddingVertical: 12,
+        justifyContent: 'space-between', // чтобы всё красиво распределилось
     },
     countries: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 4,
-        marginBottom: 6,
+        marginBottom: 4,
     },
     chip: {
         backgroundColor: '#f5f5f5',
@@ -169,16 +181,15 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     title: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#111',
-        marginBottom: 6,
+        flexShrink: 1,
     },
     metaRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
     },
     meta: {
         fontSize: 14,
