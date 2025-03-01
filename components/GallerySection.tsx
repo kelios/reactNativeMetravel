@@ -9,7 +9,6 @@ interface GallerySectionProps {
 }
 
 const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
-    // Если formData ещё не загружен, можно показать лоадер или иной fallback
     if (!formData) {
         return (
             <View style={styles.galleryContainer}>
@@ -19,7 +18,6 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
         );
     }
 
-    // Если у путешествия ещё нет id, значит галерею пока нельзя привязать
     if (!formData.id) {
         return (
             <View style={styles.galleryContainer}>
@@ -28,20 +26,19 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
         );
     }
 
-    // Если есть id, но галерея пуста, можно вывести сообщение
     const isGalleryEmpty = !formData.gallery || formData.gallery.length === 0;
 
     return (
         <View style={styles.galleryContainer}>
-            {isGalleryEmpty ? (
+            {isGalleryEmpty && (
                 <Text>Пока нет изображений в галерее.</Text>
-            ) : (
-                <ImageGalleryComponent
-                    collection="gallery"
-                    idTravel={formData.id}
-                    initialImages={formData.gallery}
-                />
             )}
+
+            <ImageGalleryComponent
+                collection="gallery"
+                idTravel={formData.id}
+                initialImages={formData.gallery}
+            />
         </View>
     );
 };
