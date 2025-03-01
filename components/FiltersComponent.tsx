@@ -6,29 +6,56 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    useWindowDimensions
+    useWindowDimensions,
 } from 'react-native';
 import MultiSelect from 'react-native-multiple-select';
 
 const FiltersComponent = ({
                               filters,
                               filterValue,
-                              isLoadingFilters,
                               onSelectedItemsChange,
                               handleTextFilterChange,
                               handleApplyFilters,
                               resetFilters,
                               closeMenu,
-                              isMobile,
                           }) => {
     const { width } = useWindowDimensions();
-    const [yearInput, setYearInput] = useState(filterValue.year || '');
+    const isMobile = width <= 768;
 
-    const isDesktop = width > 768;
+    const [yearInput, setYearInput] = useState(filterValue.year || '');
 
     const applyFilters = () => {
         handleApplyFilters(yearInput);
         if (isMobile) closeMenu();
+    };
+
+    const renderSelectedChips = () => {
+        const allFilters = [
+            { field: 'countries', items: filters.countries, label: 'Страны' },
+            { field: 'categories', items: filters.categories, label: 'Категории' },
+            { field: 'categoryTravelAddress', items: filters.categoryTravelAddress, label: 'Объекты' },
+            { field: 'transports', items: filters.transports, label: 'Транспорт' },
+            { field: 'companions', items: filters.companions, label: 'Компаньоны' },
+            { field: 'complexity', items: filters.complexity, label: 'Сложность' },
+            { field: 'month', items: filters.month, label: 'Месяц' },
+            { field: 'over_nights_stay', items: filters.over_nights_stay, label: 'Ночлег' },
+        ];
+
+        return allFilters.flatMap(({ field, items }) => {
+            const selected = filterValue[field] || [];
+            return selected.map(id => {
+                const item = items.find(i => i.id == id || i.country_id == id);
+                if (!item) return null;
+                return (
+                    <View key={`${field}-${id}`} style={styles.chip}>
+                        <Text style={styles.chipText}>{item.name || item.title_ru}</Text>
+                        <TouchableOpacity onPress={() => onSelectedItemsChange(field, selected.filter(v => v !== id))}>
+                            <Text style={styles.chipClose}>✖️</Text>
+                        </TouchableOpacity>
+                    </View>
+                );
+            });
+        });
     };
 
     const renderMultiSelect = (label, field, items, uniqueKey, displayKey) => (
@@ -42,70 +69,148 @@ const FiltersComponent = ({
                 selectedItems={filterValue[field] || []}
                 selectText={`Выбрать ${label.toLowerCase()}...`}
                 searchInputPlaceholderText={`Поиск ${label.toLowerCase()}...`}
-                tagRemoveIconColor="#6AAAAA"
-                tagBorderColor="#6AAAAA"
-                tagTextColor="#333"
-                selectedItemTextColor="#6AAAAA"
-                selectedItemIconColor="#6AAAAA"
-                itemTextColor="#000"
-                submitButtonColor="#6AAAAA"
-                submitButtonText="ОК"
+                hideTags
+                hideSubmitButton
                 styleDropdownMenuSubsection={styles.multiSelectInput}
             />
         </View>
     );
 
     return (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.filtersContainer}>
-                {renderMultiSelect('Страны', 'countries', filters.countries, 'country_id', 'title_ru')}
-                {renderMultiSelect('Категории', 'categories', filters.categories, 'id', 'name')}
-                {renderMultiSelect('Объекты', 'categoryTravelAddress', filters.categoryTravelAddress, 'id', 'name')}
-                {renderMultiSelect('Транспорт', 'transports', filters.transports, 'id', 'name')}
-                {renderMultiSelect('Компаньоны', 'companions', filters.companions, 'id', 'name')}
-                {renderMultiSelect('Сложность', 'complexity', filters.complexity, 'id', 'name')}
-                {renderMultiSelect('Месяц', 'month', filters.month, 'id', 'name')}
-                {renderMultiSelect('Ночлег', 'over_nights_stay', filters.over_nights_stay, 'id', 'name')}
-
-                <View style={styles.filterBlock}>
-                    <Text style={styles.filterLabel}>Год</Text>
-                    <TextInput
-                        style={styles.yearInput}
-                        value={yearInput}
-                        onChangeText={(text) => {
-                            setYearInput(text);
-                            handleTextFilterChange(text);
-                        }}
-                        placeholder="Введите год"
-                        keyboardType="numeric"
-                    />
-                </View>
-
-                <View style={styles.buttonsRow}>
-                    <TouchableOpacity style={[styles.button, styles.resetButton]} onPress={resetFilters}>
-                        <Text style={styles.buttonText}>Сбросить</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.button, styles.applyButton]} onPress={applyFilters}>
-                        <Text style={styles.buttonText}>Применить</Text>
+        <View style={styles.container}>
+            {isMobile && (
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Фильтры</Text>
+                    <TouchableOpacity onPress={closeMenu}>
+                        <Text style={styles.closeButton}>Закрыть ✖️</Text>
                     </TouchableOpacity>
                 </View>
+            )}
+
+            <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContainer}>
+                {/* Блок чипсов — выбранных фильтров */}
+                <View style={styles.chipsContainer}>
+                    {renderSelectedChips()}
+                </View>
+
+                {/* Сетка фильтров */}
+                <View style={styles.filtersGrid}>
+                    {renderMultiSelect('Страны', 'countries', filters.countries, 'country_id', 'title_ru')}
+                    {renderMultiSelect('Категории', 'categories', filters.categories, 'id', 'name')}
+                    {renderMultiSelect('Объекты', 'categoryTravelAddress', filters.categoryTravelAddress, 'id', 'name')}
+                    {renderMultiSelect('Транспорт', 'transports', filters.transports, 'id', 'name')}
+                    {renderMultiSelect('Компаньоны', 'companions', filters.companions, 'id', 'name')}
+                    {renderMultiSelect('Сложность', 'complexity', filters.complexity, 'id', 'name')}
+                    {renderMultiSelect('Месяц', 'month', filters.month, 'id', 'name')}
+                    {renderMultiSelect('Ночлег', 'over_nights_stay', filters.over_nights_stay, 'id', 'name')}
+
+                    <View style={styles.filterBlock}>
+                        <Text style={styles.filterLabel}>Год</Text>
+                        <TextInput
+                            style={styles.yearInput}
+                            value={yearInput}
+                            onChangeText={setYearInput}
+                            placeholder="Введите год"
+                            keyboardType="numeric"
+                        />
+                    </View>
+                </View>
+            </ScrollView>
+
+            <View style={[styles.footer, isMobile && styles.footerMobile]}>
+                <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
+                    <Text style={styles.buttonText}>Сбросить</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+                    <Text style={styles.buttonText}>Применить</Text>
+                </TouchableOpacity>
             </View>
-        </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    scrollContainer: { padding: 10 },
-    filtersContainer: { backgroundColor: '#fff', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#ddd' },
-    filterBlock: { marginBottom: 8 },
-    filterLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 4, color: '#333' },
-    multiSelectInput: { minHeight: 40, backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#ddd', borderRadius: 5, paddingHorizontal: 10 },
-    yearInput: { height: 40, borderWidth: 1, borderColor: '#ddd', paddingHorizontal: 10, borderRadius: 5, backgroundColor: '#f9f9f9' },
-    buttonsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-    button: { flex: 1, paddingVertical: 10, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
-    resetButton: { backgroundColor: '#ccc', marginRight: 5 },
-    applyButton: { backgroundColor: '#6AAAAA', marginLeft: 5 },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+    container: { flex: 1, backgroundColor: '#fff' },
+    header: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, backgroundColor: '#f8f8f8' },
+    headerTitle: { fontWeight: 'bold', fontSize: 18 },
+    closeButton: { color: 'tomato', fontWeight: 'bold' },
+    scrollArea: { flex: 1 },
+    scrollContainer: { paddingHorizontal: 12, paddingBottom: 12 },
+    chipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginBottom: 12,
+    },
+    chip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E7F3FF',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 16,
+    },
+    chipText: {
+        marginRight: 6,
+    },
+    chipClose: {
+        color: 'tomato',
+        fontWeight: 'bold',
+    },
+    filtersGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 12,
+    },
+    filterBlock: {
+        width: '100%',
+        maxWidth: 360,
+    },
+    filterLabel: {
+        fontWeight: 'bold',
+        marginBottom: 6,
+    },
+    multiSelectInput: {
+        backgroundColor: '#f9f9f9',
+        paddingLeft:10
+    },
+    yearInput: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 6,
+        padding: 8,
+    },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 12,
+        backgroundColor: '#fff',
+    },
+    footerMobile: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+    },
+    resetButton: {
+        flex: 1,
+        backgroundColor: '#ccc',
+        padding: 12,
+        alignItems: 'center',
+        marginRight: 6,
+        borderRadius: 6,
+    },
+    applyButton: {
+        flex: 1,
+        backgroundColor: '#6aaaaa',
+        padding: 12,
+        alignItems: 'center',
+        borderRadius: 6,
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
 });
 
 export default FiltersComponent;
