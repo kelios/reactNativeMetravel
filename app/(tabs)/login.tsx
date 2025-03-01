@@ -44,7 +44,12 @@ export default function Login() {
         setError('');
         try {
             const success = await login(email, password, navigation);
-            if (!success) {
+            if (success) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'index' }],  // <- Заменить на ваш реальный экран
+                });
+            } else {
                 setError('Неверный email или пароль.');
             }
         } catch (err: any) {

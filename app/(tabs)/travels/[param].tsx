@@ -297,7 +297,7 @@ const TravelDetails: React.FC = () => {
                 {/* Карта с рефом */}
                 {travel.coordsMeTravel?.length > 0 && (
                     <View style={styles.mapBlock} ref={mapRef}>
-                      <MapClientSideComponent travel={travel} />
+                      <MapClientSideComponent     travel={{ data: travel?.travelAddress || [] }}/>
                     </View>
                 )}
 
