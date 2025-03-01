@@ -4,11 +4,11 @@ import {
     StyleSheet,
     View,
     Dimensions,
-    ActivityIndicator,
     Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Snackbar } from 'react-native-paper';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import {
     fetchFilters,
@@ -17,7 +17,6 @@ import {
     saveFormData,
 } from '@/src/api/travels';
 import { TravelFormData, MarkerData, Travel } from '@/src/types/types';
-import { useLocalSearchParams } from 'expo-router';
 
 import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
 import ContentUpsertSection from '@/components/ContentUpsertSection';
@@ -26,31 +25,23 @@ import GallerySection from '@/components/GallerySection';
 import { useAutoSaveForm } from '@/hooks/useAutoSaveForm';
 
 export default function UpsertTravel() {
+    const router = useRouter();
+    const { id } = useLocalSearchParams();
+
+    const isNew = !id;
     const windowWidth = Dimensions.get('window').width;
     const isMobile = windowWidth <= 768;
-
-    const styles = getStyles(isMobile);
-
-    const { id } = useLocalSearchParams();
-    const travelId = id || null;
 
     const [menuVisible, setMenuVisible] = useState(!isMobile);
     const [isLoadingFilters, setIsLoadingFilters] = useState(false);
     const [markers, setMarkers] = useState<MarkerData[]>([]);
     const [travelDataOld, setTravelDataOld] = useState<Travel | null>(null);
-    const [filters, setFilters] = useState({
-        countries: [],
-        categories: [],
-        companions: [],
-        complexity: [],
-        month: [],
-        over_nights_stay: [],
-        transports: [],
-        categoryTravelAddress: [],
-    });
-    const [formData, setFormData] = useState<TravelFormData>(getEmptyFormData(travelId));
+    const [filters, setFilters] = useState(initFilters());
+    const [formData, setFormData] = useState<TravelFormData>(getEmptyFormData(isNew ? null : String(id)));
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    // --- ЛОГИКА СОХРАНЕНИЯ ---
 
     const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
         const savedData = await saveFormData(cleanEmptyFields({ ...data, id: data.id || null }));
@@ -60,81 +51,104 @@ export default function UpsertTravel() {
     const { resetOriginalData } = useAutoSaveForm(formData, {
         debounce: 5000,
         onSave: saveFormDataWithId,
-        onSuccess: () => {
-            setSnackbarMessage('Автосохранение прошло успешно!');
-            setSnackbarVisible(true);
+        onSuccess: (savedData) => {
+            applySavedData(savedData);
+            if (isNew && savedData.id) {
+                router.replace(`/travel/${savedData.id}`);
+            }
+            showSnackbar('Автосохранение прошло успешно!');
         },
-        onError: (error) => {
-            console.error('Ошибка при автосохранении:', error);
-            setSnackbarMessage('Ошибка автосохранения');
-            setSnackbarVisible(true);
+        onError: () => {
+            showSnackbar('Ошибка автосохранения');
         },
     });
 
+    // --- ЗАГРУЗКА ДАННЫХ ---
     useEffect(() => {
         getFilters();
         getFiltersCountry();
-        if (travelId) {
-            loadTravelData(travelId);
-        }
-    }, [travelId]);
 
-    const loadTravelData = async (id: string) => {
-        const travelData = await fetchTravel(Number(id));
+        if (!isNew) {
+            loadTravelData(id as string);
+        }
+    }, [id, isNew]);
+
+    const loadTravelData = async (travelId: string) => {
+        const travelData = await fetchTravel(Number(travelId));
         setTravelDataOld(travelData);
 
         const transformed = transformTravelToFormData(travelData);
         setFormData(transformed);
+        setMarkers(transformed.coordsMeTravel || []);
+
         resetOriginalData(transformed);
-        setMarkers(travelData.coordsMeTravel || []);
-        updateCountriesFromMarkers(travelData.coordsMeTravel || []);
     };
 
+    // --- РУЧНОЕ СОХРАНЕНИЕ ---
     const handleManualSave = async () => {
         try {
             const savedData = await saveFormDataWithId(formData);
-            setFormData(savedData);
-            resetOriginalData(savedData);
-            setMarkers(savedData.coordsMeTravel || []);
-            setSnackbarMessage('Сохранение прошло успешно!');
-            setSnackbarVisible(true);
+            applySavedData(savedData);
+
+            if (isNew && savedData.id) {
+                router.replace(`/travel/${savedData.id}`);
+            }
+
+            showSnackbar('Сохранение прошло успешно!');
         } catch (error) {
-            console.error('Ошибка при сохранении:', error);
-            setSnackbarMessage('Ошибка сохранения');
-            setSnackbarVisible(true);
+            showSnackbar('Ошибка сохранения');
         }
     };
 
-    const getFilters = useCallback(async () => {
+    const applySavedData = (savedData: TravelFormData) => {
+        setFormData(savedData);
+        setMarkers(savedData.coordsMeTravel || []);
+        resetOriginalData(savedData);
+    };
+
+    // --- ФИЛЬТРЫ ---
+    const getFilters = async () => {
         if (isLoadingFilters) return;
         setIsLoadingFilters(true);
         const data = await fetchFilters();
         setFilters((prev) => ({ ...prev, ...data }));
         setIsLoadingFilters(false);
-    }, [isLoadingFilters]);
+    };
 
-    const getFiltersCountry = useCallback(async () => {
+    const getFiltersCountry = async () => {
         if (isLoadingFilters) return;
         setIsLoadingFilters(true);
         const countries = await fetchFiltersCountry();
         setFilters((prev) => ({ ...prev, countries }));
         setIsLoadingFilters(false);
-    }, [isLoadingFilters]);
-
-    const updateCountriesFromMarkers = (markers: MarkerData[]) => {
-        const countriesFromMarkers = markers.map((marker) => marker.country).filter(Boolean);
-        setFormData((prev) => ({
-            ...prev,
-            countries: Array.from(new Set([...prev.countries, ...countriesFromMarkers])),
-        }));
     };
 
+    // --- UI ---
     const toggleMenu = useCallback(() => {
         setMenuVisible((prev) => !prev);
     }, []);
 
+    const showSnackbar = (message: string) => {
+        setSnackbarMessage(message);
+        setSnackbarVisible(true);
+    };
+
     return (
         <SafeAreaView style={styles.safeContainer}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>
+                    {isNew ? 'Создание нового путешествия' : 'Редактирование путешествия'}
+                </Text>
+                <Button
+                    mode="contained"
+                    icon="content-save"
+                    onPress={handleManualSave}
+                    style={styles.topSaveButton}
+                >
+                    Сохранить сейчас
+                </Button>
+            </View>
+
             <View style={styles.mainWrapper}>
                 <View style={styles.contentColumn}>
                     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -145,16 +159,7 @@ export default function UpsertTravel() {
                             setMarkers={setMarkers}
                             filters={filters}
                         />
-
                         <GallerySection formData={formData} travelDataOld={travelDataOld} />
-
-                        <Button
-                            mode="contained"
-                            onPress={handleManualSave}
-                            style={styles.manualSaveButton}
-                        >
-                            Сохранить сейчас
-                        </Button>
                     </ScrollView>
                 </View>
 
@@ -173,7 +178,7 @@ export default function UpsertTravel() {
             {isMobile && (
                 <View style={styles.mobileFiltersWrapper}>
                     <Button mode="contained" onPress={toggleMenu} style={styles.menuButton}>
-                        {menuVisible ? 'Скрыть боковую панель' : 'Показать боковую панель'}
+                        {menuVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
                     </Button>
                     {menuVisible && (
                         <FiltersUpsertComponent
@@ -186,19 +191,14 @@ export default function UpsertTravel() {
                 </View>
             )}
 
-            <Snackbar
-                visible={snackbarVisible}
-                onDismiss={() => setSnackbarVisible(false)}
-                duration={3000}
-            >
+            <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
                 {snackbarMessage}
             </Snackbar>
         </SafeAreaView>
     );
 }
 
-// Вспомогательные функции
-
+// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 function getEmptyFormData(id: string | null): TravelFormData {
     return {
         id: id || null,
@@ -231,26 +231,83 @@ function getEmptyFormData(id: string | null): TravelFormData {
 }
 
 function transformTravelToFormData(travel: Travel): TravelFormData {
-    return {
-        ...getEmptyFormData(travel.id),
-        ...travel,
-    };
+    return { ...getEmptyFormData(String(travel.id)), ...travel };
 }
 
 function cleanEmptyFields(obj: any): any {
-    return Object.fromEntries(Object.entries(obj).map(([key, value]) => [
-        key, value === '' ? null : value
-    ]));
+    return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, value === '' ? null : value]));
 }
 
-function getStyles(isMobile: boolean) {
-    return StyleSheet.create({
-        safeContainer: { flex: 1 },
-        mainWrapper: { flex: 1, flexDirection: isMobile ? 'column' : 'row' },
-        contentColumn: { flex: 1, padding: 10 },
-        filtersColumn: { width: 320, borderLeftWidth: 1 },
-        scrollContent: { paddingBottom: 100 },
-        manualSaveButton: { marginTop: 20, backgroundColor: '#4CAF50' },
-        menuButton: { backgroundColor: '#6aaaaa' },
-    });
+
+function initFilters() {
+    return {
+        countries: [],
+        categories: [],
+        companions: [],
+        complexity: [],
+        month: [],
+        over_nights_stay: [],
+        transports: [],
+        categoryTravelAddress: [],
+    };
 }
+
+const styles = StyleSheet.create({
+    safeContainer: {
+        flex: 1,
+        backgroundColor: '#f9f9f9',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    topSaveButton: {
+        backgroundColor: '#4CAF50',
+        borderRadius: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        elevation: 3,
+    },
+    mainWrapper: {
+        flex: 1,
+        flexDirection: Dimensions.get('window').width <= 768 ? 'column' : 'row',
+    },
+    contentColumn: {
+        flex: 1,
+        backgroundColor: '#fff',
+        padding: 10,
+    },
+    filtersColumn: {
+        width: 320,
+        backgroundColor: '#fff',
+        borderLeftWidth: 1,
+        borderColor: '#ddd',
+        padding: 10,
+    },
+    scrollContent: {
+        paddingBottom: 100,
+    },
+    mobileFiltersWrapper: {
+        backgroundColor: '#fff',
+        padding: 10,
+    },
+    menuButton: {
+        backgroundColor: '#6aaaaa',
+        borderRadius: 8,
+    },
+    snackbar: {
+        backgroundColor: '#323232',
+    },
+});
+

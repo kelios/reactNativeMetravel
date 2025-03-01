@@ -1,57 +1,46 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import _isEqual from 'lodash/isEqual';
 
-interface AutoSaveOptions {
+interface Options<T> {
     debounce?: number;
-    onSave: (formData: any) => Promise<any>;
-    onSuccess?: () => void;
-    onError?: (error: unknown) => void;
+    onSave: (data: T) => Promise<T>;
+    onSuccess?: (savedData: T) => void;
+    onError?: (error: any) => void;
 }
 
-export function useAutoSaveForm<T>(formData: T, options: AutoSaveOptions) {
+export function useAutoSaveForm<T>(formData: T, options: Options<T>) {
     const { debounce = 5000, onSave, onSuccess, onError } = options;
 
-    const [originalData, setOriginalData] = useState<T>(formData);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const originalDataRef = useRef<T>(formData); // Тут храним исходник
 
-    const isDataChanged = (a: T, b: T) => {
-        return JSON.stringify(a) !== JSON.stringify(b);
-    };
-
-    // Обновляем оригинальные данные после успешного сохранения
-    const updateOriginalData = (newData: T) => {
-        setOriginalData(newData);
-    };
-
-    // Автосохранение с дебаунсом
     useEffect(() => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
         timeoutRef.current = setTimeout(async () => {
-            if (isDataChanged(formData, originalData)) {
+            if (!deepEqual(formData, originalDataRef.current)) {
                 try {
                     const savedData = await onSave(formData);
-                    updateOriginalData(savedData);
-
-                    onSuccess?.();
-                } catch (error) {
-                    onError?.(error);
+                    originalDataRef.current = savedData; // Обновили эталон
+                    onSuccess?.(savedData);
+                } catch (err) {
+                    onError?.(err);
                 }
             }
         }, debounce);
 
         return () => {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-            }
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [formData, originalData, debounce, onSave, onSuccess, onError]);
+    }, [formData]);
 
-    // Функция для сброса originalData вручную (например, после первой загрузки данных)
-    const resetOriginalData = (data: T) => {
-        setOriginalData(data);
+    const resetOriginalData = (newData: T) => {
+        originalDataRef.current = newData;
     };
 
     return { resetOriginalData };
+}
+
+function deepEqual(a: any, b: any): boolean {
+    return _isEqual(a, b); // lodash умеет сравнивать глубоко (вложенные объекты и массивы)
 }
