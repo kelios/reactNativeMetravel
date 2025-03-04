@@ -162,7 +162,7 @@ export default function ListTravel() {
                             renderItem={({ item }) => (
                                 <View style={{
                                     flex: 1,
-                                    maxWidth: 600, // Сделать карточки шире
+                                    maxWidth: '50%', // Сделать карточки шире
                                     alignSelf: 'center',
                                     marginBottom: 16,
                                 }}>

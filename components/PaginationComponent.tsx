@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
 import { Button as PaperButton, Menu } from 'react-native-paper';
 
@@ -11,21 +11,29 @@ export default function PaginationComponent({
                                                 totalItems,
                                             }) {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const { width } = useWindowDimensions();
-    const isMobile = width <= 768;
-
     const [menuVisible, setMenuVisible] = useState(false);
-    const [pageInput, setPageInput] = useState(currentPage + 1); // Человеческий счёт страниц
+    const [pageInput, setPageInput] = useState(currentPage + 1);
+
+    useEffect(() => {
+        // Когда itemsPerPage меняется, корректируем текущую страницу
+        const newTotalPages = Math.ceil(totalItems / itemsPerPage);
+        if (currentPage >= newTotalPages) {
+            const newPage = Math.max(0, newTotalPages - 1);
+            setPageInput(newPage + 1);
+            onPageChange(newPage);
+        } else {
+            setPageInput(currentPage + 1);
+        }
+    }, [itemsPerPage, totalItems]);
 
     const handlePageChange = (newPage) => {
-        const page = Math.min(Math.max(newPage - 1, 0), totalPages - 1); // гарантируем границы
+        const page = Math.min(Math.max(newPage - 1, 0), totalPages - 1);
         setPageInput(page + 1);
         onPageChange(page);
     };
 
     return (
         <View style={styles.paginationContainer}>
-            {/* Информация о странице */}
             <View style={styles.pageInfoContainer}>
                 <Text style={styles.pageInfo}>Страница</Text>
                 <TextInput
@@ -38,7 +46,6 @@ export default function PaginationComponent({
                 <Text style={styles.pageInfo}>из {totalPages}</Text>
             </View>
 
-            {/* Кнопки "Назад" и "Вперед" */}
             <View style={styles.buttonGroup}>
                 <PaperButton
                     mode="outlined"
@@ -59,7 +66,6 @@ export default function PaginationComponent({
                 </PaperButton>
             </View>
 
-            {/* Выбор количества на странице */}
             <View style={styles.itemsPerPageWrapper}>
                 <Text style={styles.itemsPerPageText}>Показывать по:</Text>
                 <Menu

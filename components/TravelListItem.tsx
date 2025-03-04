@@ -5,7 +5,7 @@ import {
     TouchableOpacity,
     Text,
     Image,
-    Dimensions,
+    useWindowDimensions,
 } from 'react-native';
 import { Card } from 'react-native-paper';
 import { Travel } from '@/src/types/types';
@@ -41,19 +41,32 @@ const TravelListItem = ({
         createdAt,
     } = travel;
 
+    const { width } = useWindowDimensions();
     const route = useRoute();
     const isMetravel = route.name === 'metravel';
-
     const canEditOrDelete = isMetravel || isSuperuser;
 
     const countries = (countryName || '').split(',').map((c) => c.trim());
     const imageSource = travel_image_thumb_url ? { uri: travel_image_thumb_url } : { uri: placeholderImage };
 
+    // Динамический расчет размеров карточки
+    let cardWidth = width * 0.9;
+    let imageHeight = 200;
+    let contentHeight = 120;
+
+    if (width > 768 && width <= 1200) {
+        cardWidth = (width - 400) / 2; // Планшет - 2 карточки в ряд
+        imageHeight = 250;
+    } else if (width > 1200) {
+        cardWidth = (width - 550) / 2; // Десктоп - 2 карточки в ряд
+        imageHeight = 400;
+    }
+
     return (
-        <View style={styles.cardContainer}>
+        <View style={[styles.cardContainer, { width: cardWidth }]}>
             <TouchableOpacity onPress={() => router.push(`/travels/${slug}`)}>
                 <Card style={styles.card}>
-                    <View style={styles.imageContainer}>
+                    <View style={[styles.imageContainer, { height: imageHeight }]}>
                         <Image source={imageSource} style={styles.image} />
                         {canEditOrDelete && (
                             <View style={styles.actionsAbsolute}>
@@ -67,7 +80,7 @@ const TravelListItem = ({
                         )}
                     </View>
 
-                    <View style={styles.content}>
+                    <View style={[styles.content, { height: contentHeight }]}>
                         <View style={styles.countries}>
                             {countries.map((country, index) => (
                                 <Text key={index} style={styles.chip}>{country}</Text>
@@ -101,26 +114,8 @@ const formatDate = (dateString?: string) => {
     });
 };
 
-const { width } = Dimensions.get('window');
-
-// Определяем ширину и высоту карточки в зависимости от устройства
-let cardWidth = width * 0.9; // по умолчанию для мобильных
-let imageHeight = 200; // дефолтная высота картинки
-let contentHeight = 120; // фиксированная высота белой плашки
-
-if (width > 768 && width <= 1200) {
-    // Планшеты
-    cardWidth = (width - 400) / 2; // 2 карточки в ряд
-    imageHeight = 250;
-} else if (width > 1200) {
-    // Десктопы
-    cardWidth = (width - 550) / 2; // 2 карточки в ряд
-    imageHeight = 350;
-}
-
 const styles = StyleSheet.create({
     cardContainer: {
-        width: cardWidth,
         alignSelf: 'center',
         marginBottom: 15,
     },
@@ -135,8 +130,6 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
-        height: imageHeight,
-        overflow: 'hidden',
     },
     image: {
         width: '100%',
@@ -161,10 +154,9 @@ const styles = StyleSheet.create({
         borderColor: '#ddd',
     },
     content: {
-        height: contentHeight, // фиксированная высота белой плашки
         paddingHorizontal: 16,
         paddingVertical: 12,
-        justifyContent: 'space-between', // чтобы всё красиво распределилось
+        justifyContent: 'space-between',
     },
     countries: {
         flexDirection: 'row',
