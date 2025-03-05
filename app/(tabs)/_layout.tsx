@@ -172,6 +172,16 @@ export default function TabLayout() {
                 />
 
                 <Tabs.Screen
+                    name="chat"
+                    options={{
+                        tabBarIconStyle: {display: 'none'},
+                        href: null,
+                        title: '',
+                        headerRight: () => <RenderRightMenu />,
+                    }}
+                />
+
+                <Tabs.Screen
                     name="accountconfirmation"
                     options={{
                         tabBarIconStyle: {display: 'none'},

@@ -53,6 +53,7 @@ if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
 }
 
 // Экспортируем некоторые пути
+const SEND_AI_QUESTION = `${URLAPI}/api/chat`;
 export const UPLOAD_IMAGE = `${URLAPI}/api/upload`;
 const GALLERY = `${URLAPI}/api/gallery`;
 const GET_TRAVELS = `${URLAPI}/api/travels`;
@@ -640,5 +641,20 @@ export const deleteTravel = async (id: string) => {
     } catch (error) {
         console.error('Ошибка при удалении путешествия:', error);
         throw error;
+    }
+};
+
+export const sendAIMessage = async (inputText: string) => {
+    try {
+
+        const response = await fetch(SEND_AI_QUESTION, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:  JSON.stringify({ message: inputText }),
+        });
+        const responseData = await response.json();
+        return responseData;
+    } catch (error) {
+        console.error('Ошибка:', error);
     }
 };
