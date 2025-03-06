@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Platform, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import {
+    View,
+    Text,
+    Image,
+    StyleSheet,
+    TouchableOpacity,
+    ActivityIndicator,
+    Platform,
+    Dimensions,
+} from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import { useDropzone } from 'react-dropzone';
 import { uploadImage } from "@/src/api/travels";
-import { HEICConverter } from 'react-native-heic-converter';
 import { FontAwesome } from '@expo/vector-icons';
 
 interface ImageUploadComponentProps {
@@ -19,200 +27,196 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (oldImage) {
+        if (oldImage && !imageUri) {
             setImageUri(oldImage);
         }
     }, [oldImage]);
 
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop: async (acceptedFiles) => {
-            const file = acceptedFiles[0];
-            const fileType = file.type;
-
-            let fileUri = URL.createObjectURL(file);
-
-            if (fileType === 'image/heic' || fileType === 'image/heif') {
-                try {
-                    const converted = await HEICConverter.convert({ path: fileUri });
-                    fileUri = converted.path;
-                } catch (error) {
-                    console.error('Error converting HEIC image:', error);
-                    setUploadMessage('Failed to convert HEIC image.');
-                    return;
-                }
-            }
-
-            await handleUploadImage(file);
-        },
-        accept: 'image/*',
-    });
-
-    const pickImage = () => {
-        ImagePicker.launchImageLibrary({}, async (response) => {
-            if (response.assets && response.assets.length > 0) {
-                let selectedImageUri = response.assets[0].uri;
-                const fileType = response.assets[0].type;
-
-                if (fileType === 'image/heic' || fileType === 'image/heif') {
-                    try {
-                        const converted = await HEICConverter.convert({ path: selectedImageUri });
-                        selectedImageUri = converted.path;
-                    } catch (error) {
-                        console.error('Error converting HEIC image:', error);
-                        setUploadMessage('Failed to convert HEIC image.');
-                        return;
-                    }
-                }
-
-                await handleUploadImage({
-                    uri: selectedImageUri,
-                    name: 'photo.jpg',
-                    type: fileType || 'image/jpeg',
-                });
-            }
-        });
-    };
-
-    const handleUploadImage = async (file: any) => {
+    const handleUploadImage = async (file: File | { uri: string; name: string; type: string }) => {
         try {
             setLoading(true);
+            setUploadMessage(null);
+
             const formData = new FormData();
-            formData.append('file', file);
+
+            if (Platform.OS === 'web' && file instanceof File) {
+                formData.append('file', file);
+            } else {
+                const rnFile = file as { uri: string; name: string; type: string };
+                formData.append('file', {
+                    uri: rnFile.uri,
+                    name: rnFile.name,
+                    type: rnFile.type,
+                } as any);
+            }
+
             formData.append('collection', collection);
             formData.append('id', idTravel);
 
             const response = await uploadImage(formData);
 
             if (response?.url) {
-                setUploadMessage("Image uploaded successfully.");
                 setImageUri(response.url);
-                if (onUpload) {
-                    onUpload(response.url);
-                }
+                setUploadMessage('Фотография успешно загружена');
+                onUpload?.(response.url);
             } else {
-                setUploadMessage("Upload failed.");
+                setUploadMessage('Ошибка при загрузке');
             }
         } catch (error) {
-            console.error(error);
-            setUploadMessage("An error occurred during upload.");
+            console.error('Ошибка при загрузке:', error);
+            setUploadMessage('Произошла ошибка при загрузке');
         } finally {
             setLoading(false);
         }
     };
 
+    const pickImage = () => {
+        ImagePicker.launchImageLibrary({ mediaType: 'photo', quality: 0.8 }, async (response) => {
+            if (response.didCancel || response.errorCode) return;
+
+            const asset = response.assets?.[0];
+            if (!asset?.uri) return;
+
+            await handleUploadImage({
+                uri: asset.uri,
+                name: asset.fileName || 'photo.jpg',
+                type: asset.type || 'image/jpeg',
+            });
+        });
+    };
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop: async (acceptedFiles) => {
+            const file = acceptedFiles[0];
+            await handleUploadImage(file);
+        },
+        accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp', '.heic', '.heif'] },
+    });
+
     return (
         <View style={styles.container}>
             {Platform.OS === 'web' ? (
-                <div {...getRootProps({ className: 'dropzone' })} style={isDragActive ? styles.dropzoneActive : styles.dropzone}>
+                <div {...getRootProps()} style={isDragActive ? styles.dropzoneActive : styles.dropzone}>
                     <input {...getInputProps()} />
                     {loading ? (
-                        <ActivityIndicator size="large" color="#fff" />
+                        <ActivityIndicator size="large" color="#D67F4A" />
                     ) : imageUri ? (
-                        <Image source={{ uri: imageUri }} style={styles.largeImage} />
+                        <Image source={{ uri: imageUri }} style={styles.image} />
                     ) : (
                         <View style={styles.placeholderContainer}>
-                            <FontAwesome name="cloud-upload" size={50} color="#4b7c6f" />
+                            <FontAwesome name="cloud-upload" size={50} color="#A45D37" />
                             <Text style={styles.placeholderText}>Перетащите сюда изображение</Text>
-                            <Text style={styles.instructionsText}>или нажмите для выбора файла</Text>
+                            <Text style={styles.placeholderSubtext}>или нажмите для выбора файла</Text>
                         </View>
                     )}
                 </div>
             ) : (
                 <>
-                    <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-                        <Text style={styles.buttonText}>Загрузить фото</Text>
+                    <TouchableOpacity style={styles.uploadButton} onPress={pickImage} disabled={loading}>
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <>
+                                <FontAwesome name="cloud-upload" size={18} color="#fff" />
+                                <Text style={styles.uploadButtonText}>{imageUri ? 'Заменить фото' : 'Загрузить фото'}</Text>
+                            </>
+                        )}
                     </TouchableOpacity>
-                    {loading ? (
-                        <ActivityIndicator size="large" color="#4b7c6f" />
-                    ) : imageUri ? (
-                        <Image source={{ uri: imageUri }} style={styles.largeImage} />
-                    ) : (
-                        <Text style={styles.placeholderText}>Загрузите картинку</Text>
-                    )}
+                    {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
                 </>
             )}
+
             {uploadMessage && <Text style={styles.uploadMessage}>{uploadMessage}</Text>}
         </View>
     );
 };
 
 const { width } = Dimensions.get('window');
+const colors = {
+    primary: '#D67F4A',
+    text: '#4B4B4B',
+    border: '#DDDDDD',
+    background: '#F9F9F9',
+};
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
         width: '100%',
+        backgroundColor: '#fff',
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        alignItems: 'center',
     },
     dropzone: {
-        width: width > 500 ? 350 : '100%',
-        height: 250,
+        width: '100%',
+        height: 180,
         borderWidth: 2,
-        backgroundColor: '#f0f0f0',
-        borderColor: '#4b7c6f',
-        borderRadius: 15,
-        display: 'flex',
+        borderColor: '#D67F4A',
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        transition: 'background-color 0.3s ease, border-color 0.3s ease',
         cursor: 'pointer',
+        backgroundColor: '#fdf8f5',
+        outline: 'none', // убираем браузерный outline
+        overflow: 'hidden',
     },
     dropzoneActive: {
-        backgroundColor: '#e0f7f4',
-        borderColor: '#4b7c6f',
+        backgroundColor: '#fff0e6',
+        borderColor: '#A45D37',
     },
-    largeImage: {
-        width: 250,  // Увеличена ширина изображения
-        height: 250, // Увеличена высота изображения
-        borderRadius: 125, // Радиус теперь соответствует новой ширине и высоте
-        marginVertical: 20,
-        borderColor: '#fff',
-        borderWidth: 2,
+    uploadButton: {
+        backgroundColor: '#D67F4A',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    uploadButtonText: {
+        color: '#fff',
+        fontWeight: '600',
+    },
+    imageContainer: {
+        width: '100%',
+        position: 'relative',
+        marginTop: 8,
+        borderRadius: 12,
+        overflow: 'hidden', // чтобы сообщение не выходило за края
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    image: {
+        width: '100%',
+        aspectRatio: 1,
+        objectFit: 'cover', // обрезка при необходимости
     },
     placeholderContainer: {
-        display: 'flex',
-        justifyContent: 'center',
         alignItems: 'center',
     },
     placeholderText: {
-        color: '#4b7c6f',
-        fontSize: width > 500 ? 16 : 14,
-        textAlign: 'center',
-        marginTop: 10,
-    },
-    instructionsText: {
-        color: '#4b7c6f',
-        fontSize: width > 500 ? 14 : 12,
-        textAlign: 'center',
-        marginTop: 5,
-    },
-    buttonText: {
-        color: '#fff',
         fontSize: 16,
-        textAlign: 'center',
+        fontWeight: '500',
+        color: '#4B4B4B',
     },
-    uploadButton: {
-        backgroundColor: '#4b7c6f',
-        paddingVertical: 15,
-        paddingHorizontal: 30,
-        borderRadius: 25,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 5,
+    placeholderSubtext: {
+        fontSize: 14,
+        color: '#888',
     },
     uploadMessage: {
-        color: '#4b7c6f',
-        fontSize: 14,
-        textAlign: 'center',
-        marginTop: 10,
+        position: 'absolute',
+        bottom: 4,
+        left: 4,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#fff',
+        fontSize: 12,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
     },
 });
+
 
 export default ImageUploadComponent;
