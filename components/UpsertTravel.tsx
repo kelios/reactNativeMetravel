@@ -79,14 +79,14 @@ export default function UpsertTravel() {
     };
 
     const validateForm = () => {
-        if (!validateYear(formData.year)) {
+       /* if (!validateYear(formData.year)) {
             showSnackbar('Год должен быть от 1900 до ' + (new Date().getFullYear() + 1));
             return false;
         }
         if (formData.number_days && Number(formData.number_days) > 365) {
             showSnackbar('Максимальная длительность — 365 дней');
             return false;
-        }
+        };*/
         return true;
     };
 

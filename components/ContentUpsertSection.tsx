@@ -83,7 +83,7 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                         onCountrySelect={handleCountrySelect}
                         onCountryDeselect={handleCountryDeselect}
                         categoryTravelAddress={filters.categoryTravelAddress}
-                        countrylist={filters.countries}
+                        countrylist={filters.countries || []}
                     />
                 </View>
 

@@ -70,7 +70,7 @@ const WebMapComponent = ({
 
     const handleEditMarker = (index: number) => {
         setEditingIndex(index);
-        setIsExpanded(true);  // Открываем список при редактировании
+        setIsExpanded(true);
         setTimeout(() => {
             const element = document.getElementById(`marker-${index}`);
             if (element) {
@@ -157,17 +157,36 @@ const WebMapComponent = ({
                 ))}
             </MapContainer>
 
-            <MarkersListComponent
-                markers={markers}
-                categoryTravelAddress={categoryTravelAddress}
-                handleMarkerChange={handleMarkerChange}
-                handleImageUpload={handleImageUpload}
-                handleMarkerRemove={handleMarkerRemove}
-                editingIndex={editingIndex}
-                setEditingIndex={setEditingIndex}
-                isExpanded={isExpanded}
-                setIsExpanded={setIsExpanded}
-            />
+            {/* Кнопка показать/скрыть со счётчиком */}
+            <div style={{ marginTop: 16 }}>
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    style={styles.toggleButton}
+                >
+                    {isExpanded ? `Скрыть точки (${markers.length})` : `Показать точки (${markers.length})`}
+                </button>
+
+                {/* Анимированный блок со списком */}
+                <div style={{
+                    maxHeight: isExpanded ? '500px' : '0',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.3s ease',
+                }}>
+                    {isExpanded && (
+                        <MarkersListComponent
+                            markers={markers}
+                            categoryTravelAddress={categoryTravelAddress}
+                            handleMarkerChange={handleMarkerChange}
+                            handleImageUpload={handleImageUpload}
+                            handleMarkerRemove={handleMarkerRemove}
+                            editingIndex={editingIndex}
+                            setEditingIndex={setEditingIndex}
+                            isExpanded={isExpanded}
+                            setIsExpanded={setIsExpanded}
+                        />
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -206,6 +225,17 @@ const styles = {
         padding: '6px 12px',
         borderRadius: '6px',
         cursor: 'pointer',
+    },
+    toggleButton: {
+        padding: '8px 16px',
+        backgroundColor: '#4b7c6f',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        marginBottom: '8px',
+        fontWeight: 'bold',
+        fontSize: '14px',
     },
 };
 
