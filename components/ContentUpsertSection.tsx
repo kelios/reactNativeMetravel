@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, SafeAreaView, StyleSheet, ScrollView } from 'react-native';
+import { View, SafeAreaView, StyleSheet, ScrollView, Text } from 'react-native';
 import { TravelFormData, MarkerData } from '@/src/types/types';
 import TextInputComponent from '@/components/TextInputComponent';
 import YoutubeLinkComponent from '@/components/YoutubeLinkComponent';
@@ -7,12 +7,18 @@ import WebMapComponent from '@/components/WebMapComponent';
 import ArticleEditor from '@/components/ArticleEditor';
 import { UPLOAD_IMAGE } from '@/src/api/travels';
 
+// Явный интерфейс для filters (подставь реальные типы, если знаешь)
+interface Filters {
+    categoryTravelAddress: any[];
+    countries: any[];
+}
+
 interface ContentUpsertSectionProps {
     formData: TravelFormData;
     setFormData: (data: TravelFormData) => void;
     markers: MarkerData[];
     setMarkers: (data: MarkerData[]) => void;
-    filters: any;
+    filters: Filters;
     handleCountrySelect: (countryId: string) => void;
     handleCountryDeselect: (countryId: string) => void;
 }
@@ -26,7 +32,8 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                                                                        handleCountrySelect,
                                                                        handleCountryDeselect,
                                                                    }) => {
-    const handleChange = (name: keyof TravelFormData, value: any) => {
+
+    const handleChange = <T extends keyof TravelFormData>(name: T, value: TravelFormData[T]) => {
         setFormData((prevData) => ({
             ...prevData,
             [name]: value,
@@ -50,81 +57,59 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
         }));
     };
 
-    // Функция для рендеринга ArticleEditor
-    const renderArticleEditor = (label: string, content: string, onChange: (content: string) => void) => {
-        return (
-            <View style={styles.editorContainer}>
-                <ArticleEditor
-                    label={label}
-                    height={400}
-                    content={content}
-                    idTravel={formData?.id}
-                    onChange={onChange}
-                    uploadUrl={UPLOAD_IMAGE}
-                />
-            </View>
-        );
-    };
-
     return (
-       <View contentContainerStyle={styles.container}>
-            <View style={styles.section}>
-                <TextInputComponent
-                    label="Название"
-                    value={formData.name}
-                    onChange={(value) => handleChange('name', value)}
-                />
-            </View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView contentContainerStyle={styles.container}>
+                <View style={styles.section}>
+                    <TextInputComponent
+                        label="Название"
+                        value={formData.name}
+                        onChange={(value) => handleChange('name', value)}
+                    />
+                </View>
 
-            <View style={styles.section}>
-                <YoutubeLinkComponent
-                    label="Ссылка на Youtube"
-                    value={formData.youtube_link}
-                    onChange={(value) => handleChange('youtube_link', value)}
-                />
-            </View>
+                <View style={styles.section}>
+                    <YoutubeLinkComponent
+                        label="Ссылка на Youtube"
+                        value={formData.youtube_link}
+                        onChange={(value) => handleChange('youtube_link', value)}
+                    />
+                </View>
 
-            <View style={styles.section}>
-                <WebMapComponent
-                    markers={markers || []}
-                    onMarkersChange={handleMarkersChange}
-                    onCountrySelect={handleCountrySelect}
-                    onCountryDeselect={handleCountryDeselect}
-                    categoryTravelAddress={filters.categoryTravelAddress}
-                    countrylist={filters.countries}
-                />
-            </View>
+                <View style={styles.section}>
+                    <WebMapComponent
+                        markers={markers || []}
+                        onMarkersChange={handleMarkersChange}
+                        onCountrySelect={handleCountrySelect}
+                        onCountryDeselect={handleCountryDeselect}
+                        categoryTravelAddress={filters.categoryTravelAddress}
+                        countrylist={filters.countries}
+                    />
+                </View>
 
-            <View style={styles.sectionEditor}>
-                {renderArticleEditor('Описание', formData.description, (newContent) =>
-                    handleChange('description', newContent))
-                }
-            </View>
+                {renderEditorSection('Описание', formData.description, (val) => handleChange('description', val))}
+                {renderEditorSection('Плюсы', formData.plus, (val) => handleChange('plus', val))}
+                {renderEditorSection('Минусы', formData.minus, (val) => handleChange('minus', val))}
+                {renderEditorSection('Рекомендации', formData.recommendation, (val) => handleChange('recommendation', val))}
 
-            <View style={styles.sectionEditor}>
-                {renderArticleEditor('Плюсы', formData.plus, (newContent) =>
-                    handleChange('plus', newContent))
-                }
-            </View>
-
-            <View style={styles.sectionEditor}>
-                {renderArticleEditor('Минусы', formData.minus, (newContent) =>
-                    handleChange('minus', newContent))
-                }
-            </View>
-
-            <View style={styles.sectionEditor}>
-                {renderArticleEditor('Рекомендации', formData.recommendation, (newContent) =>
-                    handleChange('recommendation', newContent))
-                }
-            </View>
-       </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
+// Универсальная функция для секции редактора
+const renderEditorSection = (title: string, content: string, onChange: (val: string) => void) => (
+    <View style={styles.sectionEditor}>
+        <ArticleEditor
+            content={content}
+            onChange={onChange}
+            uploadUrl={UPLOAD_IMAGE}
+        />
+    </View>
+);
+
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
         padding: 20,
         backgroundColor: '#f9f9f9',
     },
@@ -135,15 +120,31 @@ const styles = StyleSheet.create({
         padding: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 5,
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
     },
     sectionEditor: {
-        //flex: 1,
+        marginBottom: 20,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        overflow: 'hidden'
     },
-    editorContainer: {
-        marginTop: 10,
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
+        color: '#333',
     },
 });
 
