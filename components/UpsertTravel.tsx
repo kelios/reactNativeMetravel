@@ -111,6 +111,29 @@ export default function UpsertTravel() {
         resetOriginalData(transformed);
     };
 
+    const handleCountrySelect = (countryId: string) => {
+        if (countryId) {
+            setFormData((prevData) => {
+                if (!prevData.countries.includes(countryId)) {
+                    return {
+                        ...prevData,
+                        countries: [...prevData.countries, countryId],
+                    };
+                }
+                return prevData;
+            });
+        }
+    };
+
+    // Пример: удаление страны
+    const handleCountryDeselect = (countryId: string) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            countries: prevData.countries.filter((id) => id !== countryId),
+        }));
+    };
+
+
     const showSnackbar = (message: string) => {
         setSnackbarMessage(message);
         setSnackbarVisible(true);
@@ -120,7 +143,15 @@ export default function UpsertTravel() {
         <SafeAreaView style={styles.safeContainer}>
             <View style={[styles.mainWrapper, isMobile && styles.mainWrapperMobile]}>
                 <ScrollView style={styles.contentColumn}>
-                    <ContentUpsertSection formData={formData} setFormData={setFormData} markers={markers} setMarkers={setMarkers} filters={filters} />
+                    <ContentUpsertSection
+                        formData={formData}
+                        setFormData={setFormData}
+                        markers={markers}
+                        setMarkers={setMarkers}
+                        filters={filters}
+                        handleCountrySelect={handleCountrySelect}
+                        handleCountryDeselect={handleCountryDeselect}
+                    />
                     <GallerySection formData={formData} travelDataOld={travelDataOld} />
                 </ScrollView>
 

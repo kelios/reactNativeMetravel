@@ -75,7 +75,7 @@ function WebEditor(props: ArticleEditorProps) {
             [{ list: 'ordered' }, { list: 'bullet' }], // списки
             [{ align: [] }],                            // выравнивание
             [{ color: [] }, { background: [] }],        // цвет текста, цвет фона
-            ['link', 'image', 'video'],                 // вставка ссылки, картинки, видео
+            ['link'],                 // вставка ссылки, картинки, видео
             ['clean']                                   // очистить форматирование
         ],
         history: {

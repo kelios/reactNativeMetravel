@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { MarkerData } from "@/src/types/types";
-import { View } from "react-native";
-import MultiSelect from "react-native-multiple-select";
-import MarkersListComponent from './MarkersListComponent'; // Импорт компонента списка маркеров
-import ImageUploadComponent from '@/components/ImageUploadComponent';
+import MarkersListComponent from './MarkersListComponent';
 
 // Иконка маркера
 const markerIcon = new L.Icon({
@@ -16,34 +12,34 @@ const markerIcon = new L.Icon({
     popupAnchor: [0, -30],
 });
 
-// Компонент для обработки кликов на карте
+// Обработчик кликов по карте
 const MapClickHandler = ({ addMarker }) => {
     useMapEvents({
         click(e) {
-            addMarker(e.latlng); // Добавление маркера при клике на карту
+            addMarker(e.latlng);
         }
     });
     return null;
 };
 
-// Функция для обратного геокодирования (определение адреса по координатам)
+// Обратное геокодирование
 const reverseGeocode = async (latlng) => {
     const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`
     );
-    const data = await response.json();
-    return data;
+    return await response.json();
 };
 
 const WebMapComponent = ({
                              markers,
                              onMarkersChange,
+                             categoryTravelAddress,
+                             countrylist,
                              onCountrySelect,
                              onCountryDeselect,
-                             categoryTravelAddress,
-                             countrylist
                          }) => {
-    const [showMarkersList, setShowMarkersList] = useState(true); // Состояние для управления списком маркеров
+    const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const addMarker = async (latlng) => {
         const geocodeData = await reverseGeocode(latlng);
@@ -54,173 +50,162 @@ const WebMapComponent = ({
             id: null,
             lat: latlng.lat,
             lng: latlng.lng,
-            country: null,
-            city: null,
-            address: address,
+            address,
             categories: [],
             image: null,
+            country: null,
+            city: null,
         };
 
-        // Определяем страну маркера
         if (country) {
             const foundCountry = countrylist.find(c => c.title_ru === country);
             if (foundCountry) {
                 newMarker.country = foundCountry.country_id;
-                onCountrySelect(foundCountry.country_id); // Добавляем страну в фильтры
+                onCountrySelect(foundCountry.country_id);
             }
         }
 
         onMarkersChange([...markers, newMarker]);
     };
 
-    const toggleMarkersList = () => {
-        setShowMarkersList(!showMarkersList); // Переключение видимости списка маркеров
+    const handleEditMarker = (index: number) => {
+        setEditingIndex(index);
+        setIsExpanded(true);  // Открываем список при редактировании
+        setTimeout(() => {
+            const element = document.getElementById(`marker-${index}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
     };
 
-    const handleMarkerChange = (index, field, value) => {
+    const handleMarkerChange = (index: number, field: string, value: string | string[]) => {
         const updatedMarkers = [...markers];
-        updatedMarkers[index] = {
-            ...updatedMarkers[index],
-            [field]: value || '',
-        };
+        updatedMarkers[index] = { ...updatedMarkers[index], [field]: value };
         onMarkersChange(updatedMarkers);
     };
 
-    const handleImageUpload = (index, imageUrl) => {
+    const handleImageUpload = (index: number, imageUrl: string) => {
         const updatedMarkers = [...markers];
         updatedMarkers[index].image = imageUrl;
         onMarkersChange(updatedMarkers);
     };
 
-    const handleMarkerRemove = (index) => {
+    const handleMarkerRemove = (index: number) => {
         const removedMarker = markers[index];
         const updatedMarkers = markers.filter((_, idx) => idx !== index);
         onMarkersChange(updatedMarkers);
 
         if (removedMarker.country) {
-            const hasOtherMarkersWithSameCountry = updatedMarkers.some(marker => marker.country === removedMarker.country);
-            if (!hasOtherMarkersWithSameCountry) {
-                onCountryDeselect(removedMarker.country); // Удаляем страну из фильтров, если маркеров с этой страной больше нет
+            const hasMoreWithSameCountry = updatedMarkers.some(marker => marker.country === removedMarker.country);
+            if (!hasMoreWithSameCountry) {
+                onCountryDeselect(removedMarker.country);
             }
+        }
+
+        if (editingIndex === index) {
+            setEditingIndex(null);
         }
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.mapSection}>
-                <MapContainer center={[51.505, -0.09]} zoom={13} style={styles.map}>
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution="&copy; OpenStreetMap contributors"
-                    />
-                    <MapClickHandler addMarker={addMarker} />
-                    {markers.map((marker, idx) => (
-                        <Marker
-                            key={idx}
-                            position={[marker.lat, marker.lng]}
-                            icon={markerIcon}
-                            eventHandlers={{
-                                click: () => toggleMarkersList(), // Переключаем список маркеров при клике на маркер
-                            }}
-                        >
-                            <Popup>
-                                <div style={styles.popupContent}>
-                                    <h4>Информация о точке</h4>
-                                    <div style={styles.popupRow}>
-                                        <label>Категории:</label>
-                                        <View style={styles.multiselector}>
-                                            <MultiSelect
-                                                hideTags
-                                                items={categoryTravelAddress}
-                                                uniqueKey="id"
-                                                onSelectedItemsChange={(selectedItems) => handleMarkerChange(idx, 'categories', selectedItems)}
-                                                selectedItems={marker.categories}
-                                                selectText="Выберите категории"
-                                                searchInputPlaceholderText="Выберите категории"
-                                                style={styles.input}
-                                            />
-                                        </View>
-                                    </div>
-                                    <div style={styles.popupRow}>
-                                        <label>Адрес:</label>
-                                        <input
-                                            type="text"
-                                            value={marker.address || ''}
-                                            onChange={(e) => handleMarkerChange(idx, 'address', e.target.value)}
-                                            placeholder="Введите адрес"
-                                            style={styles.input}
-                                        />
-                                    </div>
-                                    {marker.id !== null && (
-                                        <div style={styles.popupRow}>
-                                            <label>Изображение:</label>
-                                            <ImageUploadComponent
-                                                collection="travelImageAddress"
-                                                idTravel={marker.id}
-                                                onUpload={(imageUrl) => handleImageUpload(idx, imageUrl)}
-                                                oldImage={marker.image}
-                                            />
-                                            {marker.image && (
-                                                <img src={marker.image} alt="Превью" style={styles.imagePreview} />
-                                            )}
-                                        </div>
-                                    )}
-                                    <button onClick={() => handleMarkerRemove(idx)} style={styles.button}>
-                                        Удалить точку
+        <div style={{ padding: 20 }}>
+            <MapContainer center={[51.505, -0.09]} zoom={13} style={{ height: 500 }}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapClickHandler addMarker={addMarker} />
+                {markers.map((marker, idx) => (
+                    <Marker key={idx} position={[marker.lat, marker.lng]} icon={markerIcon}>
+                        <Popup>
+                            <div style={styles.popupContent}>
+                                {marker.image && (
+                                    <img src={marker.image} alt="Фото" style={styles.popupImage} />
+                                )}
+                                <p><strong>Адрес:</strong> {marker.address || 'Не указан'}</p>
+                                <p><strong>Категории:</strong>
+                                    {marker.categories.length > 0
+                                        ? marker.categories
+                                            .map(catId => {
+                                                const found = categoryTravelAddress.find(c => c.id === catId);
+                                                return found ? found.name : `ID: ${catId}`;
+                                            })
+                                            .join(', ')
+                                        : 'Не выбрано'}
+                                </p>
+                                <div style={styles.popupButtons}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEditMarker(idx);
+                                        }}
+                                        style={styles.editButton}
+                                    >
+                                        Редактировать
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleMarkerRemove(idx);
+                                        }}
+                                        style={styles.deleteButton}
+                                    >
+                                        Удалить
                                     </button>
                                 </div>
-                            </Popup>
-                        </Marker>
-                    ))}
-                </MapContainer>
-            </div>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+            </MapContainer>
 
-            {/* Кнопка для переключения отображения списка маркеров */}
-            <button onClick={toggleMarkersList} style={styles.toggleButton}>
-                {showMarkersList ? 'Скрыть точки' : 'Показать точки'}
-            </button>
-
-            {showMarkersList && (
-                <MarkersListComponent
-                    markers={markers}
-                    categoryTravelAddress={categoryTravelAddress}
-                    handleMarkerChange={handleMarkerChange}
-                    handleImageUpload={handleImageUpload}
-                    handleMarkerRemove={handleMarkerRemove}
-                />
-            )}
+            <MarkersListComponent
+                markers={markers}
+                categoryTravelAddress={categoryTravelAddress}
+                handleMarkerChange={handleMarkerChange}
+                handleImageUpload={handleImageUpload}
+                handleMarkerRemove={handleMarkerRemove}
+                editingIndex={editingIndex}
+                setEditingIndex={setEditingIndex}
+                isExpanded={isExpanded}
+                setIsExpanded={setIsExpanded}
+            />
         </div>
     );
 };
 
 const styles = {
-    container: {
+    popupContent: {
         display: 'flex',
         flexDirection: 'column',
-        padding: '20px',
-        backgroundColor: '#f8f8f8',
+        gap: '8px',
+        width: '240px',
     },
-    mapSection: {
-        marginBottom: '20px',
-        borderRadius: '10px',
-        overflow: 'hidden',
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
-    },
-    map: {
-        height: '500px',
+    popupImage: {
         width: '100%',
-        borderRadius: '10px',
+        height: '120px',
+        objectFit: 'cover',
+        borderRadius: '6px',
+        backgroundColor: '#f0f0f0',
     },
-    toggleButton: {
+    popupButtons: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        gap: '8px',
+    },
+    editButton: {
         backgroundColor: '#4b7c6f',
         color: 'white',
         border: 'none',
-        padding: '10px 15px',
-        borderRadius: '8px',
+        padding: '6px 12px',
+        borderRadius: '6px',
         cursor: 'pointer',
-        marginBottom: '20px',
-        alignSelf: 'center',
-        fontSize: '16px',
+    },
+    deleteButton: {
+        backgroundColor: '#d9534f',
+        color: 'white',
+        border: 'none',
+        padding: '6px 12px',
+        borderRadius: '6px',
+        cursor: 'pointer',
     },
 };
 
