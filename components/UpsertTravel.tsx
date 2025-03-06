@@ -4,11 +4,13 @@ import {
     StyleSheet,
     View,
     Dimensions,
-    Text,
+    Alert,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Snackbar } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
     fetchFilters,
@@ -27,8 +29,8 @@ import { useAutoSaveForm } from '@/hooks/useAutoSaveForm';
 export default function UpsertTravel() {
     const router = useRouter();
     const { id } = useLocalSearchParams();
-
     const isNew = !id;
+
     const windowWidth = Dimensions.get('window').width;
     const isMobile = windowWidth <= 768;
 
@@ -40,64 +42,10 @@ export default function UpsertTravel() {
     const [formData, setFormData] = useState<TravelFormData>(getEmptyFormData(isNew ? null : String(id)));
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-    // --- ЛОГИКА СОХРАНЕНИЯ ---
-
-    const saveFormDataWithId = async (data: TravelFormData): Promise<TravelFormData> => {
-        const savedData = await saveFormData(cleanEmptyFields({ ...data, id: data.id || null }));
-        return savedData;
-    };
-
-    const { resetOriginalData } = useAutoSaveForm(formData, {
-        debounce: 5000,
-        onSave: saveFormDataWithId,
-        onSuccess: (savedData) => {
-            applySavedData(savedData);
-            if (isNew && savedData.id) {
-                router.replace(`/travel/${savedData.id}`);
-            }
-            showSnackbar('Автосохранение прошло успешно!');
-        },
-        onError: () => {
-            showSnackbar('Ошибка автосохранения');
-        },
-    });
-
-    // --- ЗАГРУЗКА ДАННЫХ ---
-    useEffect(() => {
-        getFilters();
-        getFiltersCountry();
-
-        if (!isNew) {
-            loadTravelData(id as string);
-        }
-    }, [id, isNew]);
-
-    const loadTravelData = async (travelId: string) => {
-        const travelData = await fetchTravel(Number(travelId));
-        setTravelDataOld(travelData);
-
-        const transformed = transformTravelToFormData(travelData);
-        setFormData(transformed);
-        setMarkers(transformed.coordsMeTravel || []);
-
-        resetOriginalData(transformed);
-    };
-
-    // --- РУЧНОЕ СОХРАНЕНИЕ ---
-    const handleManualSave = async () => {
-        try {
-            const savedData = await saveFormDataWithId(formData);
-            applySavedData(savedData);
-
-            if (isNew && savedData.id) {
-                router.replace(`/travel/${savedData.id}`);
-            }
-
-            showSnackbar('Сохранение прошло успешно!');
-        } catch (error) {
-            showSnackbar('Ошибка сохранения');
-        }
+    const saveFormDataWithId = async (data: TravelFormData) => {
+        return await saveFormData(cleanEmptyFields({ ...data, id: data.id || null }));
     };
 
     const applySavedData = (savedData: TravelFormData) => {
@@ -106,123 +54,141 @@ export default function UpsertTravel() {
         resetOriginalData(savedData);
     };
 
-    // --- ФИЛЬТРЫ ---
-    const getFilters = async () => {
-        if (isLoadingFilters) return;
-        setIsLoadingFilters(true);
-        const data = await fetchFilters();
-        setFilters((prev) => ({ ...prev, ...data }));
-        setIsLoadingFilters(false);
+    const { resetOriginalData } = useAutoSaveForm(formData, {
+        debounce: 5000,
+        onSave: saveFormDataWithId,
+        onSuccess: applySavedData,
+        onError: () => showSnackbar('Ошибка автосохранения'),
+    });
+
+    useEffect(() => {
+        const loadSuperuserFlag = async () => {
+            const flag = await AsyncStorage.getItem('isSuperuser');
+            setIsSuperAdmin(flag === 'true');
+        };
+        loadSuperuserFlag();
+        fetchFilters().then(setFilters);
+        fetchFiltersCountry().then(countries => setFilters(prev => ({ ...prev, countries })));
+        if (!isNew) loadTravelData(id as string);
+    }, [id, isNew]);
+
+    const validateYear = (year: string) => {
+        const currentYear = new Date().getFullYear();
+        const parsedYear = parseInt(year, 10);
+        return parsedYear >= 1900 && parsedYear <= currentYear + 1;
     };
 
-    const getFiltersCountry = async () => {
-        if (isLoadingFilters) return;
-        setIsLoadingFilters(true);
-        const countries = await fetchFiltersCountry();
-        setFilters((prev) => ({ ...prev, countries }));
-        setIsLoadingFilters(false);
+    const validateForm = () => {
+        if (!validateYear(formData.year)) {
+            showSnackbar('Год должен быть от 1900 до ' + (new Date().getFullYear() + 1));
+            return false;
+        }
+        if (formData.number_days && Number(formData.number_days) > 365) {
+            showSnackbar('Максимальная длительность — 365 дней');
+            return false;
+        }
+        return true;
     };
 
-    // --- UI ---
-    const toggleMenu = useCallback(() => {
-        setMenuVisible((prev) => !prev);
-    }, []);
+    const handleManualSave = async () => {
+        if (!validateForm()) return;
+        try {
+            const savedData = await saveFormDataWithId(formData);
+            applySavedData(savedData);
+            if (isNew && savedData.id) router.replace(`/travel/${savedData.id}`);
+            showSnackbar('Сохранено успешно!');
+        } catch {
+            showSnackbar('Ошибка сохранения');
+        }
+    };
+
+    const loadTravelData = async (travelId: string) => {
+        const travelData = await fetchTravel(Number(travelId));
+        const transformed = transformTravelToFormData(travelData);
+        setTravelDataOld(travelData);
+        setFormData(transformed);
+        setMarkers(transformed.coordsMeTravel || []);
+        resetOriginalData(transformed);
+    };
 
     const showSnackbar = (message: string) => {
         setSnackbarMessage(message);
         setSnackbarVisible(true);
     };
 
-    const handleCountrySelect = (countryId: string) => {
-        if (countryId) {
-            setFormData((prevData) => {
-                if (!prevData.countries.includes(countryId)) {
-                    return {
-                        ...prevData,
-                        countries: [...prevData.countries, countryId],
-                    };
-                }
-                return prevData;
-            });
-        }
-    };
-
-    // Пример: удаление страны
-    const handleCountryDeselect = (countryId: string) => {
-        setFormData((prevData) => ({
-            ...prevData,
-            countries: prevData.countries.filter((id) => id !== countryId),
-        }));
-    };
-
     return (
         <SafeAreaView style={styles.safeContainer}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>
-                    {isNew ? 'Создание нового путешествия' : 'Редактирование путешествия'}
-                </Text>
-                <Button
-                    mode="contained"
-                    icon="content-save"
-                    onPress={handleManualSave}
-                    style={styles.topSaveButton}
-                >
-                    Сохранить сейчас
-                </Button>
-            </View>
+            <View style={[styles.mainWrapper, isMobile && styles.mainWrapperMobile]}>
+                <ScrollView style={styles.contentColumn}>
+                    <ContentUpsertSection formData={formData} setFormData={setFormData} markers={markers} setMarkers={setMarkers} filters={filters} />
+                    <GallerySection formData={formData} travelDataOld={travelDataOld} />
+                </ScrollView>
 
-            <View style={styles.mainWrapper}>
-                <View style={styles.contentColumn}>
-                    <ScrollView contentContainerStyle={styles.scrollContent}>
-                        <ContentUpsertSection
-                            formData={formData}
-                            setFormData={setFormData}
-                            markers={markers}
-                            setMarkers={setMarkers}
-                            filters={filters}
-                            handleCountrySelect={handleCountrySelect}
-                            handleCountryDeselect={handleCountryDeselect}
-                        />
-                        <GallerySection formData={formData} travelDataOld={travelDataOld} />
-                    </ScrollView>
-                </View>
-
-                {!isMobile && (
-                    <View style={styles.filtersColumn}>
-                        <FiltersUpsertComponent
-                            filters={filters}
-                            travelDataOld={travelDataOld}
-                            formData={formData}
-                            setFormData={setFormData}
-                        />
+                {isMobile ? (
+                    <View style={styles.mobileFiltersWrapper}>
+                        <Button onPress={() => setMenuVisible(!menuVisible)}>Фильтры</Button>
+                        {menuVisible && <ScrollView style={{ maxHeight: '60vh' }}><FiltersUpsertComponent {...{ filters, travelDataOld, formData, setFormData, isSuperAdmin, onSave: handleManualSave }} /></ScrollView>}
                     </View>
+                ) : (
+                    <View style={styles.filtersColumn}><FiltersUpsertComponent {...{ filters, travelDataOld, formData, setFormData, isSuperAdmin, onSave: handleManualSave }} /></View>
                 )}
             </View>
 
             {isMobile && (
-                <View style={styles.mobileFiltersWrapper}>
-                    <Button mode="contained" onPress={toggleMenu} style={styles.menuButton}>
-                        {menuVisible ? 'Скрыть фильтры' : 'Показать фильтры'}
+                <View style={styles.mobileActionBar}>
+                    <Button
+                        mode="contained"
+                        icon="content-save"
+                        onPress={handleManualSave}
+                        style={styles.saveButtonMobile}
+                    >
+                        Сохранить
                     </Button>
-                    {menuVisible && (
-                        <FiltersUpsertComponent
-                            filters={filters}
-                            travelDataOld={travelDataOld}
-                            formData={formData}
-                            setFormData={setFormData}
-                        />
-                    )}
                 </View>
             )}
 
-            <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)} duration={3000}>
-                {snackbarMessage}
-            </Snackbar>
+            <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)}>{snackbarMessage}</Snackbar>
         </SafeAreaView>
     );
 }
 
-// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+const styles = StyleSheet.create({
+    safeContainer: { flex: 1, backgroundColor: '#f9f9f9' },
+    header: { padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#ddd' },
+    headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    brandPlaceholder: { flex: 1 }, // Здесь может быть логотип или меню
+    saveButtonDesktop: { backgroundColor: '#f5a623' },
+    saveButtonMobile: { backgroundColor: '#f5a623', width: '100%' },
+    mainWrapper: { flex: 1, flexDirection: 'row' },
+    mainWrapperMobile: { flexDirection: 'column' },
+    contentColumn: { flex: 1 },
+    filtersColumn: { width: 320, borderLeftWidth: 1, padding: 12, borderColor: '#ddd' },
+    mobileFiltersWrapper: { padding: 12 },
+    mobileActionBar: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        padding: 8,
+        borderTopWidth: 1,
+        borderColor: '#ddd',
+    },
+});
+
+function initFilters() {
+    return {
+        countries: [],
+        categories: [],
+        companions: [],
+        complexity: [],
+        month: [],
+        over_nights_stay: [],
+        transports: [],
+        categoryTravelAddress: [],
+    };
+}
+
 function getEmptyFormData(id: string | null): TravelFormData {
     return {
         id: id || null,
@@ -243,6 +209,7 @@ function getEmptyFormData(id: string | null): TravelFormData {
         recommendation: '',
         description: '',
         publish: false,
+        moderation: false,
         visa: false,
         coordsMeTravel: [],
         thumbs200ForCollectionArr: [],
@@ -261,77 +228,3 @@ function transformTravelToFormData(travel: Travel): TravelFormData {
 function cleanEmptyFields(obj: any): any {
     return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, value === '' ? null : value]));
 }
-
-
-function initFilters() {
-    return {
-        countries: [],
-        categories: [],
-        companions: [],
-        complexity: [],
-        month: [],
-        over_nights_stay: [],
-        transports: [],
-        categoryTravelAddress: [],
-    };
-}
-
-const styles = StyleSheet.create({
-    safeContainer: {
-        flex: 1,
-        backgroundColor: '#f9f9f9',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#ffffff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-    },
-    topSaveButton: {
-        backgroundColor: '#4CAF50',
-        borderRadius: 8,
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        elevation: 3,
-    },
-    mainWrapper: {
-        flex: 1,
-        flexDirection: Dimensions.get('window').width <= 768 ? 'column' : 'row',
-    },
-    contentColumn: {
-        flex: 1,
-        backgroundColor: '#fff',
-        padding: 10,
-    },
-    filtersColumn: {
-        width: 320,
-        backgroundColor: '#fff',
-        borderLeftWidth: 1,
-        borderColor: '#ddd',
-        padding: 10,
-    },
-    scrollContent: {
-        paddingBottom: 100,
-    },
-    mobileFiltersWrapper: {
-        backgroundColor: '#fff',
-        padding: 10,
-    },
-    menuButton: {
-        backgroundColor: '#6aaaaa',
-        borderRadius: 8,
-    },
-    snackbar: {
-        backgroundColor: '#323232',
-    },
-});
-
