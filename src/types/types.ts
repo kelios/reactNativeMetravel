@@ -131,6 +131,14 @@ export interface FormValues {
     confirmPassword: string;
 }
 
+export interface TravelFilters {
+    countries: Array<{ country_id: string; title_ru: string }>;
+    categories: Array<{ id: string; name: string }>;
+    transports: Array<{ id: string; name: string }>;
+    complexity: Array<{ id: string; name: string }>;
+}
+
+
 export interface TravelFormData {
     id?: string | null;
     name?: string;
@@ -164,6 +172,8 @@ export interface TravelFormData {
     number_days?: string;
     visa: boolean;
     publish: boolean;
+    moderation?: boolean;
+
 }
 
 export interface MarkerData {

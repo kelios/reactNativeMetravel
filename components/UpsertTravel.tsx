@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
     ScrollView,
     StyleSheet,
@@ -7,9 +7,9 @@ import {
     Alert,
     Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Snackbar } from 'react-native-paper';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {Button, Snackbar} from 'react-native-paper';
+import {useRouter, useLocalSearchParams} from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -18,17 +18,17 @@ import {
     fetchTravel,
     saveFormData,
 } from '@/src/api/travels';
-import { TravelFormData, MarkerData, Travel } from '@/src/types/types';
+import {TravelFormData, MarkerData, Travel} from '@/src/types/types';
 
 import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
 import ContentUpsertSection from '@/components/ContentUpsertSection';
 import GallerySection from '@/components/GallerySection';
 
-import { useAutoSaveForm } from '@/hooks/useAutoSaveForm';
+import {useAutoSaveForm} from '@/hooks/useAutoSaveForm';
 
 export default function UpsertTravel() {
     const router = useRouter();
-    const { id } = useLocalSearchParams();
+    const {id} = useLocalSearchParams();
     const isNew = !id;
 
     const windowWidth = Dimensions.get('window').width;
@@ -45,7 +45,10 @@ export default function UpsertTravel() {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     const saveFormDataWithId = async (data: TravelFormData) => {
-        return await saveFormData(cleanEmptyFields({ ...data, id: data.id || null }));
+        console.log('До:', data);
+        const cleanedData = cleanEmptyFields({ ...data, id: data.id || null });
+        console.log('Отправляем данные на сервер:', cleanedData);
+        return await saveFormData(cleanedData);
     };
 
     const applySavedData = (savedData: TravelFormData) => {
@@ -54,7 +57,7 @@ export default function UpsertTravel() {
         resetOriginalData(savedData);
     };
 
-    const { resetOriginalData } = useAutoSaveForm(formData, {
+    const {resetOriginalData} = useAutoSaveForm(formData, {
         debounce: 5000,
         onSave: saveFormDataWithId,
         onSuccess: applySavedData,
@@ -68,7 +71,7 @@ export default function UpsertTravel() {
         };
         loadSuperuserFlag();
         fetchFilters().then(setFilters);
-        fetchFiltersCountry().then(countries => setFilters(prev => ({ ...prev, countries })));
+        fetchFiltersCountry().then(countries => setFilters(prev => ({...prev, countries})));
         if (!isNew) loadTravelData(id as string);
     }, [id, isNew]);
 
@@ -79,14 +82,14 @@ export default function UpsertTravel() {
     };
 
     const validateForm = () => {
-       /* if (!validateYear(formData.year)) {
-            showSnackbar('Год должен быть от 1900 до ' + (new Date().getFullYear() + 1));
-            return false;
-        }
-        if (formData.number_days && Number(formData.number_days) > 365) {
-            showSnackbar('Максимальная длительность — 365 дней');
-            return false;
-        };*/
+        /* if (!validateYear(formData.year)) {
+             showSnackbar('Год должен быть от 1900 до ' + (new Date().getFullYear() + 1));
+             return false;
+         }
+         if (formData.number_days && Number(formData.number_days) > 365) {
+             showSnackbar('Максимальная длительность — 365 дней');
+             return false;
+         };*/
         return true;
     };
 
@@ -152,16 +155,31 @@ export default function UpsertTravel() {
                         handleCountrySelect={handleCountrySelect}
                         handleCountryDeselect={handleCountryDeselect}
                     />
-                    <GallerySection formData={formData} travelDataOld={travelDataOld} />
+                    <GallerySection formData={formData} travelDataOld={travelDataOld}/>
                 </ScrollView>
 
                 {isMobile ? (
                     <View style={styles.mobileFiltersWrapper}>
                         <Button onPress={() => setMenuVisible(!menuVisible)}>Фильтры</Button>
-                        {menuVisible && <ScrollView style={{ maxHeight: '60vh' }}><FiltersUpsertComponent {...{ filters, travelDataOld, formData, setFormData, isSuperAdmin, onSave: handleManualSave }} /></ScrollView>}
+                        {menuVisible && <ScrollView style={{maxHeight: '60vh'}}>
+                            <FiltersUpsertComponent {...{
+                                filters,
+                                travelDataOld,
+                                formData,
+                                setFormData,
+                                isSuperAdmin,
+                                onSave: handleManualSave
+                            }} /></ScrollView>}
                     </View>
                 ) : (
-                    <View style={styles.filtersColumn}><FiltersUpsertComponent {...{ filters, travelDataOld, formData, setFormData, isSuperAdmin, onSave: handleManualSave }} /></View>
+                    <View style={styles.filtersColumn}><FiltersUpsertComponent {...{
+                        filters,
+                        travelDataOld,
+                        formData,
+                        setFormData,
+                        isSuperAdmin,
+                        onSave: handleManualSave
+                    }} /></View>
                 )}
             </View>
 
@@ -184,17 +202,17 @@ export default function UpsertTravel() {
 }
 
 const styles = StyleSheet.create({
-    safeContainer: { flex: 1, backgroundColor: '#f9f9f9' },
-    header: { padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#ddd' },
-    headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    brandPlaceholder: { flex: 1 }, // Здесь может быть логотип или меню
-    saveButtonDesktop: { backgroundColor: '#f5a623' },
-    saveButtonMobile: { backgroundColor: '#f5a623', width: '100%' },
-    mainWrapper: { flex: 1, flexDirection: 'row' },
-    mainWrapperMobile: { flexDirection: 'column' },
-    contentColumn: { flex: 1 },
-    filtersColumn: { width: 320, borderLeftWidth: 1, padding: 12, borderColor: '#ddd' },
-    mobileFiltersWrapper: { padding: 12 },
+    safeContainer: {flex: 1, backgroundColor: '#f9f9f9'},
+    header: {padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#ddd'},
+    headerContent: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
+    brandPlaceholder: {flex: 1}, // Здесь может быть логотип или меню
+    saveButtonDesktop: {backgroundColor: '#f5a623'},
+    saveButtonMobile: {backgroundColor: '#f5a623', width: '100%'},
+    mainWrapper: {flex: 1, flexDirection: 'row'},
+    mainWrapperMobile: {flexDirection: 'column'},
+    contentColumn: {flex: 1},
+    filtersColumn: {width: 320, borderLeftWidth: 1, padding: 12, borderColor: '#ddd'},
+    mobileFiltersWrapper: {padding: 12},
     mobileActionBar: {
         position: 'absolute',
         bottom: 0,
@@ -253,9 +271,21 @@ function getEmptyFormData(id: string | null): TravelFormData {
 }
 
 function transformTravelToFormData(travel: Travel): TravelFormData {
-    return { ...getEmptyFormData(String(travel.id)), ...travel };
+    return {
+        ...getEmptyFormData(String(travel.id)),
+        ...travel,
+        moderation: travel.moderation ?? false,
+        publish: travel.publish ?? false,
+        visa: travel.visa ?? false,
+    };
 }
 
 function cleanEmptyFields(obj: any): any {
-    return Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, value === '' ? null : value]));
+    return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => {
+            if (value === '') return [key, null];
+            if (value === false) return [key, false]; // специально сохраняем false
+            return [key, value];
+        })
+    );
 }
