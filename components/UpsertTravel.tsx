@@ -35,7 +35,6 @@ export default function UpsertTravel() {
     const isMobile = windowWidth <= 768;
 
     const [menuVisible, setMenuVisible] = useState(!isMobile);
-    const [isLoadingFilters, setIsLoadingFilters] = useState(false);
     const [markers, setMarkers] = useState<MarkerData[]>([]);
     const [travelDataOld, setTravelDataOld] = useState<Travel | null>(null);
     const [filters, setFilters] = useState(initFilters());
@@ -45,9 +44,7 @@ export default function UpsertTravel() {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
     const saveFormDataWithId = async (data: TravelFormData) => {
-        console.log('До:', data);
         const cleanedData = cleanEmptyFields({ ...data, id: data.id || null });
-        console.log('Отправляем данные на сервер:', cleanedData);
         return await saveFormData(cleanedData);
     };
 
@@ -65,15 +62,39 @@ export default function UpsertTravel() {
     });
 
     useEffect(() => {
-        const loadSuperuserFlag = async () => {
-            const flag = await AsyncStorage.getItem('isSuperuser');
-            setIsSuperAdmin(flag === 'true');
+        let isMounted = true;
+
+        const loadData = async () => {
+            try {
+                const flag = await AsyncStorage.getItem('isSuperuser');
+                if (isMounted) setIsSuperAdmin(flag === 'true');
+
+                const [filtersData, countryData] = await Promise.all([
+                    fetchFilters(),
+                    fetchFiltersCountry()
+                ]);
+
+                if (isMounted) {
+                    setFilters(prev => ({
+                        ...filtersData,
+                        countries: countryData
+                    }));
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки фильтров:', error);
+            }
         };
-        loadSuperuserFlag();
-        fetchFilters().then(setFilters);
-        fetchFiltersCountry().then(countries => setFilters(prev => ({...prev, countries})));
-        if (!isNew) loadTravelData(id as string);
-    }, [id, isNew]);
+
+        loadData();
+
+        if (!isNew) {
+            loadTravelData(id as string);
+        }
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
 
     const validateYear = (year: string) => {
         const currentYear = new Date().getFullYear();

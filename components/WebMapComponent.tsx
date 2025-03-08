@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import React, {useEffect, useState} from 'react';
+import {MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import MarkersListComponent from './MarkersListComponent';
@@ -11,6 +11,19 @@ const markerIcon = new L.Icon({
     iconAnchor: [13, 30],
     popupAnchor: [0, -30],
 });
+
+const FitBounds = ({ markers }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (markers.length > 0) {
+            const bounds = L.latLngBounds(markers.map(marker => [marker.lat, marker.lng]));
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom:6,});
+        }
+    }, [markers, map]);
+
+    return null;
+};
 
 // Обработчик кликов по карте
 const MapClickHandler = ({ addMarker }) => {
@@ -113,6 +126,7 @@ const WebMapComponent = ({
             <MapContainer center={[51.505, -0.09]} zoom={13} style={{ height: 500 }}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <MapClickHandler addMarker={addMarker} />
+                <FitBounds markers={markers} />
                 {markers.map((marker, idx) => (
                     <Marker key={idx} position={[marker.lat, marker.lng]} icon={markerIcon}>
                         <Popup>
