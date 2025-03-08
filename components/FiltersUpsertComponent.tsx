@@ -15,7 +15,7 @@ import CheckboxComponent from '@/components/CheckboxComponent';
 import ImageUploadComponent from '@/components/ImageUploadComponent';
 import { TravelFormData, TravelFilters, Travel } from '@/src/types/types';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const isMobile = width <= 768;
 
 interface FiltersComponentProps {
@@ -88,10 +88,9 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                     mode="outlined"
                     icon="open-in-new"
                     onPress={() => window.open(`/travels/${formData.slug}`, '_blank')}
-                    style={styles.iconButton}
-                    contentStyle={styles.iconButtonContent}
-                >
-                    Открыть статью
+                    style={styles.floatingIconButton}
+                    >
+                    Предпросмотр
                 </Button>
             )}
 
@@ -205,17 +204,17 @@ const styles = StyleSheet.create({
     closeButton: { alignSelf: 'flex-end', marginBottom: 12 },
     saveButton: {
         backgroundColor: '#f5a623',
+        borderRadius: 12,
         marginBottom: 12,
     },
-    iconButton: {
+    floatingIconButton: {
         minWidth: 40, // Уменьшаем размер кнопки
-        height: 40,
         borderRadius: 20, // Делаем кнопку круглой
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    iconButtonContent: {
-        padding: 0, // Убираем внутренние отступы
+        backgroundColor: '#fff',
+        elevation: 3,
+        marginBottom: 12,
     },
 });
 

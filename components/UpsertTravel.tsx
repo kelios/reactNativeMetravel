@@ -1,15 +1,13 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     ScrollView,
     StyleSheet,
     View,
     Dimensions,
-    Alert,
-    Platform,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {Button, Snackbar} from 'react-native-paper';
-import {useRouter, useLocalSearchParams} from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button, Snackbar } from 'react-native-paper';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
@@ -18,17 +16,17 @@ import {
     fetchTravel,
     saveFormData,
 } from '@/src/api/travels';
-import {TravelFormData, MarkerData, Travel} from '@/src/types/types';
+import { TravelFormData, MarkerData, Travel } from '@/src/types/types';
 
 import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
 import ContentUpsertSection from '@/components/ContentUpsertSection';
 import GallerySection from '@/components/GallerySection';
 
-import {useAutoSaveForm} from '@/hooks/useAutoSaveForm';
+import { useAutoSaveForm } from '@/hooks/useAutoSaveForm';
 
 export default function UpsertTravel() {
     const router = useRouter();
-    const {id} = useLocalSearchParams();
+    const { id } = useLocalSearchParams();
     const isNew = !id;
 
     const windowWidth = Dimensions.get('window').width;
@@ -54,7 +52,7 @@ export default function UpsertTravel() {
         resetOriginalData(savedData);
     };
 
-    const {resetOriginalData} = useAutoSaveForm(formData, {
+    const { resetOriginalData } = useAutoSaveForm(formData, {
         debounce: 5000,
         onSave: saveFormDataWithId,
         onSuccess: applySavedData,
@@ -96,26 +94,7 @@ export default function UpsertTravel() {
         };
     }, [id]);
 
-    const validateYear = (year: string) => {
-        const currentYear = new Date().getFullYear();
-        const parsedYear = parseInt(year, 10);
-        return parsedYear >= 1900 && parsedYear <= currentYear + 1;
-    };
-
-    const validateForm = () => {
-        /* if (!validateYear(formData.year)) {
-             showSnackbar('Год должен быть от 1900 до ' + (new Date().getFullYear() + 1));
-             return false;
-         }
-         if (formData.number_days && Number(formData.number_days) > 365) {
-             showSnackbar('Максимальная длительность — 365 дней');
-             return false;
-         };*/
-        return true;
-    };
-
     const handleManualSave = async () => {
-        if (!validateForm()) return;
         try {
             const savedData = await saveFormDataWithId(formData);
             applySavedData(savedData);
@@ -176,31 +155,35 @@ export default function UpsertTravel() {
                         handleCountrySelect={handleCountrySelect}
                         handleCountryDeselect={handleCountryDeselect}
                     />
-                    <GallerySection formData={formData} travelDataOld={travelDataOld}/>
+                    <GallerySection formData={formData} travelDataOld={travelDataOld} />
                 </ScrollView>
 
                 {isMobile ? (
                     <View style={styles.mobileFiltersWrapper}>
-                        <Button onPress={() => setMenuVisible(!menuVisible)}>Фильтры</Button>
-                        {menuVisible && <ScrollView style={{maxHeight: '60vh'}}>
-                            <FiltersUpsertComponent {...{
-                                filters,
-                                travelDataOld,
-                                formData,
-                                setFormData,
-                                isSuperAdmin,
-                                onSave: handleManualSave
-                            }} /></ScrollView>}
+                        {menuVisible && (
+                            <ScrollView style={styles.filtersScroll}>
+                                <FiltersUpsertComponent {...{
+                                    filters,
+                                    travelDataOld,
+                                    formData,
+                                    setFormData,
+                                    isSuperAdmin,
+                                    onSave: handleManualSave
+                                }} />
+                            </ScrollView>
+                        )}
                     </View>
                 ) : (
-                    <View style={styles.filtersColumn}><FiltersUpsertComponent {...{
-                        filters,
-                        travelDataOld,
-                        formData,
-                        setFormData,
-                        isSuperAdmin,
-                        onSave: handleManualSave
-                    }} /></View>
+                    <View style={styles.filtersColumn}>
+                        <FiltersUpsertComponent {...{
+                            filters,
+                            travelDataOld,
+                            formData,
+                            setFormData,
+                            isSuperAdmin,
+                            onSave: handleManualSave
+                        }} />
+                    </View>
                 )}
             </View>
 
@@ -214,35 +197,54 @@ export default function UpsertTravel() {
                     >
                         Сохранить
                     </Button>
+
+                    <Button
+                        mode="outlined"
+                        icon="filter-outline"
+                        onPress={() => setMenuVisible(!menuVisible)}
+                        style={styles.filterButton}
+                    >
+                        Боковая панель
+                    </Button>
                 </View>
             )}
 
-            <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)}>{snackbarMessage}</Snackbar>
+            <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)}>
+                {snackbarMessage}
+            </Snackbar>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    safeContainer: {flex: 1, backgroundColor: '#f9f9f9'},
-    header: {padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#ddd'},
-    headerContent: {flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
-    brandPlaceholder: {flex: 1}, // Здесь может быть логотип или меню
-    saveButtonDesktop: {backgroundColor: '#f5a623'},
-    saveButtonMobile: {backgroundColor: '#f5a623', width: '100%'},
-    mainWrapper: {flex: 1, flexDirection: 'row'},
-    mainWrapperMobile: {flexDirection: 'column'},
-    contentColumn: {flex: 1},
-    filtersColumn: {width: 320, borderLeftWidth: 1, padding: 12, borderColor: '#ddd'},
-    mobileFiltersWrapper: {padding: 12},
+    safeContainer: { flex: 1, backgroundColor: '#f9f9f9' },
+    mainWrapper: { flex: 1, flexDirection: 'row' },
+    mainWrapperMobile: { flexDirection: 'column' },
+    contentColumn: { flex: 1 },
+    filtersColumn: { width: 320, borderLeftWidth: 1, padding: 12, borderColor: '#ddd' },
+    filtersScroll: { maxHeight: '60vh' },
+    mobileFiltersWrapper: { padding: 12 },
     mobileActionBar: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
         backgroundColor: '#fff',
-        padding: 8,
+        padding: 12,
         borderTopWidth: 1,
         borderColor: '#ddd',
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    saveButtonMobile: {
+        backgroundColor: '#f5a623',
+        borderRadius: 50,
+        minWidth: 150,
+    },
+    filterButton: {
+        borderColor: '#007AFF',
+        borderRadius: 50,
+        minWidth: 100,
     },
 });
 
