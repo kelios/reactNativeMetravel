@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, useColorScheme } from 'react-native';
 import ImageGalleryComponent from '@/components/ImageGalleryComponent';
 import { TravelFormData, Travel } from '@/src/types/types';
 
@@ -9,19 +9,26 @@ interface GallerySectionProps {
 }
 
 const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
+    const theme = useColorScheme();
+    const isDarkMode = theme === 'dark';
+
     if (!formData) {
         return (
-            <View style={styles.galleryContainer}>
+            <View style={[styles.galleryContainer, isDarkMode && styles.darkBackground]}>
                 <ActivityIndicator size="large" color="#6aaaaa" />
-                <Text>Загрузка данных...</Text>
+                <Text style={[styles.loadingText, isDarkMode && styles.darkText]}>
+                    Загрузка данных...
+                </Text>
             </View>
         );
     }
 
     if (!formData.id) {
         return (
-            <View style={styles.galleryContainer}>
-                <Text>Галерея станет доступна после сохранения путешествия.</Text>
+            <View style={[styles.galleryContainer, isDarkMode && styles.darkBackground]}>
+                <Text style={[styles.infoText, isDarkMode && styles.darkText]}>
+                    Галерея станет доступна после сохранения путешествия.
+                </Text>
             </View>
         );
     }
@@ -29,9 +36,11 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
     const isGalleryEmpty = !formData.gallery || formData.gallery.length === 0;
 
     return (
-        <View style={styles.galleryContainer}>
+        <View style={[styles.galleryContainer, isDarkMode && styles.darkBackground]}>
             {isGalleryEmpty && (
-                <Text>Пока нет изображений в галерее.</Text>
+                <Text style={[styles.emptyText, isDarkMode && styles.darkText]}>
+                    Пока нет изображений в галерее.
+                </Text>
             )}
 
             <ImageGalleryComponent
@@ -46,9 +55,38 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
 const styles = StyleSheet.create({
     galleryContainer: {
         marginTop: 20,
-        padding: 10,
+        padding: 15,
         backgroundColor: '#fff',
-        borderRadius: 8,
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        alignItems: 'center', // Центрируем текст и лоадер
+    },
+    darkBackground: {
+        backgroundColor: '#222',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#555',
+    },
+    infoText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#666',
+        textAlign: 'center',
+    },
+    emptyText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#888',
+        textAlign: 'center',
+    },
+    darkText: {
+        color: '#ddd',
     },
 });
 
