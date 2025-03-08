@@ -12,9 +12,10 @@ const YoutubeLinkComponent: React.FC<YoutubeLinkComponentProps> = ({ label, valu
     const [isValid, setIsValid] = useState(true);
 
     const validateYoutubeUrl = (url: string) => {
-        const regex = /^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/;
+        const regex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(\S+)?$/;
         return regex.test(url);
     };
+
 
     const handleBlur = () => {
         const valid = validateYoutubeUrl(inputValue);

@@ -82,6 +82,19 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             >
                 Сохранить сейчас
             </Button>
+
+            {formData.slug && (
+                <Button
+                    mode="outlined"
+                    icon="open-in-new"
+                    onPress={() => window.open(`/travels/${formData.slug}`, '_blank')}
+                    style={styles.iconButton}
+                    contentStyle={styles.iconButtonContent}
+                >
+                    Открыть статью
+                </Button>
+            )}
+
             {onClose && (
                 <Button onPress={onClose} style={styles.closeButton}>
                     Закрыть
@@ -193,6 +206,16 @@ const styles = StyleSheet.create({
     saveButton: {
         backgroundColor: '#f5a623',
         marginBottom: 12,
+    },
+    iconButton: {
+        minWidth: 40, // Уменьшаем размер кнопки
+        height: 40,
+        borderRadius: 20, // Делаем кнопку круглой
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    iconButtonContent: {
+        padding: 0, // Убираем внутренние отступы
     },
 });
 
