@@ -6,7 +6,7 @@ import {
     ScrollView,
     StyleSheet,
     Dimensions,
-    ActivityIndicator,
+    ActivityIndicator, TouchableOpacity,
 } from 'react-native';
 import { Button } from 'react-native-paper';
 
@@ -15,7 +15,7 @@ import CheckboxComponent from '@/components/CheckboxComponent';
 import ImageUploadComponent from '@/components/ImageUploadComponent';
 import { TravelFormData, TravelFilters, Travel } from '@/src/types/types';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const isMobile = width <= 768;
 
 interface FiltersComponentProps {
@@ -23,17 +23,18 @@ interface FiltersComponentProps {
     formData: TravelFormData | null;
     setFormData: (data: TravelFormData) => void;
     travelDataOld?: Travel | null;
-    onClose?: () => void;
-    isSuperAdmin?: boolean;
-    onSave: () => void;
+    onClose?: () => void; // Функция закрытия боковой панели
+    isSuperAdmin?: boolean; // Флаг для супер-админа (по умолчанию false)
+    onSave: () => void; // Функция сохранения
 }
+
 
 const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                                                                      filters,
                                                                      formData,
                                                                      setFormData,
                                                                      travelDataOld,
-                                                                     onClose,
+                                                                     onClose, // Добавлено onClose
                                                                      isSuperAdmin = false,
                                                                      onSave
                                                                  }) => {
@@ -73,7 +74,20 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            style={[styles.container, isMobile && { minHeight: '100%' }]}
+        >
+            {onClose && isMobile && ( // Показываем кнопку "Закрыть" только на мобильных
+
+                <TouchableOpacity
+                    onPress={() => onClose()}
+                    style={styles.closeIcon}
+                >
+                    <Text style={styles.closeButtonText}>✖</Text>
+                </TouchableOpacity>
+            )}
+
             <Button
                 mode="contained"
                 icon="content-save"
@@ -91,12 +105,6 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                     style={styles.floatingIconButton}
                     >
                     Предпросмотр
-                </Button>
-            )}
-
-            {onClose && (
-                <Button onPress={onClose} style={styles.closeButton}>
-                    Закрыть
                 </Button>
             )}
 
@@ -194,14 +202,37 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 16, backgroundColor: '#fff' },
+    container: {
+        padding: 16,
+        backgroundColor: '#fff',
+        flex: 1 // Исправляем скролл на мобильных
+    },
+    closeButton: {
+        alignSelf: 'flex-end',
+        marginBottom: 12,
+        display: isMobile ? 'flex' : 'none' // Прячем кнопку на десктопе
+    },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     imageUploadWrapper: { alignItems: 'center', marginVertical: 12 },
     inputGroup: { marginBottom: 12 },
     input: { borderWidth: 1, borderColor: '#d1d1d1', padding: 8, borderRadius: 6 },
     label: { fontWeight: 'bold', marginBottom: 4 },
     resetButton: { marginTop: 16, borderColor: '#f57c00' },
-    closeButton: { alignSelf: 'flex-end', marginBottom: 12 },
+    closeIcon: {
+        position: 'absolute',
+        top: -16,
+        right: -14,
+        backgroundColor: 'rgba(255, 0, 0, 0.8)',
+        borderRadius: 12,
+        width: 20, // Уменьшили кнопку
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closeButtonText: {
+        color: '#fff',
+        fontSize: 12, // Уменьшили текст крестика
+    },
     saveButton: {
         backgroundColor: '#f5a623',
         borderRadius: 12,

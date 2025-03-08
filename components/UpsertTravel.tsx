@@ -162,29 +162,32 @@ export default function UpsertTravel() {
                     <View style={styles.mobileFiltersWrapper}>
                         {menuVisible && (
                             <ScrollView style={styles.filtersScroll}>
-                                <FiltersUpsertComponent {...{
-                                    filters,
-                                    travelDataOld,
-                                    formData,
-                                    setFormData,
-                                    isSuperAdmin,
-                                    onSave: handleManualSave
-                                }} />
+                                <FiltersUpsertComponent
+                                    filters={filters}
+                                    formData={formData}
+                                    setFormData={setFormData}
+                                    travelDataOld={travelDataOld}
+                                    onClose={() => setMenuVisible(false)} // Закрываем боковую панель
+                                    isSuperAdmin={isSuperAdmin}
+                                    onSave={handleManualSave}
+                                />
                             </ScrollView>
                         )}
                     </View>
                 ) : (
                     <View style={styles.filtersColumn}>
-                        <FiltersUpsertComponent {...{
-                            filters,
-                            travelDataOld,
-                            formData,
-                            setFormData,
-                            isSuperAdmin,
-                            onSave: handleManualSave
-                        }} />
+                        <FiltersUpsertComponent
+                            filters={filters}
+                            formData={formData}
+                            setFormData={setFormData}
+                            travelDataOld={travelDataOld}
+                            onClose={() => setMenuVisible(false)}
+                            isSuperAdmin={isSuperAdmin}
+                            onSave={handleManualSave}
+                        />
                     </View>
                 )}
+
             </View>
 
             {isMobile && (
@@ -222,7 +225,7 @@ const styles = StyleSheet.create({
     mainWrapperMobile: { flexDirection: 'column' },
     contentColumn: { flex: 1 },
     filtersColumn: { width: 320, borderLeftWidth: 1, padding: 12, borderColor: '#ddd' },
-    filtersScroll: { maxHeight: '60vh' },
+    filtersScroll: { maxHeight: '80vh' },
     mobileFiltersWrapper: { padding: 12 },
     mobileActionBar: {
         position: 'absolute',
