@@ -58,13 +58,11 @@ const TravelDetails: React.FC = () => {
 
   const toggleMenu = useCallback(() => {
     setMenuVisible((prev) => {
-      console.log(`Toggle menu: ${!prev}`);
       return !prev;
     });
   }, []);
 
   const closeMenu = useCallback(() => {
-    console.log('Close menu');
     setMenuVisible(false);
   }, []);
 
@@ -121,71 +119,86 @@ const TravelDetails: React.FC = () => {
 
   const styleHtml = `
   <style>
-    body {
-      font-family: 'Georgia', serif;
-      line-height: 1.6;
-      font-size: 16px;
-      color: #555555;
-      text-align: justify;
-    }
+  body {
+    font-family: 'Georgia', serif;
+    line-height: 1.8;
+    font-size: 18px;
+    color: #444;
+    text-align: justify;
+  }
 
-    h1, h2, h3 {
-      color: #555555;
-      font-weight: bold;
-      margin-bottom: 1rem;
-      text-align: left;
-    }
+  h1, h2, h3 {
+    color: #333;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: left;
+  }
 
-    p {
-      margin: 1.5rem 0;
-      line-height: 1.7;
-      font-size: 18px;
-    }
+  p {
+    margin: 1.2rem 0;
+    font-size: 18px;
+  }
 
+  img {
+    max-width: 45%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+  }
+
+  /* 📌 Текст обтекает изображения */
+  img.left {
+    float: left;
+    margin-right: 20px;
+  }
+
+  img.right {
+    float: right;
+    margin-left: 20px;
+  }
+
+  /* 🖥️ Адаптивность */
+  @media (max-width: 768px) {
     img {
-      display: block;
-      margin: 20px auto;
-      padding: 8px;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.1);
       max-width: 100%;
-      height: auto;
+      float: none;
+      margin: 10px auto;
+      display: block;
     }
+  }
 
-    a {
-      color: #007BFF;
-      text-decoration: none;
-      border-bottom: 2px solid #007BFF;
-      transition: color 0.3s, border-bottom-color 0.3s;
-    }
+  a {
+    color: #007BFF;
+    text-decoration: none;
+    border-bottom: 2px solid #007BFF;
+    transition: color 0.3s, border-bottom-color 0.3s;
+  }
 
-    a:hover {
-      color: #0056b3;
-      border-bottom-color: #0056b3;
-    }
+  a:hover {
+    color: #0056b3;
+    border-bottom-color: #0056b3;
+  }
 
-    p, a, h1, h2, h3 {
-      text-align: justify;
-    }
+  ul, ol {
+    padding-left: 20px;
+    margin: 1.5rem 0;
+  }
 
-    iframe {
-      width: 100%;
-      height: 500px;
-      border-radius: 12px;
-      border: none;
-      margin-top: 20px;
-    }
+  li {
+    margin-bottom: 0.5rem;
+  }
 
-    ul, ol {
-      padding-left: 20px;
-      margin: 1.5rem 0;
-    }
-
-    li {
-      margin-bottom: 0.5rem;
-    }
-  </style>`;
+  /* Стили для iframe */
+  iframe {
+    width: 100%;
+    height: 400px;
+    border-radius: 12px;
+    border: none;
+    margin-top: 20px;
+  }
+</style>
+`;
 
   return (
       <SafeAreaView style={{ flex: 1 }}>

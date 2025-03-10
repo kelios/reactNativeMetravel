@@ -120,9 +120,20 @@ function WebEditor(props: ArticleEditorProps) {
                 }
                 try {
                     const res = await uploadImage(formData);
-                    if (res.url) {
-                        // Добавляем <img src="..." />
-                        handleChange(html + `<img src="${res.url}" alt="img" />`);
+                    if (res?.url) {
+                        const editor = quillRef.current?.getEditor();
+                        if (editor) {
+                            const range = editor.getSelection(); // Получаем позицию курсора
+                            if (range) {
+                                editor.insertEmbed(range.index, 'image', res.url); // Вставляем картинку
+
+                                // Устанавливаем стили через <img> тег
+                                const img = editor.root.querySelector(`img[src="${res.url}"]`);
+                                if (img) {
+                                    img.classList.add('editor-image');
+                                }
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Ошибка загрузки картинки', error);

@@ -87,10 +87,10 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     />
                 </View>
 
-                {renderEditorSection('Описание', formData.description, (val) => handleChange('description', val))}
-                {renderEditorSection('Плюсы', formData.plus, (val) => handleChange('plus', val))}
-                {renderEditorSection('Минусы', formData.minus, (val) => handleChange('minus', val))}
-                {renderEditorSection('Рекомендации', formData.recommendation, (val) => handleChange('recommendation', val))}
+                {renderEditorSection('Описание', formData.description, (val) => handleChange('description', val),formData.id)}
+                {renderEditorSection('Плюсы', formData.plus, (val) => handleChange('plus', val),formData.id)}
+                {renderEditorSection('Минусы', formData.minus, (val) => handleChange('minus', val),formData.id)}
+                {renderEditorSection('Рекомендации', formData.recommendation, (val) => handleChange('recommendation', val),formData.id)}
 
             </ScrollView>
         </SafeAreaView>
@@ -98,12 +98,13 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
 };
 
 // Универсальная функция для секции редактора
-const renderEditorSection = (title: string, content: string, onChange: (val: string) => void) => (
+const renderEditorSection = (title: string, content: string, onChange: (val: string) => void, idTravel?: string) => (
     <View style={styles.sectionEditor}>
         <ArticleEditor
             content={content}
             onChange={onChange}
             uploadUrl={UPLOAD_IMAGE}
+            idTravel={idTravel}
         />
     </View>
 );
