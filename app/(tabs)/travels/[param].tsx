@@ -25,12 +25,10 @@ import SideBarTravel from '@/components/SideBarTravel';
 import NearTravelList from '@/components/NearTravelList';
 import PopularTravelList from '@/components/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Импорт иконок
+import CustomImageRenderer from '@/components/CustomImageRenderer';
 
 const TravelDetails: React.FC = () => {
   const { param } = useLocalSearchParams();
-  console.log('param');
-
   const numericId = Number(param);
   const isNumeric = !isNaN(numericId);
 
@@ -52,7 +50,6 @@ const TravelDetails: React.FC = () => {
   const theme = useTheme();
 
   useEffect(() => {
-    console.log(`isMobile: ${isMobile}, menuVisible: ${menuVisible}`);
     setMenuVisible(!isMobile);
   }, [isMobile]);
 
@@ -101,6 +98,10 @@ const TravelDetails: React.FC = () => {
       []
   );
 
+  const renderers = {
+    img: CustomImageRenderer,
+  };
+
   if (!travel) {
     return (
         <View style={styles.loadingContainer}>
@@ -116,89 +117,6 @@ const TravelDetails: React.FC = () => {
           : (travel.gallery || []).map((item) => item?.url);
 
   const hasGallery = Array.isArray(gallery) && gallery?.length > 0;
-
-  const styleHtml = `
-  <style>
-  body {
-    font-family: 'Georgia', serif;
-    line-height: 1.8;
-    font-size: 18px;
-    color: #444;
-    text-align: justify;
-  }
-
-  h1, h2, h3 {
-    color: #333;
-    font-weight: bold;
-    margin-bottom: 1rem;
-    text-align: left;
-  }
-
-  p {
-    margin: 1.2rem 0;
-    font-size: 18px;
-  }
-
-  img {
-    max-width: 45%;
-    height: auto;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    margin: 10px;
-  }
-
-  /* 📌 Текст обтекает изображения */
-  img.left {
-    float: left;
-    margin-right: 20px;
-  }
-
-  img.right {
-    float: right;
-    margin-left: 20px;
-  }
-
-  /* 🖥️ Адаптивность */
-  @media (max-width: 768px) {
-    img {
-      max-width: 100%;
-      float: none;
-      margin: 10px auto;
-      display: block;
-    }
-  }
-
-  a {
-    color: #007BFF;
-    text-decoration: none;
-    border-bottom: 2px solid #007BFF;
-    transition: color 0.3s, border-bottom-color 0.3s;
-  }
-
-  a:hover {
-    color: #0056b3;
-    border-bottom-color: #0056b3;
-  }
-
-  ul, ol {
-    padding-left: 20px;
-    margin: 1.5rem 0;
-  }
-
-  li {
-    margin-bottom: 0.5rem;
-  }
-
-  /* Стили для iframe */
-  iframe {
-    width: 100%;
-    height: 400px;
-    border-radius: 12px;
-    border: none;
-    margin-top: 20px;
-  }
-</style>
-`;
 
   return (
       <SafeAreaView style={{ flex: 1 }}>
@@ -286,22 +204,27 @@ const TravelDetails: React.FC = () => {
                       <Card style={styles.card}>
                         <Card.Content>
                           <Title style={styles.cardTitle}>{travel.name}</Title>
-
                           <RenderHTML
-                              source={{ html: styleHtml + travel.description }}
                               contentWidth={width - 40}
-                              customHTMLElementModels={{ iframe: iframeModel }}
+                              source={{ html: travel.description }}
                               WebView={WebView}
-                              baseStyle={{ fontFamily: 'Georgia', color: '#555555' }}
+                              customHTMLElementModels={{ iframe: iframeModel }}
+                              renderers={{ img: CustomImageRenderer }}
+                              baseStyle={{ fontFamily: 'Georgia', color: '#555555', textAlign: 'justify' }}
                               tagsStyles={{
-                                p: { marginTop: 15, marginBottom: 0 },
-                                iframe: { height: 500, width: '100%' },
+                                p: {
+                                  marginVertical: 5,
+                                },
+                                iframe: { width: '100%', height: 500 },
                                 h1: { fontFamily: 'Georgia', color: '#555555' },
                                 h2: { fontFamily: 'Georgia', color: '#555555' },
                                 h3: { fontFamily: 'Georgia', color: '#555555' },
                                 a: { fontFamily: 'Georgia', color: '#007BFF' },
                               }}
+                              enableExperimentalMarginCollapsing={true}
+                              enableExperimentalBRCollapsing={true}
                           />
+
                         </Card.Content>
                       </Card>
                     </View>
@@ -459,6 +382,11 @@ const styles = StyleSheet.create({
   pointListContainer: {
     width: '100%',
     marginTop: 20,
+  },
+  imageContainer: {
+    width: '50%',
+    padding: 10,
+    alignSelf: 'flex-start',
   },
 });
 
