@@ -6,7 +6,7 @@ export type Travel = {
     travel_image_thumb_url: string
     travel_image_thumb_small_url: string
     url: string
-
+    youtube_link: string
     userName: string
     description: string
     cityName: string

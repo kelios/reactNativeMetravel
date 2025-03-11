@@ -5,6 +5,7 @@ import { View, TouchableOpacity, StyleSheet, Linking, Image } from 'react-native
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Travel } from '@/src/types/types';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type SideBarTravelProps = {
     handlePress: (ref: React.RefObject<View>) => () => void;
@@ -13,15 +14,18 @@ type SideBarTravelProps = {
     travel: Travel;
     refs: {
         galleryRef: React.RefObject<View>;
+        videoRef: React.RefObject<View>;
         descriptionRef: React.RefObject<View>;
         mapRef: React.RefObject<View>;
         pointsRef: React.RefObject<View>;
         nearRef: React.RefObject<View>;
         popularRef: React.RefObject<View>;
     };
+    isSuperuser: boolean;
+    storedUserId?: string;
 };
 
-const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMenu, isMobile, travel, refs }) => {
+const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMenu, isMobile, travel, refs, isSuperuser, storedUserId }) => {
     const theme = useTheme();
 
     const handlePressUserTravel = useCallback(() => {
@@ -29,10 +33,18 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
         Linking.openURL(url);
     }, [travel.userIds]);
 
+    const handleEditPress = useCallback(() => {
+        const url = `/travel/${travel.id}`;
+        Linking.openURL(url);
+    }, [travel.id]);
+
     const gallery =
         process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true'
             ? travel.gallery
             : (travel.gallery || []).map((item) => item?.url);
+
+    const canEdit = isSuperuser || storedUserId === travel.userIds?.toString();
+
 
     return (
         <View style={styles.sideMenu}>
@@ -51,6 +63,21 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
                 </TouchableOpacity>
             )}
 
+            {travel.youtube_link && (
+                <TouchableOpacity
+                    style={styles.linkButton}
+                    onPress={() => {
+                        handlePress(refs.videoRef)();
+                        if (isMobile) closeMenu();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Видео"
+                >
+                    <MaterialIcons name="ondemand-video" size={24} color="#6B4F4F" />
+                    <Text style={styles.linkText}>Видео</Text>
+                </TouchableOpacity>
+            )}
+
             {travel.description && (
                 <TouchableOpacity
                     style={styles.linkButton}
@@ -65,6 +92,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
                     <Text style={styles.linkText}>Описание</Text>
                 </TouchableOpacity>
             )}
+
 
             <TouchableOpacity
                 style={styles.linkButton}
@@ -132,6 +160,18 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
                         <MaterialIcons name="image" size={100} color="#ccc" />
                     )}
                 </View>
+                {canEdit && (
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={handleEditPress}
+                        accessibilityRole="button"
+                        accessibilityLabel="Редактировать статью"
+                        activeOpacity={0.7}
+                    >
+                        <MaterialIcons name="edit" size={20} color="#ffffff" />
+                        <Text style={styles.editButtonText}>Редактировать</Text>
+                    </TouchableOpacity>
+                )}
                 <View style={styles.viewerCount}>
                     <MaterialIcons name="visibility" size={20} color="#6B4F4F" />
                     <Text style={[styles.viewerText, { color: theme.colors.text }]}>
@@ -249,6 +289,26 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#ddd',
     },
+    editButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'center',
+        marginVertical: 10,
+        backgroundColor: '#6B4F4F',
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 20,
+        elevation: 3,
+    },
+
+    editButtonText: {
+        color: '#ffffff',
+        fontSize: 15,
+        marginLeft: 8,
+        fontFamily: 'Georgia',
+        fontWeight: '500',
+    },
+
 });
 
 export default SideBarTravel;

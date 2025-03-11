@@ -10,7 +10,7 @@ import {
   SafeAreaView,
   Pressable,
   TouchableOpacity,
-  Text,
+  Text, Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Travel } from '@/src/types/types';
@@ -27,6 +27,7 @@ import PopularTravelList from '@/components/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
 import CustomImageRenderer from '@/components/CustomImageRenderer';
 import Icon from "react-native-vector-icons/MaterialIcons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TravelDetails: React.FC = () => {
   const { param } = useLocalSearchParams();
@@ -42,6 +43,7 @@ const TravelDetails: React.FC = () => {
 
   // Рефы для секций
   const galleryRef = useRef<View>(null);
+  const videoRef = useRef<View>(null);
   const descriptionRef = useRef<View>(null);
   const mapRef = useRef<View>(null);
   const pointsRef = useRef<View>(null);
@@ -49,6 +51,19 @@ const TravelDetails: React.FC = () => {
   const popularRef = useRef<View>(null);
 
   const theme = useTheme();
+  const [isSuperuser, setIsSuperuser] = useState(false);
+  const [storedUserId, setStoredUserId] = useState(null);
+
+  useEffect(() => {
+    const checkSuperuser = async () => {
+      const flag = await AsyncStorage.getItem('isSuperuser');
+      const storedUserId = await AsyncStorage.getItem('userId');
+      setStoredUserId(storedUserId);
+      setIsSuperuser(flag === 'true');
+    };
+    checkSuperuser();
+  }, []);
+
 
   useEffect(() => {
     setMenuVisible(!isMobile);
@@ -119,6 +134,13 @@ const TravelDetails: React.FC = () => {
 
   const hasGallery = Array.isArray(gallery) && gallery?.length > 0;
 
+  const convertYouTubeLink = (url: string): string | null => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  };
+  const embedUrl = convertYouTubeLink(travel.youtube_link);
+  console.log(travel.youtube_link+'-----------'+embedUrl);
+
   return (
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
@@ -146,12 +168,15 @@ const TravelDetails: React.FC = () => {
                         travel={travel}
                         refs={{
                           galleryRef,
+                          videoRef,
                           descriptionRef,
                           mapRef,
                           pointsRef,
                           nearRef,
                           popularRef,
                         }}
+                        isSuperuser={isSuperuser}
+                        storedUserId = {storedUserId}
                     />
                 )}
               </View>
@@ -164,12 +189,15 @@ const TravelDetails: React.FC = () => {
                     travel={travel}
                     refs={{
                       galleryRef,
+                      videoRef,
                       descriptionRef,
                       mapRef,
                       pointsRef,
                       nearRef,
                       popularRef,
                     }}
+                    isSuperuser={isSuperuser}
+                    storedUserId = {storedUserId}
                 />
               </View>
           )}
@@ -199,6 +227,22 @@ const TravelDetails: React.FC = () => {
                     </View>
                 )}
 
+                {/* youtube_link с рефом */}
+                {travel.youtube_link ? (
+                    <View ref={videoRef} style={{ height: 600, width:600 }}>
+                      {Platform.OS === "web" ? (
+                          <iframe
+                              src={embedUrl}
+                              width="100%"
+                              height="100%"
+                              style={{ border: "none", flex: 1 }}
+                          />
+                      ) : (
+                          <WebView source={{ uri: embedUrl }} style={{ flex: 1 }} />
+                      )}
+                    </View>
+                ) : null}
+
                 {/* Описание с рефом */}
                 {travel.description ? (
                     <View ref={descriptionRef}>
@@ -219,7 +263,7 @@ const TravelDetails: React.FC = () => {
                                 fontSize: 18,
                               }}
                               tagsStyles={{
-                                p: { marginVertical: 12 },
+                                p: { marginVertical: 12},
                                 ul: { marginVertical: 10 },
                                 li: { marginVertical: 6 },
                                 iframe: { width: '100%', height: 500 },
