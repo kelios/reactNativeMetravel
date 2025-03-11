@@ -9,6 +9,7 @@ import {
     useWindowDimensions,
 } from 'react-native';
 import MultiSelect from 'react-native-multiple-select';
+import {CheckBox} from "react-native-elements";
 
 const FiltersComponent = ({
                               filters,
@@ -18,14 +19,30 @@ const FiltersComponent = ({
                               handleApplyFilters,
                               resetFilters,
                               closeMenu,
+                              isSuperuser,
                           }) => {
     const { width } = useWindowDimensions();
     const isMobile = width <= 768;
 
     const [yearInput, setYearInput] = useState(filterValue.year || '');
+    const [showModerationPending, setShowModerationPending] = useState(false);
 
     const applyFilters = () => {
-        handleApplyFilters(yearInput);
+        const updatedFilters = {
+            ...filterValue,
+            year: yearInput,
+            showModerationPending: showModerationPending ?? false, // ✅ Гарантируем наличие флага
+        };
+
+        if (showModerationPending) {
+            updatedFilters.publish = 1;
+            updatedFilters.moderation = 0;
+        } else {
+            delete updatedFilters.publish;
+            delete updatedFilters.moderation;
+        }
+
+        handleApplyFilters(updatedFilters); // ✅ Теперь передаем полный объект фильтров
         if (isMobile) closeMenu();
     };
 
@@ -88,6 +105,20 @@ const FiltersComponent = ({
             )}
 
             <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContainer}>
+
+                {isSuperuser && (
+                    <View style={styles.filterBlock}>
+                        <Text style={styles.filterLabel}>Ожидающие модерации</Text>
+                        <View style={styles.checkboxContainer}>
+                            <CheckBox
+                                title="Показать статьи, ожидающие модерации"
+                                checked={showModerationPending} // ✅ Исправлено с `value` на `checked`
+                                onPress={() => setShowModerationPending(!showModerationPending)} // ✅ Добавлено событие нажатия
+                            />
+                        </View>
+                    </View>
+                )}
+
                 {/* Блок чипсов — выбранных фильтров */}
                 <View style={styles.chipsContainer}>
                     {renderSelectedChips()}
@@ -210,6 +241,11 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontWeight: 'bold',
+    },
+    checkboxContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 10,
     },
 });
 

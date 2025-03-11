@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     SafeAreaView,
     View,
@@ -9,33 +9,33 @@ import {
     StyleSheet,
     ScrollView,
 } from 'react-native';
-import { Button as PaperButton } from 'react-native-paper';
+import {Button as PaperButton} from 'react-native-paper';
 import FiltersComponent from '../components/FiltersComponent';
 import PaginationComponent from '../components/PaginationComponent';
-import { fetchTravels, fetchFilters, fetchFiltersCountry, deleteTravel } from '@/src/api/travels';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SearchBar } from 'react-native-elements';
+import {fetchTravels, fetchFilters, fetchFiltersCountry, deleteTravel} from '@/src/api/travels';
+import {useLocalSearchParams, useRouter} from 'expo-router';
+import {SearchBar} from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRoute } from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 import TravelListItem from '../components/TravelListItem';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function ListTravel() {
-    const { width } = useWindowDimensions();
+    const {width} = useWindowDimensions();
     const isMobile = width <= 768;
     const cardWidth = isMobile ? width * 0.9 : 600;
     const numColumns = isMobile ? 1 : 2;
 
     const router = useRouter();
     const route = useRoute();
-    const { user_id } = useLocalSearchParams();
+    const {user_id} = useLocalSearchParams();
 
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
 
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({});
-    const [filterValue, setFilterValue] = useState({});
+    const [filterValue, setFilterValue] = useState({ showModerationPending: false });
     const [travels, setTravels] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -72,17 +72,25 @@ export default function ListTravel() {
 
     const loadFilters = async () => {
         const [filtersData, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
-        setFilters({ ...filtersData, countries });
+        setFilters({...filtersData, countries});
     };
 
     const fetchMore = async () => {
         setIsLoading(true);
         try {
             const params = { ...cleanFilters(filterValue) };
-            if (isMeTravel) params.user_id = userId;
-            else if (isTravelBy) Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
-            else Object.assign(params, { publish: 1, moderation: 1 });
-            if (user_id) params.user_id = user_id;
+
+            const isModerationPending = filterValue?.showModerationPending ?? false;
+            if (isModerationPending) {
+                params.publish = 1;
+                params.moderation = 0;
+            } else {
+                if (isMeTravel) params.user_id = userId;
+                else if (isTravelBy) Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
+                else Object.assign(params, { publish: 1, moderation: 1 });
+
+                if (user_id) params.user_id = user_id;
+            }
 
             const data = await fetchTravels(currentPage, itemsPerPage, search, params);
             setTravels(data);
@@ -123,11 +131,12 @@ export default function ListTravel() {
                         <FiltersComponent
                             filters={filters}
                             filterValue={filterValue}
-                            onSelectedItemsChange={(field, items) => setFilterValue({ ...filterValue, [field]: items })}
-                            handleTextFilterChange={(year) => setFilterValue({ ...filterValue, year })}
-                            handleApplyFilters={(year) => setFilterValue({ ...filterValue, year })}
+                            onSelectedItemsChange={(field, items) => setFilterValue({...filterValue, [field]: items})}
+                            handleTextFilterChange={(year) => setFilterValue({...filterValue, year})}
+                            handleApplyFilters={(updatedFilters) => setFilterValue(updatedFilters)}
                             resetFilters={() => setFilterValue({})}
                             closeMenu={() => setMenuVisible(false)}
+                            isSuperuser={isSuperuser}
                         />
                     </View>
                 )}
@@ -150,16 +159,16 @@ export default function ListTravel() {
                     />
 
                     {isLoading ? (
-                        <ActivityIndicator size="large" color="#ff7f50" />
+                        <ActivityIndicator size="large" color="#ff7f50"/>
                     ) : travels?.data?.length === 0 ? (
                         <Text>Путешествий не найдено</Text>
                     ) : (
                         <FlatList
                             key={`list-cols-${numColumns}`}
                             numColumns={numColumns}
-                            columnWrapperStyle={numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined}
+                            columnWrapperStyle={numColumns > 1 ? {justifyContent: 'center', gap: 16} : undefined}
                             data={travels?.data || []}
-                            renderItem={({ item }) => (
+                            renderItem={({item}) => (
                                 <View style={{
                                     flex: 1,
                                     maxWidth: '50%', // Сделать карточки шире
@@ -202,8 +211,8 @@ export default function ListTravel() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    contentWrapper: { flexDirection: 'row', flex: 1 },
+    container: {flex: 1},
+    contentWrapper: {flexDirection: 'row', flex: 1},
     sidebar: {
         backgroundColor: '#f8f8f8',
         padding: 10,
@@ -211,9 +220,9 @@ const styles = StyleSheet.create({
         borderRightWidth: 1,
         borderRightColor: '#ddd',
     },
-    content: { flex: 1, padding: 16 },
-    filterButton: { marginBottom: 12, backgroundColor: '#ff7f50' },
-    searchBar: { backgroundColor: 'transparent', marginBottom: 16 },
-    searchInputContainer: { backgroundColor: '#fff', borderRadius: 8, height: 42 },
+    content: {flex: 1, padding: 16},
+    filterButton: {marginBottom: 12, backgroundColor: '#ff7f50'},
+    searchBar: {backgroundColor: 'transparent', marginBottom: 16},
+    searchInputContainer: {backgroundColor: '#fff', borderRadius: 8, height: 42},
 });
 
