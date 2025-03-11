@@ -11,9 +11,6 @@ import {
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Подключаете useAuth, если нужно
-import { useAuth } from '@/context/AuthContext';
-
 // ----- Константы URL (определяются в зависимости от окружения) -----
 let URLAPI = '';
 let SEARCH_TRAVELS_FOR_MAP = '';

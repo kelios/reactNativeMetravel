@@ -11,7 +11,7 @@ import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display'
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
 import CookiePopup from '@/components/CookiePopup';
-import { Text } from 'react-native';
+import { sendAnalyticsEvent } from '@/src/utils/analytics';
 
 export const ErrorBoundary = (props) => <>{props.children}</>;
 
@@ -46,14 +46,18 @@ const theme = {
     },
 };
 
-//Text.defaultProps = Text.defaultProps || {};
-//Text.defaultProps.selectable = true;
 
 export default function RootLayout() {
     const [loaded, error] = useFonts({
         PlayfairDisplay_400Regular,
         ...FontAwesome.font,
     });
+
+    useEffect(() => {
+        if (process.env.EXPO_PUBLIC_IS_LOCAL_API==='false') {
+            sendAnalyticsEvent('app_open', {screen: 'Home'});
+        }
+    }, []);
 
     useEffect(() => {
         if (error) {
