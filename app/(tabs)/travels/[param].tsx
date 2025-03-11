@@ -138,8 +138,6 @@ const TravelDetails: React.FC = () => {
     const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
     return match ? `https://www.youtube.com/embed/${match[1]}` : null;
   };
-  const embedUrl = convertYouTubeLink(travel.youtube_link);
-  console.log(travel.youtube_link+'-----------'+embedUrl);
 
   return (
       <SafeAreaView style={{ flex: 1 }}>
@@ -228,20 +226,20 @@ const TravelDetails: React.FC = () => {
                 )}
 
                 {/* youtube_link с рефом */}
-                {travel.youtube_link ? (
-                    <View ref={videoRef} style={{ height: 600, width:600 }}>
-                      {Platform.OS === "web" ? (
-                          <iframe
-                              src={embedUrl}
-                              width="100%"
-                              height="100%"
-                              style={{ border: "none", flex: 1 }}
-                          />
-                      ) : (
-                          <WebView source={{ uri: embedUrl }} style={{ flex: 1 }} />
-                      )}
-                    </View>
-                ) : null}
+                  {travel.youtube_link && (
+                      <View ref={videoRef} style={[styles.videoContainer, { height: width * 0.56 }]}>
+                          {Platform.OS === 'web' ? (
+                              <iframe
+                                  src={convertYouTubeLink(travel.youtube_link)}
+                                  width="100%"
+                                  height="100%"
+                                  style={{ border: 'none' }}
+                              />
+                          ) : (
+                              <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) }} style={{ flex: 1 }} />
+                          )}
+                      </View>
+                  )}
 
                 {/* Описание с рефом */}
                 {travel.description ? (
@@ -255,6 +253,7 @@ const TravelDetails: React.FC = () => {
                               WebView={WebView}
                               customHTMLElementModels={{ iframe: iframeModel }}
                               renderers={{ img: CustomImageRenderer }}
+                              defaultTextProps={{ selectable: true }}
                               baseStyle={{
                                 fontFamily: 'Georgia',
                                 color: '#555555',
@@ -423,20 +422,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 5, // Поднимаем выше других элементов
   },
   mobileSideMenu: {
     position: 'absolute',
     width: '100%',
     backgroundColor: 'white',
-    zIndex: 999,
-    elevation: 2,
+    zIndex: 1002, // Должно быть выше остального контента
+    elevation: 5, // Тень на Android
     top: 0,
     left: 0,
-    transform: [{ translateX: -1000 }],
+    transform: [{ translateX: -1000 }], // По умолчанию скрыто
+
+    width: '100%', // Используется для мобильной версии
+    maxHeight: '85vh', // Ограничиваем высоту
+    overflowY: 'auto',  // Добавляем прокрутку
+    zIndex: 1001, // Поднимаем выше других элементов
   },
   visibleMobileSideMenu: {
-    transform: [{ translateX: 0 }],
+    transform: [{ translateX: 0 }], // Показываем при нажатии
   },
   desktopSideMenu: {
     width: 300,
@@ -477,6 +481,17 @@ const styles = StyleSheet.create({
     padding: 10,
     alignSelf: 'flex-start',
   },
+    videoContainer: {
+            width: '100%',
+            maxWidth: '80vw', // Адаптивность, ограничение ширины на больших экранах
+            height: 'auto', // Позволяет сохранять пропорции
+            aspectRatio: 16 / 9, // Поддержка 16:9
+            alignSelf: 'center', // Центрирование
+            marginVertical: 20, // Отступы сверху и снизу
+            borderRadius: 10, // Закругленные углы
+            overflow: 'hidden',
+            backgroundColor: '#000', // Фон, если видео не загрузилось
+        }
 });
 
 export default TravelDetails;
