@@ -46,6 +46,12 @@ const FiltersComponent = ({
         if (isMobile) closeMenu();
     };
 
+    const handleResetFilters = () => {
+        setYearInput(''); // Сбрасываем поле года
+        setShowModerationPending(false); // Сбрасываем чекбокс
+        resetFilters(); // Вызываем переданный `resetFilters`
+    };
+
     const renderSelectedChips = () => {
         const allFilters = [
             { field: 'countries', items: filters.countries, label: 'Страны' },
@@ -108,12 +114,15 @@ const FiltersComponent = ({
 
                 {isSuperuser && (
                     <View style={styles.filterBlock}>
-                        <Text style={styles.filterLabel}>Ожидающие модерации</Text>
                         <View style={styles.checkboxContainer}>
                             <CheckBox
                                 title="Показать статьи, ожидающие модерации"
-                                checked={showModerationPending} // ✅ Исправлено с `value` на `checked`
-                                onPress={() => setShowModerationPending(!showModerationPending)} // ✅ Добавлено событие нажатия
+                                checked={showModerationPending}
+                                onPress={() => setShowModerationPending(!showModerationPending)}
+                                containerStyle={styles.checkboxContainer}
+                                textStyle={styles.checkboxText}
+                                checkedColor="#6aaaaa" // Цвет, когда чекбокс включен
+                                uncheckedColor="#6aaaaa" // Цвет, когда чекбокс выключен
                             />
                         </View>
                     </View>
@@ -149,7 +158,7 @@ const FiltersComponent = ({
             </ScrollView>
 
             <View style={[styles.footer, isMobile && styles.footerMobile]}>
-                <TouchableOpacity style={styles.resetButton} onPress={resetFilters}>
+                <TouchableOpacity style={styles.resetButton} onPress={handleResetFilters}>
                     <Text style={styles.buttonText}>Сбросить</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
@@ -243,9 +252,18 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     checkboxContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 10,
+        backgroundColor: 'transparent', // Убираем фон
+        borderWidth: 0, // Убираем рамку
+        padding: 0, // Убираем лишние отступы
+    },
+    checkboxText: {
+        fontSize: 16,
+        color: '#333', // Основной цвет текста
+        fontWeight: '500',
+    },
+    checkboxChecked: {
+        backgroundColor: '#6aaaaa', // Основной цвет сайта
+        borderRadius: 6,
     },
 });
 

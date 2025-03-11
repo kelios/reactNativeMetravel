@@ -134,7 +134,7 @@ export default function ListTravel() {
                             onSelectedItemsChange={(field, items) => setFilterValue({...filterValue, [field]: items})}
                             handleTextFilterChange={(year) => setFilterValue({...filterValue, year})}
                             handleApplyFilters={(updatedFilters) => setFilterValue(updatedFilters)}
-                            resetFilters={() => setFilterValue({})}
+                            resetFilters={() => setFilterValue({ showModerationPending: false, year: '' })}
                             closeMenu={() => setMenuVisible(false)}
                             isSuperuser={isSuperuser}
                         />
