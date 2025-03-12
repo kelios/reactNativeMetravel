@@ -12,12 +12,7 @@ import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
 import CookiePopup from '@/components/CookiePopup';
 import { sendAnalyticsEvent } from '@/src/utils/analytics';
-
-export const ErrorBoundary = (props) => <>{props.children}</>;
-
-export const unstable_settings = {
-    initialRouteName: '(tabs)',
-};
+import { YandexMetricaComponent } from '@/src/utils/YandexMetrica';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,13 +34,12 @@ const theme = {
             level0: 'transparent',
             level1: '#f0f0f0',
             level2: '#e0e0e0',
-            level3: '#d0d0d0',   // вот это критично!
+            level3: '#d0d0d0',
             level4: '#c0c0c0',
             level5: '#b0b0b0',
         },
     },
 };
-
 
 export default function RootLayout() {
     const [loaded, error] = useFonts({
@@ -54,8 +48,8 @@ export default function RootLayout() {
     });
 
     useEffect(() => {
-        if (process.env.EXPO_PUBLIC_IS_LOCAL_API==='false') {
-            sendAnalyticsEvent('app_open', {screen: 'Home'});
+        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'false') {
+            sendAnalyticsEvent('app_open', { screen: 'Home' });
         }
     }, []);
 
@@ -89,6 +83,7 @@ function RootLayoutNav() {
                             options={{ headerShown: false }}
                         />
                     </Stack>
+                    <YandexMetricaComponent />
                 </FiltersProvider>
             </AuthProvider>
             <CookiePopup />
