@@ -1,105 +1,130 @@
+import 'react-native-reanimated';
 import React, { useState } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import {
+    View,
+    Image,
+    StyleSheet,
+    useWindowDimensions,
+    TouchableOpacity,
+    ImageBackground
+} from 'react-native';
+import Carousel from 'react-native-reanimated-carousel';
+import { AntDesign } from '@expo/vector-icons';
 
 interface SliderProps {
-  images: { url: string; id: number }[]; // Изменение типа данных для массива изображений
-  onLayout?: (event: any) => void;
+    images: { url: string; id: number }[];
 }
 
-const Slider: React.FC<SliderProps> = ({ images, onLayout }) => {
-  const countOfImages = images.length - 1;
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const windowDimensions = useWindowDimensions();
+const Slider: React.FC<SliderProps> = ({ images }) => {
+    const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+    const carouselRef = React.useRef<Carousel<any>>(null);
+    const [activeIndex, setActiveIndex] = useState(0);
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
-  };
+    const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
 
-  const handleNext = () => {
-    if (currentIndex < countOfImages) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
+    return (
+        <View style={[styles.container, { height: sliderHeight }]}>
+            {/* Фон сразу меняется без анимации */}
+            <ImageBackground
+                source={{ uri: images[activeIndex]?.url }}
+                style={styles.backgroundImage}
+                blurRadius={10} // Оптимально для слабых устройств
+            />
 
-  return (
-      <View style={styles.container} onLayout={onLayout}>
-        <View
-            style={[
-              styles.imageContainer,
-              {
-                width: windowDimensions.width * 0.9,
-                height: windowDimensions.width * 0.5, // Используем аспектный коэффициент для высоты
-              },
-            ]}
-        >
-          <Image
-              source={{ uri: images[currentIndex].url }} // Используем поле url
-              style={styles.image}
-              resizeMode="contain"
-          />
-          {countOfImages > 0 && (
-              <>
-                <TouchableOpacity
-                    onPress={handlePrevious}
-                    style={[styles.arrow, styles.leftArrow, currentIndex === 0 && { opacity: 0.5 }]}
-                    disabled={currentIndex === 0}
-                >
-                  <Icon name="chevron-left" size={30} color="white" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    onPress={handleNext}
-                    style={[styles.arrow, styles.rightArrow, currentIndex === countOfImages && { opacity: 0.5 }]}
-                    disabled={currentIndex === countOfImages}
-                >
-                  <Icon name="chevron-right" size={30} color="white" />
-                </TouchableOpacity>
-              </>
-          )}
+            {/* Основной карусель слайдер */}
+            <Carousel
+                ref={carouselRef}
+                loop
+                width={windowWidth}
+                height={sliderHeight}
+                autoPlay
+                autoPlayInterval={8000}
+                data={images}
+                scrollAnimationDuration={10}
+                onSnapToItem={(index) => setActiveIndex(index)} // Меняем фон сразу
+                renderItem={({ item }) => (
+                    <View style={styles.imageContainer}>
+                        <Image source={{ uri: item.url }} style={styles.image} resizeMode="contain" />
+                    </View>
+                )}
+            />
+
+            {/* Кнопки навигации */}
+            <TouchableOpacity
+                style={[styles.navButton, { left: 10 }]}
+                onPress={() => carouselRef.current?.prev()}
+            >
+                <AntDesign name="left" size={24} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[styles.navButton, { right: 10 }]}
+                onPress={() => carouselRef.current?.next()}
+            >
+                <AntDesign name="right" size={24} color="white" />
+            </TouchableOpacity>
+
+            {/* Индикатор слайдов */}
+            <View style={styles.pagination}>
+                {images.map((_, index) => (
+                    <View key={index} style={[
+                        styles.dot,
+                        activeIndex === index ? styles.activeDot : null
+                    ]} />
+                ))}
+            </View>
         </View>
-      </View>
-  );
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    marginBottom: 20, // Отступ снизу
-  },
-  imageContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  arrow: {
-    position: 'absolute',
-    top: '50%',
-    transform: [{ translateY: -15 }],
-    zIndex: 2, // Убедиться, что стрелки на переднем плане
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Темный фон для лучшего контраста
-    padding: 10,
-    borderRadius: 20,
-  },
-  leftArrow: {
-    position: 'absolute',
-    left: '15%',
-    top: '50%',
-    transform: [{ translateY: -15 }],
-  },
-  rightArrow: {
-    position: 'absolute',
-    right: '15%',
-    top: '50%',
-    transform: [{ translateY: -15 }],
-  },
+    container: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    backgroundImage: {
+        ...StyleSheet.absoluteFillObject,
+        width: '100%',
+        height: '100%',
+    },
+    imageContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        height: '100%',
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+    },
+    navButton: {
+        position: 'absolute',
+        top: '50%',
+        transform: [{ translateY: -20 }],
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 10,
+        borderRadius: 20,
+    },
+    pagination: {
+        position: 'absolute',
+        bottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        width: '100%',
+    },
+    dot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        marginHorizontal: 5,
+    },
+    activeDot: {
+        backgroundColor: 'white',
+        width: 10,
+        height: 10,
+    },
 });
 
 export default Slider;

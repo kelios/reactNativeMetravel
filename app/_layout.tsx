@@ -13,6 +13,8 @@ import { AuthProvider } from '@/context/AuthContext';
 import CookiePopup from '@/components/CookiePopup';
 import { sendAnalyticsEvent } from '@/src/utils/analytics';
 import { YandexMetricaComponent } from '@/src/utils/YandexMetrica';
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
 
 SplashScreen.preventAutoHideAsync();
 
