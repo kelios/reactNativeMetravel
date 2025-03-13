@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
         { name: 'home', label: 'Путешествия', route: '/' },
         { name: 'globe', label: 'Беларусь', route: '/travelsby' },
         { name: 'map', label: 'Карта', route: '/map' },
-        { name: 'instagram', label: 'Аккаунты в Instagram', route: '/travels/439' },
+        { name: 'instagram', label: 'Аккаунты в Instagram', route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
         { name: 'envelope', label: 'Обратная связь', route: '/contact' },
         { name: 'info-circle', label: 'О сайте', route: '/about' },
     ];

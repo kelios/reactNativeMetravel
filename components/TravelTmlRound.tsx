@@ -48,7 +48,7 @@ const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => router.push(`/travels/${id}`)}>
+      <Pressable onPress={() => router.push(`/travels/${slug}`)}>
         <View style={pointContentStyle}>
           <View style={styles.imageWrapper}>
             <Card.Cover
