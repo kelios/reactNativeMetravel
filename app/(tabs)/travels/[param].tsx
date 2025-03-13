@@ -212,6 +212,7 @@ const TravelDetails: React.FC = () => {
             )}
 
             <ScrollView
+                key={param}
                 style={styles.scrollView}
                 ref={scrollRef}
                 contentContainerStyle={styles.contentContainer}
