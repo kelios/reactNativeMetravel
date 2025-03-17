@@ -25,9 +25,8 @@ import SideBarTravel from '@/components/SideBarTravel';
 import NearTravelList from '@/components/NearTravelList';
 import PopularTravelList from '@/components/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
-import CustomImageRenderer from '@/components/CustomImageRenderer';
-import Icon from "react-native-vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import TravelDescription from "@/components/travel/TravelDescription";
 
 const TravelDetails: React.FC = () => {
   const { param } = useLocalSearchParams();
@@ -113,10 +112,6 @@ const TravelDetails: React.FC = () => {
       },
       []
   );
-
-  const renderers = {
-    img: CustomImageRenderer,
-  };
 
   if (!travel) {
     return (
@@ -242,79 +237,11 @@ const TravelDetails: React.FC = () => {
                       </View>
                   )}
 
-                {/* Описание с рефом */}
+                {/* Описание */}
                 {travel.description ? (
                     <View ref={descriptionRef}>
                       <Card style={styles.card}>
-                        <Card.Content>
-                          <Title style={styles.cardTitle}>{travel.name}</Title>
-                          <RenderHTML
-                              contentWidth={width - 40}
-                              source={{ html: travel.description }}
-                              WebView={WebView}
-                              customHTMLElementModels={{ iframe: iframeModel }}
-                              renderers={{ img: CustomImageRenderer }}
-                              defaultTextProps={{ selectable: true }}
-                              baseStyle={{
-                                fontFamily: 'Georgia',
-                                color: '#555555',
-                                textAlign: 'justify',
-                                lineHeight: 28,
-                                fontSize: 18,
-                              }}
-                              tagsStyles={{
-                                p: { marginVertical: 12},
-                                ul: { marginVertical: 10 },
-                                li: { marginVertical: 6 },
-                                iframe: { width: '100%', height: 500 },
-                                h1: {
-                                  fontFamily: 'Georgia',
-                                  fontSize: 28,
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  marginBottom: 15,
-                                },
-                                h2: {
-                                  fontFamily: 'Georgia',
-                                  fontSize: 24,
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  marginBottom: 12,
-                                },
-                                h3: {
-                                  fontFamily: 'Georgia',
-                                  fontSize: 22,
-                                  fontWeight: 'bold',
-                                  color: '#333333',
-                                  marginBottom: 10,
-                                },
-                                a: {
-                                  fontFamily: 'Georgia',
-                                  color: '#1a73e8',
-                                  textDecorationLine: 'underline',
-                                },
-                                li: {
-                                  marginVertical: 6,
-                                },
-                              }}
-                          />
-
-                          <TouchableOpacity
-                              style={{
-                                position: 'absolute',
-                                bottom: 20,
-                                right: 20,
-                                padding: 12,
-                                backgroundColor: '#6B4F4F',
-                                borderRadius: 50,
-                                elevation: 4,
-                              }}
-                              onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-                              activeOpacity={0.7}
-                          >
-                            <Icon name="arrow-upward" size={24} color="#ffffff" />
-                          </TouchableOpacity>
-                        </Card.Content>
+                      <TravelDescription htmlContent={travel.description} title = {travel.name} />
                       </Card>
                     </View>
                 ) : null}
@@ -492,7 +419,7 @@ const styles = StyleSheet.create({
             borderRadius: 10, // Закругленные углы
             overflow: 'hidden',
             backgroundColor: '#000', // Фон, если видео не загрузилось
-        }
+        },
 });
 
 export default TravelDetails;
