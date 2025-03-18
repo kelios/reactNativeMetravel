@@ -19,7 +19,7 @@ const splitContent = (html: string) => {
 
 const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, title }) => {
     const { width, height } = useWindowDimensions();
-    const pageHeight = useMemo(() => height * 0.8, [height]);
+    const pageHeight = useMemo(() => height * 0.75, [height]);
     const isDesktop = width > 1024;
     const [firstHalf, secondHalf] = useMemo(() => splitContent(htmlContent), [htmlContent]);
 
@@ -84,7 +84,7 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, titl
 const styles = StyleSheet.create({
     container: {
         alignSelf: 'center',
-        width: '90%',
+        width: '100%',
         marginVertical: 20,
         backgroundColor: '#F3EACF',
         borderRadius: 14,

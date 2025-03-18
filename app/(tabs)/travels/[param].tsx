@@ -246,9 +246,9 @@ const TravelDetails: React.FC = () => {
                 {/* Описание */}
                 {travel.description ? (
                     <View ref={descriptionRef}>
-                      <Card style={styles.card}>
+                      <View style={styles.descriptionContainer}>
                       <TravelDescription htmlContent={travel.description} title = {travel.name} />
-                      </Card>
+                      </View>
                     </View>
                 ) : null}
 
@@ -429,6 +429,13 @@ const styles = StyleSheet.create({
             overflow: 'hidden',
             backgroundColor: '#000', // Фон, если видео не загрузилось
         },
+  descriptionContainer: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  }
 });
 
 export default TravelDetails;
