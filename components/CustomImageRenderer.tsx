@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, useWindowDimensions, View } from 'react-native';
+import { Image, useWindowDimensions, View, StyleSheet } from 'react-native';
 import { CustomRenderer } from 'react-native-render-html';
 
 const CustomImageRenderer: CustomRenderer = function CustomImageRenderer({ tnode }) {
@@ -16,18 +16,29 @@ const CustomImageRenderer: CustomRenderer = function CustomImageRenderer({ tnode
     }
 
     return (
-        <View style={{ alignItems: 'center', marginVertical: 10 }}>
-            <Image
-                source={{ uri: tnode.attributes.src }}
-                style={{
-                    width: imageWidth,
-                    height: imageWidth * 0.75, // Сохраняем соотношение 4:3
-                    resizeMode: 'cover',
-                    borderRadius: 10,
-                }}
-            />
-        </View>
+        <View style={[styles.imageContainer]}>
+                <Image
+                    source={{ uri: tnode.attributes.src }}
+                    style={[styles.image, { width: imageWidth, height: imageWidth * 0.75 }]} // Сохраняем соотношение 4:3
+                />
+          </View>
     );
 };
+
+const styles = StyleSheet.create({
+    imageContainer: {
+        alignItems: 'center',
+        marginVertical: 15,
+        padding: 10,
+        position: 'relative',
+    },
+    image: {
+        resizeMode: 'cover',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#5A4232', // Тонкий контур в стиле винтажного фото
+    },
+
+});
 
 export default CustomImageRenderer;

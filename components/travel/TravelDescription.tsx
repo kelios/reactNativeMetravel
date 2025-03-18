@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Platform, View, ScrollView, useWindowDimensions, StyleSheet, Text, Animated, useColorScheme } from 'react-native';
+import { Platform, View, ScrollView, useWindowDimensions, StyleSheet, Text, Animated, useColorScheme, Image } from 'react-native';
 import RenderHTML from 'react-native-render-html';
 import CustomImageRenderer from '@/components/CustomImageRenderer';
 import { iframeModel } from '@native-html/iframe-plugin';
@@ -19,7 +19,6 @@ const splitContent = (html: string) => {
 
 const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, title }) => {
     const { width, height } = useWindowDimensions();
-    const scheme = useColorScheme();
     const pageHeight = useMemo(() => height * 0.75, [height]);
     const isDesktop = width > 1024;
     const [firstHalf, secondHalf] = useMemo(() => splitContent(htmlContent), [htmlContent]);
@@ -46,17 +45,14 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, titl
     }, []);
 
     return (
-        <View style={[
-            styles.container,
-            { height: pageHeight + 80, backgroundColor: scheme === 'dark' ? '#2C2C2C' : '#F7F3ED' }
-        ]}>
-            <Text style={[styles.title, { color: scheme === 'dark' ? '#E6D6C5' : '#3B2C24' }]}>{title}</Text>
+        <View style={[styles.container, { height: pageHeight + 100 }]}>
+            <Text style={styles.title}>{title}</Text>
+            <Image source={require('@/assets/travel-stamp.png')} style={styles.stamp} />
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
-                style={[styles.page, { height: pageHeight }]}
-            >
+                style={[styles.page, { height: pageHeight }]}>
                 <View style={[styles.contentContainer, isDesktop ? styles.bookLayout : styles.singleColumn]}>
                     <View style={[styles.pageSection, styles.pageShadow]}>
                         <RenderHTML
@@ -97,25 +93,35 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         width: '100%',
         marginVertical: 20,
-        borderRadius: 14,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 6,
-        padding: 15,
-    },
-    page: {
         borderRadius: 10,
-        paddingHorizontal: 20,
-        paddingVertical: 15,
+        padding: 20,
+        borderWidth: 3,
+        borderColor: '#A89C94', // Мягкий серо-коричневый тон
+        backgroundColor: '#F5F2EB', // Более спокойный кремовый цвет
+        position: 'relative',
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        shadowOffset: { width: 4, height: 4 },
+        backgroundImage: 'url("/mnt/data/A_travel_journal_page_with_a_vintage,_worn_look._T.png")', // Путь к картинке
+        backgroundSize: 'cover', // Текстура будет покрывать весь фон
+        backgroundPosition: 'center',
     },
     title: {
-        fontSize: 30,
+        fontSize: 26,
         fontWeight: 'bold',
-        fontFamily: 'Merriweather',
-        paddingVertical: 10,
+        fontFamily: 'DancingScript',
         textAlign: 'center',
+        color: '#3B2C24',
+        marginBottom: 10,
+    },
+    stamp: {
+        width: 80,
+        height: 80,
+        position: 'absolute',
+        right: 20,
+        top: 10,
+        opacity: 0.5, // Делаем более приглушённым, чтобы выглядел как оттиск
     },
     contentContainer: {
         justifyContent: 'center',
@@ -131,24 +137,26 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 10,
         paddingHorizontal: 20,
+        backgroundColor: '#EEE9E1', // Фон страниц как старая бумага
+        borderWidth: 2,
+        borderColor: '#A89C94',
+        borderRadius: 8,
     },
     pageShadow: {
         shadowColor: '#000',
         shadowOpacity: 0.1,
-        shadowRadius: 12,
-        shadowOffset: { width: 6, height: 6 },
-        backgroundColor: '#FDFBF1',
-        borderRadius: 10,
+        shadowRadius: 8,
+        shadowOffset: { width: 4, height: 4 },
     },
     progressContainer: {
         height: 5,
-        backgroundColor: '#D6C5A1',
+        backgroundColor: '#C2B8A3', // Мягкий серо-бежевый цвет
         borderRadius: 5,
         marginTop: 10,
     },
     progressBar: {
         height: 5,
-        backgroundColor: '#4E3B31',
+        backgroundColor: '#6B5A50', // Темно-коричневый, чтобы выделялся
         borderRadius: 5,
     },
     pageText: {
@@ -156,6 +164,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
         marginTop: 5,
+        fontFamily: 'Courier',
+        color: '#5A4232',
     }
 });
 
