@@ -42,12 +42,11 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, titl
                 showsVerticalScrollIndicator={true}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
-                style={[styles.page, { height: pageHeight }]}
-            >
-                <View style={[styles.contentContainer, isDesktop && styles.bookLayout]}>
-                    <View style={[styles.pageLeft, styles.pageShadow]}>
+                style={[styles.page, { height: pageHeight }]}>
+                <View style={[styles.contentContainer, isDesktop ? styles.bookLayout : styles.singleColumn]}>
+                    <View style={[styles.pageSection, styles.pageShadow]}>
                         <RenderHTML
-                            contentWidth={width / 2 - 80}
+                            contentWidth={isDesktop ? width / 2 - 80 : width - 40}
                             source={{ html: firstHalf }}
                             WebView={WebView}
                             customHTMLElementModels={{ iframe: iframeModel }}
@@ -57,18 +56,20 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, titl
                             tagsStyles={styles.tagStyles}
                         />
                     </View>
-                    <View style={[styles.pageRight, styles.pageShadow]}>
-                        <RenderHTML
-                            contentWidth={width / 2 - 80}
-                            source={{ html: secondHalf }}
-                            WebView={WebView}
-                            customHTMLElementModels={{ iframe: iframeModel }}
-                            renderers={{ img: CustomImageRenderer }}
-                            defaultTextProps={{ selectable: true }}
-                            baseStyle={styles.baseText}
-                            tagsStyles={styles.tagStyles}
-                        />
-                    </View>
+                    {isDesktop && (
+                        <View style={[styles.pageSection, styles.pageShadow]}>
+                            <RenderHTML
+                                contentWidth={width / 2 - 80}
+                                source={{ html: secondHalf }}
+                                WebView={WebView}
+                                customHTMLElementModels={{ iframe: iframeModel }}
+                                renderers={{ img: CustomImageRenderer }}
+                                defaultTextProps={{ selectable: true }}
+                                baseStyle={styles.baseText}
+                                tagsStyles={styles.tagStyles}
+                            />
+                        </View>
+                    )}
                 </View>
             </ScrollView>
             <View style={styles.progressContainer}>
@@ -114,56 +115,19 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         textAlign: 'center',
     },
-    progressContainer: {
-        height: 6,
-        width: '90%',
-        backgroundColor: '#E0DCD3',
-        borderRadius: 3,
-        marginTop: 10,
-        overflow: 'hidden',
-        alignSelf: 'center',
-    },
-    progressBar: {
-        height: '100%',
-        backgroundColor: '#8B5E3C',
-    },
-    pageText: {
-        textAlign: 'center',
-        fontSize: 14,
-        color: '#5A4238',
-        marginTop: 8,
-        fontFamily: 'Georgia',
-    },
-    baseText: {
-        fontFamily: 'Georgia',
-        fontSize: 18,
-        lineHeight: 28,
-        color: '#4E3B31',
-        textAlign: 'justify',
-    },
     contentContainer: {
-        flexDirection: 'row',
         justifyContent: 'center',
     },
     bookLayout: {
         flexDirection: 'row',
-        backgroundColor: '#FDFBF1',
-        borderRadius: 12,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 8 },
     },
-    pageLeft: {
-        flex: 1,
-        paddingRight: 20,
-        borderRightWidth: 3,
-        borderRightColor: '#C2A68E',
+    singleColumn: {
+        flexDirection: 'column',
     },
-    pageRight: {
+    pageSection: {
         flex: 1,
-        paddingLeft: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
     },
     pageShadow: {
         shadowColor: '#000',
