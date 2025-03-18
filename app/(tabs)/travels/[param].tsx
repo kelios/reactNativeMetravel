@@ -1,6 +1,6 @@
 // TravelDetails.tsx
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
 import {
   View,
   ScrollView,
@@ -34,8 +34,11 @@ const TravelDetails: React.FC = () => {
   const isNumeric = !isNaN(numericId);
 
   const [travel, setTravel] = useState<Travel | null>(null);
-  const { width } = useWindowDimensions();
+  const { width,height } = useWindowDimensions();
   const isMobile = width <= 768;
+
+  const pageHeight = useMemo(() => height * 0.7, [height]);
+
 
   const [menuVisible, setMenuVisible] = useState(!isMobile);
   const scrollRef = useRef<ScrollView>(null);
@@ -224,7 +227,7 @@ const TravelDetails: React.FC = () => {
                 {/* youtube_link с рефом */}
                   {travel.youtube_link && (
                       <Card style={styles.card}>
-                      <View ref={videoRef} style={[styles.videoContainer, { height: width * 0.3 }]}>
+                      <View ref={videoRef} style={[styles.videoContainer, { height: pageHeight }]}>
                           {Platform.OS === 'web' ? (
                               <iframe
                                   src={convertYouTubeLink(travel.youtube_link)}
