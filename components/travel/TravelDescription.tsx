@@ -1,41 +1,39 @@
-import React, { useState } from 'react';
-import { View, ScrollView, useWindowDimensions, StyleSheet, Text } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Platform, View, ScrollView, useWindowDimensions, StyleSheet, Text } from 'react-native';
 import RenderHTML from 'react-native-render-html';
-import { WebView } from 'react-native-webview';
 import CustomImageRenderer from '@/components/CustomImageRenderer';
 import { iframeModel } from '@native-html/iframe-plugin';
 
+const WebView = Platform.OS !== 'web' ? require('react-native-webview').WebView : undefined;
+
 interface TravelDescriptionProps {
     htmlContent: string;
-    title: string
+    title: string;
 }
 
-const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent,title }) => {
+const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, title }) => {
     const { width, height } = useWindowDimensions();
-    const pageHeight = height * 0.7;
-    const [currentPage, setCurrentPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(1);
+    const pageHeight = useMemo(() => height * 0.7, [height]);
 
-    const handleScroll = (event: any) => {
-        const offsetY = event.nativeEvent.contentOffset.y;
-        setCurrentPage(Math.floor(offsetY / pageHeight));
-    };
+    const [scrollPercent, setScrollPercent] = useState(0);
 
-    const handleContentSizeChange = (_: number, contentHeight: number) => {
-        setTotalPages(Math.ceil(contentHeight / pageHeight));
-    };
+    const handleScroll = useCallback((event: any) => {
+        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+        const visibleHeight = layoutMeasurement.height;
+        const totalHeight = contentSize.height - visibleHeight;
+        const currentOffset = contentOffset.y;
 
-    const progressPercent = ((currentPage + 1) / totalPages) * 100;
+        const percent = totalHeight > 0 ? (currentOffset / totalHeight) * 100 : 0;
+        setScrollPercent(Math.min(Math.max(percent, 0), 100));
+    }, []);
 
     return (
         <View style={[styles.container, { height: pageHeight + 60 }]}>
             <Text style={styles.title}>{title}</Text>
             <ScrollView
-                pagingEnabled
-                showsVerticalScrollIndicator={false}
+                showsVerticalScrollIndicator={true}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
-                onContentSizeChange={(_, contentHeight) => setTotalPages(Math.ceil(contentHeight / pageHeight))}
                 style={[styles.page, { height: pageHeight }]}
             >
                 <RenderHTML
@@ -51,10 +49,10 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent,title
             </ScrollView>
 
             <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
+                <View style={[styles.progressBar, { width: `${scrollPercent}%` }]} />
             </View>
             <Text style={styles.pageText}>
-                Страница {currentPage + 1} из {totalPages}
+                Прочитано {scrollPercent.toFixed(0)}%
             </Text>
         </View>
     );
@@ -65,7 +63,7 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         width: '90%',
         marginVertical: 20,
-        backgroundColor: '#FAFAFA', // Легкий сероватый фон, внешний контейнер
+        backgroundColor: '#FAFAFA',
         borderRadius: 14,
         shadowColor: '#000',
         shadowOpacity: 0.08,
@@ -79,14 +77,16 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 20,
         paddingVertical: 15,
-        height: '100%',
     },
     title: {
-        fontSize: 24,
-        fontWeight: '600',
-        color: '#444',
-        marginBottom: 15,
+        fontSize: 26,
+        color: '#5A4238',
+        fontWeight: 'bold',
         fontFamily: 'Georgia',
+        paddingVertical: 8,
+        borderBottomWidth: 2,
+        borderColor: '#F0E6DE',
+        marginBottom: 15,
         alignSelf: 'center',
     },
     progressContainer: {
@@ -121,16 +121,6 @@ const styles = StyleSheet.create({
         h2: { fontSize: 20, marginVertical: 8, fontWeight: 'bold', color: '#333' },
         p: { marginVertical: 6 },
         a: { color: '#007aff', textDecorationLine: 'underline' },
-    },
-    title: {
-        fontSize: 26,
-        color: '#5A4238',
-        fontWeight: 'bold',
-        fontFamily: 'Georgia',
-        paddingVertical: 8,
-        borderBottomWidth: 2,
-        borderColor: '#F0E6DE',
-        marginBottom: 15,
     },
 });
 
