@@ -11,8 +11,8 @@ const CustomImageRenderer: CustomRenderer = function CustomImageRenderer({ tnode
             <Image
                 source={{ uri: tnode.attributes.src }}
                 style={{
-                    width: imageWidth,
-                    height: imageWidth * 0.75,
+                    width: imageWidth * 0.6,
+                    height: imageWidth * 0.5,
                     resizeMode: 'cover',
                     borderRadius: 10,
                 }}

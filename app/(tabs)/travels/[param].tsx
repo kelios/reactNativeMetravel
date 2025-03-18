@@ -223,7 +223,8 @@ const TravelDetails: React.FC = () => {
 
                 {/* youtube_link с рефом */}
                   {travel.youtube_link && (
-                      <View ref={videoRef} style={[styles.videoContainer, { height: width * 0.56 }]}>
+                      <Card style={styles.card}>
+                      <View ref={videoRef} style={[styles.videoContainer, { height: width * 0.3 }]}>
                           {Platform.OS === 'web' ? (
                               <iframe
                                   src={convertYouTubeLink(travel.youtube_link)}
@@ -234,7 +235,9 @@ const TravelDetails: React.FC = () => {
                           ) : (
                               <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) }} style={{ flex: 1 }} />
                           )}
+
                       </View>
+                      </Card>
                   )}
 
                 {/* Описание */}
@@ -318,13 +321,16 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     marginVertical: 20,
-    elevation: 5,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    shadowColor: '#000',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Полупрозрачный фон
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backdropFilter: 'blur(10px)',
+    shadowColor: 'rgba(255, 255, 255, 0.6)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
   },
   cardTitle: {
     fontSize: 22,
@@ -411,7 +417,7 @@ const styles = StyleSheet.create({
   },
     videoContainer: {
             width: '100%',
-            maxWidth: '80vw', // Адаптивность, ограничение ширины на больших экранах
+            maxWidth: '60vw', // Адаптивность, ограничение ширины на больших экранах
             height: 'auto', // Позволяет сохранять пропорции
             aspectRatio: 16 / 9, // Поддержка 16:9
             alignSelf: 'center', // Центрирование
