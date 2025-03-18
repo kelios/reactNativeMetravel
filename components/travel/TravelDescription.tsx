@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Platform, View, ScrollView, useWindowDimensions, StyleSheet, Text } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Platform, View, ScrollView, useWindowDimensions, StyleSheet, Text, Animated, useColorScheme } from 'react-native';
 import RenderHTML from 'react-native-render-html';
 import CustomImageRenderer from '@/components/CustomImageRenderer';
 import { iframeModel } from '@native-html/iframe-plugin';
@@ -13,36 +13,50 @@ interface TravelDescriptionProps {
 
 const splitContent = (html: string) => {
     const midpoint = Math.floor(html.length / 2);
-    const breakPoint = html.indexOf('</p>', midpoint) + 4 || midpoint;
+    const breakPoint = html.lastIndexOf('</p>', midpoint) + 4 || midpoint;
     return [html.slice(0, breakPoint), html.slice(breakPoint)];
 };
 
 const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, title }) => {
     const { width, height } = useWindowDimensions();
+    const scheme = useColorScheme();
     const pageHeight = useMemo(() => height * 0.75, [height]);
     const isDesktop = width > 1024;
     const [firstHalf, secondHalf] = useMemo(() => splitContent(htmlContent), [htmlContent]);
 
     const [scrollPercent, setScrollPercent] = useState(0);
+    const animatedScroll = useState(new Animated.Value(0))[0];
+
+    useEffect(() => {
+        animatedScroll.addListener(({ value }) => setScrollPercent(value.toFixed(0)));
+        return () => animatedScroll.removeAllListeners();
+    }, []);
 
     const handleScroll = useCallback((event: any) => {
         const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
         const visibleHeight = layoutMeasurement.height;
         const totalHeight = contentSize.height - visibleHeight;
         const currentOffset = contentOffset.y;
-
         const percent = totalHeight > 0 ? (currentOffset / totalHeight) * 100 : 0;
-        setScrollPercent(Math.min(Math.max(percent, 0), 100));
+        Animated.timing(animatedScroll, {
+            toValue: percent,
+            duration: 150,
+            useNativeDriver: false,
+        }).start();
     }, []);
 
     return (
-        <View style={[styles.container, { height: pageHeight + 60 }]}>
-            <Text style={styles.title}>{title}</Text>
+        <View style={[
+            styles.container,
+            { height: pageHeight + 80, backgroundColor: scheme === 'dark' ? '#2C2C2C' : '#F7F3ED' }
+        ]}>
+            <Text style={[styles.title, { color: scheme === 'dark' ? '#E6D6C5' : '#3B2C24' }]}>{title}</Text>
             <ScrollView
-                showsVerticalScrollIndicator={true}
+                showsVerticalScrollIndicator={false}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
-                style={[styles.page, { height: pageHeight }]}>
+                style={[styles.page, { height: pageHeight }]}
+            >
                 <View style={[styles.contentContainer, isDesktop ? styles.bookLayout : styles.singleColumn]}>
                     <View style={[styles.pageSection, styles.pageShadow]}>
                         <RenderHTML
@@ -53,7 +67,6 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, titl
                             renderers={{ img: CustomImageRenderer }}
                             defaultTextProps={{ selectable: true }}
                             baseStyle={styles.baseText}
-                            tagsStyles={styles.tagStyles}
                         />
                     </View>
                     {isDesktop && (
@@ -66,18 +79,15 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({ htmlContent, titl
                                 renderers={{ img: CustomImageRenderer }}
                                 defaultTextProps={{ selectable: true }}
                                 baseStyle={styles.baseText}
-                                tagsStyles={styles.tagStyles}
                             />
                         </View>
                     )}
                 </View>
             </ScrollView>
             <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { width: `${scrollPercent}%` }]} />
+                <Animated.View style={[styles.progressBar, { width: animatedScroll.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }]} />
             </View>
-            <Text style={styles.pageText}>
-                Прочитано {scrollPercent.toFixed(0)}%
-            </Text>
+            <Text style={styles.pageText}>Прочитано {scrollPercent}%</Text>
         </View>
     );
 };
@@ -87,32 +97,24 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         width: '100%',
         marginVertical: 20,
-        backgroundColor: '#F3EACF',
         borderRadius: 14,
         shadowColor: '#000',
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
         elevation: 6,
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#D6C5A1',
+        padding: 15,
     },
     page: {
-        backgroundColor: '#FCF8E8',
         borderRadius: 10,
         paddingHorizontal: 20,
         paddingVertical: 15,
     },
     title: {
-        fontSize: 28,
-        color: '#4E3B31',
+        fontSize: 30,
         fontWeight: 'bold',
-        fontFamily: 'Georgia',
+        fontFamily: 'Merriweather',
         paddingVertical: 10,
-        borderBottomWidth: 3,
-        borderColor: '#D6C5A1',
-        marginBottom: 20,
         textAlign: 'center',
     },
     contentContainer: {
@@ -120,6 +122,7 @@ const styles = StyleSheet.create({
     },
     bookLayout: {
         flexDirection: 'row',
+        gap: 20,
     },
     singleColumn: {
         flexDirection: 'column',
@@ -137,6 +140,23 @@ const styles = StyleSheet.create({
         backgroundColor: '#FDFBF1',
         borderRadius: 10,
     },
+    progressContainer: {
+        height: 5,
+        backgroundColor: '#D6C5A1',
+        borderRadius: 5,
+        marginTop: 10,
+    },
+    progressBar: {
+        height: 5,
+        backgroundColor: '#4E3B31',
+        borderRadius: 5,
+    },
+    pageText: {
+        textAlign: 'center',
+        fontSize: 16,
+        fontWeight: '500',
+        marginTop: 5,
+    }
 });
 
 export default TravelDescription;
