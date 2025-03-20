@@ -8,8 +8,8 @@ import {
     TouchableOpacity,
     useWindowDimensions,
 } from 'react-native';
-import MultiSelect from 'react-native-multiple-select';
-import {CheckBox} from "react-native-elements";
+import { MultiSelect } from 'react-native-element-dropdown';
+import { CheckBox } from 'react-native-elements';
 
 const FiltersComponent = ({
                               filters,
@@ -31,7 +31,7 @@ const FiltersComponent = ({
         const updatedFilters = {
             ...filterValue,
             year: yearInput,
-            showModerationPending: showModerationPending ?? false, // ✅ Гарантируем наличие флага
+            showModerationPending: showModerationPending ?? false,
         };
 
         if (showModerationPending) {
@@ -42,14 +42,14 @@ const FiltersComponent = ({
             delete updatedFilters.moderation;
         }
 
-        handleApplyFilters(updatedFilters); // ✅ Теперь передаем полный объект фильтров
+        handleApplyFilters(updatedFilters);
         if (isMobile) closeMenu();
     };
 
     const handleResetFilters = () => {
-        setYearInput(''); // Сбрасываем поле года
-        setShowModerationPending(false); // Сбрасываем чекбокс
-        resetFilters(); // Вызываем переданный `resetFilters`
+        setYearInput('');
+        setShowModerationPending(false);
+        resetFilters();
     };
 
     const renderSelectedChips = () => {
@@ -73,7 +73,7 @@ const FiltersComponent = ({
                     <View key={`${field}-${id}`} style={styles.chip}>
                         <Text style={styles.chipText}>{item.name || item.title_ru}</Text>
                         <TouchableOpacity onPress={() => onSelectedItemsChange(field, selected.filter(v => v !== id))}>
-                            <Text style={styles.chipClose}>✖️</Text>
+                            <Text style={styles.chipClose}>✖</Text>
                         </TouchableOpacity>
                     </View>
                 );
@@ -85,16 +85,19 @@ const FiltersComponent = ({
         <View style={styles.filterBlock} key={field}>
             <Text style={styles.filterLabel}>{label}</Text>
             <MultiSelect
-                items={items}
-                uniqueKey={uniqueKey}
-                displayKey={displayKey}
-                onSelectedItemsChange={(selected) => onSelectedItemsChange(field, selected)}
-                selectedItems={filterValue[field] || []}
-                selectText={`Выбрать ${label.toLowerCase()}...`}
-                searchInputPlaceholderText={`Поиск ${label.toLowerCase()}...`}
-                hideTags
-                hideSubmitButton
-                styleDropdownMenuSubsection={styles.multiSelectInput}
+                data={items}
+                labelField={displayKey}
+                valueField={uniqueKey}
+                placeholder={`Выбрать ${label.toLowerCase()}...`}
+                search
+                searchPlaceholder={`Поиск ${label.toLowerCase()}...`}
+                value={filterValue[field] || []}
+                onChange={(selected) => onSelectedItemsChange(field, selected)}
+                style={styles.dropdown}
+                selectedStyle={styles.selectedStyle}
+                itemTextStyle={styles.itemText}
+                selectedTextStyle={styles.selectedText}
+                containerStyle={styles.dropdownContainer}
             />
         </View>
     );
@@ -105,13 +108,12 @@ const FiltersComponent = ({
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Фильтры</Text>
                     <TouchableOpacity onPress={closeMenu}>
-                        <Text style={styles.closeButton}>Закрыть ✖️</Text>
+                        <Text style={styles.closeButton}>✖</Text>
                     </TouchableOpacity>
                 </View>
             )}
 
             <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContainer}>
-
                 {isSuperuser && (
                     <View style={styles.filterBlock}>
                         <View style={styles.checkboxContainer}>
@@ -121,8 +123,8 @@ const FiltersComponent = ({
                                 onPress={() => setShowModerationPending(!showModerationPending)}
                                 containerStyle={styles.checkboxContainer}
                                 textStyle={styles.checkboxText}
-                                checkedColor="#6aaaaa" // Цвет, когда чекбокс включен
-                                uncheckedColor="#6aaaaa" // Цвет, когда чекбокс выключен
+                                checkedColor="#a8c2a8" // Приглушенный зеленый
+                                uncheckedColor="#a8c2a8" // Приглушенный зеленый
                             />
                         </View>
                     </View>
@@ -170,61 +172,95 @@ const FiltersComponent = ({
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, backgroundColor: '#f8f8f8' },
-    headerTitle: { fontWeight: 'bold', fontSize: 18 },
-    closeButton: { color: 'tomato', fontWeight: 'bold' },
+    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    headerTitle: { fontWeight: 'bold', fontSize: 20, color: '#333' },
+    closeButton: { fontSize: 20, color: '#666' },
     scrollArea: { flex: 1 },
-    scrollContainer: { paddingHorizontal: 12, paddingBottom: 12 },
+    scrollContainer: { paddingHorizontal: 16, paddingBottom: 16 },
     chipsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 6,
-        marginBottom: 12,
+        gap: 8,
+        marginBottom: 16,
     },
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E7F3FF',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 16,
+        backgroundColor: '#d4c8b8', // Приглушенный бежевый
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
     },
     chipText: {
+        color: '#333',
         marginRight: 6,
     },
     chipClose: {
-        color: 'tomato',
+        color: '#333',
         fontWeight: 'bold',
     },
     filtersGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
+        gap: 16,
     },
     filterBlock: {
         width: '100%',
-        maxWidth: 360,
     },
     filterLabel: {
-        fontWeight: 'bold',
-        marginBottom: 6,
+        fontWeight: '600',
+        fontSize: 14,
+        color: '#333',
+        marginBottom: 8,
     },
-    multiSelectInput: {
-        backgroundColor: '#f9f9f9',
-        paddingLeft:10
+    dropdown: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+    },
+    dropdownContainer: {
+        borderRadius: 8,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    selectedStyle: {
+        borderRadius: 8,
+        backgroundColor: '#a8c2a8', // Приглушенный зеленый
+    },
+    itemText: {
+        color: '#333',
+    },
+    selectedText: {
+        color: '#333',
     },
     yearInput: {
+        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 6,
-        padding: 8,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 14,
     },
     footer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        padding: 12,
+        padding: 16,
         backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
     },
     footerMobile: {
         position: 'absolute',
@@ -234,36 +270,32 @@ const styles = StyleSheet.create({
     },
     resetButton: {
         flex: 1,
-        backgroundColor: '#ccc',
+        backgroundColor: '#e0e0e0', // Серый
         padding: 12,
         alignItems: 'center',
-        marginRight: 6,
-        borderRadius: 6,
+        borderRadius: 8,
+        marginRight: 8,
     },
     applyButton: {
         flex: 1,
-        backgroundColor: '#6aaaaa',
+        backgroundColor: '#d4c8b8', // Приглушенный бежевый
         padding: 12,
         alignItems: 'center',
-        borderRadius: 6,
+        borderRadius: 8,
     },
     buttonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        color: '#333',
+        fontWeight: '600',
     },
     checkboxContainer: {
-        backgroundColor: 'transparent', // Убираем фон
-        borderWidth: 0, // Убираем рамку
-        padding: 0, // Убираем лишние отступы
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        padding: 0,
     },
     checkboxText: {
-        fontSize: 16,
-        color: '#333', // Основной цвет текста
+        fontSize: 14,
+        color: '#333',
         fontWeight: '500',
-    },
-    checkboxChecked: {
-        backgroundColor: '#6aaaaa', // Основной цвет сайта
-        borderRadius: 6,
     },
 });
 
