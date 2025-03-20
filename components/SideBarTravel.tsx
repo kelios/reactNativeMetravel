@@ -20,6 +20,9 @@ type SideBarTravelProps = {
         pointsRef: React.RefObject<View>;
         nearRef: React.RefObject<View>;
         popularRef: React.RefObject<View>;
+        recommendationRef: React.RefObject<View>;
+        plusRef: React.RefObject<View>;
+        minusRef: React.RefObject<View>;
     };
     isSuperuser: boolean;
     storedUserId?: string;
@@ -92,6 +95,52 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(({ handlePress, closeMe
                     <Text style={styles.linkText}>Описание</Text>
                 </TouchableOpacity>
             )}
+
+            {travel.recommendation && (
+                <TouchableOpacity
+                    style={styles.linkButton}
+                    onPress={() => {
+                        handlePress(refs.recommendationRef)();
+                        if (isMobile) closeMenu();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Перейти к рекомендациям"
+                >
+                    <MaterialIcons name="recommendation" size={24} color="#6B4F4F" />
+                    <Text style={styles.linkText}>Рекомендации</Text>
+                </TouchableOpacity>
+            )}
+
+            {travel.plus && (
+                <TouchableOpacity
+                    style={styles.linkButton}
+                    onPress={() => {
+                        handlePress(refs.plusRef)();
+                        if (isMobile) closeMenu();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Перейти к плюсам"
+                >
+                    <MaterialIcons name="plus" size={24} color="#6B4F4F" />
+                    <Text style={styles.linkText}>Плюсы</Text>
+                </TouchableOpacity>
+            )}
+
+            {travel.minus && (
+                <TouchableOpacity
+                    style={styles.linkButton}
+                    onPress={() => {
+                        handlePress(refs.minusRef)();
+                        if (isMobile) closeMenu();
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Перейти к описанию"
+                >
+                    <MaterialIcons name="minus" size={24} color="#6B4F4F" />
+                    <Text style={styles.linkText}>Минусы</Text>
+                </TouchableOpacity>
+            )}
+
 
 
             <TouchableOpacity

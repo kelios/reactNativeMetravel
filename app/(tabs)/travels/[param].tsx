@@ -51,6 +51,9 @@ const TravelDetails: React.FC = () => {
   const pointsRef = useRef<View>(null);
   const nearRef = useRef<View>(null);
   const popularRef = useRef<View>(null);
+  const recommendationRef = useRef<View>(null);
+  const plusRef = useRef<View>(null);
+  const minusRef = useRef<View>(null);
 
   const theme = useTheme();
   const [isSuperuser, setIsSuperuser] = useState(false);
@@ -191,6 +194,9 @@ const TravelDetails: React.FC = () => {
                       pointsRef,
                       nearRef,
                       popularRef,
+                      recommendationRef,
+                      minusRef,
+                      plusRef
                     }}
                     isSuperuser={isSuperuser}
                     storedUserId = {storedUserId}
@@ -251,6 +257,32 @@ const TravelDetails: React.FC = () => {
                       </View>
                     </View>
                 ) : null}
+
+                {travel.recommendation ? (
+                    <View ref={recommendationRef}>
+                      <View style={styles.descriptionContainer}>
+                        <TravelDescription htmlContent={travel.recommendation} title = 'Рекомендации' />
+                      </View>
+                    </View>
+                ) : null}
+
+                {travel.plus ? (
+                    <View ref={plusRef}>
+                      <View style={styles.descriptionContainer}>
+                        <TravelDescription htmlContent={travel.plus} title = 'Плюсы' />
+                      </View>
+                    </View>
+                ) : null}
+
+                {travel.minus ? (
+                    <View ref={minusRef}>
+                      <View style={styles.descriptionContainer}>
+                        <TravelDescription htmlContent={travel.minus} title = 'Минусы' />
+                      </View>
+                    </View>
+                ) : null}
+
+
 
                 {/* Карта с рефом */}
                 {travel.coordsMeTravel?.length > 0 && (

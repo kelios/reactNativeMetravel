@@ -9,6 +9,9 @@ export type Travel = {
     youtube_link: string
     userName: string
     description: string
+    recommendation: string
+    plus: string
+    minus: string
     cityName: string
     countryName: string
     countUnicIpView: string
