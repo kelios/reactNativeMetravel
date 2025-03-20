@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,34 +7,34 @@ import {
   Pressable,
   Linking,
   Platform,
-  Alert,
 } from 'react-native';
 
-// Для копирования в буфер (Expo). Если не Expo, используйте @react-native-clipboard/clipboard.
-import * as Clipboard from 'expo-clipboard';
-
-// Проверяем, есть ли 'window', чтобы избежать ошибки при SSR или в нативных средах
 const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 
-let MapContainer, TileLayer, Marker, Popup, useMap, L, Icon;
+// Импорты Leaflet и react-leaflet только в веб-среде
+let MapContainer: any, TileLayer: any, Marker: any, Popup: any, useMap: any, L: any, Icon: any, MapRoute: any;
+
 if (isWeb) {
-  // Подгружаем только в браузерной среде
-  MapContainer = require('react-leaflet').MapContainer;
-  TileLayer = require('react-leaflet').TileLayer;
-  Marker = require('react-leaflet').Marker;
-  Popup = require('react-leaflet').Popup;
-  useMap = require('react-leaflet').useMap;
-  L = require('leaflet');
-  Icon = require('leaflet').Icon;
-  require('leaflet/dist/leaflet.css'); // Подключаем стили Leaflet
+  const leaflet = require('leaflet');
+  const reactLeaflet = require('react-leaflet');
+
+  MapContainer = reactLeaflet.MapContainer;
+  TileLayer = reactLeaflet.TileLayer;
+  Marker = reactLeaflet.Marker;
+  Popup = reactLeaflet.Popup;
+  useMap = reactLeaflet.useMap;
+  L = leaflet;
+  Icon = leaflet.Icon;
+
+  require('leaflet/dist/leaflet.css');
+  MapRoute = require('./Map/MapRoute').default;
 }
 
-// Ваш компонент для вывода текстовых полей (не меняется)
 import LabelText from './LabelText';
 
-type Point = {
+export type Point = {
   id: number;
-  coord: string;               // Строка вида "53.9, 27.5"
+  coord: string;
   address: string;
   travelImageThumbUrl: string;
   categoryName: string;
@@ -51,50 +51,55 @@ interface Coordinates {
   longitude: number;
 }
 
-interface TravelProps {
-  travel: TravelPropsType;        // объект с data: Point[]
-  coordinates: Coordinates | null; // начальные координаты
+interface MapClientSideProps {
+  travel: TravelPropsType;
+  coordinates?: Coordinates | null;
+  showRoute?: boolean;
 }
 
+// ✅ Безопасная функция парсинга координат
 const getLatLng = (latlng: string): [number, number] | null => {
-  const [lat, lng] = latlng.split(',').map((coord) => parseFloat(coord.trim()));
-  if (!isNaN(lat) && !isNaN(lng)) {
-    return [lat, lng];
-  }
-  return null;
+  if (!latlng) return null;
+  const [lat, lng] = latlng.split(',').map(Number);
+  return isNaN(lat) || isNaN(lng) ? null : [lat, lng];
 };
 
-/**
- * Компонент FitBoundsOnData:
- *  - Автоматически подгоняет зум (map.fitBounds) под все валидные координаты
- */
-function FitBoundsOnData({ data }: { data: Point[] }) {
+// ✅ Исправленный `FitBoundsOnData`
+const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
+  if (!isWeb) return null;
   const map = useMap();
 
   useEffect(() => {
-    if (!map || !data || !data.length) return;
+    if (!map || !map._loaded || !data?.length) return;
 
-    // Получаем массив координат [ [lat, lng], [lat, lng], ... ]
-    const coords = data
-        .map((point) => getLatLng(point.coord))
-        .filter((coord): coord is [number, number] => Boolean(coord));
-
+    const coords = data.map((p) => getLatLng(p.coord)).filter(Boolean);
     if (!coords.length) return;
 
     const bounds = L.latLngBounds(coords);
-    map.fitBounds(bounds, { padding: [50, 50] });
+    if (bounds.isValid()) {
+      setTimeout(() => {
+        if (map) {
+          map.fitBounds(bounds, { padding: [50, 50] });
+        }
+      }, 100);
+    }
   }, [map, data]);
 
   return null;
-}
+};
 
-const Map: React.FC<TravelProps> = ({ travel, coordinates: propCoordinates }) => {
-  // Если среда не веб, показываем fallback
-  if (!isWeb) {
-    return <Text>Карта доступна только в веб-версии</Text>;
-  }
+const MapClientSideComponent: React.FC<MapClientSideProps> = ({
+                                                                travel,
+                                                                coordinates,
+                                                                showRoute,
+                                                              }) => {
+  if (!isWeb) return <Text>Карта доступна только в веб-версии</Text>;
 
-  // Создаём иконку Leaflet (через useMemo)
+  const travelData = travel?.data || [];
+  const initialCenter: [number, number] = coordinates
+      ? [coordinates.latitude, coordinates.longitude]
+      : [53.8828449, 27.7273595];
+
   const meTravelIcon = useMemo(
       () =>
           new Icon({
@@ -106,116 +111,39 @@ const Map: React.FC<TravelProps> = ({ travel, coordinates: propCoordinates }) =>
       []
   );
 
-  const travelData = travel?.data || [];
-  // Начальные координаты, если не переданы — ставим дефолт
-  const initialCenter: [number, number] = propCoordinates
-      ? [propCoordinates.latitude, propCoordinates.longitude]
-      : [53.8828449, 27.7273595];
-
-  // ==========================
-  //  ЛОГИКА КОПИРОВАНИЯ / ШАРИНГА
-  // ==========================
-  const copyCoords = (coord: string) => {
-    if (!coord) return;
-    Clipboard.setString(coord);
-
-  };
-
-  const shareCoordsTelegram = (coord: string) => {
-    if (!coord) return;
-    const telegramShareUrl =
-        'https://t.me/share/url?url=' + encodeURIComponent(coord) +
-        '&text=' + encodeURIComponent(`Координаты места: ${coord}`);
-    Linking.openURL(telegramShareUrl).catch((err) => {
-      console.error('Failed to open Telegram URL:', err);
-    });
-  };
-
-  // ==========================
-  //  ОБРАБОТКА НАЖАТИЯ ПО СТАТЬЕ
-  // ==========================
-  const handlePressArticle = (point: Point) => {
-    const url = point.articleUrl || point.urlTravel;
-    if (url) {
-      Linking.openURL(url);
-    }
-  };
-
   return (
       <MapContainer
           center={initialCenter}
           zoom={7}
           style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom={true}
+          scrollWheelZoom
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-        {/* Подгоняем зум под все точки */}
         <FitBoundsOnData data={travelData} />
-
+        {showRoute && MapRoute && <MapRoute data={travelData} profile="driving" />}
         {travelData.map((point, index) => {
           const latLng = getLatLng(point.coord);
-          if (!latLng) return null; // пропускаем невалидные координаты
-
+          if (!latLng) return null;
           return (
-              <Marker
-                  key={String(point.id) + index}
-                  position={latLng}
-                  icon={meTravelIcon}
-              >
+              <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
                 <Popup>
-                  {/* СТИЛИЗОВАННАЯ "КАРТОЧКА" ВНУТРИ POPUP */}
                   <View style={styles.popupCard}>
-                    {/* Блок картинки или fallback */}
                     {point.travelImageThumbUrl ? (
-                        <Image
-                            source={{ uri: point.travelImageThumbUrl }}
-                            style={styles.pointImage}
-                        />
+                        <Image source={{ uri: point.travelImageThumbUrl }} style={styles.pointImage} />
                     ) : (
-                        <Text style={styles.fallbackText}>
-                          Нет фото. Нажмите, чтобы открыть статью.
-                        </Text>
+                        <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
                     )}
-
-                    {/* При нажатии на блок открываем статью (если есть url) */}
                     <Pressable
-                        onPress={() => handlePressArticle(point)}
-                        style={({ pressed }) => [
-                          styles.textContainer,
-                          { opacity: pressed ? 0.8 : 1 },
-                        ]}
+                        onPress={() => {
+                          const url = point.articleUrl || point.urlTravel;
+                          if (url) Linking.openURL(url);
+                        }}
+                        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }, styles.textContainer]}
                     >
-                      {point.address && (
-                          <LabelText label="Адрес:" text={point.address} />
-                      )}
-                      {point.coord && (
-                          <LabelText label="Координаты:" text={point.coord} />
-                      )}
-                      {point.categoryName && (
-                          <LabelText label="Категория:" text={point.categoryName} />
-                      )}
+                      {point.address && <LabelText label="Адрес:" text={point.address} />}
+                      {point.coord && <LabelText label="Координаты:" text={point.coord} />}
+                      {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
                     </Pressable>
-
-                    {/* Ряд кнопок (копировать и отправить) */}
-                    <View style={styles.actionsRow}>
-                      <Pressable
-                          onPress={() => copyCoords(point.coord)}
-                          style={styles.actionButton}
-                      >
-                        <Text style={styles.actionButtonText}>Копировать</Text>
-                      </Pressable>
-
-                      <Pressable
-                          onPress={() => shareCoordsTelegram(point.coord)}
-                          style={[
-                            styles.actionButton,
-                            { backgroundColor: '#6AAAAA' },
-                          ]}
-                      >
-                        <Text style={styles.actionButtonText}>Telegram</Text>
-                      </Pressable>
-                    </View>
                   </View>
                 </Popup>
               </Marker>
@@ -225,12 +153,14 @@ const Map: React.FC<TravelProps> = ({ travel, coordinates: propCoordinates }) =>
   );
 };
 
+export default MapClientSideComponent;
+
 const styles = StyleSheet.create({
   popupCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 8,
-    width: 220, // фиксированная ширина "карточки"
+    width: 220,
     maxWidth: 250,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -253,22 +183,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  actionButton: {
-    backgroundColor: '#ff9f5a',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
-  },
 });
-
-export default Map;
