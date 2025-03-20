@@ -77,11 +77,11 @@ const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
 
     const bounds = L.latLngBounds(coords);
     if (bounds.isValid()) {
-      setTimeout(() => {
-        if (map) {
+      requestAnimationFrame(() => {
+        if (map && map._loaded) {
           map.fitBounds(bounds, { padding: [50, 50] });
         }
-      }, 100);
+      });
     }
   }, [map, data]);
 

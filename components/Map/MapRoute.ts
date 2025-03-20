@@ -29,6 +29,17 @@ interface MapRouteProps {
     profile?: string;
 }
 
+useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .leaflet-top, .leaflet-right {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+}, []);
+
 const getLatLng = (coord?: string): [number, number] | null => {
     if (!coord) return null;
     const [lat, lng] = coord.split(',').map(Number);
@@ -50,7 +61,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
     const fitBoundsCalled = useRef(false);
 
     const waypoints = useMemo(() => {
-        console.log("📌 Исходные точки маршрута:", data);
+        //console.log("📌 Исходные точки маршрута:", data);
 
         const points = data
             .map((p) => getLatLng(p.coord))
@@ -60,7 +71,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
         if (points.length < 2) {
             console.warn("⚠ Недостаточно точек для маршрута.");
         } else {
-            console.log("🗺 Генерируем маршрут с точками:", points);
+           // console.log("🗺 Генерируем маршрут с точками:", points);
         }
 
         return points;
@@ -81,7 +92,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
     }, []);
 
     useEffect(() => {
-        if (!map || !map._leaflet_id) {
+        if (!map || !map._leaflet_id || !map.getContainer()) {
             console.warn("⚠ Карта не инициализирована.");
             return;
         }
@@ -115,29 +126,19 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
                 routeControlRef.current = routeControl;
                 console.log("✅ Маршрут успешно создан.");
 
-                // ✅ Проверяем, можно ли вызвать `fitBounds()`
-                if (map.getContainer() && map._leaflet_id && waypoints.length > 0 && !fitBoundsCalled.current) {
-                    console.log("📌 Автоматическое приближение на маршрут...");
-                    fitBoundsCalled.current = true;
-
-                    // Use requestAnimationFrame for better timing
-                    requestAnimationFrame(() => {
-                        if (map && map.getContainer() && map._leaflet_id) {
-                            try {
-                                // Ensure the map is fully initialized
-                                map.invalidateSize();
-                                map.fitBounds(L.latLngBounds(waypoints), { padding: [50, 50] }); // Add padding for better UX
-                                console.log("✅ fitBounds() выполнен успешно.");
-                            } catch (error) {
-                                console.error("❌ Ошибка при выполнении fitBounds():", error);
-                            }
-                        } else {
-                            console.warn("⚠ Карта была удалена до fitBounds().");
+                requestAnimationFrame(() => {
+                    if (map && map.getContainer() && map._leaflet_id) {
+                        try {
+                            map.invalidateSize();
+                            map.fitBounds(L.latLngBounds(waypoints), { padding: [50, 50] });
+                            console.log("✅ fitBounds() выполнен успешно.");
+                        } catch (error) {
+                            console.error("❌ Ошибка при выполнении fitBounds():", error);
                         }
-                    });
-                } else {
-                    console.warn("⚠ Невозможно выполнить fitBounds(), карта не готова.");
-                }
+                    } else {
+                        console.warn("⚠ Карта была удалена до fitBounds().");
+                    }
+                });
             } else {
                 console.error("❌ Не удалось добавить маршрут в карту.");
             }
@@ -149,7 +150,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
             if (routeControlRef.current) {
                 try {
                     console.log("🗑 Попытка удаления маршрута...");
-                    routeControlRef.current.getPlan()?.setWaypoints([]); // Очистка маршрута
+                    routeControlRef.current.getPlan()?.setWaypoints([]);
                     routeControlRef.current.remove();
                     routeControlRef.current = null;
                     console.log("✅ Маршрут успешно удалён.");
@@ -157,7 +158,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
                     console.warn("⚠ Ошибка при удалении маршрута:", error);
                 }
             }
-            fitBoundsCalled.current = false; // Сбрасываем флаг
+            fitBoundsCalled.current = false;
         };
     }, [map, waypoints, meTravelIcon]);
 
