@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute } from '@react-navigation/native';
 import TravelListItem from '../components/TravelListItem';
 import ConfirmDialog from '../components/ConfirmDialog';
-import {Travel} from "@/src/types/types";
+import { Travel } from '@/src/types/types';
 
 export default function ListTravel() {
     const { width } = useWindowDimensions();
@@ -156,6 +156,9 @@ export default function ListTravel() {
                         lightTheme
                         containerStyle={styles.searchBar}
                         inputContainerStyle={styles.searchInputContainer}
+                        inputStyle={[styles.searchInput, { outlineStyle: 'none' }]} // Убираем рамку
+                        searchIcon={{ color: '#333' }} // Цвет иконки поиска
+                        clearIcon={{ color: '#333' }} // Цвет иконки очистки
                     />
 
                     {isLoading ? (
@@ -222,6 +225,20 @@ const styles = StyleSheet.create({
     },
     content: { flex: 1, padding: 16 },
     filterButton: { marginBottom: 12, backgroundColor: '#ff7f50' },
-    searchBar: { backgroundColor: 'transparent', marginBottom: 16 },
-    searchInputContainer: { backgroundColor: '#fff', borderRadius: 8, height: 42 },
+    searchBar: {
+        backgroundColor: 'transparent',
+        marginBottom: 16,
+        borderBottomColor: 'transparent', // Убираем нижнюю границу
+        borderTopColor: 'transparent', // Убираем верхнюю границу
+    },
+    searchInputContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        height: 42,
+        borderWidth: 1, // Добавляем границу
+        borderColor: '#ddd', // Цвет границы
+    },
+    searchInput: {
+        color: '#333', // Цвет текста
+    },
 });

@@ -94,10 +94,9 @@ const FiltersComponent = ({
                 value={filterValue[field] || []}
                 onChange={(selected) => onSelectedItemsChange(field, selected)}
                 style={styles.dropdown}
-                selectedStyle={styles.selectedStyle}
                 itemTextStyle={styles.itemText}
-                selectedTextStyle={styles.selectedText}
                 containerStyle={styles.dropdownContainer}
+                renderSelectedItem={() => <></>} // Исправленный код
             />
         </View>
     );
@@ -172,18 +171,18 @@ const FiltersComponent = ({
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    container: { flex: 1, backgroundColor: '#F7F6F3' }, // Светло-серый фон
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#F2F1EF', // Нежный серо-бежевый
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomColor: '#DAD7D2',
     },
-    headerTitle: { fontWeight: 'bold', fontSize: 20, color: '#333' },
-    closeButton: { fontSize: 20, color: '#666' },
+    headerTitle: { fontWeight: 'bold', fontSize: 20, color: '#5A5149' }, // Темный теплый серый
+    closeButton: { fontSize: 20, color: '#7D7368' },
     scrollArea: { flex: 1 },
     scrollContainer: { paddingHorizontal: 16, paddingBottom: 16 },
     chipsContainer: {
@@ -195,19 +194,22 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#d4c8b8', // Приглушенный бежевый
+        backgroundColor: '#C2B8A3', // Песочный серо-бежевый
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
-    },
-    chipText: {
-        color: '#333',
-        marginRight: 6,
+        cursor: 'pointer', // Делаем курсор указателем
     },
     chipClose: {
-        color: '#333',
+        color: '#FFF',
         fontWeight: 'bold',
+        cursor: 'pointer', // Чтобы крестик выглядел как кнопка
     },
+    chipText: {
+        color: '#FFF',
+        marginRight: 6,
+    },
+
     filtersGrid: {
         gap: 16,
     },
@@ -217,16 +219,16 @@ const styles = StyleSheet.create({
     filterLabel: {
         fontWeight: '600',
         fontSize: 14,
-        color: '#333',
+        color: '#5A5149', // Темный серо-коричневый
         marginBottom: 8,
     },
     dropdown: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFF',
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: '#DAD7D2',
     },
     dropdownContainer: {
         borderRadius: 8,
@@ -238,18 +240,18 @@ const styles = StyleSheet.create({
     },
     selectedStyle: {
         borderRadius: 8,
-        backgroundColor: '#a8c2a8', // Приглушенный зеленый
+        backgroundColor: '#B0A89B', // Приглушенный серо-бежевый
     },
     itemText: {
-        color: '#333',
+        color: '#5A5149',
     },
     selectedText: {
-        color: '#333',
+        color: '#FFF',
     },
     yearInput: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFF',
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: '#DAD7D2',
         borderRadius: 8,
         padding: 12,
         fontSize: 14,
@@ -258,9 +260,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         padding: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#F2F1EF',
         borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
+        borderTopColor: '#DAD7D2',
     },
     footerMobile: {
         position: 'absolute',
@@ -270,7 +272,7 @@ const styles = StyleSheet.create({
     },
     resetButton: {
         flex: 1,
-        backgroundColor: '#e0e0e0', // Серый
+        backgroundColor: '#DAD7D2', // Светло-серый
         padding: 12,
         alignItems: 'center',
         borderRadius: 8,
@@ -278,13 +280,13 @@ const styles = StyleSheet.create({
     },
     applyButton: {
         flex: 1,
-        backgroundColor: '#d4c8b8', // Приглушенный бежевый
+        backgroundColor: '#A89E91', // Спокойный серо-коричневый
         padding: 12,
         alignItems: 'center',
         borderRadius: 8,
     },
     buttonText: {
-        color: '#333',
+        color: '#FFF',
         fontWeight: '600',
     },
     checkboxContainer: {
@@ -294,9 +296,10 @@ const styles = StyleSheet.create({
     },
     checkboxText: {
         fontSize: 14,
-        color: '#333',
+        color: '#5A5149',
         fontWeight: '500',
     },
 });
+
 
 export default FiltersComponent;
