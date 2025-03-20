@@ -9,10 +9,12 @@ import {
 } from "react-native";
 import { Card, Text, Button } from "react-native-paper";
 
-// Цвета, ближе к тому, что видно на скриншоте:
-// (При желании замените на точные значения из макета/дизайна)
+// Цвета
 const brandOrange = "#ff8c49";
 const brandDark = "#333333";
+const background = "#f8f9fa";
+const textPrimary = "#333333";
+const textSecondary = "#666666";
 
 type Point = {
   id: string;
@@ -33,8 +35,6 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
   const isLargeScreen = useMemo(() => width >= 768, [width]);
 
   // Универсальное ограничение списка по высоте:
-  // - Web: 60vh
-  // - iOS/Android: 60% высоты экрана
   const containerStyle = useMemo(() => {
     if (Platform.OS === "web") {
       return {
@@ -83,81 +83,83 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
 
   return (
       <View style={[styles.container, containerStyle]}>
-        <ScrollView contentContainerStyle={styles.scrollArea}>
+        <ScrollView contentContainerStyle={[styles.scrollArea, isLargeScreen && styles.scrollAreaLarge]}>
           {points.map((point) => (
-              <Card key={point.id} style={styles.card} mode="elevated">
-                <View
-                    style={[
-                      styles.cardContent,
-                      { flexDirection: isLargeScreen ? "row" : "column" },
-                    ]}
-                >
-                  {/* Картинка или заглушка */}
-                  {point.travelImageThumbUrl ? (
-                      <Card.Cover
-                          source={{ uri: point.travelImageThumbUrl }}
-                          style={[
-                            styles.cover,
-                            isLargeScreen ? styles.coverLarge : styles.coverSmall,
-                          ]}
-                          resizeMode="cover"
+              <View key={point.id} style={[styles.cardContainer, isLargeScreen && styles.cardContainerLarge]}>
+                <Card style={styles.card} mode="elevated">
+                  <View
+                      style={[
+                        styles.cardContent,
+                        { flexDirection: isLargeScreen ? "row" : "column" },
+                      ]}
+                  >
+                    {/* Картинка или заглушка */}
+                    {point.travelImageThumbUrl ? (
+                        <Card.Cover
+                            source={{ uri: point.travelImageThumbUrl }}
+                            style={[
+                              styles.cover,
+                              isLargeScreen ? styles.coverLarge : styles.coverSmall,
+                            ]}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View
+                            style={[
+                              styles.noPhotoContainer,
+                              isLargeScreen ? styles.coverLarge : styles.coverSmall,
+                            ]}
+                        >
+                          <Text style={styles.noPhotoText}>Нет фото</Text>
+                        </View>
+                    )}
+
+                    {/* Текстовая часть */}
+                    <View style={styles.infoSection}>
+                      <Card.Title
+                          title="Местоположение"
+                          subtitle={point.coord}
+                          titleStyle={styles.cardTitle}
+                          subtitleStyle={styles.cardSubtitle}
                       />
-                  ) : (
-                      <View
-                          style={[
-                            styles.noPhotoContainer,
-                            isLargeScreen ? styles.coverLarge : styles.coverSmall,
-                          ]}
-                      >
-                        <Text style={styles.noPhotoText}>Нет фото</Text>
-                      </View>
-                  )}
 
-                  {/* Текстовая часть */}
-                  <View style={styles.infoSection}>
-                    <Card.Title
-                        title="Местоположение"
-                        subtitle={point.coord}
-                        titleStyle={styles.cardTitle}
-                        subtitleStyle={styles.cardSubtitle}
-                    />
+                      <Card.Content>
+                        <Text style={styles.label}>Адрес:</Text>
+                        <Text style={styles.text}>{point.address}</Text>
 
-                    <Card.Content>
-                      <Text style={styles.label}>Адрес:</Text>
-                      <Text style={styles.text}>{point.address}</Text>
+                        <Text style={styles.label}>Категория:</Text>
+                        <Text style={styles.text}>
+                          {point.categoryName || "Не указано"}
+                        </Text>
+                      </Card.Content>
 
-                      <Text style={styles.label}>Категория:</Text>
-                      <Text style={styles.text}>
-                        {point.categoryName || "Не указано"}
-                      </Text>
-                    </Card.Content>
-
-                    {/** Кнопки (Actions) */}
-                    <Card.Actions style={styles.actions}>
-                      <Button
-                          icon="map-marker"
-                          onPress={() => handleOpenGoogle(point.coord)}
-                          mode="contained"
-                          textColor="#fff"
-                          buttonColor={brandOrange}
-                          style={styles.actionButton}
-                      >
-                        Открыть в Google
-                      </Button>
-                      <Button
-                          icon="send"
-                          onPress={() => handleSendToTelegram(point.coord)}
-                          mode="outlined"
-                          textColor={brandDark}
-                          style={styles.actionButton}
-                          buttonColor="#fff"
-                      >
-                        Скопировать в Telegram
-                      </Button>
-                    </Card.Actions>
+                      {/** Кнопки (Actions) */}
+                      <Card.Actions style={styles.actions}>
+                        <Button
+                            icon="map-marker"
+                            onPress={() => handleOpenGoogle(point.coord)}
+                            mode="contained"
+                            textColor="#fff"
+                            buttonColor={brandOrange}
+                            style={styles.actionButton}
+                        >
+                          Открыть в Google
+                        </Button>
+                        <Button
+                            icon="send"
+                            onPress={() => handleSendToTelegram(point.coord)}
+                            mode="outlined"
+                            textColor={brandDark}
+                            style={styles.actionButton}
+                            buttonColor="#fff"
+                        >
+                          Скопировать в Telegram
+                        </Button>
+                      </Card.Actions>
+                    </View>
                   </View>
-                </View>
-              </Card>
+                </Card>
+              </View>
           ))}
         </ScrollView>
       </View>
@@ -169,37 +171,52 @@ export default PointList;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
+    backgroundColor: background,
+    padding: 10,
   },
   scrollArea: {
     padding: 10,
   },
-  card: {
+  scrollAreaLarge: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  cardContainer: {
+    width: '100%',
+  },
+  cardContainerLarge: {
+    width: '48%', // Две колонки с небольшим отступом
     marginBottom: 12,
-    borderRadius: 8,
+  },
+  card: {
+    borderRadius: 12,
     // Тень (Android)
     elevation: 3,
     // Тень (iOS/Web)
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     backgroundColor: "#fff",
   },
-  cardContent: {},
+  cardContent: {
+    flex: 1,
+  },
   cover: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     overflow: "hidden",
   },
   coverSmall: {
     width: "100%",
-    height: 160,
+    height: 180,
   },
   coverLarge: {
-    width: 220,
-    height: 220,
+    width: 240,
+    height: 240,
     borderTopRightRadius: 0,
-    borderBottomLeftRadius: 8,
+    borderBottomLeftRadius: 12,
     marginRight: 10,
   },
   noPhotoContainer: {
@@ -215,33 +232,35 @@ const styles = StyleSheet.create({
   infoSection: {
     flex: 1,
     justifyContent: "space-between",
+    padding: 16,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
-    color: brandDark,
+    color: textPrimary,
   },
   cardSubtitle: {
     fontSize: 14,
-    color: "#777",
+    color: textSecondary,
   },
   label: {
-    marginTop: 6,
+    marginTop: 8,
     fontSize: 14,
     fontWeight: "600",
-    color: "#444",
+    color: textPrimary,
   },
   text: {
     fontSize: 14,
-    color: "#555",
-    marginTop: 2,
+    color: textSecondary,
+    marginTop: 4,
   },
   actions: {
-    marginTop: 8,
+    marginTop: 12,
     flexWrap: "wrap",
   },
   actionButton: {
     marginRight: 8,
-    marginTop: 4,
+    marginTop: 8,
+    borderRadius: 20,
   },
 });
