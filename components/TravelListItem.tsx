@@ -6,6 +6,8 @@ import {
     Text,
     Image,
     useWindowDimensions,
+    Animated,
+    Easing,
 } from 'react-native';
 import { Card } from 'react-native-paper';
 import { Travel } from '@/src/types/types';
@@ -25,7 +27,6 @@ const placeholderImage = 'https://via.placeholder.com/400x200?text=Нет+фот
 
 const TravelListItem = ({
                             travel,
-                            currentUserId,
                             isSuperuser,
                             onEditPress,
                             onDeletePress,
@@ -35,9 +36,9 @@ const TravelListItem = ({
         slug,
         travel_image_thumb_url,
         name,
-        countryName,
+        countryName = '',
         userName,
-        countUnicIpView,
+        countUnicIpView = 0,
         createdAt,
     } = travel;
 
@@ -46,8 +47,29 @@ const TravelListItem = ({
     const isMetravel = route.name === 'metravel';
     const canEditOrDelete = isMetravel || isSuperuser;
 
-    const countries = (countryName || '').split(',').map((c) => c.trim());
+    const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
     const imageSource = travel_image_thumb_url ? { uri: travel_image_thumb_url } : { uri: placeholderImage };
+
+    // Анимация
+    const scaleValue = new Animated.Value(1);
+
+    const handlePressIn = () => {
+        Animated.timing(scaleValue, {
+            toValue: 0.95,
+            duration: 150,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+        }).start();
+    };
+
+    const handlePressOut = () => {
+        Animated.timing(scaleValue, {
+            toValue: 1,
+            duration: 150,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+        }).start();
+    };
 
     // Динамический расчет размеров карточки
     let cardWidth = width * 0.9;
@@ -63,8 +85,13 @@ const TravelListItem = ({
     }
 
     return (
-        <View style={[styles.cardContainer, { width: cardWidth }]}>
-            <TouchableOpacity onPress={() => router.push(`/travels/${slug}`)}>
+        <Animated.View style={[styles.cardContainer, { width: cardWidth, transform: [{ scale: scaleValue }] }]}>
+            <TouchableOpacity
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={() => router.push(`/travels/${slug}`)}
+                activeOpacity={0.9}
+            >
                 <Card style={styles.card}>
                     <View style={[styles.imageContainer, { height: imageHeight }]}>
                         <Image source={imageSource} style={styles.image} />
@@ -81,11 +108,13 @@ const TravelListItem = ({
                     </View>
 
                     <View style={[styles.content, { height: contentHeight }]}>
-                        <View style={styles.countries}>
-                            {countries.map((country, index) => (
-                                <Text key={index} style={styles.chip}>{country}</Text>
-                            ))}
-                        </View>
+                        {countries.length > 0 && (
+                            <View style={styles.countries}>
+                                {countries.map((country, index) => (
+                                    <Text key={index} style={styles.chip}>{country}</Text>
+                                ))}
+                            </View>
+                        )}
 
                         <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{name}</Text>
 
@@ -93,21 +122,18 @@ const TravelListItem = ({
                             <Text style={styles.meta}>
                                 Автор: <Text style={styles.author}>{userName}</Text>
                             </Text>
-                            <Text style={styles.meta}>👀 {countUnicIpView || 0}</Text>
+                            <Text style={styles.meta}>👀 {countUnicIpView}</Text>
                         </View>
-
-                        <Text style={styles.date}>Опубликовано: {formatDate(createdAt)}</Text>
                     </View>
                 </Card>
             </TouchableOpacity>
-        </View>
+        </Animated.View>
     );
 };
 
 const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU', {
+    return new Date(dateString).toLocaleDateString('ru-RU', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -141,7 +167,6 @@ const styles = StyleSheet.create({
         top: 8,
         right: 8,
         flexDirection: 'row',
-        gap: 8,
     },
     iconButton: {
         backgroundColor: 'rgba(255,255,255,0.9)',
@@ -152,16 +177,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#ddd',
+        marginLeft: 8,
     },
     content: {
         paddingHorizontal: 16,
         paddingVertical: 12,
         justifyContent: 'space-between',
+        overflow: 'hidden',
     },
     countries: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 4,
         marginBottom: 4,
     },
     chip: {
@@ -171,6 +197,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 12,
+        marginRight: 4,
+        marginBottom: 4,
     },
     title: {
         fontSize: 16,

@@ -26,6 +26,7 @@ const FiltersComponent = ({
 
     const [yearInput, setYearInput] = useState(filterValue.year || '');
     const [showModerationPending, setShowModerationPending] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
 
     const applyFilters = () => {
         const updatedFilters = {
@@ -148,11 +149,17 @@ const FiltersComponent = ({
                     <View style={styles.filterBlock}>
                         <Text style={styles.filterLabel}>Год</Text>
                         <TextInput
-                            style={styles.yearInput}
+                            style={[
+                                styles.yearInput,
+                                isFocused && { borderColor: 'gray' } // или любой цвет при фокусе
+                            ]}
                             value={yearInput}
                             onChangeText={setYearInput}
                             placeholder="Введите год"
                             keyboardType="numeric"
+                            underlineColorAndroid="transparent"
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
                         />
                     </View>
                 </View>
@@ -171,7 +178,9 @@ const FiltersComponent = ({
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F7F6F3' }, // Светло-серый фон
+    container: {
+        flex: 1
+    },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -181,10 +190,14 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#DAD7D2',
     },
-    headerTitle: { fontWeight: 'bold', fontSize: 20, color: '#5A5149' }, // Темный теплый серый
+    headerTitle: {
+        fontWeight: 'bold',
+        fontSize: 20,
+        color: '#5A5149'
+    }, // Темный теплый серый
     closeButton: { fontSize: 20, color: '#7D7368' },
     scrollArea: { flex: 1 },
-    scrollContainer: { paddingHorizontal: 16, paddingBottom: 16 },
+    scrollContainer: { paddingHorizontal: 16, paddingBottom: 100 },
     chipsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -194,7 +207,7 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#C2B8A3', // Песочный серо-бежевый
+        backgroundColor: '#6aaaaa', // Песочный серо-бежевый
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
@@ -240,7 +253,7 @@ const styles = StyleSheet.create({
     },
     selectedStyle: {
         borderRadius: 8,
-        backgroundColor: '#B0A89B', // Приглушенный серо-бежевый
+        backgroundColor: '#6aaaaa', // Приглушенный серо-бежевый
     },
     itemText: {
         color: '#5A5149',
@@ -251,10 +264,11 @@ const styles = StyleSheet.create({
     yearInput: {
         backgroundColor: '#FFF',
         borderWidth: 1,
-        borderColor: '#DAD7D2',
+        borderColor: 'lightgray',
         borderRadius: 8,
         padding: 12,
         fontSize: 14,
+        outlineStyle: 'none', // Убирает синюю рамку в Web
     },
     footer: {
         flexDirection: 'row',
@@ -280,7 +294,7 @@ const styles = StyleSheet.create({
     },
     applyButton: {
         flex: 1,
-        backgroundColor: '#A89E91', // Спокойный серо-коричневый
+        backgroundColor: '#6aaaaa',
         padding: 12,
         alignItems: 'center',
         borderRadius: 8,
