@@ -1,44 +1,55 @@
-import React from 'react';
+import React, { forwardRef, useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { MultiSelect } from 'react-native-element-dropdown';
+import { MultiSelect, MultiSelectRef } from 'react-native-element-dropdown';
 
-interface MultiSelectFieldProps<T> {
-    label: string;
-    items: T[];
-    value: string[];
-    onChange: (value: string[]) => void;
-    labelField: keyof T;
-    valueField: keyof T;
-}
+const MultiSelectField = forwardRef(
+    (
+        { label, items, value = [], onChange, labelField, valueField, single, ...rest },
+        ref
+    ) => {
+        const multiSelectRef = useRef(null);
 
-export default function MultiSelectField<T>({
-                                                label,
-                                                items,
-                                                value = [],   // <= всегда массив по умолчанию
-                                                onChange,
-                                                labelField,
-                                                valueField,
-                                            }: MultiSelectFieldProps<T>) {
-    return (
-        <View style={styles.container}>
-            <Text style={styles.label}>{label}</Text>
-            <MultiSelect
-                data={items}
-                value={value} // гарантировано массив
-                labelField={labelField as string}
-                valueField={valueField as string}
-                placeholder="Выберите..."
-                search
-                onChange={onChange}
-                searchPlaceholder="Поиск..."
-                style={styles.dropdown}
-            />
-        </View>
-    );
-}
+        const handleChange = (selectedItems) => {
+            if (single) {
+                // Если single=true, оставляем только последний выбранный элемент
+                const lastSelectedItem = selectedItems[selectedItems.length - 1];
+                onChange(lastSelectedItem ? [lastSelectedItem] : []);
+            } else {
+                // Иначе разрешаем множественный выбор
+                onChange(selectedItems);
+            }
+
+            // Закрываем dropdown после выбора
+            if (multiSelectRef.current) {
+                multiSelectRef.current.close();
+            }
+        };
+
+        return (
+            <View style={styles.container}>
+                <Text style={styles.label}>{label}</Text>
+                <MultiSelect
+                    ref={multiSelectRef}
+                    data={items}
+                    value={value}
+                    labelField={labelField}
+                    valueField={valueField}
+                    placeholder="Выберите..."
+                    search
+                    onChange={handleChange}
+                    searchPlaceholder="Поиск..."
+                    style={styles.dropdown}
+                    {...rest}
+                />
+            </View>
+        );
+    }
+);
 
 const styles = StyleSheet.create({
     container: { marginBottom: 12 },
     label: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
     dropdown: { borderWidth: 1, borderColor: '#d1d1d1', borderRadius: 6, padding: 8 },
 });
+
+export default MultiSelectField;
