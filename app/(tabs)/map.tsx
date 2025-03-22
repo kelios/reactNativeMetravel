@@ -12,6 +12,7 @@ import FiltersPanel from '@/components/MapPage/FiltersPanel';
 import MapPanel from '@/components/MapPage/MapPanel';
 import TravelListPanel from '@/components/MapPage/TravelListPanel';
 import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels';
+import { Provider as PaperProvider } from 'react-native-paper';
 
 export default function MapScreen() {
   const { width } = useWindowDimensions();
@@ -139,6 +140,7 @@ export default function MapScreen() {
   const closeMenu = () => setMenuVisible(false);
 
   return (
+      <PaperProvider>
       <SafeAreaView style={styles.safeContainer}>
         <View style={styles.container}>
           {/* 📌 Панель фильтров над картой (всегда сверху) */}
@@ -183,6 +185,7 @@ export default function MapScreen() {
           </View>
         </View>
       </SafeAreaView>
+      </PaperProvider>
   );
 }
 

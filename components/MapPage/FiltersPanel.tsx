@@ -79,16 +79,18 @@ const FiltersPanel = ({
             </View>
 
             {/* Радиус */}
-                <View style={styles.filterField}>
-                    <RadiusSelect
-                        value={filterValue.radius}
-                        options={filters.radius}
-                        onChange={(value) => onFilterChange('radius', value)}
-                    />
-                </View>
+            <View style={styles.filterField}>
+                <Text style={styles.label}>Радиус (км)</Text>
+                <RadiusSelect
+                    value={filterValue.radius}
+                    options={filters.radius}
+                    onChange={(value) => onFilterChange('radius', value)}
+                />
+            </View>
 
             {/* Адрес */}
             <View style={styles.filterField}>
+                <Text style={styles.label}>Адрес</Text>
                 <TextInput
                     style={styles.input}
                     placeholder="Адрес"
@@ -114,7 +116,9 @@ const FiltersPanel = ({
             {/* Закрыть (моб) */}
             {isMobile && (
                 <View style={styles.filterField}>
-                    <TouchableOpacity style={styles.closeButton} onPress={closeMenu} accessibilityLabel="Close menu">
+                    <TouchableOpacity style={styles.closeButton}
+                                      onPress={closeMenu}
+                                      accessibilityLabel="Close menu">
                         <Icon name="close" size={16} color="white" style={styles.icon} />
                         <Text style={styles.closeButtonText}>Закрыть</Text>
                     </TouchableOpacity>
@@ -152,12 +156,13 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 8,
+        borderColor: '#d1d1d1',
+        padding: 12,
         backgroundColor: 'white',
-        borderRadius: 5,
+        borderRadius: 6,
         fontSize: 14,
     },
+
     resetButton: {
         backgroundColor: '#ff9f5a',
         borderRadius: 5,
@@ -185,6 +190,7 @@ const styles = StyleSheet.create({
     icon: {
         marginRight: 5,
     },
+    label: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
 });
 
 export default React.memo(FiltersPanel);
