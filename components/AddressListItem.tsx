@@ -21,39 +21,6 @@ import * as Clipboard from 'expo-clipboard';
 import LabelText from '@/components/LabelText';
 import { TravelCoords } from '@/src/types/types';
 
-/**
- * Простой компонент для Web, чтобы показывать tooltip при hover.
- * На мобильных платформах hover-события не работают,
- * поэтому tooltip появляться не будет.
- */
-const HoverableTooltip: React.FC<{
-    tooltip: string;
-    children: React.ReactNode;
-}> = ({ tooltip, children }) => {
-    const [hovered, setHovered] = useState(false);
-
-    // Если не web, просто возвращаем children
-    if (Platform.OS !== 'web') {
-        return <>{children}</>;
-    }
-
-    return (
-        <RNView
-            style={{ position: 'relative', display: 'inline-flex' }}
-            // Для Web: onMouseEnter/onMouseLeave
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-        >
-            {children}
-            {hovered && (
-                <RNView style={styles.tooltip}>
-                    <Text style={styles.tooltipText}>{tooltip}</Text>
-                </RNView>
-            )}
-        </RNView>
-    );
-};
-
 type AddressListItemProps = {
     travel: TravelCoords;
 };
@@ -68,19 +35,14 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
         urlTravel,
     } = travel;
 
-    // Ограничение длины координат
     const shortCoord =
-        coord && coord.length > 20
+        typeof coord === 'string' && coord.length > 20
             ? coord.substring(0, 20) + '...'
             : coord || '';
 
-    // Состояние для Snackbar (уведомление внизу экрана)
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
 
-    const onDismissSnackbar = () => setSnackbarVisible(false);
-
-    // Открытие ссылки «Подробнее»
     const handlePressLink = () => {
         const link = articleUrl || urlTravel;
         if (link) {
@@ -90,7 +52,6 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
         }
     };
 
-    // Копирование координат
     const handleCopyCoords = () => {
         if (!coord) return;
         Clipboard.setString(coord);
@@ -98,7 +59,6 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
         setSnackbarVisible(true);
     };
 
-    // Отправка координат в Telegram (через Telegram Share URL)
     const handleShareTelegram = () => {
         if (!coord) return;
         const telegramShareUrl =
@@ -109,16 +69,12 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
         });
     };
 
-    // Цветовая метка для категории
     const categoryBadgeStyle = getCategoryBadgeStyle(categoryName);
-
-    // Тема React Native Paper (если нужно что-то подтянуть)
-    const { colors } = useTheme();
 
     return (
         <>
             <Card style={styles.container} elevation={4}>
-                {/* Картинка или placeholder */}
+                {/* Фото */}
                 {travelImageThumbUrl ? (
                     <Card.Cover
                         source={{ uri: travelImageThumbUrl }}
@@ -129,69 +85,61 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
                     <Image
                         source={require('@/assets/no-data.png')}
                         style={styles.image}
-                        resizeMode="cover"
+                        resizeMode="contain"
                     />
                 )}
 
+                {/* Контент */}
                 <Card.Content style={styles.cardContent}>
-                    {/* Заголовок — адрес */}
-                    {!!address && (
-                        <Text variant="titleMedium" style={styles.title}>
-                            {address}
-                        </Text>
-                    )}
+                    <RNView style={styles.cardInnerWrapper}>
+                        {/* Адрес */}
+                        {!!address && (
+                            <>
+                                <Text
+                                    variant="titleMedium"
+                                    style={styles.title}
+                                    numberOfLines={2}
+                                    ellipsizeMode="tail"
+                                >
+                                    {address}
+                                </Text>
+                                <Divider style={styles.divider} />
+                            </>
+                        )}
 
-                    {!!address && <Divider style={styles.divider} />}
+                        {/* Координаты */}
+                        {!!shortCoord && (
+                            <>
+                                <LabelText
+                                    label="Координаты:"
+                                    text={shortCoord}
+                                    labelStyle={styles.labelText}
+                                    textStyle={styles.labelText}
+                                />
+                                <RNView style={styles.coordsActions}>
+                                    <Tooltip icon="content-copy" onPress={handleCopyCoords} tooltip="Скопировать" />
+                                    <Tooltip icon="send" onPress={handleShareTelegram} tooltip="Отправить в Telegram" />
+                                </RNView>
+                                <Divider style={styles.divider} />
+                            </>
+                        )}
 
-                    {/* Координаты (новая строка) + иконки копирования и шаринга */}
-                    {!!shortCoord && (
-                        <>
-                            <LabelText
-                                label="Координаты:"
-                                text={shortCoord}
-                                labelStyle={styles.labelText}
-                                textStyle={styles.labelText}
-                            />
-                            <RNView style={styles.coordsActions}>
-                                <HoverableTooltip tooltip="Скопировать координаты">
-                                    <IconButton
-                                        icon="content-copy"
-                                        size={20}
-                                        color="#6AAAAA"
-                                        onPress={handleCopyCoords}
-                                        accessibilityLabel="Скопировать координаты"
-                                    />
-                                </HoverableTooltip>
-
-                                <HoverableTooltip tooltip="Поделиться координатами">
-                                    <IconButton
-                                        icon="send"
-                                        size={20}
-                                        color="#6AAAAA"
-                                        onPress={handleShareTelegram}
-                                        accessibilityLabel="Отправить координаты в Telegram"
-                                    />
-                                </HoverableTooltip>
+                        {/* Категория */}
+                        {!!categoryName && (
+                            <RNView style={[styles.categoryWrapper, categoryBadgeStyle]}>
+                                <Text style={styles.categoryText}>{categoryName}</Text>
                             </RNView>
-                            <Divider style={styles.divider} />
-                        </>
-                    )}
-
-                    {/* Категория */}
-                    {!!categoryName && (
-                        <RNView style={[styles.categoryWrapper, categoryBadgeStyle]}>
-                            <Text style={styles.categoryText}>{categoryName}</Text>
-                        </RNView>
-                    )}
+                        )}
+                    </RNView>
                 </Card.Content>
 
-                {/* Кнопка «Подробнее» */}
+                {/* Кнопка Подробнее */}
                 <Card.Actions style={styles.actions}>
                     <Button
                         onPress={handlePressLink}
                         mode="contained"
                         icon="link"
-                        buttonColor="#ff9f5a" // брендовый оранжевый
+                        buttonColor="#ff9f5a"
                         textColor="#fff"
                     >
                         Подробнее
@@ -199,17 +147,12 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
                 </Card.Actions>
             </Card>
 
-            {/* Snackbar для уведомлений (копирование координат) */}
+            {/* Snackbar */}
             <Snackbar
                 visible={snackbarVisible}
-                onDismiss={onDismissSnackbar}
+                onDismiss={() => setSnackbarVisible(false)}
                 duration={2000}
-                action={{
-                    label: 'OK',
-                    onPress: () => {
-                        setSnackbarVisible(false);
-                    },
-                }}
+                action={{ label: 'OK', onPress: () => setSnackbarVisible(false) }}
             >
                 {snackbarMessage}
             </Snackbar>
@@ -217,15 +160,42 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
     );
 };
 
-/**
- * Вычисляем стиль бейджа для категории
- */
-function getCategoryBadgeStyle(category?: string) {
-    if (!category) return {};
-    let backgroundColor = '#bbb';
+const Tooltip = ({
+                     icon,
+                     onPress,
+                     tooltip,
+                 }: {
+    icon: string;
+    onPress: () => void;
+    tooltip: string;
+}) => {
+    const [hovered, setHovered] = useState(false);
 
-    // Примеры назначения цвета по типам
-    switch (category.toLowerCase()) {
+    if (Platform.OS !== 'web') {
+        return (
+            <IconButton icon={icon} size={20} color="#6AAAAA" onPress={onPress} />
+        );
+    }
+
+    return (
+        <RNView
+            style={{ position: 'relative', display: 'inline-flex' }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            <IconButton icon={icon} size={20} color="#6AAAAA" onPress={onPress} />
+            {hovered && (
+                <RNView style={styles.tooltip}>
+                    <Text style={styles.tooltipText}>{tooltip}</Text>
+                </RNView>
+            )}
+        </RNView>
+    );
+};
+
+const getCategoryBadgeStyle = (category?: string) => {
+    let backgroundColor = '#bbb';
+    switch (category?.toLowerCase()) {
         case 'природа':
             backgroundColor = '#4CAF50';
             break;
@@ -235,74 +205,70 @@ function getCategoryBadgeStyle(category?: string) {
         case 'музей':
             backgroundColor = '#9C27B0';
             break;
-        // ...и т. д. на ваше усмотрение
         default:
             backgroundColor = '#ccc';
             break;
     }
-
     return { backgroundColor };
-}
+};
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFF', // Белый фон карточки
+        backgroundColor: '#FFF',
         borderRadius: 12,
         marginVertical: wp(2),
         marginHorizontal: wp(4),
-        overflow: 'hidden', // скругление для изображения
+        overflow: 'hidden',
+        elevation: 4,
     },
     image: {
         width: '100%',
-        height: 180,
+        height: wp(40),
     },
     cardContent: {
-        paddingTop: wp(3),
-        paddingBottom: wp(2),
+        paddingHorizontal: wp(4),
+        paddingVertical: wp(3),
+    },
+    cardInnerWrapper: {
+        flexDirection: 'column',
+        gap: wp(2),
     },
     title: {
         color: '#333',
         fontWeight: '700',
-        marginBottom: 5,
     },
     divider: {
         backgroundColor: '#d1d1d1',
-        marginVertical: wp(1),
         height: 1,
     },
+    coordsActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    labelText: {
+        color: '#333',
+    },
     categoryWrapper: {
-        borderRadius: 8,
+        borderRadius: 6,
         paddingHorizontal: wp(2),
-        paddingVertical: wp(1),
+        paddingVertical: wp(0.5),
         alignSelf: 'flex-start',
-        marginTop: wp(1.5),
+        maxWidth: '90%',
     },
     categoryText: {
         color: '#fff',
-        fontSize: 13,
+        fontSize: wp(3),
+        fontWeight: '500',
     },
     actions: {
         justifyContent: 'flex-end',
         paddingHorizontal: wp(2),
         paddingBottom: wp(2),
     },
-
-    // Новая строка для иконок копирования/шаринга
-    coordsActions: {
-        flexDirection: 'row',
-        marginTop: wp(1),
-        marginBottom: wp(1),
-    },
-
-    // Текст для лейбла и координат
-    labelText: {
-        color: '#333',
-    },
-
-    // Стили для tooltip (только Web)
     tooltip: {
         position: 'absolute',
-        bottom: '100%', // над иконкой
+        bottom: '100%',
         left: 0,
         backgroundColor: '#333',
         paddingVertical: 4,
@@ -313,7 +279,7 @@ const styles = StyleSheet.create({
     },
     tooltipText: {
         color: '#fff',
-        fontSize: 12,
+        fontSize: wp(3),
     },
 });
 

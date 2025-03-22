@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
 
 // Ленивая загрузка компонента карты
 const MapClientSideComponent = React.lazy(() => import('@/components/Map'));
@@ -18,7 +19,7 @@ const MapPanel = ({ travelsData, coordinates, style }) => {
 // Компонент для отображения индикатора загрузки
 const LoadingIndicator = () => (
     <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#ff9f5a" />
+        <ActivityIndicator size="large" color="#ff9f5a" accessibilityLabel="Loading map" />
     </View>
 );
 
@@ -41,4 +42,17 @@ const styles = StyleSheet.create({
     },
 });
 
-export default MapPanel;
+MapPanel.propTypes = {
+    travelsData: PropTypes.array.isRequired,
+    coordinates: PropTypes.shape({
+        latitude: PropTypes.number.isRequired,
+        longitude: PropTypes.number.isRequired,
+    }).isRequired,
+    style: PropTypes.object,
+};
+
+MapPanel.defaultProps = {
+    style: {},
+};
+
+export default React.memo(MapPanel);
