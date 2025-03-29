@@ -468,7 +468,7 @@ export const fetchTravelsForMap = async (
     filter: Record<string, any>,
 ): Promise<TravelsForMap> => {
     try {
-        const radius = filter?.radius?.[0] ?? 60;
+        const radius = filter?.radius ?? 60;
         const whereObject = {
             publish: 1,
             moderation: 1,
@@ -478,15 +478,6 @@ export const fetchTravelsForMap = async (
             categories: [],
             address: null,
         };
-
-        if (filter?.categories?.length > 0) {
-            filter.categories.forEach((category: any, index: number) => {
-                whereObject.categories[index] = { id: category, name: category };
-            });
-        }
-        if (filter?.address?.length) {
-            whereObject.address = filter.address;
-        }
 
         const paramsObj = {
             page: (page + 1).toString(),

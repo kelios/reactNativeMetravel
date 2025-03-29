@@ -11,15 +11,22 @@ const TravelListPanel = ({
                              onPageChange,
                              onItemsPerPageChange,
                          }) => {
-    const isLoading = !travelsData; // Пока нет данных — считаем, что идёт загрузка
-    const totalPages = travelsData?.total ? Math.ceil(travelsData.total / itemsPerPage) : 1;
+    const isLoading = travelsData === null;
+    const totalItems = travelsData?.length || 0;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    // Нарезаем текущую страницу вручную
+    const paginatedData = travelsData?.slice(
+        currentPage * itemsPerPage,
+        currentPage * itemsPerPage + itemsPerPage
+    ) || [];
 
     return (
         <View style={styles.listMenu}>
             {/* Информация о количестве найденных объектов */}
-            {!!travelsData?.total && (
+            {totalItems > 0 && (
                 <Text style={styles.resultsCount}>
-                    Найдено {travelsData.total} объектов
+                    Найдено {totalItems} объектов
                 </Text>
             )}
 
@@ -30,7 +37,7 @@ const TravelListPanel = ({
                 </View>
             ) : (
                 <FlatList
-                    data={travelsData?.data || []}
+                    data={paginatedData}
                     renderItem={({ item }) => <AddressListItem travel={item} />}
                     keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
                     ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
@@ -44,7 +51,7 @@ const TravelListPanel = ({
             )}
 
             {/* Пагинация */}
-            {!!travelsData?.total && (
+            {totalItems > 0 && (
                 <View style={styles.containerPaginator}>
                     <DataTable>
                         <DataTable.Pagination
@@ -64,6 +71,7 @@ const TravelListPanel = ({
         </View>
     );
 };
+
 
 const styles = StyleSheet.create({
     listMenu: {

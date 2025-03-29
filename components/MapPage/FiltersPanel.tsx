@@ -30,38 +30,34 @@ const FiltersPanel = ({
         const count = {};
         if (travelsData?.length) {
             travelsData.forEach(travel => {
-                const catName = travel.categoryName?.trim();
-                if (catName) {
-                    count[catName] = (count[catName] || 0) + 1;
-                }
+                const categories = travel.categoryName
+                    ? travel.categoryName.split(',').map(s => s.trim())
+                    : [];
+
+                categories.forEach(cat => {
+                    if (cat) {
+                        count[cat] = (count[cat] || 0) + 1;
+                    }
+                });
             });
         }
-        console.log('▶️ travelCategoriesCount:', count);
         return count;
     }, [travelsData]);
 
-    // Только те категории, которые реально есть в travelsData
     const categoriesWithCount = React.useMemo(() => {
-        const filtered = filters.categories
-            .filter(cat => {
-                const name = cat.name?.trim();
-                return travelCategoriesCount.hasOwnProperty(name);
-            })
+        return filters.categories
             .map(cat => {
                 const name = cat.name?.trim();
-                return {
-                    ...cat,
-                    label: `${name} (${travelCategoriesCount[name] || 0})`,
-                    value: name,
-                };
-            });
-
-        console.log('✅ categoriesWithCount:', filtered);
-        return filtered;
+                return travelCategoriesCount[name]
+                    ? {
+                        ...cat,
+                        label: `${name} (${travelCategoriesCount[name]})`,
+                        value: name,
+                    }
+                    : null;
+            })
+            .filter(Boolean);
     }, [filters.categories, travelCategoriesCount]);
-
-    // 🔍 Логим значение фильтра
-    console.log('📦 filterValue.categories (selected):', filterValue.categories);
 
     return (
         <View style={[styles.filters, isMobile ? styles.mobileFilters : styles.desktopFilters]}>

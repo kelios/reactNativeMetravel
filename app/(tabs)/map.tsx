@@ -3,7 +3,6 @@ import {
   StyleSheet,
   SafeAreaView,
   useWindowDimensions,
-  Pressable,
   View,
 } from 'react-native';
 import { Button } from 'react-native-elements';
@@ -30,7 +29,6 @@ export default function MapScreen() {
     longitude: 27.7273595,
   });
 
-  const [menuVisible, setMenuVisible] = useState(!isMobile);
   const [infoVisible, setInfoVisible] = useState(true);
   const toggleInfoPanel = () => setInfoVisible(prev => !prev);
 
@@ -39,7 +37,6 @@ export default function MapScreen() {
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageOptions[2]);
 
-  // 📍 Получаем текущую геолокацию
   useEffect(() => {
     (async () => {
       try {
@@ -57,7 +54,6 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // 📦 Загружаем фильтры с бэка
   useEffect(() => {
     const loadFilters = async () => {
       try {
@@ -74,26 +70,22 @@ export default function MapScreen() {
     loadFilters();
   }, []);
 
-  // ✅ Устанавливаем радиус по умолчанию
   useEffect(() => {
     if (filters.radius.length && !filterValue.radius) {
       setFilterValue(prev => ({ ...prev, radius: filters.radius[0].id }));
     }
   }, [filters.radius]);
 
-  // Обнуляем страницу при смене фильтра
   useEffect(() => {
     setCurrentPage(0);
   }, [filterValue, itemsPerPage]);
 
-  // 🔄 Загружаем данные с сервера при смене радиуса/адреса
+  // 🔄 Загружаем с сервера только по радиусу
   useEffect(() => {
     const fetchData = async () => {
       try {
         const travelData = await fetchTravelsForMap(currentPage, itemsPerPage, {
           radius: filterValue.radius,
-          address: filterValue.address,
-          categories: [], // Категории фильтруем локально
         });
 
         setRawTravelsData(travelData?.data || []);
@@ -105,20 +97,29 @@ export default function MapScreen() {
     if (filterValue.radius) {
       fetchData();
     }
-  }, [filterValue.radius, filterValue.address, currentPage, itemsPerPage]);
+  }, [filterValue.radius, currentPage, itemsPerPage]);
 
-  // 🧠 Локальная фильтрация по категориям
   useEffect(() => {
-    if (!rawTravelsData) return;
+    if (!rawTravelsData.length) return;
 
-    const filtered = filterValue.categories.length
-        ? rawTravelsData.filter(travel =>
-            filterValue.categories.includes(travel.categoryName?.trim())
-        )
-        : rawTravelsData;
+    const filtered = rawTravelsData.filter(travel => {
+      const travelCategories = travel.categoryName
+          ? travel.categoryName.split(',').map(s => s.trim())
+          : [];
+
+      const categoryMatch =
+          !filterValue.categories.length ||
+          filterValue.categories.every(cat => travelCategories.includes(cat));
+
+      const addressMatch =
+          !filterValue.address ||
+          travel.address?.toLowerCase().includes(filterValue.address.toLowerCase());
+
+      return categoryMatch && addressMatch;
+    });
 
     setTravelsData(filtered);
-  }, [filterValue.categories, rawTravelsData]);
+  }, [filterValue.categories, filterValue.address, rawTravelsData]);
 
   const onFilterChange = (field, value) => {
     setFilterValue(prev => ({ ...prev, [field]: value }));
@@ -136,55 +137,50 @@ export default function MapScreen() {
     });
   };
 
-  const toggleMenu = () => setMenuVisible(prev => !prev);
-  const closeMenu = () => setMenuVisible(false);
-
   return (
       <PaperProvider>
-      <SafeAreaView style={styles.safeContainer}>
-        <View style={styles.container}>
-          {/* 📌 Панель фильтров над картой (всегда сверху) */}
-          <View style={styles.topFilters}>
-            <FiltersPanel
-                filters={filters}
-                filterValue={filterValue}
-                onFilterChange={onFilterChange}
-                onTextFilterChange={onTextFilterChange}
-                resetFilters={resetFilters}
-                travelsData={rawTravelsData}
-                isMobile={isMobile}
-                closeMenu={closeMenu}
-            />
-          </View>
+        <SafeAreaView style={styles.safeContainer}>
+          <View style={styles.container}>
+            {/* Панель фильтров */}
+            <View style={styles.topFilters}>
+              <FiltersPanel
+                  filters={filters}
+                  filterValue={filterValue}
+                  onFilterChange={onFilterChange}
+                  onTextFilterChange={onTextFilterChange}
+                  resetFilters={resetFilters}
+                  travelsData={rawTravelsData}
+                  isMobile={isMobile}
+                  closeMenu={() => {}}
+              />
+            </View>
 
-          {/* 📍 Основной контент: карта + список */}
-          <View style={{ flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
-            {/* Карта */}
-            <MapPanel travelsData={travelsData} coordinates={coordinates} style={styles.map} />
+            {/* Карта + Список */}
+            <View style={{ flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
+              <MapPanel travelsData={travelsData} coordinates={coordinates} style={styles.map} />
 
-            {/* Список объектов */}
-            {infoVisible && (
-                <View style={isMobile ? styles.infoPanel : styles.desktopInfoWrapper}>
-                  <TravelListPanel
-                      travelsData={travelsData}
-                      currentPage={currentPage}
-                      itemsPerPage={itemsPerPage}
-                      itemsPerPageOptions={itemsPerPageOptions}
-                      onPageChange={setCurrentPage}
-                      onItemsPerPageChange={setItemsPerPage}
-                  />
-                  <Button
-                      title="Скрыть объекты"
-                      onPress={toggleInfoPanel}
-                      containerStyle={isMobile ? styles.infoButtonContainer : styles.desktopHideButtonContainer}
-                      buttonStyle={styles.infoButton}
-                      titleStyle={styles.infoButtonText}
-                  />
-                </View>
-            )}
+              {infoVisible && (
+                  <View style={isMobile ? styles.infoPanel : styles.desktopInfoWrapper}>
+                    <TravelListPanel
+                        travelsData={travelsData}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        itemsPerPageOptions={itemsPerPageOptions}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                    />
+                    <Button
+                        title="Скрыть объекты"
+                        onPress={toggleInfoPanel}
+                        containerStyle={isMobile ? styles.infoButtonContainer : styles.desktopHideButtonContainer}
+                        buttonStyle={styles.infoButton}
+                        titleStyle={styles.infoButtonText}
+                    />
+                  </View>
+              )}
+            </View>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
       </PaperProvider>
   );
 }
@@ -249,9 +245,9 @@ const getStyles = (isMobile) => StyleSheet.create({
     fontWeight: 'bold',
   },
   desktopInfoWrapper: {
-    width: 360,
-    marginRight: 10,
-    marginTop: 10,
+    flex: 1, // ← теперь панель займет всю доступную высоту
+    maxWidth: 360, // ← максимальная ширина, но без жестких ограничений
+    margin: 10,
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 10,
@@ -260,9 +256,6 @@ const getStyles = (isMobile) => StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
   },
   desktopHideButtonContainer: {
     marginTop: 10,

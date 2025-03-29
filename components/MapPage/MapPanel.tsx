@@ -10,7 +10,7 @@ const MapPanel = ({ travelsData, coordinates, style }) => {
         <View style={[styles.map, style]}>
             {/* Suspense для отображения индикатора загрузки */}
             <Suspense fallback={<LoadingIndicator />}>
-                <MapClientSideComponent travel={travelsData} coordinates={coordinates} />
+                <MapClientSideComponent travel={{ data: travelsData }} coordinates={coordinates} />
             </Suspense>
         </View>
     );

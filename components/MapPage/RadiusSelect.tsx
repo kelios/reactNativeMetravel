@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Menu, Button, useTheme } from 'react-native-paper';
 
-const RadiusSelect = ({ value, options, onChange }) => {
+const RadiusSelect = ({ value, options = [], onChange }) => {
     const [visible, setVisible] = useState(false);
     const openMenu = () => setVisible(true);
     const closeMenu = () => setVisible(false);
 
-    const selectedOption = options.find((opt) => String(opt.id) === String(value));
+    const selectedOption = options ? options.find((opt) => String(opt.id) === String(value || '')) : null;
     const selectedLabel = selectedOption ? `${selectedOption.name} км` : 'Выберите радиус';
 
     return (
@@ -35,7 +35,7 @@ const RadiusSelect = ({ value, options, onChange }) => {
                         key={item.id}
                         onPress={() => {
                             onChange(item.id);
-                            setTimeout(closeMenu, 0); // предотвращает залипание
+                            setTimeout(closeMenu, 0);
                         }}
                         title={item.name}
                         titleStyle={styles.menuItemText}
@@ -45,7 +45,6 @@ const RadiusSelect = ({ value, options, onChange }) => {
         </View>
     );
 };
-
 const styles = StyleSheet.create({
     button: {
         backgroundColor: 'white',
