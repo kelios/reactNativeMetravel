@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  SafeAreaView,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { StyleSheet, SafeAreaView, useWindowDimensions, View } from 'react-native';
 import { Button } from 'react-native-elements';
 import * as Location from 'expo-location';
 import FiltersPanel from '@/components/MapPage/FiltersPanel';
@@ -24,13 +19,13 @@ export default function MapScreen() {
   const [rawTravelsData, setRawTravelsData] = useState([]);
   const [travelsData, setTravelsData] = useState([]);
 
-  const [coordinates, setCoordinates] = useState({
-    latitude: 53.8828449,
-    longitude: 27.7273595,
-  });
+  const [coordinates, setCoordinates] = useState({ latitude: 53.8828449, longitude: 27.7273595 });
 
   const [infoVisible, setInfoVisible] = useState(true);
+  const [filtersVisible, setFiltersVisible] = useState(true);
+
   const toggleInfoPanel = () => setInfoVisible(prev => !prev);
+  const toggleFiltersPanel = () => setFiltersVisible(prev => !prev);
 
   const initialPage = 0;
   const itemsPerPageOptions = [10, 20, 30, 50, 100];
@@ -43,140 +38,70 @@ export default function MapScreen() {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
           const location = await Location.getCurrentPositionAsync({});
-          if (location?.coords) {
-            const { latitude, longitude } = location.coords;
-            setCoordinates({ latitude, longitude });
-          }
+          if (location?.coords) setCoordinates(location.coords);
         }
-      } catch (error) {
-        console.log('Error getting location:', error);
-      }
+      } catch (error) { console.log('Error getting location:', error); }
     })();
   }, []);
 
   useEffect(() => {
-    const loadFilters = async () => {
+    (async () => {
       try {
         const newData = await fetchFiltersMap();
-        setFilters({
-          categories: newData?.categories || [],
-          radius: newData?.radius || [],
-          address: '',
-        });
-      } catch (error) {
-        console.log('Ошибка при загрузке фильтров:', error);
-      }
-    };
-    loadFilters();
+        setFilters({ categories: newData?.categories || [], radius: newData?.radius || [], address: '' });
+      } catch (error) { console.log('Ошибка при загрузке фильтров:', error); }
+    })();
   }, []);
 
-  useEffect(() => {
-    if (filters.radius.length && !filterValue.radius) {
-      setFilterValue(prev => ({ ...prev, radius: filters.radius[0].id }));
-    }
-  }, [filters.radius]);
+  useEffect(() => { if (filters.radius.length && !filterValue.radius) setFilterValue(prev => ({ ...prev, radius: filters.radius[0].id })); }, [filters.radius]);
+
+  useEffect(() => { setCurrentPage(0); }, [filterValue, itemsPerPage]);
 
   useEffect(() => {
-    setCurrentPage(0);
-  }, [filterValue, itemsPerPage]);
-
-  // 🔄 Загружаем с сервера только по радиусу
-  useEffect(() => {
-    const fetchData = async () => {
+    if (!filterValue.radius) return;
+    (async () => {
       try {
-        const travelData = await fetchTravelsForMap(currentPage, itemsPerPage, {
-          radius: filterValue.radius,
-        });
-
+        const travelData = await fetchTravelsForMap(currentPage, itemsPerPage, { radius: filterValue.radius });
         setRawTravelsData(travelData?.data || []);
-      } catch (error) {
-        console.log('Failed to fetch travel data:', error);
-      }
-    };
-
-    if (filterValue.radius) {
-      fetchData();
-    }
+      } catch (error) { console.log('Failed to fetch travel data:', error); }
+    })();
   }, [filterValue.radius, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    if (!rawTravelsData.length) return;
-
-    const filtered = rawTravelsData.filter(travel => {
-      const travelCategories = travel.categoryName
-          ? travel.categoryName.split(',').map(s => s.trim())
-          : [];
-
-      const categoryMatch =
-          !filterValue.categories.length ||
-          filterValue.categories.every(cat => travelCategories.includes(cat));
-
-      const addressMatch =
-          !filterValue.address ||
-          travel.address?.toLowerCase().includes(filterValue.address.toLowerCase());
-
+    setTravelsData(rawTravelsData.filter(travel => {
+      const travelCategories = travel.categoryName?.split(',').map(s => s.trim()) || [];
+      const categoryMatch = !filterValue.categories.length || filterValue.categories.every(cat => travelCategories.includes(cat));
+      const addressMatch = !filterValue.address || travel.address?.toLowerCase().includes(filterValue.address.toLowerCase());
       return categoryMatch && addressMatch;
-    });
-
-    setTravelsData(filtered);
+    }));
   }, [filterValue.categories, filterValue.address, rawTravelsData]);
 
-  const onFilterChange = (field, value) => {
-    setFilterValue(prev => ({ ...prev, [field]: value }));
-  };
-
-  const onTextFilterChange = (value) => {
-    setFilterValue(prev => ({ ...prev, address: value }));
-  };
-
-  const resetFilters = () => {
-    setFilterValue({
-      radius: filters.radius.length ? filters.radius[0].id : '',
-      categories: [],
-      address: '',
-    });
-  };
+  const onFilterChange = (field, value) => setFilterValue(prev => ({ ...prev, [field]: value }));
+  const onTextFilterChange = (value) => setFilterValue(prev => ({ ...prev, address: value }));
+  const resetFilters = () => setFilterValue({ radius: filters.radius[0]?.id || '', categories: [], address: '' });
 
   return (
       <PaperProvider>
         <SafeAreaView style={styles.safeContainer}>
           <View style={styles.container}>
-            {/* Панель фильтров */}
-            <View style={styles.topFilters}>
-              <FiltersPanel
-                  filters={filters}
-                  filterValue={filterValue}
-                  onFilterChange={onFilterChange}
-                  onTextFilterChange={onTextFilterChange}
-                  resetFilters={resetFilters}
-                  travelsData={rawTravelsData}
-                  isMobile={isMobile}
-                  closeMenu={() => {}}
-              />
-            </View>
+            {filtersVisible ? (
+                <View style={styles.topFilters}>
+                  <FiltersPanel {...{ filters, filterValue, onFilterChange, onTextFilterChange, resetFilters, travelsData: rawTravelsData, isMobile, closeMenu: toggleFiltersPanel }} />
+                </View>
+            ) : (
+                <Button title="Показать фильтры" onPress={toggleFiltersPanel} buttonStyle={styles.infoButton} />
+            )}
 
-            {/* Карта + Список */}
             <View style={{ flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
               <MapPanel travelsData={travelsData} coordinates={coordinates} style={styles.map} />
 
-              {infoVisible && (
+              {infoVisible ? (
                   <View style={isMobile ? styles.infoPanel : styles.desktopInfoWrapper}>
-                    <TravelListPanel
-                        travelsData={travelsData}
-                        currentPage={currentPage}
-                        itemsPerPage={itemsPerPage}
-                        itemsPerPageOptions={itemsPerPageOptions}
-                        onPageChange={setCurrentPage}
-                        onItemsPerPageChange={setItemsPerPage}
-                    />
-                    <Button
-                        title="Скрыть объекты"
-                        onPress={toggleInfoPanel}
-                        containerStyle={isMobile ? styles.infoButtonContainer : styles.desktopHideButtonContainer}
-                        buttonStyle={styles.infoButton}
-                        titleStyle={styles.infoButtonText}
-                    />
+                    <TravelListPanel {...{ travelsData, currentPage, itemsPerPage, itemsPerPageOptions, onPageChange: setCurrentPage, onItemsPerPageChange: setItemsPerPage }} />
+                    <Button title="Скрыть объекты" onPress={toggleInfoPanel} buttonStyle={styles.infoButton} />
                   </View>
+              ) : (
+                  <Button title="Показать объекты" onPress={toggleInfoPanel} buttonStyle={styles.infoButton} containerStyle={styles.topFilters} />
               )}
             </View>
           </View>
@@ -186,79 +111,11 @@ export default function MapScreen() {
 }
 
 const getStyles = (isMobile) => StyleSheet.create({
-  safeContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  container: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: '#f5f5f5',
-    flexDirection: 'column',
-  },
-  topFilters: {
-    width: '100%',
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 5,
-    backgroundColor: '#f5f5f5',
-  },
-  map: {
-    flex: 1,
-    backgroundColor: 'white',
-    margin: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  infoPanel: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    maxHeight: '50%',
-    backgroundColor: 'white',
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 999,
-  },
-  infoButtonContainer: {
-    marginTop: 10,
-    alignSelf: 'center',
-    width: '90%',
-  },
-  infoButton: {
-    backgroundColor: '#6aaaaa',
-    borderRadius: 5,
-  },
-  infoButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  desktopInfoWrapper: {
-    flex: 1, // ← теперь панель займет всю доступную высоту
-    maxWidth: 360, // ← максимальная ширина, но без жестких ограничений
-    margin: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  desktopHideButtonContainer: {
-    marginTop: 10,
-    alignSelf: 'flex-end',
-  },
+  safeContainer: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  topFilters: { padding: 10, backgroundColor: '#f5f5f5' },
+  map: { flex: 1, margin: 10, borderRadius: 10 },
+  infoPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '50%', backgroundColor: 'white', borderRadius: 10, padding: 10 },
+  desktopInfoWrapper: { flex: 1, maxWidth: 360, margin: 10, backgroundColor: 'white', borderRadius: 10, padding: 10 },
+  infoButton: { backgroundColor: '#6aaaaa', borderRadius: 5, marginVertical: 10 },
 });

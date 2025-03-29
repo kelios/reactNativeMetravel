@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import MultiSelectField from '../MultiSelectField';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -21,68 +15,67 @@ const FiltersPanel = ({
                           isMobile,
                           closeMenu,
                       }) => {
-    // 🔍 Логируем входящие данные
-    console.log('▶️ filters.categories:', filters.categories);
-    console.log('▶️ travelsData:', travelsData);
-
-    // Подсчёт количества по categoryName из travelsData
     const travelCategoriesCount = React.useMemo(() => {
         const count = {};
-        if (travelsData?.length) {
-            travelsData.forEach(travel => {
-                const categories = travel.categoryName
-                    ? travel.categoryName.split(',').map(s => s.trim())
-                    : [];
-
-                categories.forEach(cat => {
-                    if (cat) {
-                        count[cat] = (count[cat] || 0) + 1;
-                    }
-                });
+        travelsData?.forEach(travel => {
+            travel.categoryName?.split(',').map(s => s.trim()).forEach(cat => {
+                count[cat] = (count[cat] || 0) + 1;
             });
-        }
+        });
         return count;
     }, [travelsData]);
 
-    const categoriesWithCount = React.useMemo(() => {
-        return filters.categories
-            .map(cat => {
-                const name = cat.name?.trim();
-                return travelCategoriesCount[name]
-                    ? {
-                        ...cat,
-                        label: `${name} (${travelCategoriesCount[name]})`,
-                        value: name,
-                    }
-                    : null;
-            })
-            .filter(Boolean);
-    }, [filters.categories, travelCategoriesCount]);
+    const categoriesWithCount = React.useMemo(() => filters.categories
+        .map(cat => {
+            const name = cat.name.trim();
+            return travelCategoriesCount[name] ? {
+                ...cat,
+                label: `${name} (${travelCategoriesCount[name]})`,
+                value: name,
+            } : null;
+        })
+        .filter(Boolean), [filters.categories, travelCategoriesCount]);
 
     return (
         <View style={[styles.filters, isMobile ? styles.mobileFilters : styles.desktopFilters]}>
             {/* Категории */}
-            <View style={styles.filterField}>
-                <MultiSelectField
-                    label="Категория"
-                    items={categoriesWithCount}
-                    value={filterValue.categories}
-                    onChange={value => onFilterChange('categories', value)}
-                    labelField="label"
-                    valueField="value"
-                    compact
-                />
-            </View>
+            {!!categoriesWithCount.length && (
+                <View style={styles.filterField}>
+                    <MultiSelectField
+                        label="Категория"
+                        items={categoriesWithCount}
+                        value={filterValue.categories}
+                        onChange={value => onFilterChange('categories', value)}
+                        labelField="label"
+                        valueField="value"
+                        compact
+                    />
+                    {!!filterValue.categories.length && (
+                        <ScrollView horizontal style={styles.selectedCategoriesContainer}>
+                            {filterValue.categories.map(catName => (
+                                <View key={catName} style={styles.categoryBadge}>
+                                    <Text style={styles.categoryBadgeText}>{catName}</Text>
+                                    <TouchableOpacity onPress={() => onFilterChange('categories', filterValue.categories.filter(c => c !== catName))}>
+                                        <Icon name="close" size={16} color="#fff" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    )}
+                </View>
+            )}
 
             {/* Радиус */}
-            <View style={styles.filterField}>
-                <Text style={styles.label}>Радиус (км)</Text>
-                <RadiusSelect
-                    value={filterValue.radius}
-                    options={filters.radius}
-                    onChange={(value) => onFilterChange('radius', value)}
-                />
-            </View>
+            {!!filters.radius.length && (
+                <View style={styles.filterField}>
+                    <Text style={styles.label}>Радиус (км)</Text>
+                    <RadiusSelect
+                        value={filterValue.radius}
+                        options={filters.radius}
+                        onChange={(value) => onFilterChange('radius', value)}
+                    />
+                </View>
+            )}
 
             {/* Адрес */}
             <View style={styles.filterField}>
@@ -103,19 +96,20 @@ const FiltersPanel = ({
                     onPress={resetFilters}
                     buttonStyle={styles.resetButton}
                     titleStyle={styles.resetButtonText}
-                    icon={<Icon name="clear" size={16} color="white" style={styles.icon} />}
+                    icon={<Icon name="clear" size={16} color="white" />}
                     iconRight
                     accessibilityLabel="Clear filters"
                 />
             </View>
 
-            {/* Закрыть (моб) */}
+            {/* Закрыть (мобильная версия) */}
             {isMobile && (
                 <View style={styles.filterField}>
-                    <TouchableOpacity style={styles.closeButton}
-                                      onPress={closeMenu}
-                                      accessibilityLabel="Close menu">
-                        <Icon name="close" size={16} color="white" style={styles.icon} />
+                    <TouchableOpacity
+                        style={styles.closeButton}
+                        onPress={closeMenu}
+                        accessibilityLabel="Close menu">
+                        <Icon name="close" size={16} color="white" />
                         <Text style={styles.closeButtonText}>Закрыть</Text>
                     </TouchableOpacity>
                 </View>
@@ -138,7 +132,7 @@ const styles = StyleSheet.create({
     },
     desktopFilters: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'space-between',
         gap: 10,
     },
@@ -158,7 +152,6 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         fontSize: 14,
     },
-
     resetButton: {
         backgroundColor: '#ff9f5a',
         borderRadius: 5,
@@ -183,10 +176,30 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginLeft: 5,
     },
-    icon: {
-        marginRight: 5,
+    label: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 4,
     },
-    label: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+    selectedCategoriesContainer: {
+        flexDirection: 'row',
+        marginTop: 4,
+        paddingVertical: 4,
+    },
+    categoryBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#6aaaaa',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 16,
+        marginRight: 6,
+    },
+    categoryBadgeText: {
+        color: '#fff',
+        marginRight: 4,
+        fontSize: 13,
+    },
 });
 
 export default React.memo(FiltersPanel);
