@@ -25,16 +25,21 @@ const FiltersPanel = ({
         return count;
     }, [travelsData]);
 
-    const categoriesWithCount = React.useMemo(() => filters.categories
-        .map(cat => {
-            const name = cat.name.trim();
-            return travelCategoriesCount[name] ? {
-                ...cat,
-                label: `${name} (${travelCategoriesCount[name]})`,
-                value: name,
-            } : null;
-        })
-        .filter(Boolean), [filters.categories, travelCategoriesCount]);
+    const categoriesWithCount = React.useMemo(() =>
+            filters.categories
+                .map(cat => {
+                    const name = cat.name.trim();
+                    return travelCategoriesCount[name]
+                        ? {
+                            ...cat,
+                            label: `${name} (${travelCategoriesCount[name]})`,
+                            value: name,
+                        }
+                        : null;
+                })
+                .filter(Boolean),
+        [filters.categories, travelCategoriesCount]
+    );
 
     return (
         <View style={[styles.filters, isMobile ? styles.mobileFilters : styles.desktopFilters]}>
@@ -49,13 +54,21 @@ const FiltersPanel = ({
                         labelField="label"
                         valueField="value"
                         compact
+                        showsSelectedItems={false}
                     />
                     {!!filterValue.categories.length && (
                         <ScrollView horizontal style={styles.selectedCategoriesContainer}>
                             {filterValue.categories.map(catName => (
                                 <View key={catName} style={styles.categoryBadge}>
                                     <Text style={styles.categoryBadgeText}>{catName}</Text>
-                                    <TouchableOpacity onPress={() => onFilterChange('categories', filterValue.categories.filter(c => c !== catName))}>
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            onFilterChange(
+                                                'categories',
+                                                filterValue.categories.filter(c => c !== catName)
+                                            )
+                                        }
+                                    >
                                         <Icon name="close" size={16} color="#fff" />
                                     </TouchableOpacity>
                                 </View>
@@ -68,11 +81,10 @@ const FiltersPanel = ({
             {/* Радиус */}
             {!!filters.radius.length && (
                 <View style={styles.filterField}>
-                    <Text style={styles.label}>Радиус (км)</Text>
                     <RadiusSelect
                         value={filterValue.radius}
                         options={filters.radius}
-                        onChange={(value) => onFilterChange('radius', value)}
+                        onChange={val => onFilterChange('radius', val)}
                     />
                 </View>
             )}
@@ -108,7 +120,8 @@ const FiltersPanel = ({
                     <TouchableOpacity
                         style={styles.closeButton}
                         onPress={closeMenu}
-                        accessibilityLabel="Close menu">
+                        accessibilityLabel="Close menu"
+                    >
                         <Icon name="close" size={16} color="white" />
                         <Text style={styles.closeButtonText}>Закрыть</Text>
                     </TouchableOpacity>
@@ -132,9 +145,10 @@ const styles = StyleSheet.create({
     },
     desktopFilters: {
         flexDirection: 'row',
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
         gap: 10,
+        flexWrap: 'wrap',
     },
     mobileFilters: {
         flexDirection: 'column',
@@ -183,6 +197,7 @@ const styles = StyleSheet.create({
     },
     selectedCategoriesContainer: {
         flexDirection: 'row',
+        flexWrap: 'nowrap',
         marginTop: 4,
         paddingVertical: 4,
     },
