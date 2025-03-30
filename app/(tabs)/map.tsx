@@ -27,8 +27,8 @@ export default function MapScreen() {
 
   const [coordinates, setCoordinates] = useState({ latitude: 53.8828449, longitude: 27.7273595 });
 
-  const [infoVisible, setInfoVisible] = useState(true);
-  const [filtersVisible, setFiltersVisible] = useState(true);
+  const [infoVisible, setInfoVisible] = useState(false);
+  const [filtersVisible, setFiltersVisible] = useState(isMobile ? false : true);
 
   const toggleInfoPanel = () => setInfoVisible(prev => !prev);
   const toggleFiltersPanel = () => setFiltersVisible(prev => !prev);
