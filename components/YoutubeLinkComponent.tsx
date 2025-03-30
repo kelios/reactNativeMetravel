@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 
 interface YoutubeLinkComponentProps {
     label: string;
@@ -11,11 +11,14 @@ const YoutubeLinkComponent: React.FC<YoutubeLinkComponentProps> = ({ label, valu
     const [inputValue, setInputValue] = useState(value);
     const [isValid, setIsValid] = useState(true);
 
+    useEffect(() => {
+        setInputValue(value);
+    }, [value]);
+
     const validateYoutubeUrl = (url: string) => {
         const regex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})(\S+)?$/;
         return regex.test(url);
     };
-
 
     const handleBlur = () => {
         const valid = validateYoutubeUrl(inputValue);

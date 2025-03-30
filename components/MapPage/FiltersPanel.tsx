@@ -1,9 +1,17 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    ScrollView,
+    Platform,
+} from 'react-native';
 import MultiSelectField from '../MultiSelectField';
 import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import RadiusSelect from "@/components/MapPage/RadiusSelect";
+import RadiusSelect from '@/components/MapPage/RadiusSelect';
 
 const FiltersPanel = ({
                           filters,
@@ -27,7 +35,8 @@ const FiltersPanel = ({
         return count;
     }, [travelsData]);
 
-    const categoriesWithCount = React.useMemo(() =>
+    const categoriesWithCount = React.useMemo(
+        () =>
             filters.categories
                 .map(cat => {
                     const name = cat.name.trim();
@@ -44,7 +53,12 @@ const FiltersPanel = ({
     );
 
     return (
-        <View style={[styles.filtersContainer, isMobile ? styles.mobileLayout : styles.desktopLayout]}>
+        <View
+            style={[
+                styles.filtersContainer,
+                isMobile ? styles.mobileLayout : styles.desktopLayout,
+            ]}
+        >
             {/* Категории */}
             {!!categoriesWithCount.length && (
                 <View style={styles.filterField}>
@@ -56,27 +70,34 @@ const FiltersPanel = ({
                         labelField="label"
                         valueField="value"
                         compact
-                        renderSelectedItem={() => <></>} // Исправленный код
+                        renderSelectedItem={() => <></>}
                     />
                     {!!filterValue.categories.length && (
-                        <ScrollView horizontal style={styles.selectedCategories}>
-                            {filterValue.categories.map(catName => (
-                                <View key={catName} style={styles.categoryChip}>
-                                    <Text style={styles.categoryChipText}>{catName}</Text>
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            onFilterChange(
-                                                'categories',
-                                                filterValue.categories.filter(c => c !== catName)
-                                            )
-                                        }
-                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                    >
-                                        <Icon name="close" size={16} color="#fff" />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </ScrollView>
+                        <View style={styles.selectedCategoriesWrapper}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                style={styles.selectedCategoriesScroll}
+                                contentContainerStyle={styles.selectedCategories}
+                            >
+                                {filterValue.categories.map(catName => (
+                                    <View key={catName} style={styles.categoryChip}>
+                                        <Text style={styles.categoryChipText}>{catName}</Text>
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                onFilterChange(
+                                                    'categories',
+                                                    filterValue.categories.filter(c => c !== catName)
+                                                )
+                                            }
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            <Icon name="close" size={16} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        </View>
                     )}
                 </View>
             )}
@@ -100,11 +121,10 @@ const FiltersPanel = ({
                     placeholder="Введите адрес"
                     value={filterValue.address}
                     onChangeText={onTextFilterChange}
-                    accessibilityLabel="Address input"
                 />
             </View>
 
-            {/* Очистка */}
+            {/* Кнопки */}
             <View style={styles.actions}>
                 <Button
                     title="Очистить"
@@ -125,94 +145,111 @@ const FiltersPanel = ({
     );
 };
 
-const getStyles = (isMobile) => StyleSheet.create({
-    filtersContainer: {
-        backgroundColor: '#fff',
-        padding: 12,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 12,
-        elevation: 4,
-        gap: 12,
-    },
-    desktopLayout: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-    },
-    mobileLayout: {
-        flexDirection: 'column',
-    },
-    filterField: {
-        flex: 1,
-        minWidth: 200,
-    },
-    selectedCategories: {
-        flexDirection: 'row',
-        marginTop: 6,
-    },
-    categoryChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#6aaaaa',
-        paddingVertical: 4,
-        paddingHorizontal: 10,
-        borderRadius: 20,
-        marginRight: 8,
-    },
-    categoryChipText: {
-        color: 'white',
-        fontSize: 13,
-        marginRight: 6,
-    },
-    input: {
-        height: 44,
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        fontSize: 14,
-        backgroundColor: '#fff',
-    },
-    label: {
-        fontSize: 13,
-        fontWeight: '600',
-        marginBottom: 8,
-        color: '#333',
-    },
-    actions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        marginTop: isMobile ? 0 : 22,
-    },
-    clearButton: {
-        backgroundColor: '#ff9f5a',
-        borderRadius: 8,
-        paddingHorizontal: 16,
-        height: 44,
-    },
-    clearButtonText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginRight: 6,
-    },
-    closeBtn: {
-        backgroundColor: '#999',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    closeBtnText: {
-        color: 'white',
-        fontSize: 14,
-        marginLeft: 6,
-    },
-});
-
+const getStyles = isMobile =>
+    StyleSheet.create({
+        filtersContainer: {
+            backgroundColor: '#fff',
+            padding: 12,
+            borderRadius: 12,
+            shadowColor: '#000',
+            shadowOpacity: 0.08,
+            shadowRadius: 12,
+            elevation: 4,
+            gap: 12,
+        },
+        desktopLayout: {
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+        },
+        mobileLayout: {
+            flexDirection: 'column',
+        },
+        filterField: {
+            flex: 1,
+            minWidth: 200,
+            marginBottom: 12,
+        },
+        selectedCategoriesWrapper: {
+            marginTop: 6,
+            marginBottom: 8,
+        },
+        selectedCategoriesScroll: {
+            maxWidth: '100%',
+        },
+        selectedCategories: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingRight: 8,
+            paddingVertical: 4,
+            ...(Platform.OS === 'web' && {
+                flexWrap: 'nowrap',
+                overflow: 'auto',
+                display: 'flex',
+            }),
+        },
+        categoryChip: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#6aaaaa',
+            paddingVertical: 4,
+            paddingHorizontal: 10,
+            borderRadius: 20,
+            marginRight: 6,
+            marginBottom: 6,
+        },
+        categoryChipText: {
+            color: 'white',
+            fontSize: 13,
+            marginRight: 6,
+        },
+        input: {
+            height: 44,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 8,
+            paddingHorizontal: 12,
+            fontSize: 14,
+            backgroundColor: '#fff',
+        },
+        label: {
+            fontSize: 13,
+            fontWeight: '600',
+            marginBottom: 8,
+            color: '#333',
+        },
+        actions: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            marginTop: isMobile ? 0 : 22,
+        },
+        clearButton: {
+            backgroundColor: '#ff9f5a',
+            borderRadius: 8,
+            paddingHorizontal: 16,
+            height: 44,
+        },
+        clearButtonText: {
+            fontSize: 14,
+            fontWeight: 'bold',
+            marginRight: 6,
+        },
+        closeBtn: {
+            backgroundColor: '#999',
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            height: 44,
+        },
+        closeBtnText: {
+            color: 'white',
+            fontSize: 14,
+            marginLeft: 6,
+        },
+    });
 
 export default React.memo(FiltersPanel);
