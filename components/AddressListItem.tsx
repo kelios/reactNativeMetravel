@@ -23,9 +23,15 @@ import { TravelCoords } from '@/src/types/types';
 
 type AddressListItemProps = {
     travel: TravelCoords;
+    isTablet?: boolean;
+    isMobile?: boolean;
 };
 
-const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
+const AddressListItem: React.FC<AddressListItemProps> = ({
+                                                             travel,
+                                                             isTablet = false,
+                                                             isMobile = false
+                                                         }) => {
     const {
         address,
         categoryName,
@@ -73,27 +79,44 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
 
     return (
         <>
-            <Card style={styles.container} mode="contained">
-                {/* Фото */}
+            <Card style={[
+                styles.container,
+                isTablet && { marginHorizontal: 16 },
+                isMobile && { marginHorizontal: 4 },
+            ]} mode="contained">
                 {travelImageThumbUrl ? (
                     <Card.Cover
                         source={{ uri: travelImageThumbUrl }}
-                        style={styles.image}
+                        style={[
+                            styles.image,
+                            isTablet && { height: 220 },
+                            isMobile && { height: 150 },
+                        ]}
                         resizeMode="cover"
                     />
                 ) : (
                     <Image
                         source={require('@/assets/no-data.png')}
-                        style={styles.image}
+                        style={[
+                            styles.image,
+                            isTablet && { height: 220 },
+                            isMobile && { height: 150 },
+                        ]}
                         resizeMode="contain"
                     />
                 )}
 
-                {/* Контент */}
-                <Card.Content style={styles.cardContent}>
+                <Card.Content style={[
+                    styles.cardContent,
+                    isMobile && { paddingHorizontal: 12 },
+                ]}>
                     {!!address && (
                         <>
-                            <Text style={styles.title} numberOfLines={2}>
+                            <Text style={[
+                                styles.title,
+                                isMobile && { fontSize: 15 },
+                                isTablet && { fontSize: 17 },
+                            ]} numberOfLines={2}>
                                 {address}
                             </Text>
                             <Divider style={styles.divider} />
@@ -123,15 +146,28 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
                     )}
                 </Card.Content>
 
-                <Card.Actions style={styles.actions}>
+                <Card.Actions style={[
+                    styles.actions,
+                    isMobile && { paddingHorizontal: 8 },
+                ]}>
                     <Button
                         onPress={handlePressLink}
                         mode="contained-tonal"
                         icon="link"
                         buttonColor="#ff9f5a"
                         textColor="#fff"
-                        style={styles.moreButton}
-                        labelStyle={{ fontWeight: '600' }}
+                        style={[
+                            styles.moreButton,
+                            isMobile && {
+                                paddingHorizontal: 12,
+                                borderRadius: 6,
+                            },
+                        ]}
+                        labelStyle={{
+                            fontWeight: '600',
+                            fontSize: isMobile ? 13 : 14,
+                        }}
+                        compact={isMobile}
                     >
                         Подробнее
                     </Button>
@@ -208,7 +244,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 16,
         marginVertical: 10,
-        marginHorizontal: 12,
         overflow: 'hidden',
         elevation: 2,
         shadowColor: '#000',
