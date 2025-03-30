@@ -76,7 +76,7 @@ const FiltersPanel = ({
                         <View style={styles.selectedCategoriesWrapper}>
                             <ScrollView
                                 horizontal
-                                showsHorizontalScrollIndicator={false}
+                                showsHorizontalScrollIndicator={true}
                                 style={styles.selectedCategoriesScroll}
                                 contentContainerStyle={styles.selectedCategories}
                             >
@@ -169,25 +169,20 @@ const getStyles = isMobile =>
         filterField: {
             flex: 1,
             minWidth: 200,
-            marginBottom: 12,
         },
         selectedCategoriesWrapper: {
             marginTop: 6,
-            marginBottom: 8,
+            marginBottom: 50,
         },
         selectedCategoriesScroll: {
             maxWidth: '100%',
+            overflow: 'scroll',
         },
         selectedCategories: {
             flexDirection: 'row',
             alignItems: 'center',
             paddingRight: 8,
             paddingVertical: 4,
-            ...(Platform.OS === 'web' && {
-                flexWrap: 'nowrap',
-                overflow: 'auto',
-                display: 'flex',
-            }),
         },
         categoryChip: {
             flexDirection: 'row',
