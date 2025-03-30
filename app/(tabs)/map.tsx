@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, SafeAreaView, useWindowDimensions, View } from 'react-native';
-import { Button } from 'react-native-elements';
+import {
+  StyleSheet,
+  SafeAreaView,
+  useWindowDimensions,
+  View,
+  ScrollView,
+} from 'react-native';
+import { Button, Icon } from 'react-native-elements';
 import * as Location from 'expo-location';
 import FiltersPanel from '@/components/MapPage/FiltersPanel';
 import MapPanel from '@/components/MapPage/MapPanel';
@@ -40,7 +46,9 @@ export default function MapScreen() {
           const location = await Location.getCurrentPositionAsync({});
           if (location?.coords) setCoordinates(location.coords);
         }
-      } catch (error) { console.log('Error getting location:', error); }
+      } catch (error) {
+        console.log('Error getting location:', error);
+      }
     })();
   }, []);
 
@@ -48,76 +56,159 @@ export default function MapScreen() {
     (async () => {
       try {
         const newData = await fetchFiltersMap();
-        setFilters({ categories: newData?.categories || [], radius: newData?.radius || [], address: '' });
-      } catch (error) { console.log('Ошибка при загрузке фильтров:', error); }
+        setFilters({
+          categories: newData?.categories || [],
+          radius: newData?.radius || [],
+          address: '',
+        });
+      } catch (error) {
+        console.log('Ошибка при загрузке фильтров:', error);
+      }
     })();
   }, []);
 
-  useEffect(() => { if (filters.radius.length && !filterValue.radius) setFilterValue(prev => ({ ...prev, radius: filters.radius[0].id })); }, [filters.radius]);
+  useEffect(() => {
+    if (filters.radius.length && !filterValue.radius) {
+      setFilterValue(prev => ({ ...prev, radius: filters.radius[0].id }));
+    }
+  }, [filters.radius]);
 
-  useEffect(() => { setCurrentPage(0); }, [filterValue, itemsPerPage]);
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [filterValue, itemsPerPage]);
 
   useEffect(() => {
     if (!filterValue.radius) return;
     (async () => {
       try {
-        const travelData = await fetchTravelsForMap(currentPage, itemsPerPage, { radius: filterValue.radius });
-        //setRawTravelsData(travelData?.data || []);
+        const travelData = await fetchTravelsForMap(currentPage, itemsPerPage, {
+          radius: filterValue.radius,
+        });
         setRawTravelsData(travelData || []);
-      } catch (error) { console.log('Failed to fetch travel data:', error); }
+      } catch (error) {
+        console.log('Failed to fetch travel data:', error);
+      }
     })();
   }, [filterValue.radius, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    const normalize = (str) => str.trim().toLowerCase();
+    const normalize = str => str.trim().toLowerCase();
     const selectedCategories = filterValue.categories.map(normalize);
 
     const filtered = rawTravelsData.filter(travel => {
-      const travelCategories = travel.categoryName
-          ?.split(',')
-          .map(normalize) || [];
-
+      const travelCategories = travel.categoryName?.split(',').map(normalize) || [];
       const categoryMatch =
           selectedCategories.length === 0 ||
           travelCategories.some(cat => selectedCategories.includes(cat));
-
       const addressMatch =
           !filterValue.address ||
-          (travel.address && travel.address.toLowerCase().includes(filterValue.address.toLowerCase()));
-
+          (travel.address &&
+              travel.address.toLowerCase().includes(filterValue.address.toLowerCase()));
       return categoryMatch && addressMatch;
     });
 
     setTravelsData(filtered);
   }, [filterValue.categories, filterValue.address, rawTravelsData]);
 
-
-  const onFilterChange = (field, value) => setFilterValue(prev => ({ ...prev, [field]: value }));
-  const onTextFilterChange = (value) => setFilterValue(prev => ({ ...prev, address: value }));
-  const resetFilters = () => setFilterValue({ radius: filters.radius[0]?.id || '', categories: [], address: '' });
+  const onFilterChange = (field, value) =>
+      setFilterValue(prev => ({ ...prev, [field]: value }));
+  const onTextFilterChange = value =>
+      setFilterValue(prev => ({ ...prev, address: value }));
+  const resetFilters = () =>
+      setFilterValue({
+        radius: filters.radius[0]?.id || '',
+        categories: [],
+        address: '',
+      });
 
   return (
       <PaperProvider>
         <SafeAreaView style={styles.safeContainer}>
           <View style={styles.container}>
             {filtersVisible ? (
-                <View style={styles.topFilters}>
-                  <FiltersPanel {...{ filters, filterValue, onFilterChange, onTextFilterChange, resetFilters, travelsData: rawTravelsData, isMobile, closeMenu: toggleFiltersPanel }} />
+                <View style={styles.filtersPanel}>
+                  <FiltersPanel
+                      filters={filters}
+                      filterValue={filterValue}
+                      onFilterChange={onFilterChange}
+                      onTextFilterChange={onTextFilterChange}
+                      resetFilters={resetFilters}
+                      travelsData={rawTravelsData}
+                      isMobile={isMobile}
+                      closeMenu={toggleFiltersPanel}
+                  />
                 </View>
             ) : (
-                <Button title="Показать фильтры" onPress={toggleFiltersPanel} buttonStyle={styles.infoButton} />
+                <Button
+                    title="Показать фильтры"
+                    onPress={toggleFiltersPanel}
+                    buttonStyle={styles.toggleButton}
+                />
             )}
 
-            <View style={{ flex: 1, flexDirection: isMobile ? 'column' : 'row' }}>
-              <MapPanel travelsData={travelsData} coordinates={coordinates} style={styles.map} />
+            <View style={styles.mainContent}>
+              <MapPanel
+                  travelsData={travelsData}
+                  coordinates={coordinates}
+                  style={styles.map}
+              />
 
-              {infoVisible ? (
-                  <View style={isMobile ? styles.infoPanel : styles.desktopInfoWrapper}>
-                    <TravelListPanel {...{ travelsData, currentPage, itemsPerPage, itemsPerPageOptions, onPageChange: setCurrentPage, onItemsPerPageChange: setItemsPerPage }} />
-                    <Button title="Скрыть объекты" onPress={toggleInfoPanel} buttonStyle={styles.infoButton} />
+              {!isMobile && infoVisible && (
+                  <View style={styles.desktopInfoPanel}>
+                    <TravelListPanel
+                        travelsData={travelsData}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        itemsPerPageOptions={itemsPerPageOptions}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                    />
+                    <Button
+                        title="Скрыть объекты"
+                        onPress={toggleInfoPanel}
+                        buttonStyle={styles.toggleButton}
+                    />
                   </View>
-              ) : (
-                  <Button title="Показать объекты" onPress={toggleInfoPanel} buttonStyle={styles.infoButton} containerStyle={styles.topFilters} />
+              )}
+
+              {!isMobile && !infoVisible && (
+                  <View style={styles.desktopShowWrapper}>
+                    <Button
+                        title="Показать объекты"
+                        onPress={toggleInfoPanel}
+                        icon={<Icon name="keyboard-arrow-left" color="#fff" />}
+                        buttonStyle={styles.toggleButton}
+                    />
+                  </View>
+              )}
+
+              {isMobile && infoVisible && (
+                  <View style={styles.bottomSheetPanel}>
+                    <TravelListPanel
+                        travelsData={travelsData}
+                        currentPage={currentPage}
+                        itemsPerPage={itemsPerPage}
+                        itemsPerPageOptions={itemsPerPageOptions}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={setItemsPerPage}
+                    />
+                    <Button
+                        title="Скрыть объекты"
+                        onPress={toggleInfoPanel}
+                        buttonStyle={styles.toggleButton}
+                    />
+                  </View>
+              )}
+
+              {isMobile && !infoVisible && (
+                  <View style={styles.floatingShowWrapper}>
+                    <Button
+                        title="Показать объекты"
+                        onPress={toggleInfoPanel}
+                        icon={<Icon name="keyboard-arrow-up" color="#fff" />}
+                        buttonStyle={styles.floatingShowButton}
+                    />
+                  </View>
               )}
             </View>
           </View>
@@ -126,12 +217,78 @@ export default function MapScreen() {
   );
 }
 
-const getStyles = (isMobile) => StyleSheet.create({
-  safeContainer: { flex: 1, backgroundColor: '#f5f5f5' },
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  topFilters: { padding: 10, backgroundColor: '#f5f5f5' },
-  map: { flex: 1, margin: 10, borderRadius: 10 },
-  infoPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '50%', backgroundColor: 'white', borderRadius: 10, padding: 10 },
-  desktopInfoWrapper: { flex: 1, maxWidth: 360, margin: 10, backgroundColor: 'white', borderRadius: 10, padding: 10 },
-  infoButton: { backgroundColor: '#6aaaaa', borderRadius: 5, marginVertical: 10 },
-});
+const getStyles = isMobile =>
+    StyleSheet.create({
+      safeContainer: {
+        flex: 1,
+        backgroundColor: '#f2f4f7',
+      },
+      container: {
+        flex: 1,
+        padding: isMobile ? 8 : 16,
+      },
+      filtersPanel: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 12,
+        elevation: 2,
+      },
+      mainContent: {
+        flex: 1,
+        flexDirection: isMobile ? 'column' : 'row',
+        position: 'relative',
+      },
+      map: {
+        flex: 1,
+        minHeight: isMobile ? 300 : 'auto',
+        borderRadius: 16,
+        overflow: 'hidden',
+        elevation: 3,
+      },
+      desktopInfoPanel: {
+        width: 380,
+        marginLeft: 12,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 12,
+        elevation: 3,
+      },
+      desktopShowWrapper: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 10,
+      },
+      bottomSheetPanel: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#fff',
+        padding: 16,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        zIndex: 999,
+        elevation: 12,
+      },
+      toggleButton: {
+        backgroundColor: '#6AAAAA',
+        borderRadius: 12,
+        paddingVertical: 10,
+        marginTop: 12,
+      },
+      floatingShowWrapper: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        zIndex: 999,
+      },
+      floatingShowButton: {
+        backgroundColor: '#6AAAAA',
+        borderRadius: 50,
+        elevation: 6,
+      },
+    });
