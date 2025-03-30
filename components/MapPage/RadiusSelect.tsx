@@ -56,7 +56,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                 <select
                     value={value ?? ''}
                     onChange={(e) => handleChange(e.target.value)}
-                    style={styles.webSelect}
+                    style={styles.webSelect as any}
                     disabled={disabled || loading}
                 >
                     <option value="">{placeholder}</option>
@@ -67,7 +67,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                     ))}
                 </select>
                 {(loading || disabled) && (
-                    <div style={styles.webOverlay}>
+                    <div style={styles.webOverlay as any}>
                         {loading && <ActivityIndicator size="small" color="#666" />}
                     </div>
                 )}
@@ -104,10 +104,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                 animationType="fade"
                 onRequestClose={() => setVisible(false)}
             >
-                <Pressable
-                    style={styles.overlay}
-                    onPress={() => setVisible(false)}
-                >
+                <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
                     <View style={styles.modalContent}>
                         <FlatList
                             data={options}
@@ -122,9 +119,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                                     ]}
                                     android_ripple={{ color: '#f0f0f0' }}
                                 >
-                                    <Text style={styles.optionText}>
-                                        {item.name} км
-                                    </Text>
+                                    <Text style={styles.optionText}>{item.name} км</Text>
                                     {String(item.id) === String(value) && (
                                         <Text style={styles.checkmark}>✓</Text>
                                     )}
@@ -145,7 +140,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     label: {
         fontSize: 14,
@@ -188,7 +183,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666',
         textAlign: 'center',
-        lineHeight: 24, // Центрирование по вертикали
+        lineHeight: 24,
     },
     loader: {
         marginRight: 8,
@@ -242,28 +237,18 @@ const styles = StyleSheet.create({
     // Web styles
     webSelect: {
         width: '100%',
-        height: 40,
+        height: 48, // синхронизировано с мобилкой
         borderRadius: 8,
         paddingLeft: 10,
-         fontSize: 15,
+        fontSize: 15,
         border: '1px solid #ddd',
         backgroundColor: '#fff',
         color: '#333',
         cursor: 'pointer',
         outline: 'none',
-
         appearance: 'none',
         WebkitAppearance: 'none',
         MozAppearance: 'none',
-
-       ':focus': {
-            borderColor: '#007AFF',
-        },
-        ':disabled': {
-            backgroundColor: '#f5f5f5',
-            color: '#999',
-            cursor: 'not-allowed',
-        },
     },
     webOverlay: {
         position: 'absolute',

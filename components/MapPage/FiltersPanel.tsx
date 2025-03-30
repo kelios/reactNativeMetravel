@@ -102,7 +102,7 @@ const FiltersPanel = ({
             </View>
 
             {/* Кнопка очистки */}
-            <View style={styles.filterField}>
+            <View style={styles.resetButtonContainer}>
                 <Button
                     title="Очистить"
                     onPress={resetFilters}
@@ -145,10 +145,10 @@ const styles = StyleSheet.create({
     },
     desktopFilters: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        flexWrap: 'nowrap',
+        alignItems: 'center',
         justifyContent: 'space-between',
         gap: 10,
-        flexWrap: 'wrap',
     },
     mobileFilters: {
         flexDirection: 'column',
@@ -156,12 +156,17 @@ const styles = StyleSheet.create({
     },
     filterField: {
         flex: 1,
-        minWidth: 120,
+        minWidth: 200,
+    },
+    resetButtonContainer: {
+        minWidth: 200,
+        alignSelf: 'flex-end',
     },
     input: {
+        height: 48,
         borderWidth: 1,
         borderColor: '#d1d1d1',
-        padding: 12,
+        paddingHorizontal: 12,
         backgroundColor: 'white',
         borderRadius: 6,
         fontSize: 14,
@@ -169,8 +174,8 @@ const styles = StyleSheet.create({
     resetButton: {
         backgroundColor: '#ff9f5a',
         borderRadius: 5,
-        paddingHorizontal: 10,
-        height: 40,
+        height: 48,
+        width: '100%',
     },
     resetButtonText: {
         fontWeight: 'bold',
