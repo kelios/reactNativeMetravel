@@ -62,19 +62,35 @@ export default function MapScreen() {
     (async () => {
       try {
         const travelData = await fetchTravelsForMap(currentPage, itemsPerPage, { radius: filterValue.radius });
-        setRawTravelsData(travelData?.data || []);
+        //setRawTravelsData(travelData?.data || []);
+        setRawTravelsData(travelData || []);
       } catch (error) { console.log('Failed to fetch travel data:', error); }
     })();
   }, [filterValue.radius, currentPage, itemsPerPage]);
 
   useEffect(() => {
-    setTravelsData(rawTravelsData.filter(travel => {
-      const travelCategories = travel.categoryName?.split(',').map(s => s.trim()) || [];
-      const categoryMatch = !filterValue.categories.length || filterValue.categories.every(cat => travelCategories.includes(cat));
-      const addressMatch = !filterValue.address || travel.address?.toLowerCase().includes(filterValue.address.toLowerCase());
+    const normalize = (str) => str.trim().toLowerCase();
+    const selectedCategories = filterValue.categories.map(normalize);
+
+    const filtered = rawTravelsData.filter(travel => {
+      const travelCategories = travel.categoryName
+          ?.split(',')
+          .map(normalize) || [];
+
+      const categoryMatch =
+          selectedCategories.length === 0 ||
+          travelCategories.some(cat => selectedCategories.includes(cat));
+
+      const addressMatch =
+          !filterValue.address ||
+          (travel.address && travel.address.toLowerCase().includes(filterValue.address.toLowerCase()));
+
       return categoryMatch && addressMatch;
-    }));
+    });
+
+    setTravelsData(filtered);
   }, [filterValue.categories, filterValue.address, rawTravelsData]);
+
 
   const onFilterChange = (field, value) => setFilterValue(prev => ({ ...prev, [field]: value }));
   const onTextFilterChange = (value) => setFilterValue(prev => ({ ...prev, address: value }));
