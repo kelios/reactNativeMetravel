@@ -46,9 +46,9 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
     const handlePressLink = () => {
         const link = articleUrl || urlTravel;
         if (link) {
-            Linking.openURL(link).catch((err) => {
-                console.error('Failed to open URL:', err);
-            });
+            Linking.openURL(link).catch(err =>
+                console.error('Failed to open URL:', err)
+            );
         }
     };
 
@@ -64,16 +64,16 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
         const telegramShareUrl =
             'https://t.me/share/url?url=' + encodeURIComponent(coord) +
             '&text=' + encodeURIComponent(`Координаты места: ${coord}`);
-        Linking.openURL(telegramShareUrl).catch((err) => {
-            console.error('Failed to open Telegram URL:', err);
-        });
+        Linking.openURL(telegramShareUrl).catch(err =>
+            console.error('Failed to open Telegram URL:', err)
+        );
     };
 
     const categoryBadgeStyle = getCategoryBadgeStyle(categoryName);
 
     return (
         <>
-            <Card style={styles.container} elevation={4}>
+            <Card style={styles.container} mode="contained">
                 {/* Фото */}
                 {travelImageThumbUrl ? (
                     <Card.Cover
@@ -91,67 +91,58 @@ const AddressListItem: React.FC<AddressListItemProps> = ({ travel }) => {
 
                 {/* Контент */}
                 <Card.Content style={styles.cardContent}>
-                    <RNView style={styles.cardInnerWrapper}>
-                        {/* Адрес */}
-                        {!!address && (
-                            <>
-                                <Text
-                                    variant="titleMedium"
-                                    style={styles.title}
-                                    numberOfLines={2}
-                                    ellipsizeMode="tail"
-                                >
-                                    {address}
-                                </Text>
-                                <Divider style={styles.divider} />
-                            </>
-                        )}
+                    {!!address && (
+                        <>
+                            <Text style={styles.title} numberOfLines={2}>
+                                {address}
+                            </Text>
+                            <Divider style={styles.divider} />
+                        </>
+                    )}
 
-                        {/* Координаты */}
-                        {!!shortCoord && (
-                            <>
-                                <LabelText
-                                    label="Координаты:"
-                                    text={shortCoord}
-                                    labelStyle={styles.labelText}
-                                    textStyle={styles.labelText}
-                                />
-                                <RNView style={styles.coordsActions}>
-                                    <Tooltip icon="content-copy" onPress={handleCopyCoords} tooltip="Скопировать" />
-                                    <Tooltip icon="send" onPress={handleShareTelegram} tooltip="Отправить в Telegram" />
-                                </RNView>
-                                <Divider style={styles.divider} />
-                            </>
-                        )}
-
-                        {/* Категория */}
-                        {!!categoryName && (
-                            <RNView style={[styles.categoryWrapper, categoryBadgeStyle]}>
-                                <Text style={styles.categoryText}>{categoryName}</Text>
+                    {!!shortCoord && (
+                        <>
+                            <LabelText
+                                label="Координаты:"
+                                text={shortCoord}
+                                labelStyle={styles.labelText}
+                                textStyle={styles.labelText}
+                            />
+                            <RNView style={styles.coordsActions}>
+                                <Tooltip icon="content-copy" onPress={handleCopyCoords} tooltip="Скопировать" />
+                                <Tooltip icon="send" onPress={handleShareTelegram} tooltip="В Telegram" />
                             </RNView>
-                        )}
-                    </RNView>
+                            <Divider style={styles.divider} />
+                        </>
+                    )}
+
+                    {!!categoryName && (
+                        <RNView style={[styles.categoryWrapper, categoryBadgeStyle]}>
+                            <Text style={styles.categoryText}>{categoryName}</Text>
+                        </RNView>
+                    )}
                 </Card.Content>
 
-                {/* Кнопка Подробнее */}
                 <Card.Actions style={styles.actions}>
                     <Button
                         onPress={handlePressLink}
-                        mode="contained"
+                        mode="contained-tonal"
                         icon="link"
                         buttonColor="#ff9f5a"
                         textColor="#fff"
+                        style={styles.moreButton}
+                        labelStyle={{ fontWeight: '600' }}
                     >
                         Подробнее
                     </Button>
                 </Card.Actions>
             </Card>
 
-            {/* Snackbar */}
             <Snackbar
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
                 duration={2000}
+                style={styles.snackbar}
                 action={{ label: 'OK', onPress: () => setSnackbarVisible(false) }}
             >
                 {snackbarMessage}
@@ -214,57 +205,68 @@ const getCategoryBadgeStyle = (category?: string) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFF',
-        borderRadius: 12,
-        marginVertical: wp(2),
-        marginHorizontal: wp(4),
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        marginVertical: 10,
+        marginHorizontal: 12,
         overflow: 'hidden',
-        elevation: 4,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
     },
     image: {
         width: '100%',
-        height: wp(40),
+        height: 180,
     },
     cardContent: {
-        paddingHorizontal: wp(4),
-        paddingVertical: wp(3),
-    },
-    cardInnerWrapper: {
-        flexDirection: 'column',
-        gap: wp(2),
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        gap: 10,
     },
     title: {
-        color: '#333',
-        fontWeight: '700',
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#222',
     },
     divider: {
-        backgroundColor: '#d1d1d1',
+        marginVertical: 8,
         height: 1,
+        backgroundColor: '#e0e0e0',
     },
     coordsActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 8,
     },
     labelText: {
-        color: '#333',
+        fontSize: 14,
+        color: '#444',
     },
     categoryWrapper: {
-        borderRadius: 6,
-        paddingHorizontal: wp(2),
-        paddingVertical: wp(0.5),
+        borderRadius: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
         alignSelf: 'flex-start',
-        maxWidth: '90%',
     },
     categoryText: {
         color: '#fff',
-        fontSize: wp(3),
+        fontSize: 13,
         fontWeight: '500',
     },
     actions: {
         justifyContent: 'flex-end',
-        paddingHorizontal: wp(2),
-        paddingBottom: wp(2),
+        paddingHorizontal: 12,
+        paddingBottom: 12,
+    },
+    moreButton: {
+        borderRadius: 8,
+    },
+    snackbar: {
+        backgroundColor: '#333',
+        marginHorizontal: 16,
+        borderRadius: 8,
     },
     tooltip: {
         position: 'absolute',
@@ -275,11 +277,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         borderRadius: 4,
         marginBottom: 6,
-        zIndex: 9999,
+        zIndex: 1000,
     },
     tooltipText: {
         color: '#fff',
-        fontSize: wp(3),
+        fontSize: 12,
     },
 });
 
