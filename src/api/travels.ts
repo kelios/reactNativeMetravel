@@ -61,7 +61,7 @@ const GET_TRAVELS_NEAR = `${URLAPI}/api/travelsNear`;
 const GET_TRAVELS_POPULAR = `${URLAPI}/api/travelsPopular`;
 const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`;
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`;
-const SEND_FEEDBACK = `${URLAPI}/api/feedback`;
+const SEND_FEEDBACK = `${URLAPI}/api/feedback/`;
 const GET_ARTICLES = `${URLAPI}/api/articles`;
 
 // Заглушка travelDef для "пустого" результата
