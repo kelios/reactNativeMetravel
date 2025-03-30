@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { CheckBox } from 'react-native-elements';
+import {useRoute} from "@react-navigation/native";
 
 const FiltersComponent = ({
                               filters,
@@ -27,6 +28,9 @@ const FiltersComponent = ({
     const [yearInput, setYearInput] = useState(filterValue.year || '');
     const [showModerationPending, setShowModerationPending] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+
+    const route = useRoute();
+    const isTravelsByPage = route.name === 'travelsby';
 
     const applyFilters = () => {
         const updatedFilters = {
@@ -137,7 +141,7 @@ const FiltersComponent = ({
 
                 {/* Сетка фильтров */}
                 <View style={styles.filtersGrid}>
-                    {renderMultiSelect('Страны', 'countries', filters.countries, 'country_id', 'title_ru')}
+                    {!isTravelsByPage && renderMultiSelect('Страны', 'countries', filters.countries, 'country_id', 'title_ru')}
                     {renderMultiSelect('Категории', 'categories', filters.categories, 'id', 'name')}
                     {renderMultiSelect('Объекты', 'categoryTravelAddress', filters.categoryTravelAddress, 'id', 'name')}
                     {renderMultiSelect('Транспорт', 'transports', filters.transports, 'id', 'name')}
