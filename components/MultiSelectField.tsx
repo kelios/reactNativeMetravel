@@ -42,7 +42,7 @@ const MultiSelectField = forwardRef(
                     search
                     onChange={handleChange}
                     searchPlaceholder="Поиск..."
-                    style={styles.dropdown}
+                    style={[styles.dropdown, { height: 44, justifyContent: 'center' }]}
                     {...rest}
                 />
             </View>
@@ -52,7 +52,7 @@ const MultiSelectField = forwardRef(
 
 const styles = StyleSheet.create({
     container: { marginBottom: 12 },
-    label: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+    label: { fontSize: 14, fontWeight: 'bold', marginBottom: 7 },
     dropdown: {
         borderWidth: 1,
         borderColor: '#d1d1d1',

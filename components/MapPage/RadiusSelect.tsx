@@ -44,10 +44,13 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
 
     const selectedLabel = selectedOption ? `${selectedOption.name} км` : placeholder;
 
-    const handleChange = useCallback((newValue: number | string | null) => {
-        onChange(newValue);
-        setVisible(false);
-    }, [onChange]);
+    const handleChange = useCallback(
+        (newValue: number | string | null) => {
+            onChange(newValue);
+            setVisible(false);
+        },
+        [onChange]
+    );
 
     const renderWebSelect = () => (
         <View style={[styles.container, disabled && styles.disabled]}>
@@ -84,7 +87,6 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                 activeOpacity={0.7}
                 disabled={disabled || loading}
             >
-                {/* Иконка 📡 */}
                 <View style={styles.leftIcon}>
                     <Text style={{ fontSize: 16 }}>📡</Text>
                 </View>
@@ -92,13 +94,18 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                 {loading ? (
                     <ActivityIndicator size="small" color="#666" style={styles.loader} />
                 ) : (
-                    <Text style={[styles.selectorText, disabled && styles.textDisabled]}>
+                    <Text
+                        style={[
+                            styles.selectorText,
+                            !value && styles.placeholderText,
+                            disabled && styles.textDisabled,
+                        ]}
+                    >
                         {selectedLabel}
                     </Text>
                 )}
 
-                {/* Очистка */}
-                {!loading && !!value && !disabled && (
+                {!!value && !disabled && !loading && (
                     <TouchableOpacity
                         onPress={() => handleChange(null)}
                         style={styles.clearButton}
@@ -108,7 +115,6 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                     </TouchableOpacity>
                 )}
 
-                {/* Стрелка вниз */}
                 {!loading && (
                     <View style={styles.chevronContainer}>
                         <Text style={styles.chevron}>⌄</Text>
@@ -127,22 +133,23 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                         <FlatList
                             data={options}
                             keyExtractor={(item) => String(item.id)}
-                            renderItem={({ item }) => (
-                                <Pressable
-                                    onPress={() => handleChange(item.id)}
-                                    style={({ pressed }) => [
-                                        styles.option,
-                                        pressed && styles.optionPressed,
-                                        String(item.id) === String(value) && styles.optionSelected,
-                                    ]}
-                                    android_ripple={{ color: '#f0f0f0' }}
-                                >
-                                    <Text style={styles.optionText}>{item.name} км</Text>
-                                    {String(item.id) === String(value) && (
-                                        <Text style={styles.checkmark}>✓</Text>
-                                    )}
-                                </Pressable>
-                            )}
+                            renderItem={({ item }) => {
+                                const isSelected = String(item.id) === String(value);
+                                return (
+                                    <Pressable
+                                        onPress={() => handleChange(item.id)}
+                                        style={({ pressed }) => [
+                                            styles.option,
+                                            pressed && styles.optionPressed,
+                                            isSelected && styles.optionSelected,
+                                        ]}
+                                        android_ripple={{ color: '#f0f0f0' }}
+                                    >
+                                        <Text style={styles.optionText}>{item.name} км</Text>
+                                        {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                                    </Pressable>
+                                );
+                            }}
                             ItemSeparatorComponent={() => <View style={styles.separator} />}
                             contentContainerStyle={styles.listContent}
                         />
@@ -170,12 +177,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#ccc',
         borderRadius: 8,
         paddingHorizontal: 12,
-        height: 48,
+        height: 44,
         backgroundColor: '#fff',
         width: '100%',
+        shadowColor: '#000',
+        shadowOpacity: 0.02,
+        shadowRadius: 2,
+        elevation: 2,
     },
     selectorDisabled: {
         backgroundColor: '#f5f5f5',
@@ -184,15 +195,22 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#333',
         flex: 1,
+        paddingVertical: 2,
+    },
+    placeholderText: {
+        color: '#999',
+        fontStyle: 'italic',
     },
     textDisabled: {
-        color: '#999',
+        color: '#bbb',
     },
     leftIcon: {
+        justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 8,
     },
     clearButton: {
-        paddingHorizontal: 8,
+        paddingHorizontal: 4,
     },
     clearIcon: {
         fontSize: 18,
@@ -200,10 +218,13 @@ const styles = StyleSheet.create({
     },
     chevronContainer: {
         marginLeft: 8,
+        minWidth: 18,
+        alignItems: 'center',
     },
     chevron: {
         fontSize: 16,
         color: '#666',
+        textAlign: 'right',
     },
     loader: {
         marginRight: 8,
@@ -237,14 +258,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9f9f9',
     },
     optionSelected: {
-        backgroundColor: '#f0f7ff',
+        backgroundColor: '#e5f6ff',
+        borderLeftWidth: 4,
+        borderLeftColor: '#007aff',
     },
     optionText: {
         fontSize: 15,
         color: '#333',
     },
     checkmark: {
-        color: '#007AFF',
+        color: '#007aff',
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -255,11 +278,11 @@ const styles = StyleSheet.create({
     },
     webSelect: {
         width: '100%',
-        height: 48,
+        height: 44,
         borderRadius: 8,
         paddingLeft: 10,
         fontSize: 15,
-        border: '1px solid #ddd',
+        border: '1px solid #ccc',
         backgroundColor: '#fff',
         color: '#333',
         cursor: 'pointer',
@@ -267,6 +290,7 @@ const styles = StyleSheet.create({
         appearance: 'none',
         WebkitAppearance: 'none',
         MozAppearance: 'none',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
     },
     webOverlay: {
         position: 'absolute',

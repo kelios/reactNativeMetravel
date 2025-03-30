@@ -15,6 +15,8 @@ const FiltersPanel = ({
                           isMobile,
                           closeMenu,
                       }) => {
+    const styles = getStyles(isMobile);
+
     const travelCategoriesCount = React.useMemo(() => {
         const count = {};
         travelsData?.forEach(travel => {
@@ -42,7 +44,7 @@ const FiltersPanel = ({
     );
 
     return (
-        <View style={[styles.filters, isMobile ? styles.mobileFilters : styles.desktopFilters]}>
+        <View style={[styles.filtersContainer, isMobile ? styles.mobileLayout : styles.desktopLayout]}>
             {/* Категории */}
             {!!categoriesWithCount.length && (
                 <View style={styles.filterField}>
@@ -54,13 +56,13 @@ const FiltersPanel = ({
                         labelField="label"
                         valueField="value"
                         compact
-                        showsSelectedItems={false}
+                        renderSelectedItem={() => <></>} // Исправленный код
                     />
                     {!!filterValue.categories.length && (
-                        <ScrollView horizontal style={styles.selectedCategoriesContainer}>
+                        <ScrollView horizontal style={styles.selectedCategories}>
                             {filterValue.categories.map(catName => (
-                                <View key={catName} style={styles.categoryBadge}>
-                                    <Text style={styles.categoryBadgeText}>{catName}</Text>
+                                <View key={catName} style={styles.categoryChip}>
+                                    <Text style={styles.categoryChipText}>{catName}</Text>
                                     <TouchableOpacity
                                         onPress={() =>
                                             onFilterChange(
@@ -68,6 +70,7 @@ const FiltersPanel = ({
                                                 filterValue.categories.filter(c => c !== catName)
                                             )
                                         }
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                                     >
                                         <Icon name="close" size={16} color="#fff" />
                                     </TouchableOpacity>
@@ -94,132 +97,122 @@ const FiltersPanel = ({
                 <Text style={styles.label}>Адрес</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Адрес"
+                    placeholder="Введите адрес"
                     value={filterValue.address}
                     onChangeText={onTextFilterChange}
                     accessibilityLabel="Address input"
                 />
             </View>
 
-            {/* Кнопка очистки */}
-            <View style={styles.resetButtonContainer}>
+            {/* Очистка */}
+            <View style={styles.actions}>
                 <Button
                     title="Очистить"
                     onPress={resetFilters}
-                    buttonStyle={styles.resetButton}
-                    titleStyle={styles.resetButtonText}
-                    icon={<Icon name="clear" size={16} color="white" />}
+                    buttonStyle={styles.clearButton}
+                    titleStyle={styles.clearButtonText}
+                    icon={<Icon name="delete-outline" size={18} color="white" />}
                     iconRight
-                    accessibilityLabel="Clear filters"
                 />
-            </View>
-
-            {/* Закрыть (мобильная версия) */}
-            {isMobile && (
-                <View style={styles.filterField}>
-                    <TouchableOpacity
-                        style={styles.closeButton}
-                        onPress={closeMenu}
-                        accessibilityLabel="Close menu"
-                    >
-                        <Icon name="close" size={16} color="white" />
-                        <Text style={styles.closeButtonText}>Закрыть</Text>
+                {isMobile && (
+                    <TouchableOpacity onPress={closeMenu} style={styles.closeBtn}>
+                        <Icon name="close" size={18} color="white" />
+                        <Text style={styles.closeBtnText}>Закрыть</Text>
                     </TouchableOpacity>
-                </View>
-            )}
+                )}
+            </View>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
-    filters: {
-        backgroundColor: 'white',
-        padding: 10,
-        borderRadius: 10,
+const getStyles = (isMobile) => StyleSheet.create({
+    filtersContainer: {
+        backgroundColor: '#fff',
+        padding: 12,
+        borderRadius: 12,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 5,
-        marginBottom: 10,
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+        gap: 12,
     },
-    desktopFilters: {
+    desktopLayout: {
         flexDirection: 'row',
-        flexWrap: 'nowrap',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
-        gap: 10,
+        flexWrap: 'wrap',
     },
-    mobileFilters: {
+    mobileLayout: {
         flexDirection: 'column',
-        gap: 10,
     },
     filterField: {
         flex: 1,
         minWidth: 200,
     },
-    resetButtonContainer: {
-        minWidth: 200,
-        alignSelf: 'flex-end',
-    },
-    input: {
-        height: 48,
-        borderWidth: 1,
-        borderColor: '#d1d1d1',
-        paddingHorizontal: 12,
-        backgroundColor: 'white',
-        borderRadius: 6,
-        fontSize: 14,
-    },
-    resetButton: {
-        backgroundColor: '#ff9f5a',
-        borderRadius: 5,
-        height: 48,
-        width: '100%',
-    },
-    resetButtonText: {
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    closeButton: {
-        backgroundColor: '#aaa',
-        padding: 8,
-        borderRadius: 5,
+    selectedCategories: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        marginTop: 6,
     },
-    closeButtonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 14,
-        marginLeft: 5,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginBottom: 4,
-    },
-    selectedCategoriesContainer: {
-        flexDirection: 'row',
-        flexWrap: 'nowrap',
-        marginTop: 4,
-        paddingVertical: 4,
-    },
-    categoryBadge: {
+    categoryChip: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#6aaaaa',
         paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 16,
+        paddingHorizontal: 10,
+        borderRadius: 20,
+        marginRight: 8,
+    },
+    categoryChipText: {
+        color: 'white',
+        fontSize: 13,
         marginRight: 6,
     },
-    categoryBadgeText: {
-        color: '#fff',
-        marginRight: 4,
+    input: {
+        height: 44,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        fontSize: 14,
+        backgroundColor: '#fff',
+    },
+    label: {
         fontSize: 13,
+        fontWeight: '600',
+        marginBottom: 8,
+        color: '#333',
+    },
+    actions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginTop: isMobile ? 0 : 22,
+    },
+    clearButton: {
+        backgroundColor: '#ff9f5a',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        height: 44,
+    },
+    clearButtonText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginRight: 6,
+    },
+    closeBtn: {
+        backgroundColor: '#999',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    closeBtnText: {
+        color: 'white',
+        fontSize: 14,
+        marginLeft: 6,
     },
 });
+
 
 export default React.memo(FiltersPanel);
