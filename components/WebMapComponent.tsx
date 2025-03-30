@@ -53,8 +53,14 @@ const WebMapComponent = ({
                          }) => {
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
-
+    const isValidCoordinates = ({ lat, lng }) =>
+        lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
     const addMarker = async (latlng) => {
+        if (!isValidCoordinates(latlng)) {
+            console.warn('Недопустимые координаты:', latlng);
+            return;
+        }
+
         const geocodeData = await reverseGeocode(latlng);
         const address = geocodeData?.display_name || '';
         const country = geocodeData?.address?.country || '';
