@@ -180,7 +180,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             {renderInput('Бюджет (руб.)', 'budget')}
 
             <Button mode="outlined" onPress={handleResetFilters} style={styles.resetButton}>
-                Сбросить фильтры
+                Очистить
             </Button>
         </ScrollView>
     );
