@@ -19,7 +19,7 @@ interface Option {
 interface RadiusSelectProps {
     value?: number | string | null;
     options?: Option[];
-    onChange: (value: number | string) => void;
+    onChange: (value: number | string | null) => void;
     label?: string;
     disabled?: boolean;
     loading?: boolean;
@@ -44,7 +44,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
 
     const selectedLabel = selectedOption ? `${selectedOption.name} км` : placeholder;
 
-    const handleChange = useCallback((newValue: number | string) => {
+    const handleChange = useCallback((newValue: number | string | null) => {
         onChange(newValue);
         setVisible(false);
     }, [onChange]);
@@ -55,7 +55,7 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
             <div style={{ position: 'relative' }}>
                 <select
                     value={value ?? ''}
-                    onChange={(e) => handleChange(e.target.value)}
+                    onChange={(e) => handleChange(e.target.value || null)}
                     style={styles.webSelect as any}
                     disabled={disabled || loading}
                 >
@@ -84,6 +84,11 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                 activeOpacity={0.7}
                 disabled={disabled || loading}
             >
+                {/* Иконка 📡 */}
+                <View style={styles.leftIcon}>
+                    <Text style={{ fontSize: 16 }}>📡</Text>
+                </View>
+
                 {loading ? (
                     <ActivityIndicator size="small" color="#666" style={styles.loader} />
                 ) : (
@@ -91,6 +96,19 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
                         {selectedLabel}
                     </Text>
                 )}
+
+                {/* Очистка */}
+                {!loading && !!value && !disabled && (
+                    <TouchableOpacity
+                        onPress={() => handleChange(null)}
+                        style={styles.clearButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Text style={styles.clearIcon}>×</Text>
+                    </TouchableOpacity>
+                )}
+
+                {/* Стрелка вниз */}
                 {!loading && (
                     <View style={styles.chevronContainer}>
                         <Text style={styles.chevron}>⌄</Text>
@@ -148,15 +166,13 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         color: '#333',
     },
-    // Mobile styles
     selector: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 8,
-        paddingHorizontal: 14,
+        paddingHorizontal: 12,
         height: 48,
         backgroundColor: '#fff',
         width: '100%',
@@ -172,23 +188,26 @@ const styles = StyleSheet.create({
     textDisabled: {
         color: '#999',
     },
+    leftIcon: {
+        marginRight: 8,
+    },
+    clearButton: {
+        paddingHorizontal: 8,
+    },
+    clearIcon: {
+        fontSize: 18,
+        color: '#999',
+    },
     chevronContainer: {
-        width: 24,
-        height: 24,
-        justifyContent: 'center',
-        alignItems: 'center',
         marginLeft: 8,
     },
     chevron: {
         fontSize: 16,
         color: '#666',
-        textAlign: 'center',
-        lineHeight: 24,
     },
     loader: {
         marginRight: 8,
     },
-    // Modal styles
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.4)',
@@ -234,10 +253,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#eee',
         marginHorizontal: 16,
     },
-    // Web styles
     webSelect: {
         width: '100%',
-        height: 48, // синхронизировано с мобилкой
+        height: 48,
         borderRadius: 8,
         paddingLeft: 10,
         fontSize: 15,
