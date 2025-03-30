@@ -468,21 +468,18 @@ export const fetchTravelsForMap = async (
     filter: Record<string, any>,
 ): Promise<TravelsForMap> => {
     try {
-        const radius = filter?.radius ?? 60;
+        const radius = parseInt(filter?.radius ?? '60', 10);
         const whereObject = {
             publish: 1,
             moderation: 1,
             lat: 50.0170649,
             lng: 19.8933367,
-            radius: { id: radius, name: radius },
-            categories: [],
-            address: null,
+            radius: radius,
         };
 
         const paramsObj = {
             page: (page + 1).toString(),
             perPage: itemsPerPage.toString(),
-            query: JSON.stringify(filter),
             where: JSON.stringify(whereObject),
         };
         const params = new URLSearchParams(paramsObj).toString();
