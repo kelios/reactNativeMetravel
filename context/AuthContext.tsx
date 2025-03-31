@@ -1,7 +1,18 @@
-
-import React, { createContext, useState, useEffect, useContext, ReactNode, FC } from 'react';
+import React, {
+    createContext,
+    useState,
+    useEffect,
+    useContext,
+    ReactNode,
+    FC,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logoutApi, loginApi, resetPasswordLinkApi, setNewPasswordApi } from '@/src/api/travels';
+import {
+    logoutApi,
+    loginApi,
+    resetPasswordLinkApi,
+    setNewPasswordApi,
+} from '@/src/api/travels';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -14,7 +25,7 @@ interface AuthContextType {
     setUserId: (id: string | null) => void;
     logout: () => Promise<void>;
     login: (email: string, password: string) => Promise<boolean>;
-    sendPassword: (email: string) => Promise<boolean>;
+    sendPassword: (email: string) => Promise<string>;
     setNewPassword: (token: string, newPassword: string) => Promise<boolean>;
 }
 
@@ -78,7 +89,12 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         } catch (e) {
             console.warn('Ошибка при логауте с сервера:', e);
         } finally {
-            await AsyncStorage.multiRemove(['userToken', 'userName', 'isSuperuser', 'userId']);
+            await AsyncStorage.multiRemove([
+                'userToken',
+                'userName',
+                'isSuperuser',
+                'userId',
+            ]);
             setIsAuthenticated(false);
             setUserId(null);
             setUsername('');
@@ -86,17 +102,37 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
-    const sendPassword = async (email: string): Promise<boolean> => {
-        return await resetPasswordLinkApi(email);
+    const sendPassword = async (email: string): Promise<string> => {
+        const response = await resetPasswordLinkApi(email);
+        if (typeof response === 'string') {
+            return response;
+        }
+        return 'Что-то пошло не так. Попробуйте снова.';
     };
 
-    const setNewPassword = async (token: string, newPassword: string): Promise<boolean> => {
+    const setNewPassword = async (
+        token: string,
+        newPassword: string
+    ): Promise<boolean> => {
         return await setNewPasswordApi(token, newPassword);
     };
 
     return (
         <AuthContext.Provider
-            value={{ isAuthenticated, username, isSuperuser, userId, setIsAuthenticated, setUsername, setIsSuperuser, setUserId, login, logout, sendPassword, setNewPassword }}
+            value={{
+                isAuthenticated,
+                username,
+                isSuperuser,
+                userId,
+                setIsAuthenticated,
+                setUsername,
+                setIsSuperuser,
+                setUserId,
+                login,
+                logout,
+                sendPassword,
+                setNewPassword,
+            }}
         >
             {children}
         </AuthContext.Provider>

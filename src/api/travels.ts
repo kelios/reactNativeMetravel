@@ -176,20 +176,20 @@ export const resetPasswordLinkApi = async (email: string) => {
         });
 
         const json = await response.json();
+
         if (!response.ok) {
-            return json?.email?.[0] || 'Ошибка';
+            // Обрабатываем ошибку валидации
+            return json?.email?.[0] || json?.message || 'Ошибка';
         }
 
-        if (json.success) {
-            return 'Инструкции по восстановлению пароля отправлены на ваш email';
-        }
-        return false;
-
+        // Возвращаем любое текстовое сообщение от сервера
+        return json?.message || 'Инструкции по восстановлению отправлены.';
     } catch (error) {
         console.error(error);
         return 'Не удалось отправить инструкции по восстановлению пароля';
     }
 };
+
 
 export const setNewPasswordApi = async (password_reset_token: string, password: string) => {
     try {
