@@ -513,18 +513,37 @@ export const fetchCounties = async (): Promise<Filters> => {
     }
 };
 
-export const sendFeedback = async (name: string, email: string, message: string) => {
+export const sendFeedback = async (
+    name: string,
+    email: string,
+    message: string
+): Promise<string> => {
     try {
         const res = await fetch(SEND_FEEDBACK, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, message } as FeedbackData),
+            body: JSON.stringify({ name, email, message }),
         });
+
+        const json = await res.json();
+
         if (!res.ok) {
-            throw new Error(`Server responded with status: ${res.status}`);
+            // Разбор поля с ошибками
+            const firstError =
+                json?.email?.[0] ||
+                json?.name?.[0] ||
+                json?.message?.[0] ||
+                json?.detail ||
+                'Ошибка при отправке.';
+            throw new Error(firstError);
         }
-    } catch (e) {
-        console.log('Error fetching filters:', e);
+
+        return typeof json === 'string'
+            ? json
+            : json?.message || 'Сообщение успешно отправлено';
+    } catch (e: any) {
+        console.error('Ошибка при отправке обратной связи:', e);
+        throw new Error(e?.message || 'Не удалось отправить сообщение');
     }
 };
 

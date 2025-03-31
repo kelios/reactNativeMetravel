@@ -15,7 +15,7 @@ const { width } = Dimensions.get('window');
 
 export default function AboutScreen() {
   const sendMail = () => {
-    const email = 'info@metravel.by';
+    const email = 'metraveldev@gmail.com';
     const subject = 'Info metravel.by';
     const body = 'Добрый день!';
     const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -68,7 +68,7 @@ export default function AboutScreen() {
               </Paragraph>
 
               <TouchableOpacity onPress={sendMail}>
-                <Text style={styles.link}>info@metravel.by</Text>
+                <Text style={styles.link}>metraveldev@gmail.com</Text>
               </TouchableOpacity>
             </View>
           </View>
