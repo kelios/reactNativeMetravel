@@ -8,5 +8,7 @@ expo-env.d.ts
 settings.json
 .prettierrc
 .env
+.env.dev
+.env.prod
 .expo
 .idea

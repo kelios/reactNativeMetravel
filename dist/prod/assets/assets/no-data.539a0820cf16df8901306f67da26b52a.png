@@ -1,0 +1,46 @@
+<svg
+        width="300"
+        height="200"
+        viewBox="0 0 300 200"
+        xmlns="http://www.w3.org/2000/svg"
+>
+    <!-- Градиент для фона -->
+    <defs>
+        <linearGradient id="bgGradient1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F7F9FC"/>
+            <stop offset="100%" stop-color="#DCE3EA"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Прямоугольник фона -->
+    <rect width="300" height="200" fill="url(#bgGradient1)" />
+
+    <!-- Полупрозрачный круг на фоне -->
+    <circle
+            cx="150"
+            cy="100"
+            r="70"
+            fill="#9BB7D2"
+            fill-opacity="0.15"
+    />
+
+    <!-- Силуэт гор -->
+    <path
+            d="M 20 150 L 80 60 L 120 100 L 150 80 L 200 140 L 240 110 L 280 150 Z"
+            fill="#9BB7D2"
+            fill-opacity="0.6"
+    />
+
+    <!-- Текст «Фото отсутствует» -->
+    <text
+            x="150"
+            y="180"
+            font-family="sans-serif"
+            font-size="14"
+            fill="#444"
+            text-anchor="middle"
+            alignment-baseline="middle"
+    >
+        Фото отсутствует
+    </text>
+</svg>
