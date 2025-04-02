@@ -12,3 +12,4 @@ settings.json
 .env.prod
 .expo
 .idea
+env.sh

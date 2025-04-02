@@ -1,5 +1,5 @@
-const MEASUREMENT_ID = process.env.EXPO_GOOGLE_GA4; // Замени на свой GA4 ID
-const API_SECRET = process.env.EXPO_GOOGLE_API_SECRET; // Вставь свой API Secret
+const MEASUREMENT_ID = process.env.EXPO_PUBLIC_GOOGLE_GA4; // Замени на свой GA4 ID
+const API_SECRET = process.env.EXPO_PUBLIC_GOOGLE_API_SECRET; // Вставь свой API Secret
 
 export const sendAnalyticsEvent = async (eventName, eventParams = {}) => {
     const url = `https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}`;
