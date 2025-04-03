@@ -48,13 +48,13 @@ export default function RootLayout() {
         PlayfairDisplay_400Regular,
         ...FontAwesome.font,
     });
-
+/*
     useEffect(() => {
         if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'false') {
             sendAnalyticsEvent('app_open', { screen: 'Home' });
         }
     }, []);
-
+*/
     useEffect(() => {
         if (error) {
             throw error;

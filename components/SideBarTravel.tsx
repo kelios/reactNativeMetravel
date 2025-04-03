@@ -50,10 +50,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(
             Linking.openURL(url);
         }, [travel.id]);
 
-        const gallery =
-            process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true'
-                ? travel.gallery
-                : (travel.gallery || []).map((item) => item?.url);
+        const gallery = travel.gallery;
 
         const canEdit = isSuperuser || storedUserId === travel.userIds?.toString();
 

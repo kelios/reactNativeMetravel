@@ -128,10 +128,7 @@ const TravelDetails: React.FC = () => {
     );
   }
 
-  const gallery =
-      process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true'
-          ? travel.gallery
-          : (travel.gallery || []).map((item) => item?.url);
+  const gallery =travel.gallery;
 
   const hasGallery = Array.isArray(gallery) && gallery?.length > 0;
 

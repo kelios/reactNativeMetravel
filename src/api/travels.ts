@@ -25,8 +25,7 @@ let GET_LIST_COUNTRIES = '';
 let CREATE_TRAVEL = '';
 let SAVE_TRAVEL = '';
 
-if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
-    URLAPI = process.env.EXPO_PUBLIC_LOCAL_API_URL;
+    URLAPI = process.env.EXPO_PUBLIC_API_URL;
     SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/travels/search_travels_for_map`;
     GET_FILTER_FOR_MAP = `${URLAPI}/api/filterformap`;
 
@@ -38,16 +37,7 @@ if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
     SETNEWPASSWORD = `${URLAPI}/api/user/set-password-after-reset/`;
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`;
     SAVE_TRAVEL = `${URLAPI}/api/travels/upsert/`;
-} else {
-    URLAPI = process.env.EXPO_PUBLIC_PROD_API_URL;
-    SEARCH_TRAVELS_FOR_MAP = `${URLAPI}/api/searchTravelsForMap`;
-    LOGIN = `${URLAPI}/api/user/login/`;
-    LOGOUT = `${URLAPI}/api/user/logout/`;
-    REGISTER = `${URLAPI}/api/registration/`;
-    GET_FILTER_FOR_MAP = `${URLAPI}/api/getFilterForMap`;
-    GET_LIST_COUNTRIES = `${URLAPI}/location/countries`;
-    CREATE_TRAVEL = `${URLAPI}/travels/create`;
-}
+
 
 // Экспортируем некоторые пути
 const SEND_AI_QUESTION = `${URLAPI}/api/chat`;
@@ -327,13 +317,9 @@ export const fetchTravelsby = async (
 
 export const fetchTravel = async (id: number): Promise<Travel> => {
     try {
-        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
             const res = await fetch(`${GET_TRAVELS}/${id}`);
             return await res.json();
-        } else {
-            const res = await fetch(`${GET_TRAVEL}?id=${id}`);
-            return await res.json();
-        }
+
     } catch (e) {
         console.log('Error fetching Travel:', e);
         return travelDef;
@@ -342,10 +328,8 @@ export const fetchTravel = async (id: number): Promise<Travel> => {
 
 export const fetchTravelBySlug = async (slug: string): Promise<Travel> => {
     try {
-        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
-            const res = await fetch(`${GET_TRAVELS_BY_SLUG}/${slug}`);
+             const res = await fetch(`${GET_TRAVELS_BY_SLUG}/${slug}`);
             return await res.json();
-        }
     } catch (e) {
         console.log('Error fetching Travel:', e);
         return travelDef;
@@ -375,13 +359,9 @@ export const fetchFilters = async (): Promise<Filters> => {
 export const fetchFiltersCountry = async () => {
     try {
         let resData = [];
-        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
             const res = await fetch(`${GET_FILTERS_COUNTRY}`);
             resData = await res.json();
-        } else {
-            // Заглушка на сервере
-            resData = [{ country_id: '3', title_ru: 'Belarus' }];
-        }
+
         return resData;
     } catch (e) {
         console.log('Error fetching filters:', e);
@@ -429,16 +409,10 @@ export const fetchFiltersTravel = async (
 export const fetchTravelsNear = async (travel_id: number) => {
     try {
         const params = new URLSearchParams({ travel_id: travel_id.toString() }).toString();
-
-        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
             const urlTravel = `${GET_TRAVELS}/${travel_id}/near?${params}`;
             const res = await fetch(urlTravel);
             return await res.json();
-        } else {
-            const urlTravel = `${GET_TRAVELS_NEAR}?${params}`;
-            const res = await fetch(urlTravel);
-            return await res.json();
-        }
+
     } catch (e) {
         console.log('Error fetching travels near:', e);
         return [];
@@ -447,15 +421,10 @@ export const fetchTravelsNear = async (travel_id: number) => {
 
 export const fetchTravelsPopular = async (): Promise<TravelsMap> => {
     try {
-        if (process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true') {
             const urlTravel = `${GET_TRAVELS}/popular`;
             const res = await fetch(urlTravel);
             return await res.json();
-        } else {
-            const urlTravel = `${GET_TRAVELS_POPULAR}`;
-            const res = await fetch(urlTravel);
-            return await res.json();
-        }
+
     } catch (e) {
         console.log('Error fetching fetchTravelsNear:', e);
         return {} as TravelsMap;
