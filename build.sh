@@ -5,8 +5,8 @@ set -e
 function apply_env() {
   ENV=$1
 
-  if [ "$ENV" != "dev" ] && [ "$ENV" != "prod" ]; then
-    echo "❌ Укажи dev или prod"
+  if [ "$ENV" != "dev" ] && [ "$ENV" != "prod" ] && [ "$ENV" != "preprod" ]; then
+    echo "❌ Укажи dev, preprod или prod"
     exit 1
   fi
 
@@ -36,6 +36,7 @@ echo "🔁 Старт полной сборки..."
 clean_all
 
 build_env dev
+build_env preprod
 build_env prod
 
 echo "🎉 Сборка завершена успешно!"

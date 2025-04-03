@@ -9,6 +9,7 @@ settings.json
 .prettierrc
 .env
 .env.dev
+.env.preprod
 .env.prod
 .expo
 .idea
