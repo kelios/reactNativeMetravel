@@ -124,7 +124,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
             if (routeControl && map) {
                 routeControl.addTo(map);
                 routeControlRef.current = routeControl;
-                console.log("✅ Маршрут успешно создан.");
+                //console.log("✅ Маршрут успешно создан.");
 
                 requestAnimationFrame(() => {
                     if (map && map.getContainer() && map._leaflet_id) {
@@ -140,7 +140,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
                     }
                 });
             } else {
-                console.error("❌ Не удалось добавить маршрут в карту.");
+               // console.error("❌ Не удалось добавить маршрут в карту.");
             }
         } catch (error) {
             console.error("❌ Ошибка при создании маршрута:", error);
@@ -153,7 +153,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
                     routeControlRef.current.getPlan()?.setWaypoints([]);
                     routeControlRef.current.remove();
                     routeControlRef.current = null;
-                    console.log("✅ Маршрут успешно удалён.");
+                   // console.log("✅ Маршрут успешно удалён.");
                 } catch (error) {
                     console.warn("⚠ Ошибка при удалении маршрута:", error);
                 }
