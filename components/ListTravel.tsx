@@ -120,7 +120,7 @@ export default function ListTravel() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.contentWrapper}>
+            <View style={[styles.contentWrapper, isMobile && { flexDirection: 'column' }]}>
                 {(menuVisible || !isMobile) && (
                     <View style={{
                         backgroundColor: '#f8f8f8',
@@ -166,6 +166,7 @@ export default function ListTravel() {
                     ) : travels?.data?.length === 0 ? (
                         <Text>Путешествий не найдено</Text>
                     ) : (
+                        <View style={{ flex: 1 }}>
                         <FlatList
                             key={`list-cols-${numColumns}`}
                             numColumns={numColumns}
@@ -188,7 +189,7 @@ export default function ListTravel() {
                                 </View>
                             )}
                             keyExtractor={item => String(item.id)}
-                        />
+                        /></View>
                     )}
 
                     <PaginationComponent
@@ -223,7 +224,9 @@ const styles = StyleSheet.create({
         borderRightWidth: 1,
         borderRightColor: '#ddd',
     },
-    content: { flex: 1, padding: 16 },
+    content: { flex: 1,
+        padding: 16,
+        minHeight: 0, },
     filterButton: { marginBottom: 12, backgroundColor: '#ff7f50' },
     searchBar: {
         backgroundColor: 'transparent',
