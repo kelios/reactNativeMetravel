@@ -39,7 +39,6 @@ const TravelListItem = ({
         countryName = '',
         userName,
         countUnicIpView = 0,
-        createdAt,
     } = travel;
 
     const { width } = useWindowDimensions();
@@ -48,7 +47,12 @@ const TravelListItem = ({
     const canEditOrDelete = isMetravel || isSuperuser;
 
     const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
-    const imageSource = travel_image_thumb_url ? { uri: travel_image_thumb_url } : { uri: placeholderImage };
+
+    const safeUrl = travel_image_thumb_url?.startsWith('http://')
+        ? travel_image_thumb_url.replace('http://', 'https://')
+        : travel_image_thumb_url;
+
+    const imageSource = safeUrl ? { uri: safeUrl } : { uri: placeholderImage };
 
     // Анимация
     const scaleValue = new Animated.Value(1);
@@ -77,67 +81,64 @@ const TravelListItem = ({
     let contentHeight = 120;
 
     if (width > 768 && width <= 1200) {
-        cardWidth = (width - 400) / 2; // Планшет - 2 карточки в ряд
+        cardWidth = (width - 400) / 2;
         imageHeight = 250;
     } else if (width > 1200) {
-        cardWidth = (width - 550) / 2; // Десктоп - 2 карточки в ряд
+        cardWidth = (width - 550) / 2;
         imageHeight = 400;
     }
 
     return (
-        <Animated.View style={[styles.cardContainer, { width: cardWidth, transform: [{ scale: scaleValue }] }]}>
+        <View style={[styles.cardContainer, { width: cardWidth }]}>
             <TouchableOpacity
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 onPress={() => router.push(`/travels/${slug}`)}
                 activeOpacity={0.9}
             >
-                <Card style={styles.card}>
-                    <View style={[styles.imageContainer, { height: imageHeight }]}>
-                        <Image source={imageSource} style={styles.image} />
-                        {canEditOrDelete && (
-                            <View style={styles.actionsAbsolute}>
-                                <TouchableOpacity onPress={() => onEditPress(id)} style={styles.iconButton}>
-                                    <Feather name="edit" size={18} color="#333" />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => onDeletePress(id)} style={styles.iconButton}>
-                                    <Feather name="trash-2" size={18} color="#333" />
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                    </View>
-
-                    <View style={[styles.content, { height: contentHeight }]}>
-                        {countries.length > 0 && (
-                            <View style={styles.countries}>
-                                {countries.map((country, index) => (
-                                    <Text key={index} style={styles.chip}>{country}</Text>
-                                ))}
-                            </View>
-                        )}
-
-                        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{name}</Text>
-
-                        <View style={styles.metaRow}>
-                            <Text style={styles.meta}>
-                                Автор: <Text style={styles.author}>{userName}</Text>
-                            </Text>
-                            <Text style={styles.meta}>👀 {countUnicIpView}</Text>
+                <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+                    <Card style={styles.card}>
+                        <View style={[styles.imageContainer, { height: imageHeight }]}>
+                            <Image
+                                key={safeUrl}
+                                source={imageSource}
+                                style={styles.image}
+                            />
+                            {canEditOrDelete && (
+                                <View style={styles.actionsAbsolute}>
+                                    <TouchableOpacity onPress={() => onEditPress(id)} style={styles.iconButton}>
+                                        <Feather name="edit" size={18} color="#333" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => onDeletePress(id)} style={styles.iconButton}>
+                                        <Feather name="trash-2" size={18} color="#333" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
-                    </View>
-                </Card>
-            </TouchableOpacity>
-        </Animated.View>
-    );
-};
 
-const formatDate = (dateString?: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+                        <View style={[styles.content, { height: contentHeight }]}>
+                            {countries.length > 0 && (
+                                <View style={styles.countries}>
+                                    {countries.map((country, index) => (
+                                        <Text key={index} style={styles.chip}>{country}</Text>
+                                    ))}
+                                </View>
+                            )}
+
+                            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{name}</Text>
+
+                            <View style={styles.metaRow}>
+                                <Text style={styles.meta}>
+                                    Автор: <Text style={styles.author}>{userName}</Text>
+                                </Text>
+                                <Text style={styles.meta}>👀 {countUnicIpView}</Text>
+                            </View>
+                        </View>
+                    </Card>
+                </Animated.View>
+            </TouchableOpacity>
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
@@ -218,11 +219,6 @@ const styles = StyleSheet.create({
     author: {
         fontWeight: 'bold',
         color: '#111',
-    },
-    date: {
-        fontSize: 12,
-        color: '#aaa',
-        marginTop: 4,
     },
 });
 
