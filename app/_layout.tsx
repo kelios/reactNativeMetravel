@@ -11,8 +11,6 @@ import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display'
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
 import CookiePopup from '@/components/CookiePopup';
-import { sendAnalyticsEvent } from '@/src/utils/analytics';
-import { YandexMetricaComponent } from '@/src/utils/YandexMetrica';
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 
@@ -50,14 +48,6 @@ export default function RootLayout() {
     });
 
     useEffect(() => {
-        const shouldSendAnalytics = process.env.EXPO_PUBLIC_IS_LOCAL_API !== 'true';
-
-        if (shouldSendAnalytics) {
-            sendAnalyticsEvent('app_open', { screen: 'Home' });
-        }
-    }, []);
-
-    useEffect(() => {
         if (error) {
             throw error;
         }
@@ -87,7 +77,6 @@ function RootLayoutNav() {
                             options={{ headerShown: false }}
                         />
                     </Stack>
-                    <YandexMetricaComponent />
                 </FiltersProvider>
             </AuthProvider>
             <CookiePopup />

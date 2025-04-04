@@ -35,8 +35,8 @@ echo "🔁 Старт полной сборки..."
 
 clean_all
 
-build_env dev
-build_env preprod
+#build_env dev
+#build_env preprod
 build_env prod
 
 echo "🎉 Сборка завершена успешно!"
