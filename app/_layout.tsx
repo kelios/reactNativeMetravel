@@ -13,6 +13,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import CookiePopup from '@/components/CookiePopup';
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
+import {useWebAnalytics} from "@/components/analitic/useWebAnalytics";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +43,8 @@ const theme = {
 };
 
 export default function RootLayout() {
+    useWebAnalytics();
+
     const [loaded, error] = useFonts({
         PlayfairDisplay_400Regular,
         ...FontAwesome.font,
