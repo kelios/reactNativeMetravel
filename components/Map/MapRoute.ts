@@ -131,7 +131,7 @@ export default function MapRoute({ data = [], profile = 'driving' }: MapRoutePro
                         try {
                             map.invalidateSize();
                             map.fitBounds(L.latLngBounds(waypoints), { padding: [50, 50] });
-                            console.log("✅ fitBounds() выполнен успешно.");
+                           // console.log("✅ fitBounds() выполнен успешно.");
                         } catch (error) {
                             console.error("❌ Ошибка при выполнении fitBounds():", error);
                         }

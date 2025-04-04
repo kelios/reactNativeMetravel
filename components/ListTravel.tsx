@@ -217,12 +217,12 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        padding: 16,
+        paddingTop: 8,
         minHeight: 0,
     },
     mobileFiltersWrapper: {
         maxHeight: '80%',
-        backgroundColor: '#fff',
+         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderColor: '#ddd',
     },

@@ -48,6 +48,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
         gap: 6,
+        paddingRight: 16,
+        paddingLeft: 16,
     },
     mobileContainer: {
         paddingHorizontal: 8,

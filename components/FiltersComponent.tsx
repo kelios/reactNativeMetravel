@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { CheckBox } from 'react-native-elements';
-import {useRoute} from "@react-navigation/native";
+import { useRoute } from "@react-navigation/native";
 
 const FiltersComponent = ({
                               filters,
@@ -100,8 +100,8 @@ const FiltersComponent = ({
                 onChange={(selected) => onSelectedItemsChange(field, selected)}
                 style={styles.dropdown}
                 itemTextStyle={styles.itemText}
-                containerStyle={styles.dropdownContainer}
-                renderSelectedItem={() => <></>} // Исправленный код
+                containerStyle={[styles.dropdownContainer, isMobile && { maxHeight: 300 }]}
+                renderSelectedItem={() => <></>}
             />
         </View>
     );
@@ -109,8 +109,7 @@ const FiltersComponent = ({
     return (
         <View style={styles.container}>
             {isMobile && (
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Фильтры</Text>
+                <View style={styles.mobileCloseRow}>
                     <TouchableOpacity onPress={closeMenu}>
                         <Text style={styles.closeButton}>✖</Text>
                     </TouchableOpacity>
@@ -127,19 +126,17 @@ const FiltersComponent = ({
                                 onPress={() => setShowModerationPending(!showModerationPending)}
                                 containerStyle={styles.checkboxContainer}
                                 textStyle={styles.checkboxText}
-                                checkedColor="#a8c2a8" // Приглушенный зеленый
-                                uncheckedColor="#a8c2a8" // Приглушенный зеленый
+                                checkedColor="#a8c2a8"
+                                uncheckedColor="#a8c2a8"
                             />
                         </View>
                     </View>
                 )}
 
-                {/* Блок чипсов — выбранных фильтров */}
                 <View style={styles.chipsContainer}>
                     {renderSelectedChips()}
                 </View>
 
-                {/* Сетка фильтров */}
                 <View style={styles.filtersGrid}>
                     {!isTravelsByPage && renderMultiSelect('Страны', 'countries', filters.countries, 'country_id', 'title_ru')}
                     {renderMultiSelect('Категории', 'categories', filters.categories, 'id', 'name')}
@@ -155,7 +152,7 @@ const FiltersComponent = ({
                         <TextInput
                             style={[
                                 styles.yearInput,
-                                isFocused && { borderColor: 'gray' } // или любой цвет при фокусе
+                                isFocused && { borderColor: 'gray' }
                             ]}
                             value={yearInput}
                             onChangeText={setYearInput}
@@ -170,10 +167,10 @@ const FiltersComponent = ({
             </ScrollView>
 
             <View style={[styles.footer, isMobile && styles.footerMobile]}>
-                <TouchableOpacity style={styles.resetButton} onPress={handleResetFilters}>
+                <TouchableOpacity style={[styles.resetButton, isMobile && styles.buttonMobile]} onPress={handleResetFilters}>
                     <Text style={styles.buttonText}>Сбросить</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+                <TouchableOpacity style={[styles.applyButton, isMobile && styles.buttonMobile]} onPress={applyFilters}>
                     <Text style={styles.buttonText}>Применить</Text>
                 </TouchableOpacity>
             </View>
@@ -182,63 +179,68 @@ const FiltersComponent = ({
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#F2F1EF', // Нежный серо-бежевый
-        borderBottomWidth: 1,
-        borderBottomColor: '#DAD7D2',
-    },
-    headerTitle: {
-        fontWeight: 'bold',
-        fontSize: 20,
-        color: '#5A5149'
-    }, // Темный теплый серый
-    closeButton: { fontSize: 20, color: '#7D7368' },
+    container: { flex: 1 },
+
     scrollArea: { flex: 1 },
-    scrollContainer: { paddingHorizontal: 16, paddingBottom: 100 },
+
+    scrollContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 180, // увеличено для безопасного пространства
+    },
+
+    mobileCloseRow: {
+        alignItems: 'flex-end',
+        padding: 12,
+    },
+
+    closeButton: {
+        fontSize: 20,
+        color: '#7D7368',
+    },
+
     chipsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
         marginBottom: 16,
     },
+
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#6aaaaa', // Песочный серо-бежевый
+        backgroundColor: '#6aaaaa',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
-        cursor: 'pointer', // Делаем курсор указателем
+        cursor: 'pointer',
     },
+
     chipClose: {
         color: '#FFF',
         fontWeight: 'bold',
-        cursor: 'pointer', // Чтобы крестик выглядел как кнопка
+        cursor: 'pointer',
     },
+
     chipText: {
         color: '#FFF',
         marginRight: 6,
     },
 
     filtersGrid: {
-        gap: 16,
+        gap: 20,
     },
+
     filterBlock: {
         width: '100%',
     },
+
     filterLabel: {
         fontWeight: '600',
-        fontSize: 14,
-        color: '#5A5149', // Темный серо-коричневый
-        marginBottom: 8,
+        fontSize: 13,
+        color: '#5A5149',
+        marginBottom: 6,
     },
+
     dropdown: {
         backgroundColor: '#FFF',
         borderRadius: 8,
@@ -247,6 +249,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#DAD7D2',
     },
+
     dropdownContainer: {
         borderRadius: 8,
         elevation: 3,
@@ -255,16 +258,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
-    selectedStyle: {
-        borderRadius: 8,
-        backgroundColor: '#6aaaaa', // Приглушенный серо-бежевый
-    },
+
     itemText: {
         color: '#5A5149',
     },
-    selectedText: {
-        color: '#FFF',
-    },
+
     yearInput: {
         backgroundColor: '#FFF',
         borderWidth: 1,
@@ -272,8 +270,9 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         fontSize: 14,
-        outlineStyle: 'none', // Убирает синюю рамку в Web
+        outlineStyle: 'none',
     },
+
     footer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -281,43 +280,52 @@ const styles = StyleSheet.create({
         backgroundColor: '#F2F1EF',
         borderTopWidth: 1,
         borderTopColor: '#DAD7D2',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 8,
     },
+
     footerMobile: {
         position: 'absolute',
-        bottom: 0,
+        bottom: 60, // учли нижний навбар
         left: 0,
         right: 0,
     },
+
     resetButton: {
         flex: 1,
-        backgroundColor: '#DAD7D2', // Светло-серый
-        padding: 12,
+        backgroundColor: '#DAD7D2',
+        paddingVertical: 14,
         alignItems: 'center',
         borderRadius: 8,
         marginRight: 8,
     },
+
     applyButton: {
         flex: 1,
         backgroundColor: '#6aaaaa',
-        padding: 12,
+        paddingVertical: 14,
         alignItems: 'center',
         borderRadius: 8,
     },
+
     buttonText: {
         color: '#FFF',
         fontWeight: '600',
     },
+
     checkboxContainer: {
         backgroundColor: 'transparent',
         borderWidth: 0,
         padding: 0,
     },
+
     checkboxText: {
         fontSize: 14,
         color: '#5A5149',
         fontWeight: '500',
     },
 });
-
-
 export default FiltersComponent;

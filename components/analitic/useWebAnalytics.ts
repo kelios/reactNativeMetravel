@@ -7,41 +7,46 @@ const isLocal = process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true';
 
 export const useWebAnalytics = () => {
     useEffect(() => {
-        if (Platform.OS !== 'web' || isLocal ) return;
+        if (Platform.OS !== 'web' || isLocal) return;
 
-        // GA4
-        const gaScript = document.createElement('script');
-        gaScript.async = true;
-        gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-        document.head.appendChild(gaScript);
+        // Добавляем только если ещё не инициализировано
+        if (!(window as any).gtag) {
+            const script = document.createElement('script');
+            script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+            script.async = true;
+            document.head.appendChild(script);
 
-        gaScript.onload = () => {
-            (window as any).dataLayer = (window as any).dataLayer || [];
-            function gtag(...args: any[]) {
-                (window as any).dataLayer.push(args);
-            }
-            gtag('js', new Date());
-            gtag('config', GA_MEASUREMENT_ID);
-        };
+            script.onload = () => {
+                (window as any).dataLayer = (window as any).dataLayer || [];
+                function gtag(...args: any[]) {
+                    (window as any).dataLayer.push(args);
+                }
+                (window as any).gtag = gtag;
 
-        // Yandex Metrika
-        const ymScript = document.createElement('script');
-        ymScript.async = true;
-        ymScript.src = 'https://mc.yandex.ru/metrika/tag.js';
-        document.head.appendChild(ymScript);
+                gtag('js', new Date());
+                gtag('config', GA_MEASUREMENT_ID);
+            };
+        }
 
-        (window as any).ym =
-            (window as any).ym ||
-            function (...args: any[]) {
+        // Яндекс Метрика
+        if (!(window as any).ym) {
+            const ymScript = document.createElement('script');
+            ymScript.src = 'https://mc.yandex.ru/metrika/tag.js';
+            ymScript.async = true;
+            document.head.appendChild(ymScript);
+
+            (window as any).ym = function (...args: any[]) {
                 ((window as any).ym.a = (window as any).ym.a || []).push(args);
             };
-        (window as any).ym.l = 1 * new Date();
+            (window as any).ym.l = 1 * new Date();
 
-        (window as any).ym(YM_COUNTER_ID, 'init', {
-            clickmap: true,
-            trackLinks: true,
-            accurateTrackBounce: true,
-            ecommerce: 'dataLayer',
-        });
+            (window as any).ym(YM_COUNTER_ID, 'init', {
+                clickmap: true,
+                trackLinks: true,
+                accurateTrackBounce: true,
+                ecommerce: 'dataLayer',
+            });
+        }
     }, []);
+
 };
