@@ -1,6 +1,6 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Image, useColorScheme, useWindowDimensions, View, StyleSheet } from 'react-native';
 import Footer from '@/components/Footer';
 import RenderRightMenu from '@/components/RenderRightMenu';
@@ -15,8 +15,6 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-    const colorScheme = useColorScheme();
-    const width = useWindowDimensions().width;
 
     return (
         <View style={styles.container}>
@@ -31,25 +29,25 @@ export default function TabLayout() {
                     },
                 }}
             >
+                {/* Ниже идет перечисление screen-ов */}
                 <Tabs.Screen
                     name="index"
                     options={{
                         title: '',
-                        tabBarIcon: ({size, focused, color}) => {
-                            return (
-                                <Image
-                                    style={{width: 10, height: 10}}
-                                    source={require('@/assets/icons/logo_yellow.ico')}
-                                />
-                            )
-                        },
+                        tabBarIcon: ({ size, focused, color }) => (
+                            <Image
+                                style={{ width: 10, height: 10 }}
+                                source={require('@/assets/icons/logo_yellow.ico')}
+                            />
+                        ),
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
+
                 <Tabs.Screen
                     name="travelsby"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
@@ -57,36 +55,33 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="map"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="about"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="articles"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="contact"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
@@ -95,102 +90,92 @@ export default function TabLayout() {
                 <Tabs.Screen
                     name="article/[id]"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="login"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="registration"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="set-password"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="travel/new"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="travel/[id]"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="travels/[param]"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="metravel"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="chat"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
                 <Tabs.Screen
                     name="accountconfirmation"
                     options={{
-                        tabBarIconStyle: {display: 'none'},
+                        tabBarIconStyle: { display: 'none' },
                         href: null,
                         title: '',
                         headerRight: () => <RenderRightMenu />,
                     }}
                 />
-
             </Tabs>
             <Footer />
         </View>

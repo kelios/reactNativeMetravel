@@ -19,19 +19,22 @@ import TravelListItem from '../components/TravelListItem';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchAndFilterBar from '../components/listTravel/SearchAndFilterBar';
 
-import { fetchTravels, fetchFilters, fetchFiltersCountry, deleteTravel } from '@/src/api/travels';
+import {
+    fetchTravels,
+    fetchFilters,
+    fetchFiltersCountry,
+    deleteTravel
+} from '@/src/api/travels';
 import { Travel } from '@/src/types/types';
 
 export default function ListTravel() {
+    // =========================
+    // ХУКИ НА ВЕРХНЕМ УРОВНЕ
+    // =========================
     const { width } = useWindowDimensions();
-    const isMobile = width <= 768;
-    const numColumns = isMobile ? 1 : 2;
-
     const router = useRouter();
     const route = useRoute();
     const { user_id } = useLocalSearchParams();
-    const isMeTravel = route.name === 'metravel';
-    const isTravelBy = route.name === 'travelsby';
 
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({});
@@ -46,60 +49,104 @@ export default function ListTravel() {
     const [itemsPerPage, setItemsPerPage] = useState(30);
     const [isFiltersVisible, setIsFiltersVisible] = useState(false);
 
+    // ======================================
+    // ПРОЧИЕ ПЕРЕМЕННЫЕ И ВСПОМОГАТЕЛЬНЫЕ
+    // ======================================
+    const isMobile = width <= 768;
+    const numColumns = isMobile ? 1 : 2;
     const itemsPerPageOptions = [10, 20, 30, 50, 100];
+    const isMeTravel = route.name === 'metravel';
+    const isTravelBy = route.name === 'travelsby';
 
+    // ========================
+    // useEffect: загрузка
+    // ========================
     useEffect(() => {
+        // Загружаем ID юзера и флаг superuser
         const loadUserData = async () => {
-            const storedUserId = await AsyncStorage.getItem('userId');
-            const superuserFlag = await AsyncStorage.getItem('isSuperuser');
-            setUserId(storedUserId);
-            setIsSuperuser(superuserFlag === 'true');
+            try {
+                const storedUserId = await AsyncStorage.getItem('userId');
+                const superuserFlag = await AsyncStorage.getItem('isSuperuser');
+                setUserId(storedUserId);
+                setIsSuperuser(superuserFlag === 'true');
+            } catch (error) {
+                console.error('Ошибка загрузки данных пользователя:', error);
+            }
         };
+
         loadUserData();
         loadFilters();
     }, []);
 
     useEffect(() => {
+        // При изменении itemsPerPage, search, filterValue или userId сбрасываем страницу
         setCurrentPage(0);
     }, [itemsPerPage, search, filterValue, userId]);
 
     useEffect(() => {
+        // Если мы на странице "Мои путешествия" (isMeTravel), но userId нет,
+        // то не вызываем fetchMore() (пока ID не будет загружен)
         if (isMeTravel && !userId) return;
         fetchMore();
     }, [currentPage, itemsPerPage, search, filterValue, userId]);
 
+    // =======================
+    // Функции загрузки и fetch
+    // =======================
     const loadFilters = async () => {
-        const [filtersData, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
-        setFilters({ ...filtersData, countries });
+        try {
+            const [filtersData, countries] = await Promise.all([
+                fetchFilters(),
+                fetchFiltersCountry(),
+            ]);
+            setFilters({ ...filtersData, countries });
+        } catch (error) {
+            console.error('Ошибка при загрузке фильтров:', error);
+        }
     };
 
     const fetchMore = async () => {
         setIsLoading(true);
         try {
+            // Чистим объект filters от пустых значений
             const params = { ...cleanFilters(filterValue) };
             const isModerationPending = filterValue?.showModerationPending ?? false;
+
             if (isModerationPending) {
+                // Если установлен флаг "ожидают модерации"
                 params.publish = 1;
                 params.moderation = 0;
             } else {
+                // Иначе стандартные условия
                 if (isMeTravel) params.user_id = userId;
-                else if (isTravelBy) Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
-                else Object.assign(params, { publish: 1, moderation: 1 });
+                else if (isTravelBy) {
+                    Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
+                } else {
+                    Object.assign(params, { publish: 1, moderation: 1 });
+                }
+                // Если page-url содержит user_id => берем travels для конкретного пользователя
                 if (user_id) params.user_id = user_id;
             }
+
             const data = await fetchTravels(currentPage, itemsPerPage, search, params);
             setTravels(data);
         } catch (error) {
-            console.error("Failed to fetch travels:", error);
+            console.error('Failed to fetch travels:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Фильтрация: убираем поля без значений
     const cleanFilters = (filtersObject) => {
-        return Object.fromEntries(Object.entries(filtersObject).filter(([_, v]) => v && v.length));
+        return Object.fromEntries(
+            Object.entries(filtersObject).filter(([_, v]) => v && v.length)
+        );
     };
 
+    // ============================
+    // Обработка удаления
+    // ============================
     const handleDelete = async () => {
         if (currentDeleteId) {
             await deleteTravel(currentDeleteId);
@@ -113,29 +160,42 @@ export default function ListTravel() {
         setDeleteDialogVisible(true);
     };
 
+    // ================
+    // РЕНДЕР
+    // ================
     return (
         <SafeAreaView style={styles.container}>
             <View style={[styles.contentWrapper, isMobile && { flexDirection: 'column' }]}>
+                {/* Левая колонка с фильтрами (только для десктопа) */}
                 {!isMobile && (
                     <View style={styles.sidebar}>
                         <FiltersComponent
                             filters={filters}
                             filterValue={filterValue}
-                            onSelectedItemsChange={(field, items) => setFilterValue({ ...filterValue, [field]: items })}
-                            handleTextFilterChange={(year) => setFilterValue({ ...filterValue, year })}
-                            handleApplyFilters={(updatedFilters) => setFilterValue(updatedFilters)}
-                            resetFilters={() => setFilterValue({ showModerationPending: false, year: '' })}
+                            onSelectedItemsChange={(field, items) =>
+                                setFilterValue({ ...filterValue, [field]: items })
+                            }
+                            handleTextFilterChange={(year) =>
+                                setFilterValue({ ...filterValue, year })
+                            }
+                            handleApplyFilters={(updatedFilters) =>
+                                setFilterValue(updatedFilters)
+                            }
+                            resetFilters={() =>
+                                setFilterValue({ showModerationPending: false, year: '' })
+                            }
                             closeMenu={() => {}}
                             isSuperuser={isSuperuser}
                         />
                     </View>
                 )}
 
+                {/* Правая область (список/контент) */}
                 <View style={styles.content}>
                     <SearchAndFilterBar
                         search={search}
                         setSearch={setSearch}
-                        onToggleFilters={() => setIsFiltersVisible(prev => !prev)}
+                        onToggleFilters={() => setIsFiltersVisible((prev) => !prev)}
                     />
 
                     {isMobile && isFiltersVisible && (
@@ -144,13 +204,19 @@ export default function ListTravel() {
                                 <FiltersComponent
                                     filters={filters}
                                     filterValue={filterValue}
-                                    onSelectedItemsChange={(field, items) => setFilterValue({ ...filterValue, [field]: items })}
-                                    handleTextFilterChange={(year) => setFilterValue({ ...filterValue, year })}
+                                    onSelectedItemsChange={(field, items) =>
+                                        setFilterValue({ ...filterValue, [field]: items })
+                                    }
+                                    handleTextFilterChange={(year) =>
+                                        setFilterValue({ ...filterValue, year })
+                                    }
                                     handleApplyFilters={(updatedFilters) => {
                                         setFilterValue(updatedFilters);
                                         setIsFiltersVisible(false);
                                     }}
-                                    resetFilters={() => setFilterValue({ showModerationPending: false, year: '' })}
+                                    resetFilters={() =>
+                                        setFilterValue({ showModerationPending: false, year: '' })
+                                    }
                                     closeMenu={() => setIsFiltersVisible(false)}
                                     isSuperuser={isSuperuser}
                                 />
@@ -158,6 +224,7 @@ export default function ListTravel() {
                         </View>
                     )}
 
+                    {/* Состояние загрузки, либо список */}
                     {isLoading ? (
                         <ActivityIndicator size="large" color="#ff7f50" />
                     ) : travels?.data?.length === 0 ? (
@@ -166,10 +233,18 @@ export default function ListTravel() {
                         <FlatList
                             key={`list-cols-${numColumns}`}
                             numColumns={numColumns}
-                            columnWrapperStyle={numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined}
+                            columnWrapperStyle={
+                                numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined
+                            }
                             data={travels?.data || []}
                             renderItem={({ item }) => (
-                                <View style={{ flex: 1, paddingHorizontal: 8, marginBottom: 16 }}>
+                                <View
+                                    style={{
+                                        flex: 1,
+                                        paddingHorizontal: 8,
+                                        marginBottom: 16,
+                                    }}
+                                >
                                     <TravelListItem
                                         travel={item}
                                         currentUserId={userId ?? ''}
@@ -180,10 +255,11 @@ export default function ListTravel() {
                                     />
                                 </View>
                             )}
-                            keyExtractor={item => String(item.id)}
+                            keyExtractor={(item) => String(item.id)}
                         />
                     )}
 
+                    {/* Пагинация */}
                     <PaginationComponent
                         currentPage={currentPage}
                         itemsPerPage={itemsPerPage}
@@ -195,6 +271,7 @@ export default function ListTravel() {
                 </View>
             </View>
 
+            {/* Диалог подтверждения удаления */}
             <ConfirmDialog
                 visible={deleteDialogVisible}
                 onClose={() => setDeleteDialogVisible(false)}
@@ -208,7 +285,10 @@ export default function ListTravel() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    contentWrapper: { flexDirection: 'row', flex: 1 },
+    contentWrapper: {
+        flexDirection: 'row',
+        flex: 1,
+    },
     sidebar: {
         backgroundColor: '#f8f8f8',
         padding: 10,
@@ -223,7 +303,7 @@ const styles = StyleSheet.create({
     },
     mobileFiltersWrapper: {
         maxHeight: '80%',
-         backgroundColor: '#fff',
+        backgroundColor: '#fff',
         borderTopWidth: 1,
         borderColor: '#ddd',
     },

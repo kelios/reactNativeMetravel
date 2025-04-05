@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import {Filters, FiltersContextType} from '@/src/types/types';
+import { Filters, FiltersContextType } from '@/src/types/types';
 
 const FiltersContext = createContext<FiltersContextType | undefined>(undefined);
 
@@ -16,6 +16,7 @@ interface FiltersProviderProps {
 }
 
 export const FiltersProvider: React.FC<FiltersProviderProps> = ({ children }) => {
+    // Хук useState вызываем на верхнем уровне компонента
     const [filters, setFilters] = useState<Filters>({
         countries: [],
         categories: [],
@@ -37,7 +38,7 @@ export const FiltersProvider: React.FC<FiltersProviderProps> = ({ children }) =>
 
     return (
         <FiltersContext.Provider value={{ filters, updateFilters }}>
-    {children}
-    </FiltersContext.Provider>
-);
+            {children}
+        </FiltersContext.Provider>
+    );
 };

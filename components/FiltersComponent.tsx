@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { MultiSelect } from 'react-native-element-dropdown';
 import { CheckBox } from 'react-native-elements';
-import { useRoute } from "@react-navigation/native";
+import { useRoute } from '@react-navigation/native';
 
 const FiltersComponent = ({
                               filters,
@@ -22,16 +22,19 @@ const FiltersComponent = ({
                               closeMenu,
                               isSuperuser,
                           }) => {
+    // Хуки вызываем на верхнем уровне:
     const { width } = useWindowDimensions();
-    const isMobile = width <= 768;
+    const route = useRoute();
 
+    const isMobile = width <= 768;
+    const isTravelsByPage = route.name === 'travelsby';
+
+    // Локальные стейты
     const [yearInput, setYearInput] = useState(filterValue.year || '');
     const [showModerationPending, setShowModerationPending] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
-    const route = useRoute();
-    const isTravelsByPage = route.name === 'travelsby';
-
+    // Функции-обработчики — не содержат хуков
     const applyFilters = () => {
         const updatedFilters = {
             ...filterValue,
@@ -57,6 +60,7 @@ const FiltersComponent = ({
         resetFilters();
     };
 
+    // Вспомогательные функции рендера — тоже без хуков
     const renderSelectedChips = () => {
         const allFilters = [
             { field: 'countries', items: filters.countries, label: 'Страны' },
@@ -69,22 +73,29 @@ const FiltersComponent = ({
             { field: 'over_nights_stay', items: filters.over_nights_stay, label: 'Ночлег' },
         ];
 
-        return allFilters.flatMap(({ field, items }) => {
-            const selected = filterValue[field] || [];
-            return selected.map(id => {
-                const item = items.find(i => i.id == id || i.country_id == id);
-                if (!item) return null;
+        return allFilters
+            .flatMap(({ field, items }) => {
+                const selected = filterValue[field] || [];
+                return selected.map((id) => {
+                    // Например, country_id или id
+                    const item = items.find((i) => i.id == id || i.country_id == id);
+                    if (!item) return null;
 
-                return (
-                    <View key={`${field}-${id}`} style={styles.chip}>
-                        <Text style={styles.chipText}>{item.name || item.title_ru}</Text>
-                        <TouchableOpacity onPress={() => onSelectedItemsChange(field, selected.filter(v => v !== id))}>
-                            <Text style={styles.chipClose}>✖</Text>
-                        </TouchableOpacity>
-                    </View>
-                );
-            });
-        }).filter(Boolean);
+                    return (
+                        <View key={`${field}-${id}`} style={styles.chip}>
+                            <Text style={styles.chipText}>{item.name || item.title_ru}</Text>
+                            <TouchableOpacity
+                                onPress={() =>
+                                    onSelectedItemsChange(field, selected.filter((v) => v !== id))
+                                }
+                            >
+                                <Text style={styles.chipClose}>✖</Text>
+                            </TouchableOpacity>
+                        </View>
+                    );
+                });
+            })
+            .filter(Boolean);
     };
 
     const renderMultiSelect = (label, field, items, uniqueKey, displayKey) => (
@@ -102,7 +113,7 @@ const FiltersComponent = ({
                 style={styles.dropdown}
                 itemTextStyle={styles.itemText}
                 containerStyle={[styles.dropdownContainer, isMobile && { maxHeight: 300 }]}
-                renderSelectedItem={() => <></>}
+                renderSelectedItem={() => null}
             />
         </View>
     );
@@ -134,12 +145,17 @@ const FiltersComponent = ({
                     </View>
                 )}
 
-                <View style={styles.chipsContainer}>
-                    {renderSelectedChips()}
-                </View>
+                <View style={styles.chipsContainer}>{renderSelectedChips()}</View>
 
                 <View style={styles.filtersGrid}>
-                    {!isTravelsByPage && renderMultiSelect('Страны', 'countries', filters.countries, 'country_id', 'title_ru')}
+                    {!isTravelsByPage &&
+                        renderMultiSelect(
+                            'Страны',
+                            'countries',
+                            filters.countries,
+                            'country_id',
+                            'title_ru'
+                        )}
                     {renderMultiSelect('Категории', 'categories', filters.categories, 'id', 'name')}
                     {renderMultiSelect('Объекты', 'categoryTravelAddress', filters.categoryTravelAddress, 'id', 'name')}
                     {renderMultiSelect('Транспорт', 'transports', filters.transports, 'id', 'name')}
@@ -153,7 +169,7 @@ const FiltersComponent = ({
                         <TextInput
                             style={[
                                 styles.yearInput,
-                                isFocused && { borderColor: 'gray' }
+                                isFocused && { borderColor: 'gray' },
                             ]}
                             value={yearInput}
                             onChangeText={(text) => setYearInput(text.replace(/[^0-9]/g, ''))}
@@ -169,16 +185,24 @@ const FiltersComponent = ({
             </ScrollView>
 
             <View style={[styles.footer, isMobile && styles.footerMobile]}>
-                <TouchableOpacity style={[styles.resetButton, isMobile && styles.buttonMobile]} onPress={handleResetFilters}>
+                <TouchableOpacity
+                    style={[styles.resetButton, isMobile && styles.buttonMobile]}
+                    onPress={handleResetFilters}
+                >
                     <Text style={styles.buttonText}>Сбросить</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.applyButton, isMobile && styles.buttonMobile]} onPress={applyFilters}>
+                <TouchableOpacity
+                    style={[styles.applyButton, isMobile && styles.buttonMobile]}
+                    onPress={applyFilters}
+                >
                     <Text style={styles.buttonText}>Применить</Text>
                 </TouchableOpacity>
             </View>
         </View>
     );
 };
+
+export default FiltersComponent;
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
@@ -293,6 +317,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
     },
+    buttonMobile: {
+        paddingVertical: 10,
+    },
     buttonText: {
         color: '#FFF',
         fontWeight: '600',
@@ -308,5 +335,3 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 });
-
-export default FiltersComponent;

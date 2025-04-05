@@ -3,13 +3,12 @@ import { Modal, View, Text, Button, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function CookiePopup() {
-  const [isVisible, setIsVisible] = useState(false); // По умолчанию скрыто
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const checkAcceptedCookies = async () => {
       try {
         const hasAcceptedCookies = await AsyncStorage.getItem('hasAcceptedCookies');
-        console.log('hasAcceptedCookies:', hasAcceptedCookies); // Отладка
         setIsVisible(hasAcceptedCookies !== 'true');
       } catch (error) {
         console.error('Ошибка при получении данных из AsyncStorage:', error);
@@ -38,7 +37,7 @@ function CookiePopup() {
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
             <Text style={styles.modalText}>
-              На этом сайте используются файлы cookies для улучшения вашего пользовательского интерфейса.
+              На этом сайте используются файлы cookies для улучшения вашего пользовательского опыта.
             </Text>
             <Button color="#6aaaaa" title="Принять" onPress={handleClose} />
           </View>
@@ -61,10 +60,7 @@ const styles = StyleSheet.create({
     padding: 35,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,

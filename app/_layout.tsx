@@ -1,21 +1,22 @@
-import React, { useEffect } from 'react'
-import '@expo/metro-runtime'
-import FontAwesome from '@expo/vector-icons/FontAwesome'
-import { useFonts } from 'expo-font'
-import { SplashScreen, Stack } from 'expo-router'
+import React, { useEffect } from 'react';
+import '@expo/metro-runtime';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useFonts } from 'expo-font';
+import { SplashScreen, Stack } from 'expo-router';
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
-} from 'react-native-paper'
-import { FiltersProvider } from '@/providers/FiltersProvider'
-import { AuthProvider } from '@/context/AuthContext'
-import CookiePopup from '@/components/CookiePopup'
-import 'react-native-reanimated'
-import 'react-native-gesture-handler'
-import { useWebAnalytics } from '@/components/analitic/useWebAnalytics'
+} from 'react-native-paper';
+import { FiltersProvider } from '@/providers/FiltersProvider';
+import { AuthProvider } from '@/context/AuthContext';
+import CookiePopup from '@/components/CookiePopup';
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
+import { useWebAnalytics } from '@/components/analitic/useWebAnalytics';
 
-SplashScreen.preventAutoHideAsync()
+SplashScreen.preventAutoHideAsync();
 
+// Тема
 const theme = {
     ...DefaultTheme,
     colors: {
@@ -43,31 +44,36 @@ const theme = {
         ...DefaultTheme.fonts,
         bodyLarge: {
             ...DefaultTheme.fonts.bodyLarge,
-            fontFamily: 'Playfair Display, serif', // кастомно
+            fontFamily: 'Playfair Display, serif',
         },
     },
-}
+};
 
 export default function RootLayout() {
-    useWebAnalytics()
+    // Вызов кастомного хука на верхнем уровне
+    useWebAnalytics();
 
+    // Подключение шрифтов
     const [loaded, error] = useFonts({
-        ...FontAwesome.font, // только иконки
-    })
+        ...FontAwesome.font,
+    });
 
+    // Если произошла ошибка при загрузке шрифтов — выбрасываем её
     useEffect(() => {
-        if (error) throw error
-    }, [error])
+        if (error) throw error;
+    }, [error]);
 
+    // Когда шрифты загрузятся — скрываем SplashScreen
     useEffect(() => {
         if (loaded) {
-            SplashScreen.hideAsync()
+            SplashScreen.hideAsync();
         }
-    }, [loaded])
+    }, [loaded]);
 
-    if (!loaded) return null
+    // Пока шрифты не загрузились, возвращаем null
+    if (!loaded) return null;
 
-    return <RootLayoutNav />
+    return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
@@ -82,5 +88,5 @@ function RootLayoutNav() {
             </AuthProvider>
             <CookiePopup />
         </PaperProvider>
-    )
+    );
 }

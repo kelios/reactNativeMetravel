@@ -1,6 +1,4 @@
-// TravelDetails.tsx
-
-import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   ScrollView,
@@ -10,110 +8,99 @@ import {
   SafeAreaView,
   Pressable,
   TouchableOpacity,
-  Text, Platform,
+  Text,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Travel } from '@/src/types/types';
-import { iframeModel } from '@native-html/iframe-plugin';
 import RenderHTML from 'react-native-render-html';
 import { WebView } from 'react-native-webview';
-import { Card, Title, useTheme } from 'react-native-paper';
+import { Card, useTheme } from 'react-native-paper';
 import Slider from '@/components/Slider';
 import PointList from '@/components/PointList';
-import {fetchTravel, fetchTravelBySlug} from '@/src/api/travels';
+import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import SideBarTravel from '@/components/SideBarTravel';
 import NearTravelList from '@/components/NearTravelList';
 import PopularTravelList from '@/components/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import TravelDescription from "@/components/travel/TravelDescription";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import TravelDescription from '@/components/travel/TravelDescription';
 
 const TravelDetails: React.FC = () => {
-  const { param } = useLocalSearchParams();
-  const numericId = Number(param);
+  const searchParams = useLocalSearchParams();
+  const paramValue = useMemo(() => {
+    const p = searchParams.param;
+    if (typeof p === 'string') return p;
+    if (Array.isArray(p)) return p[0];
+    return '';
+  }, [searchParams]);
+
+  const numericId = Number(paramValue);
   const isNumeric = !isNaN(numericId);
 
   const [travel, setTravel] = useState<Travel | null>(null);
-  const { width,height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isMobile = width <= 768;
-
   const pageHeight = useMemo(() => height * 0.7, [height]);
-
 
   const [menuVisible, setMenuVisible] = useState(!isMobile);
   const scrollRef = useRef<ScrollView>(null);
 
-  // Рефы для секций
-  const galleryRef = useRef<View>(null);
-  const videoRef = useRef<View>(null);
-  const descriptionRef = useRef<View>(null);
-  const mapRef = useRef<View>(null);
-  const pointsRef = useRef<View>(null);
-  const nearRef = useRef<View>(null);
-  const popularRef = useRef<View>(null);
-  const recommendationRef = useRef<View>(null);
-  const plusRef = useRef<View>(null);
-  const minusRef = useRef<View>(null);
+  const refs = {
+    galleryRef: useRef<View>(null),
+    videoRef: useRef<View>(null),
+    descriptionRef: useRef<View>(null),
+    mapRef: useRef<View>(null),
+    pointsRef: useRef<View>(null),
+    nearRef: useRef<View>(null),
+    popularRef: useRef<View>(null),
+    recommendationRef: useRef<View>(null),
+    plusRef: useRef<View>(null),
+    minusRef: useRef<View>(null),
+  };
 
   const theme = useTheme();
   const [isSuperuser, setIsSuperuser] = useState(false);
-  const [storedUserId, setStoredUserId] = useState(null);
+  const [storedUserId, setStoredUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkSuperuser = async () => {
       const flag = await AsyncStorage.getItem('isSuperuser');
-      const storedUserId = await AsyncStorage.getItem('userId');
-      setStoredUserId(storedUserId);
+      const uid = await AsyncStorage.getItem('userId');
+      setStoredUserId(uid);
       setIsSuperuser(flag === 'true');
     };
     checkSuperuser();
   }, []);
 
-
   useEffect(() => {
     setMenuVisible(!isMobile);
   }, [isMobile]);
 
-  const toggleMenu = useCallback(() => {
-    setMenuVisible((prev) => {
-      return !prev;
-    });
-  }, []);
-
-  const closeMenu = useCallback(() => {
-    setMenuVisible(false);
-  }, []);
+  const toggleMenu = useCallback(() => setMenuVisible((prev) => !prev), []);
+  const closeMenu = useCallback(() => setMenuVisible(false), []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        let travelData: Travel;
-        if (isNumeric) {
-          // Если param — число, грузим по ID
-          travelData = await fetchTravel(numericId);
-        } else {
-          // Иначе грузим по slug
-          travelData = await fetchTravelBySlug(param as string);
-        }
-
+        const travelData = isNumeric
+            ? await fetchTravel(numericId)
+            : await fetchTravelBySlug(paramValue);
         setTravel(travelData);
       } catch (error) {
         console.log('Failed to fetch travel data:', error);
       }
     };
-    fetchData();
-  }, [param]);
+
+    if (paramValue) fetchData();
+  }, [paramValue]);
 
   const handlePress = useCallback(
       (ref: React.RefObject<View>) => () => {
         ref.current?.measureLayout(
             scrollRef.current?.getInnerViewNode(),
-            (x, y) => {
-                scrollRef.current?.scrollTo({ y: y, animated: true });
-            },
-            (error) => {
-              console.warn('Failed to measure layout:', error);
-            }
+            (x, y) => scrollRef.current?.scrollTo({ y, animated: true }),
+            (error) => console.warn('Failed to measure layout:', error)
         );
       },
       []
@@ -128,9 +115,8 @@ const TravelDetails: React.FC = () => {
     );
   }
 
-  const gallery =travel.gallery;
-
-  const hasGallery = Array.isArray(gallery) && gallery?.length > 0;
+  const gallery = travel.gallery;
+  const hasGallery = Array.isArray(gallery) && gallery.length > 0;
 
   const convertYouTubeLink = (url: string): string | null => {
     const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
@@ -140,14 +126,8 @@ const TravelDetails: React.FC = () => {
   return (
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
-          {isMobile && menuVisible && (
-              <Pressable
-                  onPress={closeMenu}
-                  style={styles.overlay}
-                  accessibilityRole="button"
-                  accessibilityLabel="Закрыть меню"
-              />
-          )}
+          {isMobile && menuVisible && <Pressable onPress={closeMenu} style={styles.overlay} />}
+
           {isMobile ? (
               <View
                   style={[
@@ -156,25 +136,15 @@ const TravelDetails: React.FC = () => {
                     menuVisible && styles.visibleMobileSideMenu,
                   ]}
               >
-                {menuVisible && (
-                    <SideBarTravel
-                        handlePress={handlePress}
-                        closeMenu={closeMenu}
-                        isMobile={isMobile}
-                        travel={travel}
-                        refs={{
-                          galleryRef,
-                          videoRef,
-                          descriptionRef,
-                          mapRef,
-                          pointsRef,
-                          nearRef,
-                          popularRef,
-                        }}
-                        isSuperuser={isSuperuser}
-                        storedUserId = {storedUserId}
-                    />
-                )}
+                <SideBarTravel
+                    handlePress={handlePress}
+                    closeMenu={closeMenu}
+                    isMobile={isMobile}
+                    travel={travel}
+                    refs={refs}
+                    isSuperuser={isSuperuser}
+                    storedUserId={storedUserId}
+                />
               </View>
           ) : (
               <View style={[styles.sideMenu, styles.desktopSideMenu]}>
@@ -183,127 +153,94 @@ const TravelDetails: React.FC = () => {
                     closeMenu={closeMenu}
                     isMobile={isMobile}
                     travel={travel}
-                    refs={{
-                      galleryRef,
-                      videoRef,
-                      descriptionRef,
-                      mapRef,
-                      pointsRef,
-                      nearRef,
-                      popularRef,
-                      recommendationRef,
-                      minusRef,
-                      plusRef
-                    }}
+                    refs={refs}
                     isSuperuser={isSuperuser}
-                    storedUserId = {storedUserId}
+                    storedUserId={storedUserId}
                 />
               </View>
           )}
+
           <View style={styles.content}>
             {isMobile && !menuVisible && (
-                <TouchableOpacity
-                    style={styles.menuButtonContainer}
-                    onPress={toggleMenu}
-                    accessibilityRole="button"
-                    accessibilityLabel="Открыть меню"
-                >
+                <TouchableOpacity style={styles.menuButtonContainer} onPress={toggleMenu}>
                   <Text style={styles.menuButtonText}>Меню</Text>
                 </TouchableOpacity>
             )}
 
             <ScrollView
-                key={param}
+                key={paramValue}
                 style={styles.scrollView}
                 ref={scrollRef}
                 contentContainerStyle={styles.contentContainer}
-                accessibilityLabel="Основной контент"
                 keyboardShouldPersistTaps="handled"
             >
               <View style={styles.centeredContainer}>
                 {hasGallery && (
-                    <View ref={galleryRef}>
+                    <View ref={refs.galleryRef}>
                       <Slider images={gallery} />
                     </View>
                 )}
 
-                {/* youtube_link с рефом */}
-                  {travel.youtube_link && (
-                      <Card style={styles.card}>
-                      <View ref={videoRef} style={[styles.videoContainer, { height: pageHeight }]}>
-                          {Platform.OS === 'web' ? (
-                              <iframe
-                                  src={convertYouTubeLink(travel.youtube_link)}
-                                  width="100%"
-                                  height="100%"
-                                  style={{ border: 'none' }}
-                              />
-                          ) : (
-                              <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) }} style={{ flex: 1 }} />
-                          )}
-
+                {travel.youtube_link && (
+                    <Card style={styles.card}>
+                      <View ref={refs.videoRef} style={[styles.videoContainer, { height: pageHeight }]}>
+                        {Platform.OS === 'web' ? (
+                            <iframe
+                                src={convertYouTubeLink(travel.youtube_link)}
+                                width="100%"
+                                height="100%"
+                                style={{ border: 'none' }}
+                            />
+                        ) : (
+                            <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) }} style={{ flex: 1 }} />
+                        )}
                       </View>
-                      </Card>
-                  )}
+                    </Card>
+                )}
 
-                {/* Описание */}
-                {travel.description ? (
-                    <View ref={descriptionRef}>
-                      <View style={styles.descriptionContainer}>
-                      <TravelDescription htmlContent={travel.description} title = {travel.name} />
-                      </View>
-                    </View>
-                ) : null}
-
-                {travel.recommendation ? (
-                    <View ref={recommendationRef}>
-                      <View style={styles.descriptionContainer}>
-                        <TravelDescription htmlContent={travel.recommendation} title = 'Рекомендации' />
-                      </View>
-                    </View>
-                ) : null}
-
-                {travel.plus ? (
-                    <View ref={plusRef}>
-                      <View style={styles.descriptionContainer}>
-                        <TravelDescription htmlContent={travel.plus} title = 'Плюсы' />
-                      </View>
-                    </View>
-                ) : null}
-
-                {travel.minus ? (
-                    <View ref={minusRef}>
-                      <View style={styles.descriptionContainer}>
-                        <TravelDescription htmlContent={travel.minus} title = 'Минусы' />
-                      </View>
-                    </View>
-                ) : null}
-
-
-
-                {/* Карта с рефом */}
-                {travel.coordsMeTravel?.length > 0 && (
-                    <View style={styles.mapBlock} ref={mapRef}>
-                      <MapClientSideComponent travel={{ data: travel?.travelAddress ?? [] }} />
+                {travel.description && (
+                    <View ref={refs.descriptionRef} style={styles.descriptionContainer}>
+                      <TravelDescription htmlContent={travel.description} title={travel.name} />
                     </View>
                 )}
 
-                {/* Список точек */}
+                {travel.recommendation && (
+                    <View ref={refs.recommendationRef} style={styles.descriptionContainer}>
+                      <TravelDescription htmlContent={travel.recommendation} title="Рекомендации" />
+                    </View>
+                )}
+
+                {travel.plus && (
+                    <View ref={refs.plusRef} style={styles.descriptionContainer}>
+                      <TravelDescription htmlContent={travel.plus} title="Плюсы" />
+                    </View>
+                )}
+
+                {travel.minus && (
+                    <View ref={refs.minusRef} style={styles.descriptionContainer}>
+                      <TravelDescription htmlContent={travel.minus} title="Минусы" />
+                    </View>
+                )}
+
+                {travel.coordsMeTravel?.length > 0 && (
+                    <View ref={refs.mapRef} style={styles.mapBlock}>
+                      <MapClientSideComponent travel={{ data: travel.travelAddress ?? [] }} />
+                    </View>
+                )}
+
                 {travel.travelAddress && (
-                    <View ref={pointsRef} style={styles.pointListContainer}>
+                    <View ref={refs.pointsRef} style={styles.pointListContainer}>
                       <PointList points={travel.travelAddress} />
                     </View>
                 )}
 
-                {/* Близкие путешествия */}
                 {travel.travelAddress && (
-                    <View ref={nearRef} style={styles.pointListContainer}>
+                    <View ref={refs.nearRef} style={styles.pointListContainer}>
                       <NearTravelList travel={travel} />
                     </View>
                 )}
 
-                {/* Популярные маршруты */}
-                <View ref={popularRef} style={styles.pointListContainer}>
+                <View ref={refs.popularRef} style={styles.pointListContainer}>
                   <PopularTravelList />
                 </View>
               </View>

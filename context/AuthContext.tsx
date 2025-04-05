@@ -36,31 +36,37 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
+    // Вызов хуков (useState, useEffect) строго на верхнем уровне
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [isSuperuser, setIsSuperuser] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
 
+    // При первой загрузке проверяем данные аутентификации
     useEffect(() => {
         checkAuthentication();
     }, []);
 
+    // Функции, не содержащие хуков
     const checkAuthentication = async () => {
-        const token = await AsyncStorage.getItem('userToken');
-        const storedUserId = await AsyncStorage.getItem('userId');
-        const storedUsername = await AsyncStorage.getItem('userName');
-        const superuserFlag = await AsyncStorage.getItem('isSuperuser');
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            const storedUserId = await AsyncStorage.getItem('userId');
+            const storedUsername = await AsyncStorage.getItem('userName');
+            const superuserFlag = await AsyncStorage.getItem('isSuperuser');
 
-        setIsAuthenticated(!!token);
-        setUserId(storedUserId);
-        setUsername(storedUsername || '');
-        setIsSuperuser(superuserFlag === 'true');
+            setIsAuthenticated(!!token);
+            setUserId(storedUserId);
+            setUsername(storedUsername || '');
+            setIsSuperuser(superuserFlag === 'true');
+        } catch (error) {
+            console.error('Ошибка при проверке аутентификации:', error);
+        }
     };
 
     const login = async (email: string, password: string): Promise<boolean> => {
         try {
             const userData = await loginApi(email, password);
-
             if (userData) {
                 await AsyncStorage.multiSet([
                     ['userToken', userData.token],
@@ -85,6 +91,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
     const logout = async () => {
         try {
+            // Всегда удаляем локальные данные, даже если api не сработал
             await logoutApi();
         } catch (e) {
             console.warn('Ошибка при логауте с сервера:', e);
@@ -103,11 +110,15 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     };
 
     const sendPassword = async (email: string): Promise<string> => {
-        const response = await resetPasswordLinkApi(email);
-        if (typeof response === 'string') {
-            return response;
+        try {
+            const response = await resetPasswordLinkApi(email);
+            return typeof response === 'string'
+                ? response
+                : 'Что-то пошло не так. Попробуйте снова.';
+        } catch (error) {
+            console.error('Ошибка при сбросе пароля:', error);
+            return 'Произошла ошибка. Попробуйте ещё раз.';
         }
-        return 'Что-то пошло не так. Попробуйте снова.';
     };
 
     const setNewPassword = async (
@@ -117,6 +128,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         return await setNewPasswordApi(token, newPassword);
     };
 
+    // Отдаём контекстное значение во все дочерние компоненты
     return (
         <AuthContext.Provider
             value={{
@@ -139,6 +151,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     );
 };
 
+// Кастомный хук для удобного доступа к контексту
 export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
     if (!context) {

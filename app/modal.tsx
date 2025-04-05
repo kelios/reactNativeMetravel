@@ -7,6 +7,7 @@ import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
 
 export default function ModalScreen() {
+    // Хук useNavigation вызывается на верхнем уровне компонента
     const navigation = useNavigation();
 
     return (

@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function SearchAndFilterBar({ search, setSearch, onToggleFilters }: Props) {
+    // Хук вызываем только на верхнем уровне
     const { width } = useWindowDimensions();
     const isMobile = width <= 768;
 
@@ -33,9 +34,8 @@ export default function SearchAndFilterBar({ search, setSearch, onToggleFilters 
                     containerStyle={styles.searchBar}
                     inputContainerStyle={styles.searchInputContainer}
                     inputStyle={styles.searchInput}
-                    inputStyle={[styles.searchInput, { outlineStyle: 'none' }]} // Убираем рамку
-                    searchIcon={{ color: '#333' }} // Цвет иконки поиска
-                    clearIcon={{ color: '#333' }}
+                    searchIcon={{ color: '#333' }}  // Цвет иконки поиска
+                    clearIcon={{ color: '#333' }}   // Цвет иконки очистки
                 />
             </View>
         </View>
