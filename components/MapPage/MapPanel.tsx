@@ -1,30 +1,33 @@
-import React, { Suspense } from 'react';
-import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 
-// Ленивая загрузка компонента карты
-const MapClientSideComponent = React.lazy(() => import('@/components/Map'));
+let MapClientSideComponent = null;
+if (typeof window !== 'undefined') {
+    // Импортируем компонент только на клиенте
+    MapClientSideComponent = require('@/components/Map').default;
+}
 
-// Компонент для отображения индикатора загрузки
 const LoadingIndicator = () => (
     <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#ff9f5a" accessibilityLabel="Loading map" />
     </View>
 );
 
-const MapPanel = ({
-                      travelsData,
-                      coordinates,
-                      // Вместо MapPanel.defaultProps
-                      // используем параметр по умолчанию:
-                      style = {},
-                  }) => {
+const MapPanel = ({ travelsData, coordinates, style = {} }) => {
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     return (
         <View style={[styles.map, style]}>
-            {/* Suspense для отображения индикатора загрузки */}
-            <Suspense fallback={<LoadingIndicator />}>
+            {isClient && MapClientSideComponent ? (
                 <MapClientSideComponent travel={{ data: travelsData }} coordinates={coordinates} />
-            </Suspense>
+            ) : (
+                <LoadingIndicator />
+            )}
         </View>
     );
 };
@@ -45,8 +48,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'white',
         borderRadius: 10,
-        // Если вы используете React Native Web,
-        // лучше заменить shadow-* на boxShadow.
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,

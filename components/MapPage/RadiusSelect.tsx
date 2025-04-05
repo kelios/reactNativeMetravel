@@ -286,7 +286,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         color: '#333',
         cursor: 'pointer',
-        outline: 'none',
         appearance: 'none',
         WebkitAppearance: 'none',
         MozAppearance: 'none',

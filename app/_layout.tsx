@@ -86,7 +86,6 @@ function RootLayoutNav() {
                     </Stack>
                 </FiltersProvider>
             </AuthProvider>
-            <CookiePopup />
         </PaperProvider>
     );
 }
