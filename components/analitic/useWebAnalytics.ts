@@ -5,15 +5,15 @@ export const useWebAnalytics = () => {
     useEffect(() => {
         if (Platform.OS !== 'web') return;
 
-        const GA_MEASUREMENT_ID = process.env.EXPO_PUBLIC_GOOGLE_GA4;
+       // const GA_MEASUREMENT_ID = process.env.EXPO_PUBLIC_GOOGLE_GA4;
         const YM_COUNTER_ID = process.env.EXPO_PUBLIC_YANDEX_ID;
         const isLocal = process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true';
 
         if (isLocal) return;
 
         // --- Google Analytics ---
-        if (!(window as any).gtag) {
-            (window as any).dataLayer = (window as any).dataLayer || [];
+      //  if (!(window as any).gtag) {
+        //    (window as any).dataLayer = (window as any).dataLayer || [];
 
           /*  function gtag(...args: any[]) {
                 (window as any).dataLayer.push(args);
@@ -29,7 +29,7 @@ export const useWebAnalytics = () => {
             gtag('js', new Date());
             gtag('config', GA_MEASUREMENT_ID);
         }*/
-
+c
         // --- Yandex Metrica ---
         if (!(window as any).ym) {
             const ymScript = document.createElement('script');
