@@ -7,8 +7,7 @@ import {
     useWindowDimensions,
     Animated,
     Easing,
-    Image,
-    Platform,
+    Image, Platform,
 } from 'react-native';
 import { Card } from 'react-native-paper';
 import { Travel } from '@/src/types/types';
@@ -47,25 +46,28 @@ const TravelListItem = ({
     const canEditOrDelete = isMetravel || isSuperuser;
     const countries = countryName ? countryName.split(',').map(c => c.trim()) : [];
     const [imageError, setImageError] = useState(false);
+    const [imageLoaded, setImageLoaded] = useState(false);
 
     const scaleValue = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = () => {
-        Animated.timing(scaleValue, {
-            toValue: 0.95,
-            duration: 150,
-            easing: Easing.out(Easing.quad),
+        Animated.spring(scaleValue, {
+            toValue: 0.97,
             useNativeDriver: true,
+            speed: 50,
         }).start();
     };
 
     const handlePressOut = () => {
-        Animated.timing(scaleValue, {
+        Animated.spring(scaleValue, {
             toValue: 1,
-            duration: 150,
-            easing: Easing.out(Easing.quad),
             useNativeDriver: true,
+            speed: 50,
         }).start();
+    };
+
+    const handlePress = () => {
+        setTimeout(() => router.push(`/travels/${slug}`), 100);
     };
 
     const getCardStyle = () => {
@@ -78,7 +80,7 @@ const TravelListItem = ({
         } else if (width > 1024 && width <= 1200) {
             cardWidth = (width - 400) / 2;
             imageHeight = 250;
-        } else if (width > 1200 && width <= 1400 ) {
+        } else if (width > 1200 && width <= 1400) {
             cardWidth = (width - 400) / 2;
             imageHeight = 300;
         } else if (width > 1400) {
@@ -96,7 +98,7 @@ const TravelListItem = ({
             <Pressable
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
-                onPress={() => router.push(`/travels/${slug}`)}
+                onPress={handlePress}
                 style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
             >
                 <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
@@ -107,8 +109,9 @@ const TravelListItem = ({
                                     source={{ uri: travel_image_thumb_url }}
                                     style={styles.image}
                                     onError={() => setImageError(true)}
+                                    onLoad={() => setImageLoaded(true)}
                                     resizeMode="cover"
-                                    defaultSource={Platform.OS === 'ios' ? placeholderImage : undefined}
+                                    defaultSource={placeholderImage}
                                 />
                             ) : (
                                 <View style={styles.fallback}>
@@ -116,12 +119,30 @@ const TravelListItem = ({
                                 </View>
                             )}
 
+                            {!imageLoaded && !imageError && (
+                                <View style={styles.imagePlaceholder}>
+                                    <Image
+                                        source={placeholderImage}
+                                        style={styles.image}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                            )}
+
                             {canEditOrDelete && (
                                 <View style={styles.actionsAbsolute}>
-                                    <Pressable onPress={() => onEditPress(id)} style={styles.iconButton}>
+                                    <Pressable
+                                        onPress={() => onEditPress(id)}
+                                        style={styles.iconButton}
+                                        hitSlop={10}
+                                    >
                                         <Feather name="edit" size={18} color="#333" />
                                     </Pressable>
-                                    <Pressable onPress={() => onDeletePress(id)} style={styles.iconButton}>
+                                    <Pressable
+                                        onPress={() => onDeletePress(id)}
+                                        style={styles.iconButton}
+                                        hitSlop={10}
+                                    >
                                         <Feather name="trash-2" size={18} color="#333" />
                                     </Pressable>
                                 </View>
@@ -179,10 +200,18 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
+        position: 'relative',
+        zIndex: 1,
     },
     image: {
         width: '100%',
         height: '100%',
+    },
+    imagePlaceholder: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        zIndex: 0,
     },
     fallback: {
         width: '100%',
@@ -190,6 +219,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f0f0f0',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1,
     },
     fallbackText: {
         color: '#888',
@@ -200,6 +230,7 @@ const styles = StyleSheet.create({
         top: 8,
         right: 8,
         flexDirection: 'row',
+        zIndex: 2,
     },
     iconButton: {
         backgroundColor: 'rgba(255,255,255,0.95)',
