@@ -5,8 +5,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     Image,
+    useWindowDimensions,
     Platform,
-    useWindowDimensions
 } from 'react-native';
 import { Menu, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -16,7 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 
 function RenderRightMenu() {
     const navigation = useNavigation();
-    const { isAuthenticated, username, logout } = useAuth();
+    const { isAuthenticated, username, logout, user } = useAuth();
     const { updateFilters } = useFilters();
 
     const [visible, setVisible] = useState(false);
@@ -27,9 +27,29 @@ function RenderRightMenu() {
     const openMenu = () => setVisible(true);
     const closeMenu = () => setVisible(false);
 
+    const handleNavigate = (screen: string, extraAction?: () => void) => {
+        requestAnimationFrame(() => {
+            if (extraAction) extraAction();
+            navigation.navigate(screen);
+            closeMenu();
+        });
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        closeMenu();
+        navigation.navigate('index');
+    };
+
     return (
         <View style={styles.container}>
-            <TouchableOpacity onPress={() => navigation.navigate('index')} style={styles.homeButton}>
+            <TouchableOpacity
+                onPress={() => {
+                    if (visible) closeMenu();
+                    navigation.navigate('index');
+                }}
+                style={styles.homeButton}
+            >
                 <Image source={require('../assets/icons/logo_yellow.png')} style={styles.logo} />
                 <Text style={styles.homeButtonText}>MeTravel</Text>
             </TouchableOpacity>
@@ -54,18 +74,12 @@ function RenderRightMenu() {
                     {!isAuthenticated ? (
                         <>
                             <Menu.Item
-                                onPress={() => {
-                                    navigation.navigate('login');
-                                    closeMenu();
-                                }}
+                                onPress={() => handleNavigate('login')}
                                 title="Войти"
                                 leadingIcon="login"
                             />
                             <Menu.Item
-                                onPress={() => {
-                                    navigation.navigate('registration');
-                                    closeMenu();
-                                }}
+                                onPress={() => handleNavigate('registration')}
                                 title="Зарегистрироваться"
                                 leadingIcon="account-plus"
                             />
@@ -73,30 +87,23 @@ function RenderRightMenu() {
                     ) : (
                         <>
                             <Menu.Item
-                                onPress={() => {
-                                    updateFilters({ user_id: 1 });
-                                    navigation.navigate('metravel');
-                                    closeMenu();
-                                }}
+                                onPress={() =>
+                                    handleNavigate('metravel', () =>
+                                        updateFilters({ user_id: user?.id })
+                                    )
+                                }
                                 title="Мои путешествия"
                                 leadingIcon="earth"
                             />
                             <Divider />
                             <Menu.Item
-                                onPress={() => {
-                                    navigation.navigate('travel/new');
-                                    closeMenu();
-                                }}
+                                onPress={() => handleNavigate('travel/new')}
                                 title="Добавить путешествие"
                                 leadingIcon="map-plus"
                             />
                             <Divider />
                             <Menu.Item
-                                onPress={async () => {
-                                    await logout();
-                                    closeMenu();
-                                    navigation.navigate('index');
-                                }}
+                                onPress={handleLogout}
                                 title="Выход"
                                 leadingIcon="logout"
                             />
@@ -152,7 +159,7 @@ const styles = StyleSheet.create({
     },
     menuButton: {
         backgroundColor: '#f5f5f5',
-        borderRadius: 30,
+        borderRadius: 24,
         padding: 8,
     },
     logo: {
