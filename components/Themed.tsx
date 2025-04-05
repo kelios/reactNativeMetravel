@@ -1,12 +1,13 @@
-import React from 'react';
 import {
   Text as DefaultText,
-  useColorScheme,
+  TextProps as RNTextProps,
   View as DefaultView,
+  ViewProps as RNViewProps,
   Button as DefaultButton,
+  ButtonProps as RNButtonProps,
+  useColorScheme,
   StyleSheet,
 } from 'react-native';
-
 import Colors from '@/constants/Colors';
 
 type ThemeProps = {
@@ -14,25 +15,24 @@ type ThemeProps = {
   darkColor?: string;
 };
 
-export type TextProps = ThemeProps & DefaultText['props'];
-export type ViewProps = ThemeProps & DefaultView['props'];
-export type ButtonProps = ThemeProps & DefaultButton['props'];
+export type TextProps = ThemeProps & RNTextProps;
+export type ViewProps = ThemeProps & RNViewProps;
+export type ButtonProps = ThemeProps & RNButtonProps;
 
 /**
  * Возвращает цвет на основе текущей темы.
  */
 export function useThemeColor(
     props: { light?: string; dark?: string },
-    colorName: keyof typeof Colors.light & keyof typeof Colors.dark,
+    colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
   const theme = useColorScheme() ?? 'light';
   const colorFromProps = props[theme];
-
-  return colorFromProps ? colorFromProps : Colors[theme][colorName];
+  return colorFromProps ?? Colors[theme][colorName];
 }
 
 /**
- * Компонент текст с поддержкой темной и светлой темы.
+ * Компонент Text с поддержкой темной и светлой темы.
  */
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
@@ -46,10 +46,7 @@ export function Text(props: TextProps) {
  */
 export function View(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
-  const backgroundColor = useThemeColor(
-      { light: lightColor, dark: darkColor },
-      'background',
-  );
+  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
 
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
 }
@@ -58,12 +55,10 @@ export function View(props: ViewProps) {
  * Компонент Button с поддержкой темной и светлой темы.
  */
 export function Button(props: ButtonProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { lightColor, darkColor, ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'button');
 
   return <DefaultButton color={color} {...otherProps} />;
 }
 
-const styles = StyleSheet.create({
-  // Место для общих стилей, если они понадобятся
-});
+const styles = StyleSheet.create({});

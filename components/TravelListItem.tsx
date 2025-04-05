@@ -44,10 +44,9 @@ const TravelListItem = ({
 
     const { width } = useWindowDimensions();
     const canEditOrDelete = isMetravel || isSuperuser;
-    const countries = countryName ? countryName.split(',').map(c => c.trim()) : [];
+    const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
     const [imageError, setImageError] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
-
     const scaleValue = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = () => {
@@ -128,11 +127,7 @@ const TravelListItem = ({
                                     />
                                 )
                             ) : (
-                                <Image
-                                    source={placeholderImage}
-                                    style={styles.image}
-                                    resizeMode="cover"
-                                />
+                                <Image source={placeholderImage} style={styles.image} resizeMode="cover" />
                             )}
 
                             {canEditOrDelete && (
@@ -158,19 +153,23 @@ const TravelListItem = ({
                         <View style={styles.content}>
                             {countries.length > 0 && (
                                 <View style={styles.countries}>
-                                    {countries.map((country, index) => (
-                                        <Text key={index} style={styles.chip}>{country}</Text>
+                                    {countries.map((country) => (
+                                        <Text key={country} style={styles.chip}>
+                                            {country}
+                                        </Text>
                                     ))}
                                 </View>
                             )}
 
-                            <Text style={styles.title} numberOfLines={2}>{name}</Text>
+                            <Text style={styles.title} numberOfLines={2}>
+                                {name}
+                            </Text>
 
                             <View style={styles.metaRow}>
                                 <Text style={styles.meta}>
-                                    Автор: <Text style={styles.author}>{userName}</Text>
+                                    Автор: <Text style={styles.author}>{String(userName || 'Неизвестно')}</Text>
                                 </Text>
-                                <Text style={styles.meta}>👀 {countUnicIpView}</Text>
+                                <Text style={styles.meta}>👀 {countUnicIpView ?? 0}</Text>
                             </View>
                         </View>
                     </Card>

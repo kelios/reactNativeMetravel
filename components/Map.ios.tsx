@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
-import MapView, { Marker, Callout } from 'react-native-maps'
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import MapView, { Marker, Callout } from 'react-native-maps';
 
 type Point = {
   id: number;
@@ -10,7 +10,7 @@ type Point = {
   address: string;
   travelImageThumbUrl: string;
   categoryName: string;
-}
+};
 
 type PaginatedResponse = {
   current_page: number;
@@ -21,105 +21,81 @@ type PaginatedResponse = {
   prev_page_url: string | null;
   to: number;
   total: number;
-}
+};
 
 type TravelPropsType = {
   travelAddress: PaginatedResponse;
-}
+};
 
 interface Coordinates {
-  latitude: number
-  longitude: number
+  latitude: number;
+  longitude: number;
 }
 
 interface TravelProps {
-  travel: TravelPropsType
-  coordinates: Coordinates | null
+  travel: TravelPropsType;
+  coordinates: Coordinates | null;
 }
-
 
 const getLatLng = (coord: string) => {
-  const [latitude, longitude] = coord.split(',').map(Number)
-  return { latitude, longitude }
-}
+  const [latitude, longitude] = coord.split(',').map(Number);
+  return { latitude, longitude };
+};
 
-const Map: React.FC<TravelProps> = ({
-  travel,
-  coordinates: propCoordinates,
-}) => {
-  const travelAddress = travel?.travelAddress || travel?.data || []
+const Map: React.FC<TravelProps> = ({ travel, coordinates: propCoordinates }) => {
+  const travelAddress = travel?.travelAddress?.data || [];
 
-  const [localCoordinates, setLocalCoordinates] = useState<{
-    latitude: number
-    longitude: number
-  } | null>(propCoordinates)
+  const [localCoordinates, setLocalCoordinates] = useState<Coordinates | null>(propCoordinates);
 
   useEffect(() => {
     if (!localCoordinates) {
-      setLocalCoordinates({ latitude: 53.8828449, longitude: 27.7273595 })
+      setLocalCoordinates({ latitude: 53.8828449, longitude: 27.7273595 });
     }
-  }, [localCoordinates])
+  }, [localCoordinates]);
 
   const region = {
-    latitude: localCoordinates ? localCoordinates.latitude : '53.8828449',
-    longitude: localCoordinates ? localCoordinates.longitude : '53.8828449',
+    latitude: localCoordinates?.latitude ?? 53.8828449,
+    longitude: localCoordinates?.longitude ?? 27.7273595,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
-  }
-  const mapRef = React.useRef<MapView | null>(null)
-  React.useEffect(() => {
+  };
+
+  const mapRef = useRef<MapView | null>(null);
+
+  useEffect(() => {
     if (mapRef.current && travelAddress.length) {
-      const coordinates = travelAddress.map((point) => getLatLng(point?.coord))
+      const coordinates = travelAddress.map((point) => getLatLng(point?.coord));
       mapRef.current.fitToCoordinates(coordinates, {
         edgePadding: { top: 10, right: 10, bottom: 10, left: 10 },
         animated: true,
-      })
+      });
     }
-  }, [travel])
+  }, [travelAddress]);
 
   return (
-    <MapView style={styles.map} ref={mapRef} initialRegion={region}>
-      {travelAddress.map((point, index) => (
-        <Marker
-          key={index}
-          coordinate={getLatLng(point?.coord)}
-          title={point?.address}
-        >
-          <Callout>
-            <View>
-              {point?.travelImageThumbUrl && (
-                <Image
-                  source={{ uri: point?.travelImageThumbUrl }}
-                  style={styles.pointImage}
-                />
-              )}
-              <Text style={styles.label}>Адрес места :</Text>
-              <Text>{point.address}</Text>
-              <Text style={styles.label}>Координаты :</Text>
-              <Text>{point.coord}</Text>
-              <Text style={styles.label}>Категория обьекта :</Text>
-              <Text>{point.categoryName}</Text>
-            </View>
-          </Callout>
-        </Marker>
-      ))}
-    </MapView>
-  )
-}
+      <MapView style={styles.map} ref={mapRef} initialRegion={region}>
+        {travelAddress.map((point, index) => (
+            <Marker key={index} coordinate={getLatLng(point?.coord)} title={String(point?.address)}>
+              <Callout>
+                <View>
+                  {point?.travelImageThumbUrl ? (
+                      <Image source={{ uri: point?.travelImageThumbUrl }} style={styles.pointImage} />
+                  ) : null}
+                  <Text style={styles.label}>Адрес места:</Text>
+                  <Text>{String(point.address)}</Text>
+                  <Text style={styles.label}>Координаты:</Text>
+                  <Text>{String(point.coord)}</Text>
+                  <Text style={styles.label}>Категория объекта:</Text>
+                  <Text>{String(point.categoryName)}</Text>
+                </View>
+              </Callout>
+            </Marker>
+        ))}
+      </MapView>
+  );
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  imageContainer: {
-    position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   map: {
     width: '100%',
     height: 300,
@@ -135,7 +111,8 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 10,
+    marginBottom: 10,
   },
-})
+});
 
-export default Map
+export default Map;

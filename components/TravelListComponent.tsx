@@ -6,6 +6,8 @@ import { Travel } from '@/src/types/types';
 interface TravelListComponentProps {
     travels: Travel[];
     userId: string;
+    isSuperuser: boolean;
+    isMetravel: boolean;
     handleEdit: (id: string) => void;
     handleDelete: (id: string) => void;
 }
@@ -13,12 +15,14 @@ interface TravelListComponentProps {
 const TravelListComponent: React.FC<TravelListComponentProps> = ({
                                                                      travels,
                                                                      userId,
+                                                                     isSuperuser,
+                                                                     isMetravel,
                                                                      handleEdit,
                                                                      handleDelete,
                                                                  }) => {
     const windowWidth = Dimensions.get('window').width;
     const isMobile = windowWidth <= 768;
-    const numColumns = isMobile ? 1 : 2; // Одна колонка для мобильных, две для больших экранов
+    const numColumns = isMobile ? 1 : 2;
 
     if (travels.length === 0) {
         return <Text style={styles.noDataText}>Нет доступных путешествий</Text>;
@@ -32,6 +36,8 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
                     <TravelListItem
                         travel={item}
                         currentUserId={userId}
+                        isSuperuser={isSuperuser}
+                        isMetravel={isMetravel}
                         onEditPress={handleEdit}
                         onDeletePress={handleDelete}
                     />
@@ -39,9 +45,12 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
             )}
             keyExtractor={(item) => item.id.toString()}
             numColumns={numColumns}
-            key={numColumns} // Обеспечивает перерисовку при изменении колонок
+            columnWrapperStyle={
+                numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined
+            }
             style={styles.list}
             contentContainerStyle={styles.contentContainer}
+            extraData={{ isSuperuser, isMetravel, userId }} // гарантируем перерисовку при смене этих значений
         />
     );
 };
@@ -51,14 +60,14 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     contentContainer: {
-        paddingHorizontal: 10, // Добавляем отступы для карточек
-        paddingBottom: 20, // Добавляем нижний отступ для списка
+        paddingHorizontal: 10,
+        paddingBottom: 20,
     },
     cardContainer: {
         flex: 1,
-        margin: 10, // Отступы между карточками
-        width: '100%', // Задаем фиксированную ширину для карточек
-        maxWidth: '50%', // Для двух колонок — половина доступного пространства
+        margin: 10,
+        width: '100%',
+        maxWidth: '50%',
     },
     noDataText: {
         textAlign: 'center',

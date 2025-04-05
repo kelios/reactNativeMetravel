@@ -1,6 +1,4 @@
-// PopularTravelList.tsx
-
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import React, { useEffect, useState, useCallback, memo, useMemo } from 'react';
 import {
     View,
     FlatList,
@@ -19,71 +17,83 @@ type PopularTravelListProps = {
     scrollToAnchor?: () => void;
 };
 
-const PopularTravelList: React.FC<PopularTravelListProps> = memo(({ onLayout, scrollToAnchor }) => {
-    const [travelsPopular, setTravelsPopular] = useState<TravelsMap>({});
-    const [isLoading, setIsLoading] = useState(true);
-    const { width } = useWindowDimensions();
-    const isMobile = width <= 768;
+const PopularTravelList: React.FC<PopularTravelListProps> = memo(
+    ({ onLayout, scrollToAnchor }) => {
+        const [travelsPopular, setTravelsPopular] = useState<TravelsMap>({});
+        const [isLoading, setIsLoading] = useState(true);
+        const { width } = useWindowDimensions();
+        const isMobile = width <= 768;
+        const numColumns = isMobile ? 1 : 3;
 
-    const numColumns = isMobile ? 1 : 3;
+        const fetchPopularTravels = useCallback(async () => {
+            try {
+                const travelData = await fetchTravelsPopular();
+                setTravelsPopular(travelData);
+            } catch (error) {
+                console.error('Failed to fetch popular travel data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        }, []);
 
-    const fetchPopularTravels = useCallback(async () => {
-        try {
-            const travelData = await fetchTravelsPopular();
-            setTravelsPopular(travelData);
-        } catch (error) {
-            console.error('Failed to fetch travel data:', error);
-        } finally {
-            setIsLoading(false);
+        useEffect(() => {
+            fetchPopularTravels();
+        }, [fetchPopularTravels]);
+
+        const popularList = useMemo(() => Object.values(travelsPopular), [travelsPopular]);
+
+        const renderItem = useCallback(
+            ({ item }: { item: Travel }) => <TravelTmlRound travel={item} onPress={() => {}} />,
+            []
+        );
+
+        const keyExtractor = useCallback((item: Travel) => item.id.toString(), []);
+
+        const handleContentChange = useCallback(() => {
+            if (scrollToAnchor) {
+                scrollToAnchor();
+            }
+        }, [scrollToAnchor]);
+
+        if (isLoading) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#6B4F4F" />
+                    <Text style={styles.loadingText}>Загрузка популярных маршрутов...</Text>
+                </View>
+            );
         }
-    }, []);
 
-    useEffect(() => {
-        fetchPopularTravels();
-    }, [fetchPopularTravels]);
-
-    const renderItem = useCallback(
-        ({ item }: { item: Travel }) => <TravelTmlRound travel={item} onPress={() => {}} />,
-        []
-    );
-
-    const keyExtractor = useCallback((item: Travel) => item.id.toString(), []);
-
-    const handleContentChange = useCallback(() => {
-        if (scrollToAnchor) {
-            scrollToAnchor();
+        if (popularList.length === 0) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Нет популярных маршрутов 😔</Text>
+                </View>
+            );
         }
-    }, [scrollToAnchor]);
 
-    if (isLoading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#6B4F4F" />
-                <Text style={styles.loadingText}>Загрузка популярных маршрутов...</Text>
+            <View style={styles.container} onLayout={onLayout}>
+                <Title style={styles.title}>Популярные маршруты</Title>
+                <FlatList
+                    key={numColumns}
+                    extraData={numColumns}
+                    data={popularList}
+                    renderItem={renderItem}
+                    keyExtractor={keyExtractor}
+                    numColumns={numColumns}
+                    contentContainerStyle={styles.flatListContent}
+                    showsVerticalScrollIndicator={false}
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={true}
+                    onContentSizeChange={handleContentChange}
+                />
             </View>
         );
     }
-
-    return (
-        <View style={styles.container} onLayout={onLayout}>
-            <Title style={styles.title}>Популярные маршруты</Title>
-            <FlatList
-                key={numColumns}
-                contentContainerStyle={styles.flatListContent}
-                showsVerticalScrollIndicator={false}
-                data={Object.values(travelsPopular)}
-                renderItem={renderItem}
-                keyExtractor={keyExtractor}
-                numColumns={numColumns}
-                initialNumToRender={10}
-                maxToRenderPerBatch={10}
-                windowSize={5}
-                removeClippedSubviews={true}
-                onContentSizeChange={handleContentChange}
-            />
-        </View>
-    );
-});
+);
 
 const styles = StyleSheet.create({
     container: {
@@ -101,6 +111,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontSize: 16,
         color: '#333333',
+        textAlign: 'center',
     },
     title: {
         fontSize: 24,

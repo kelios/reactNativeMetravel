@@ -5,9 +5,15 @@ interface TextInputComponentProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
+    secureTextEntry?: boolean;
 }
 
-const TextInputComponent: React.FC<TextInputComponentProps> = ({ label, value, onChange }) => {
+const TextInputComponent: React.FC<TextInputComponentProps> = ({
+                                                                   label,
+                                                                   value,
+                                                                   onChange,
+                                                                   secureTextEntry = false,
+                                                               }) => {
     return (
         <View style={styles.container}>
             <Text style={styles.label}>{label}</Text>
@@ -15,7 +21,8 @@ const TextInputComponent: React.FC<TextInputComponentProps> = ({ label, value, o
                 style={styles.input}
                 value={value}
                 onChangeText={onChange}
-                placeholder={`Введите ${label.toLowerCase()}`}
+                placeholder={`Введите ${String(label).toLowerCase()}`}
+                secureTextEntry={secureTextEntry}
             />
         </View>
     );
