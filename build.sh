@@ -24,19 +24,27 @@ function clean_all() {
 function build_env() {
   ENV=$1
   DIR="dist/$ENV"
+  ARCHIVE="dist/$ENV.tar.gz"
 
   echo "🚀 Сборка для $ENV → $DIR"
   apply_env $ENV
   EXPO_ENV=$ENV EXPO_NO_METRO_LAZY=true npx expo export --output-dir $DIR -p web -c
-  echo "✅ Готово: $DIR"
+
+  echo "📦 Архивирую $DIR → $ARCHIVE"
+  tar -czf "$ARCHIVE" -C dist "$ENV"
+
+  echo "🗑️ Удаляю $DIR"
+  rm -rf "$DIR"
+
+  echo "✅ Готово: $ARCHIVE"
 }
 
 echo "🔁 Старт полной сборки..."
 
 clean_all
 
-#build_env dev
-#build_env preprod
+build_env dev
+build_env preprod
 build_env prod
 
 echo "🎉 Сборка завершена успешно!"
