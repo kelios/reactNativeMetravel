@@ -29,7 +29,7 @@ export const useWebAnalytics = () => {
             gtag('js', new Date());
             gtag('config', GA_MEASUREMENT_ID);
         }*/
-c
+
         // --- Yandex Metrica ---
         if (!(window as any).ym) {
             const ymScript = document.createElement('script');
