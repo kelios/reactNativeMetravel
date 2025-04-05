@@ -1,21 +1,20 @@
-import React, { useEffect } from 'react';
-import '@expo/metro-runtime';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
+import React, { useEffect } from 'react'
+import '@expo/metro-runtime'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { useFonts } from 'expo-font'
+import { SplashScreen, Stack } from 'expo-router'
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
-} from 'react-native-paper';
-import { PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
-import { FiltersProvider } from '@/providers/FiltersProvider';
-import { AuthProvider } from '@/context/AuthContext';
-import CookiePopup from '@/components/CookiePopup';
-import 'react-native-reanimated';
-import 'react-native-gesture-handler';
-import {useWebAnalytics} from "@/components/analitic/useWebAnalytics";
+} from 'react-native-paper'
+import { FiltersProvider } from '@/providers/FiltersProvider'
+import { AuthProvider } from '@/context/AuthContext'
+import CookiePopup from '@/components/CookiePopup'
+import 'react-native-reanimated'
+import 'react-native-gesture-handler'
+import { useWebAnalytics } from '@/components/analitic/useWebAnalytics'
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync()
 
 const theme = {
     ...DefaultTheme,
@@ -40,33 +39,35 @@ const theme = {
             level5: '#b0b0b0',
         },
     },
-};
+    fonts: {
+        ...DefaultTheme.fonts,
+        bodyLarge: {
+            ...DefaultTheme.fonts.bodyLarge,
+            fontFamily: 'Playfair Display, serif', // кастомно
+        },
+    },
+}
 
 export default function RootLayout() {
-    useWebAnalytics();
+    useWebAnalytics()
 
     const [loaded, error] = useFonts({
-        PlayfairDisplay_400Regular,
-        ...FontAwesome.font,
-    });
+        ...FontAwesome.font, // только иконки
+    })
 
     useEffect(() => {
-        if (error) {
-            throw error;
-        }
-    }, [error]);
+        if (error) throw error
+    }, [error])
 
     useEffect(() => {
         if (loaded) {
-            SplashScreen.hideAsync();
+            SplashScreen.hideAsync()
         }
-    }, [loaded]);
+    }, [loaded])
 
-    if (!loaded) {
-        return null;
-    }
+    if (!loaded) return null
 
-    return <RootLayoutNav />;
+    return <RootLayoutNav />
 }
 
 function RootLayoutNav() {
@@ -75,14 +76,11 @@ function RootLayoutNav() {
             <AuthProvider>
                 <FiltersProvider>
                     <Stack>
-                        <Stack.Screen
-                            name="(tabs)"
-                            options={{ headerShown: false }}
-                        />
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     </Stack>
                 </FiltersProvider>
             </AuthProvider>
             <CookiePopup />
         </PaperProvider>
-    );
+    )
 }

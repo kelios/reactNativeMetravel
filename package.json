@@ -14,7 +14,6 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "@expo-google-fonts/playfair-display": "^0.2.3",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "^14.0.4",
     "@native-html/iframe-plugin": "^2.6.1",

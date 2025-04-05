@@ -35,7 +35,7 @@ const FiltersComponent = ({
     const applyFilters = () => {
         const updatedFilters = {
             ...filterValue,
-            year: yearInput,
+            year: yearInput.trim() !== '' ? yearInput : undefined,
             showModerationPending: showModerationPending ?? false,
         };
 
@@ -74,6 +74,7 @@ const FiltersComponent = ({
             return selected.map(id => {
                 const item = items.find(i => i.id == id || i.country_id == id);
                 if (!item) return null;
+
                 return (
                     <View key={`${field}-${id}`} style={styles.chip}>
                         <Text style={styles.chipText}>{item.name || item.title_ru}</Text>
@@ -83,7 +84,7 @@ const FiltersComponent = ({
                     </View>
                 );
             });
-        });
+        }).filter(Boolean);
     };
 
     const renderMultiSelect = (label, field, items, uniqueKey, displayKey) => (
@@ -155,9 +156,10 @@ const FiltersComponent = ({
                                 isFocused && { borderColor: 'gray' }
                             ]}
                             value={yearInput}
-                            onChangeText={setYearInput}
+                            onChangeText={(text) => setYearInput(text.replace(/[^0-9]/g, ''))}
                             placeholder="Введите год"
                             keyboardType="numeric"
+                            maxLength={4}
                             underlineColorAndroid="transparent"
                             onFocus={() => setIsFocused(true)}
                             onBlur={() => setIsFocused(false)}
@@ -180,31 +182,25 @@ const FiltersComponent = ({
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-
     scrollArea: { flex: 1 },
-
     scrollContainer: {
         paddingHorizontal: 16,
-        paddingBottom: 180, // увеличено для безопасного пространства
+        paddingBottom: 180,
     },
-
     mobileCloseRow: {
         alignItems: 'flex-end',
         padding: 12,
     },
-
     closeButton: {
         fontSize: 20,
         color: '#7D7368',
     },
-
     chipsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
         marginBottom: 16,
     },
-
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -214,33 +210,27 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         cursor: 'pointer',
     },
-
     chipClose: {
         color: '#FFF',
         fontWeight: 'bold',
         cursor: 'pointer',
     },
-
     chipText: {
         color: '#FFF',
         marginRight: 6,
     },
-
     filtersGrid: {
         gap: 20,
     },
-
     filterBlock: {
         width: '100%',
     },
-
     filterLabel: {
         fontWeight: '600',
         fontSize: 13,
         color: '#5A5149',
         marginBottom: 6,
     },
-
     dropdown: {
         backgroundColor: '#FFF',
         borderRadius: 8,
@@ -249,7 +239,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#DAD7D2',
     },
-
     dropdownContainer: {
         borderRadius: 8,
         elevation: 3,
@@ -258,11 +247,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
-
     itemText: {
         color: '#5A5149',
     },
-
     yearInput: {
         backgroundColor: '#FFF',
         borderWidth: 1,
@@ -272,7 +259,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         outlineStyle: 'none',
     },
-
     footer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -286,14 +272,12 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 8,
     },
-
     footerMobile: {
         position: 'absolute',
-        bottom: 60, // учли нижний навбар
+        bottom: 60,
         left: 0,
         right: 0,
     },
-
     resetButton: {
         flex: 1,
         backgroundColor: '#DAD7D2',
@@ -302,7 +286,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginRight: 8,
     },
-
     applyButton: {
         flex: 1,
         backgroundColor: '#6aaaaa',
@@ -310,22 +293,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
     },
-
     buttonText: {
         color: '#FFF',
         fontWeight: '600',
     },
-
     checkboxContainer: {
         backgroundColor: 'transparent',
         borderWidth: 0,
         padding: 0,
     },
-
     checkboxText: {
         fontSize: 14,
         color: '#5A5149',
         fontWeight: '500',
     },
 });
+
 export default FiltersComponent;

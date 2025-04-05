@@ -5,11 +5,6 @@ import * as Linking from 'expo-linking'
 import { Card, Title, Paragraph, Text } from 'react-native-paper'
 import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
 import RenderHTML from 'react-native-render-html'
-import {
-  useFonts,
-  PlayfairDisplay_400Regular,
-} from '@expo-google-fonts/playfair-display'
-import {useRoute} from "@react-navigation/native";
 import {router} from "expo-router";
 
 type ArticleListItemProps = {
@@ -59,7 +54,7 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: 10,
     width: '100%',
-    fontFamily: 'PlayfairDisplay_400Regular',
+    //fontFamily: 'PlayfairDisplay_400Regular',
     fontSize: 40,
   },
   card: {

@@ -27,7 +27,12 @@ export default function PaginationComponent({
         }
     }, [itemsPerPage, totalItems]);
 
-    const handlePageChange = (newPage) => {
+    const handlePageChange = (newPageRaw) => {
+        const newPage = Number(newPageRaw);
+        if (isNaN(newPage) || newPage < 1 || newPage > totalPages) {
+            setPageInput(currentPage + 1);
+            return;
+        }
         const page = Math.min(Math.max(newPage - 1, 0), totalPages - 1);
         setPageInput(page + 1);
         onPageChange(page);
@@ -46,8 +51,10 @@ export default function PaginationComponent({
                 style={[styles.pageInput, isMobile && styles.pageInputMobile]}
                 value={String(pageInput)}
                 keyboardType="numeric"
+                maxLength={4}
                 onChangeText={(text) => setPageInput(text.replace(/[^0-9]/g, ''))}
-                onSubmitEditing={() => handlePageChange(Number(pageInput))}
+                onSubmitEditing={() => handlePageChange(pageInput)}
+                returnKeyType="done"
             />
             <Text style={styles.totalPages}>/ {totalPages}</Text>
 
@@ -95,19 +102,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-       // paddingVertical: 10,
         borderTopWidth: 1,
         borderColor: '#e0e0e0',
         gap: 8,
         backgroundColor: '#fefefe',
+        paddingVertical: 8,
     },
     mobileContainer: {
-        position: 'sticky', // для web
+        position: 'sticky', // Web only
         bottom: 0,
         zIndex: 10,
         backgroundColor: '#fefefe',
-       // paddingRight: 16,
-        //paddingLeft: 16,
         paddingBottom: Platform.OS === 'ios' ? 16 : 0,
     },
     pageInput: {

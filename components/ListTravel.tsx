@@ -174,6 +174,7 @@ export default function ListTravel() {
                                         travel={item}
                                         currentUserId={userId ?? ''}
                                         isSuperuser={isSuperuser}
+                                        isMetravel={isMeTravel}
                                         onEditPress={() => router.push(`/travel/${item.id}`)}
                                         onDeletePress={() => openDeleteDialog(String(item.id))}
                                     />
