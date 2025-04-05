@@ -1,4 +1,4 @@
-// ✅ FiltersComponent.tsx
+// ✅ FiltersComponent.tsx — обновлённая версия
 import React, { useState } from 'react';
 import {
     View,
@@ -25,14 +25,11 @@ const FiltersComponent = ({
                           }) => {
     const { width } = useWindowDimensions();
     const route = useRoute();
-
     const isMobile = width <= 768;
     const isTravelsByPage = route.name === 'travelsby';
 
     const [yearInput, setYearInput] = useState(filterValue.year || '');
-    const [showModerationPending, setShowModerationPending] = useState(
-        filterValue.showModerationPending || false
-    );
+    const [showModerationPending, setShowModerationPending] = useState(filterValue.showModerationPending || false);
     const [isFocused, setIsFocused] = useState(false);
 
     const applyFilters = () => {
@@ -62,14 +59,14 @@ const FiltersComponent = ({
 
     const renderSelectedChips = () => {
         const allFilters = [
-            { field: 'countries', items: filters.countries || [], label: 'Страны' },
-            { field: 'categories', items: filters.categories || [], label: 'Категории' },
-            { field: 'categoryTravelAddress', items: filters.categoryTravelAddress || [], label: 'Объекты' },
-            { field: 'transports', items: filters.transports || [], label: 'Транспорт' },
-            { field: 'companions', items: filters.companions || [], label: 'Компаньоны' },
-            { field: 'complexity', items: filters.complexity || [], label: 'Сложность' },
-            { field: 'month', items: filters.month || [], label: 'Месяц' },
-            { field: 'over_nights_stay', items: filters.over_nights_stay || [], label: 'Ночлег' },
+            { field: 'countries', items: filters.countries || [] },
+            { field: 'categories', items: filters.categories || [] },
+            { field: 'categoryTravelAddress', items: filters.categoryTravelAddress || [] },
+            { field: 'transports', items: filters.transports || [] },
+            { field: 'companions', items: filters.companions || [] },
+            { field: 'complexity', items: filters.complexity || [] },
+            { field: 'month', items: filters.month || [] },
+            { field: 'over_nights_stay', items: filters.over_nights_stay || [] },
         ];
 
         return allFilters
@@ -98,10 +95,9 @@ const FiltersComponent = ({
             .filter(Boolean);
     };
 
-    const renderMultiSelect = (label, field, items, uniqueKey, displayKey) => (
+    const renderMultiSelect = (placeholder, field, items, uniqueKey, displayKey) => (
         <MultiSelectField
             key={field}
-            label={label}
             items={items}
             value={filterValue[field] || []}
             onChange={(selected) =>
@@ -109,6 +105,7 @@ const FiltersComponent = ({
             }
             labelField={displayKey}
             valueField={uniqueKey}
+            placeholder={placeholder}
             renderSelectedItem={() => <></>}
         />
     );
@@ -143,14 +140,14 @@ const FiltersComponent = ({
                 <View style={styles.chipsContainer}>{renderSelectedChips()}</View>
 
                 <View style={styles.filtersGrid}>
-                    {!isTravelsByPage && renderMultiSelect('Страны', 'countries', filters.countries || [], 'country_id', 'title_ru')}
-                    {renderMultiSelect('Категории', 'categories', filters.categories || [], 'id', 'name')}
-                    {renderMultiSelect('Объекты', 'categoryTravelAddress', filters.categoryTravelAddress || [], 'id', 'name')}
-                    {renderMultiSelect('Транспорт', 'transports', filters.transports || [], 'id', 'name')}
-                    {renderMultiSelect('Компаньоны', 'companions', filters.companions || [], 'id', 'name')}
-                    {renderMultiSelect('Сложность', 'complexity', filters.complexity || [], 'id', 'name')}
-                    {renderMultiSelect('Месяц', 'month', filters.month || [], 'id', 'name')}
-                    {renderMultiSelect('Ночлег', 'over_nights_stay', filters.over_nights_stay || [], 'id', 'name')}
+                    {!isTravelsByPage && renderMultiSelect('Выбрать страны...', 'countries', filters.countries || [], 'country_id', 'title_ru')}
+                    {renderMultiSelect('Выбрать категории...', 'categories', filters.categories || [], 'id', 'name')}
+                    {renderMultiSelect('Выбрать объекты...', 'categoryTravelAddress', filters.categoryTravelAddress || [], 'id', 'name')}
+                    {renderMultiSelect('Выбрать транспорт...', 'transports', filters.transports || [], 'id', 'name')}
+                    {renderMultiSelect('Выбрать компаньоны...', 'companions', filters.companions || [], 'id', 'name')}
+                    {renderMultiSelect('Выбрать сложность...', 'complexity', filters.complexity || [], 'id', 'name')}
+                    {renderMultiSelect('Выбрать месяц...', 'month', filters.month || [], 'id', 'name')}
+                    {renderMultiSelect('Выбрать ночлег...', 'over_nights_stay', filters.over_nights_stay || [], 'id', 'name')}
 
                     <View style={styles.filterBlock}>
                         <Text style={styles.filterLabel}>Год</Text>
@@ -209,14 +206,20 @@ const styles = StyleSheet.create({
     chipText: { color: '#FFF', marginRight: 6 },
     filtersGrid: { gap: 20 },
     filterBlock: { width: '100%' },
-    filterLabel: { fontWeight: '600', fontSize: 13, color: '#5A5149', marginBottom: 6 },
+    filterLabel: {
+        fontWeight: '500',
+        fontSize: 14,
+        color: '#5A5149',
+        marginBottom: 6,
+    },
     yearInput: {
         backgroundColor: '#FFF',
         borderWidth: 1,
-        borderColor: 'lightgray',
+        borderColor: '#e0dcd5',
         borderRadius: 8,
         padding: 12,
         fontSize: 14,
+        color: '#5A5149',
         outlineStyle: 'none',
     },
     footer: {
