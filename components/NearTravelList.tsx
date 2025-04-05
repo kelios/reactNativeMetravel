@@ -7,6 +7,7 @@ import {
     ActivityIndicator,
     Text,
     Platform,
+    TouchableOpacity,
 } from 'react-native';
 import { Title } from 'react-native-paper';
 import { Travel } from '@/src/types/types';
@@ -18,9 +19,9 @@ const CARD_WIDTH = 220;
 const MAX_COLUMNS = 3;
 
 const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
-    const [travelsNear, setTravelsNear] = useState([]);
+    const [travelsNear, setTravelsNear] = useState<Travel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
     const { width, height } = useWindowDimensions();
 
     const numColumns = Math.min(Math.max(Math.floor(width / CARD_WIDTH), 1), MAX_COLUMNS);
@@ -45,27 +46,28 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
         fetchNearbyTravels();
     }, [fetchNearbyTravels]);
 
-    const renderItem = useCallback(({ item }) => (
-        <TravelTmlRound travel={item} onPress={() => {}} />
-    ), []);
+    const renderItem = useCallback(
+        ({ item }) => <TravelTmlRound travel={item} />,
+        []
+    );
 
     const mapPoints = useMemo(() =>
-            travelsNear.flatMap(item => {
-                if (!item.coordsMeTravelArr?.length) return [];
-                return item.coordsMeTravelArr.map(coordStr => {
-                    const [lat, lng] = coordStr.split(',').map(n => parseFloat(n.trim()));
-                    if (isNaN(lat) || isNaN(lng)) return null;
-                    return {
-                        id: item.id,
-                        coord: coordStr.trim(),
-                        address: item.travelAddressAdress?.[0] || '',
-                        travelImageThumbUrl: item.travel_image_thumb_url || '',
-                        categoryName: item.countryName || '',
-                        articleUrl: item.url,
-                    };
-                }).filter(Boolean);
-            })
-        , [travelsNear]);
+        travelsNear.flatMap(item => {
+            if (!item.coordsMeTravelArr?.length) return [];
+            return item.coordsMeTravelArr.map(coordStr => {
+                const [lat, lng] = coordStr.split(',').map(n => parseFloat(n.trim()));
+                if (isNaN(lat) || isNaN(lng)) return null;
+                return {
+                    id: item.id,
+                    coord: coordStr.trim(),
+                    address: item.travelAddressAdress?.[0] || '',
+                    travelImageThumbUrl: item.travel_image_thumb_url || '',
+                    categoryName: item.countryName || '',
+                    articleUrl: item.url,
+                };
+            }).filter(Boolean);
+        }), [travelsNear]
+    );
 
     if (isLoading) {
         return (
@@ -80,20 +82,23 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
         return (
             <View style={styles.loadingContainer}>
                 <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity onPress={fetchNearbyTravels}>
+                    <Text style={styles.retryButton}>Повторить</Text>
+                </TouchableOpacity>
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { height }]}
-              onLayout={onLayout}>
+        <View style={[styles.container, { height }]} onLayout={onLayout}>
             <Title style={styles.title}>Рядом (~60км) можно еще посмотреть...</Title>
+
             <FlatList
                 data={travelsNear}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
-                key={numColumns}
                 numColumns={numColumns}
+                extraData={numColumns}
                 contentContainerStyle={styles.flatListContent}
                 showsVerticalScrollIndicator={false}
                 removeClippedSubviews
@@ -101,9 +106,11 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
                 maxToRenderPerBatch={10}
                 windowSize={5}
             />
+
             <View style={styles.mapBlock}>
                 {Platform.OS === 'web' && mapPoints.length > 0 ? (
                     <MapClientSideComponent showRoute travel={{ data: mapPoints }} />
+                    // Или: <MapClientSideComponent showRoute points={mapPoints} /> — если ты изменишь пропсы
                 ) : (
                     <Text>Карта только в веб-версии</Text>
                 )}
@@ -119,7 +126,6 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingHorizontal: 20,
         width: '100%',
-        maxHeight: '100vh',
     },
     mapBlock: {
         width: '100%',
@@ -142,6 +148,13 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontSize: 16,
         color: 'red',
+        textAlign: 'center',
+    },
+    retryButton: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#6B4F4F',
+        fontWeight: 'bold',
     },
     title: {
         fontSize: 24,

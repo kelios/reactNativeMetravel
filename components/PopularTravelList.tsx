@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, memo, useMemo } from 'react';
+import React, {
+    useEffect,
+    useState,
+    useCallback,
+    memo,
+    useMemo,
+} from 'react';
 import {
     View,
     FlatList,
@@ -40,14 +46,20 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
             fetchPopularTravels();
         }, [fetchPopularTravels]);
 
-        const popularList = useMemo(() => Object.values(travelsPopular), [travelsPopular]);
+        const popularList = useMemo(
+            () => Object.values(travelsPopular),
+            [travelsPopular]
+        );
 
         const renderItem = useCallback(
-            ({ item }: { item: Travel }) => <TravelTmlRound travel={item} onPress={() => {}} />,
+            ({ item }: { item: Travel }) => <TravelTmlRound travel={item} />,
             []
         );
 
-        const keyExtractor = useCallback((item: Travel) => item.id.toString(), []);
+        const keyExtractor = useCallback(
+            (item: Travel) => item.id.toString(),
+            []
+        );
 
         const handleContentChange = useCallback(() => {
             if (scrollToAnchor) {
@@ -59,7 +71,9 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
             return (
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#6B4F4F" />
-                    <Text style={styles.loadingText}>Загрузка популярных маршрутов...</Text>
+                    <Text style={styles.loadingText}>
+                        Загрузка популярных маршрутов...
+                    </Text>
                 </View>
             );
         }
@@ -73,11 +87,10 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
         }
 
         return (
-            <View style={styles.container} onLayout={onLayout}>
+            <View style={styles.section} onLayout={onLayout}>
                 <Title style={styles.title}>Популярные маршруты</Title>
                 <FlatList
                     key={numColumns}
-                    extraData={numColumns}
                     data={popularList}
                     renderItem={renderItem}
                     keyExtractor={keyExtractor}
@@ -87,7 +100,7 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
                     initialNumToRender={10}
                     maxToRenderPerBatch={10}
                     windowSize={5}
-                    removeClippedSubviews={true}
+                    removeClippedSubviews
                     onContentSizeChange={handleContentChange}
                 />
             </View>
@@ -96,10 +109,13 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
 );
 
 const styles = StyleSheet.create({
-    container: {
+    section: {
         marginTop: 20,
-        marginBottom: '20%',
+        marginBottom: 40,
         paddingHorizontal: 20,
+        paddingVertical: 30,
+        backgroundColor: '#f5f5f5', // светло-серый фон секции
+        borderRadius: 12,
         width: '100%',
     },
     loadingContainer: {
@@ -110,7 +126,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 10,
         fontSize: 16,
-        color: '#333333',
+        color: '#333',
         textAlign: 'center',
     },
     title: {
@@ -125,6 +141,7 @@ const styles = StyleSheet.create({
         fontFamily: 'Georgia',
     },
     flatListContent: {
+        gap: 20,
         paddingBottom: 20,
     },
 });

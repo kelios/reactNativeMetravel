@@ -2,99 +2,104 @@ import React, { useMemo } from 'react'
 import {
   View,
   Pressable,
-  Dimensions,
   StyleSheet,
   useWindowDimensions,
+  Image,
 } from 'react-native'
+import { Card, Paragraph, Text } from 'react-native-paper'
 import { Travel } from '@/src/types/types'
-import * as Linking from 'expo-linking'
-import { Card, Title, Paragraph, Text } from 'react-native-paper'
-import { widthPercentageToDP as wp } from 'react-native-responsive-screen'
-import {router} from "expo-router";
+import { router } from 'expo-router'
 
 type TravelTmlRoundProps = {
   travel: Travel
 }
-const { width, height } = Dimensions.get('window')
 
 const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
   const {
     name,
-    url,
     slug,
-    travel_image_thumb_url,
     travel_image_thumb_small_url,
-    id,
-    cityName,
     countryName,
-    userName,
-    countUnicIpView,
   } = travel
 
   const windowDimensions = useWindowDimensions()
-  const isLargeScreen = useMemo(
-    () => windowDimensions.width > 768,
-    [windowDimensions],
-  )
+  const isLargeScreen = useMemo(() => windowDimensions.width > 768, [windowDimensions])
 
-  const pointContentStyle = isLargeScreen
-    ? styles.pointContentLarge
-    : styles.pointContent
+  const imageSize = isLargeScreen ? 200 : 140
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={() => router.push(`/travels/${slug}`)}>
-        <View style={pointContentStyle}>
-          <View style={styles.imageWrapper}>
-            <Card.Cover
-              source={{ uri: travel_image_thumb_small_url }}
-              style={styles.image}
-            />
+      <View style={styles.container}>
+        <Pressable
+            onPress={() => slug && router.push(`/travels/${slug}`)}
+            android_ripple={{ color: '#ccc', borderless: false }}
+            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+        >
+          <View style={[styles.shadow, { alignItems: 'center', padding: 10 }]}>
+            <View style={[styles.imageWrapper, {
+              width: imageSize,
+              height: imageSize,
+              borderRadius: imageSize / 2,
+            }]}>
+              <Image
+                  source={
+                    travel_image_thumb_small_url
+                        ? { uri: travel_image_thumb_small_url }
+                        : require('@/assets/placeholder.png')
+                  }
+                  style={styles.image}
+                  resizeMode="cover"
+              />
+            </View>
+            <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={styles.text}
+            >
+              {name || 'Без названия'}
+            </Text>
+            <Paragraph
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={styles.paragraph}
+            >
+              {countryName || 'Страна не указана'}
+            </Paragraph>
           </View>
-          <Text style={styles.text}>{name}</Text>
-          <Paragraph style={styles.paragraph}>{countryName}</Paragraph>
-        </View>
-      </Pressable>
-    </View>
+        </Pressable>
+      </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // make sure the container takes the full width given by FlatList for each item
-    padding: 5, // optional: some space around each card
+    flex: 1,
+    padding: 10,
+    alignItems: 'center',
   },
   text: {
     paddingTop: 10,
     color: '#4b7c6f',
     fontSize: 16,
     textAlign: 'center',
+    maxWidth: 200,
   },
   paragraph: {
     fontSize: 14,
-  },
-  pointContent: {
-    alignItems: 'center',
-    maxWidth: 800,
-    flexShrink: 1,
-  },
-  pointContentLarge: {
-    alignItems: 'center',
-    flexShrink: 1,
+    textAlign: 'center',
+    color: '#555',
+    maxWidth: 200,
   },
   imageWrapper: {
-    width: 200,
-    height: 200,
-    borderRadius: 200 / 2,
     overflow: 'hidden',
+    backgroundColor: '#eee',
   },
   image: {
     width: '100%',
     height: '100%',
   },
-  paragraphLeft: {
-    marginLeft: wp(1.5),
-  },
+  shadow: {
+    padding: 10,
+  }
 })
 
 export default TravelTmlRound
