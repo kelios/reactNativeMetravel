@@ -45,9 +45,7 @@ const TravelListItem = ({
 
     const { width } = useWindowDimensions();
     const canEditOrDelete = isMetravel || isSuperuser;
-
     const countries = countryName ? countryName.split(',').map(c => c.trim()) : [];
-
     const [imageError, setImageError] = useState(false);
 
     const scaleValue = useRef(new Animated.Value(1)).current;
@@ -74,12 +72,18 @@ const TravelListItem = ({
         let cardWidth = width * 0.9;
         let imageHeight = 200;
 
-        if (width > 768 && width <= 1200) {
+        if (width >= 768 && width <= 1024) {
+            cardWidth = width * 0.9;
+            imageHeight = 350;
+        } else if (width > 1024 && width <= 1200) {
             cardWidth = (width - 400) / 2;
             imageHeight = 250;
-        } else if (width > 1200) {
-            cardWidth = (width - 550) / 2;
-            imageHeight = 400;
+        } else if (width > 1200 && width <= 1400 ) {
+            cardWidth = (width - 400) / 2;
+            imageHeight = 300;
+        } else if (width > 1400) {
+            cardWidth = (width - 400) / 2;
+            imageHeight = 500;
         }
 
         return { cardWidth, imageHeight };
@@ -133,7 +137,7 @@ const TravelListItem = ({
                                 </View>
                             )}
 
-                            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{name}</Text>
+                            <Text style={styles.title} numberOfLines={2}>{name}</Text>
 
                             <View style={styles.metaRow}>
                                 <Text style={styles.meta}>

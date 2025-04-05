@@ -7,28 +7,29 @@ const isLocal = process.env.EXPO_PUBLIC_IS_LOCAL_API === 'true';
 
 export const useWebAnalytics = () => {
     useEffect(() => {
-        if (Platform.OS !== 'web' || isLocal) return;
 
-        // Добавляем только если ещё не инициализировано
+        if (Platform.OS !== 'web' || isLocal) return;
+        console.log('useWebAnalytics');
+        // --- Google Analytics ---
         if (!(window as any).gtag) {
+            // Важно: dataLayer должен быть определён ДО подключения скрипта
+            (window as any).dataLayer = (window as any).dataLayer || [];
+            function gtag(...args: any[]) {
+                (window as any).dataLayer.push(args);
+            }
+            (window as any).gtag = gtag;
+
             const script = document.createElement('script');
             script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
             script.async = true;
             document.head.appendChild(script);
 
-            script.onload = () => {
-                (window as any).dataLayer = (window as any).dataLayer || [];
-                function gtag(...args: any[]) {
-                    (window as any).dataLayer.push(args);
-                }
-                (window as any).gtag = gtag;
-
-                gtag('js', new Date());
-                gtag('config', GA_MEASUREMENT_ID);
-            };
+            // Инициализация
+            gtag('js', new Date());
+            gtag('config', GA_MEASUREMENT_ID);
         }
 
-        // Яндекс Метрика
+        // --- Яндекс Метрика ---
         if (!(window as any).ym) {
             const ymScript = document.createElement('script');
             ymScript.src = 'https://mc.yandex.ru/metrika/tag.js';
@@ -48,5 +49,4 @@ export const useWebAnalytics = () => {
             });
         }
     }, []);
-
 };
