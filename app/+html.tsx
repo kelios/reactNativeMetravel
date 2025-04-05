@@ -15,7 +15,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
             <title>MeTravel</title>
 
             <ScrollViewStyleReset />
-
+            <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="415100ea-b563-49ce-964d-ccf2c2dd2be5" type="text/javascript" async></script>
             <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
 
             <link rel="icon" href="/favicon.ico" />
