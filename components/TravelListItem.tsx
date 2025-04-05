@@ -6,8 +6,8 @@ import {
     Text,
     useWindowDimensions,
     Animated,
-    Easing,
-    Image, Platform,
+    Platform,
+    Image,
 } from 'react-native';
 import { Card } from 'react-native-paper';
 import { Travel } from '@/src/types/types';
@@ -54,7 +54,6 @@ const TravelListItem = ({
         Animated.spring(scaleValue, {
             toValue: 0.97,
             useNativeDriver: true,
-            speed: 50,
         }).start();
     };
 
@@ -62,7 +61,6 @@ const TravelListItem = ({
         Animated.spring(scaleValue, {
             toValue: 1,
             useNativeDriver: true,
-            speed: 50,
         }).start();
     };
 
@@ -75,7 +73,6 @@ const TravelListItem = ({
         let imageHeight = 200;
 
         if (width >= 768 && width <= 1024) {
-            cardWidth = width * 0.9;
             imageHeight = 350;
         } else if (width > 1024 && width <= 1200) {
             cardWidth = (width - 400) / 2;
@@ -93,6 +90,9 @@ const TravelListItem = ({
 
     const { cardWidth, imageHeight } = getCardStyle();
 
+    const isValidImageUrl = (url?: string): boolean =>
+        !!url && typeof url === 'string' && url.startsWith('http');
+
     return (
         <View style={[styles.cardContainer, { width: cardWidth }]}>
             <Pressable
@@ -104,29 +104,35 @@ const TravelListItem = ({
                 <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
                     <Card style={styles.card}>
                         <View style={[styles.imageContainer, { height: imageHeight }]}>
-                            {!imageError ? (
-                                <Image
-                                    source={{ uri: travel_image_thumb_url }}
-                                    style={styles.image}
-                                    onError={() => setImageError(true)}
-                                    onLoad={() => setImageLoaded(true)}
-                                    resizeMode="cover"
-                                    defaultSource={placeholderImage}
-                                />
-                            ) : (
-                                <View style={styles.fallback}>
-                                    <Text style={styles.fallbackText}>Нет фото</Text>
-                                </View>
-                            )}
-
-                            {!imageLoaded && !imageError && (
-                                <View style={styles.imagePlaceholder}>
+                            {!imageError && isValidImageUrl(travel_image_thumb_url) ? (
+                                Platform.OS === 'web' ? (
+                                    <img
+                                        src={travel_image_thumb_url}
+                                        alt={name}
+                                        onError={() => setImageError(true)}
+                                        onLoad={() => setImageLoaded(true)}
+                                        style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            display: imageLoaded ? 'block' : 'none',
+                                        }}
+                                    />
+                                ) : (
                                     <Image
-                                        source={placeholderImage}
+                                        source={{ uri: travel_image_thumb_url }}
                                         style={styles.image}
+                                        onError={() => setImageError(true)}
+                                        onLoad={() => setImageLoaded(true)}
                                         resizeMode="cover"
                                     />
-                                </View>
+                                )
+                            ) : (
+                                <Image
+                                    source={placeholderImage}
+                                    style={styles.image}
+                                    resizeMode="cover"
+                                />
                             )}
 
                             {canEditOrDelete && (
@@ -206,24 +212,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
-    },
-    imagePlaceholder: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        zIndex: 0,
-    },
-    fallback: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#f0f0f0',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1,
-    },
-    fallbackText: {
-        color: '#888',
-        fontSize: 12,
     },
     actionsAbsolute: {
         position: 'absolute',

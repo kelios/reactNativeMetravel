@@ -9,7 +9,7 @@ export const useWebAnalytics = () => {
     useEffect(() => {
 
         if (Platform.OS !== 'web' || isLocal) return;
-        console.log('useWebAnalytics');
+
         // --- Google Analytics ---
         if (!(window as any).gtag) {
             // Важно: dataLayer должен быть определён ДО подключения скрипта
