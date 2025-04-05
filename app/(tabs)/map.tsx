@@ -4,15 +4,14 @@ import {
   SafeAreaView,
   useWindowDimensions,
   View,
-  ScrollView,
 } from 'react-native';
 import { Button, Icon } from 'react-native-elements';
 import * as Location from 'expo-location';
+
 import FiltersPanel from '@/components/MapPage/FiltersPanel';
 import MapPanel from '@/components/MapPage/MapPanel';
 import TravelListPanel from '@/components/MapPage/TravelListPanel';
 import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels';
-import { Provider as PaperProvider } from 'react-native-paper';
 
 export default function MapScreen() {
   const { width } = useWindowDimensions();
@@ -122,98 +121,96 @@ export default function MapScreen() {
       });
 
   return (
-      <PaperProvider>
-        <SafeAreaView style={styles.safeContainer}>
-          <View style={styles.container}>
-            {filtersVisible ? (
-                <View style={styles.filtersPanel}>
-                  <FiltersPanel
-                      filters={filters}
-                      filterValue={filterValue}
-                      onFilterChange={onFilterChange}
-                      onTextFilterChange={onTextFilterChange}
-                      resetFilters={resetFilters}
-                      travelsData={rawTravelsData}
-                      isMobile={isMobile}
-                      closeMenu={toggleFiltersPanel}
+      <SafeAreaView style={styles.safeContainer}>
+        <View style={styles.container}>
+          {filtersVisible ? (
+              <View style={styles.filtersPanel}>
+                <FiltersPanel
+                    filters={filters}
+                    filterValue={filterValue}
+                    onFilterChange={onFilterChange}
+                    onTextFilterChange={onTextFilterChange}
+                    resetFilters={resetFilters}
+                    travelsData={rawTravelsData}
+                    isMobile={isMobile}
+                    closeMenu={toggleFiltersPanel}
+                />
+              </View>
+          ) : (
+              <Button
+                  title="Показать фильтры"
+                  onPress={toggleFiltersPanel}
+                  buttonStyle={styles.toggleButton}
+              />
+          )}
+
+          <View style={styles.mainContent}>
+            <MapPanel
+                travelsData={travelsData}
+                coordinates={coordinates}
+                style={styles.map}
+            />
+
+            {!isMobile && infoVisible && (
+                <View style={styles.desktopInfoPanel}>
+                  <TravelListPanel
+                      travelsData={travelsData}
+                      currentPage={currentPage}
+                      itemsPerPage={itemsPerPage}
+                      itemsPerPageOptions={itemsPerPageOptions}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
+                  />
+                  <Button
+                      title="Скрыть объекты"
+                      onPress={toggleInfoPanel}
+                      buttonStyle={styles.toggleButton}
                   />
                 </View>
-            ) : (
-                <Button
-                    title="Показать фильтры"
-                    onPress={toggleFiltersPanel}
-                    buttonStyle={styles.toggleButton}
-                />
             )}
 
-            <View style={styles.mainContent}>
-              <MapPanel
-                  travelsData={travelsData}
-                  coordinates={coordinates}
-                  style={styles.map}
-              />
+            {!isMobile && !infoVisible && (
+                <View style={styles.desktopShowWrapper}>
+                  <Button
+                      title="Показать объекты"
+                      onPress={toggleInfoPanel}
+                      icon={<Icon name="keyboard-arrow-left" color="#fff" />}
+                      buttonStyle={styles.toggleButton}
+                  />
+                </View>
+            )}
 
-              {!isMobile && infoVisible && (
-                  <View style={styles.desktopInfoPanel}>
-                    <TravelListPanel
-                        travelsData={travelsData}
-                        currentPage={currentPage}
-                        itemsPerPage={itemsPerPage}
-                        itemsPerPageOptions={itemsPerPageOptions}
-                        onPageChange={setCurrentPage}
-                        onItemsPerPageChange={setItemsPerPage}
-                    />
-                    <Button
-                        title="Скрыть объекты"
-                        onPress={toggleInfoPanel}
-                        buttonStyle={styles.toggleButton}
-                    />
-                  </View>
-              )}
+            {isMobile && infoVisible && (
+                <View style={styles.bottomSheetPanel}>
+                  <TravelListPanel
+                      travelsData={travelsData}
+                      currentPage={currentPage}
+                      itemsPerPage={itemsPerPage}
+                      itemsPerPageOptions={itemsPerPageOptions}
+                      onPageChange={setCurrentPage}
+                      onItemsPerPageChange={setItemsPerPage}
+                  />
+                  <Button
+                      title="Скрыть объекты"
+                      onPress={toggleInfoPanel}
+                      buttonStyle={styles.toggleButton}
+                  />
+                </View>
+            )}
 
-              {!isMobile && !infoVisible && (
-                  <View style={styles.desktopShowWrapper}>
-                    <Button
-                        title="Показать объекты"
-                        onPress={toggleInfoPanel}
-                        icon={<Icon name="keyboard-arrow-left" color="#fff" />}
-                        buttonStyle={styles.toggleButton}
-                    />
-                  </View>
-              )}
-
-              {isMobile && infoVisible && (
-                  <View style={styles.bottomSheetPanel}>
-                    <TravelListPanel
-                        travelsData={travelsData}
-                        currentPage={currentPage}
-                        itemsPerPage={itemsPerPage}
-                        itemsPerPageOptions={itemsPerPageOptions}
-                        onPageChange={setCurrentPage}
-                        onItemsPerPageChange={setItemsPerPage}
-                    />
-                    <Button
-                        title="Скрыть объекты"
-                        onPress={toggleInfoPanel}
-                        buttonStyle={styles.toggleButton}
-                    />
-                  </View>
-              )}
-
-              {isMobile && !infoVisible && (
-                  <View style={styles.floatingShowWrapper}>
-                    <Button
-                        title="Показать объекты"
-                        onPress={toggleInfoPanel}
-                        icon={<Icon name="keyboard-arrow-up" color="#fff" />}
-                        buttonStyle={styles.floatingShowButton}
-                    />
-                  </View>
-              )}
-            </View>
+            {isMobile && !infoVisible && (
+                <View style={styles.floatingShowWrapper}>
+                  <Button
+                      title="Показать объекты"
+                      onPress={toggleInfoPanel}
+                      icon={<Icon name="keyboard-arrow-up" color="#fff" />}
+                      buttonStyle={styles.floatingShowButton}
+                  />
+                </View>
+            )}
           </View>
-        </SafeAreaView>
-      </PaperProvider>
+        </View>
+      </SafeAreaView>
   );
 }
 

@@ -10,13 +10,14 @@ import {
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
 import CookiePopup from '@/components/CookiePopup';
+import Footer from '@/components/Footer'; // ✅ Вот он, Footer
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import { useWebAnalytics } from '@/components/analitic/useWebAnalytics';
+import { View, StyleSheet } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
 
-// Тема
 const theme = {
     ...DefaultTheme,
     colors: {
@@ -50,27 +51,22 @@ const theme = {
 };
 
 export default function RootLayout() {
-    // Вызов кастомного хука на верхнем уровне
     useWebAnalytics();
 
-    // Подключение шрифтов
     const [loaded, error] = useFonts({
         ...FontAwesome.font,
     });
 
-    // Если произошла ошибка при загрузке шрифтов — выбрасываем её
     useEffect(() => {
         if (error) throw error;
     }, [error]);
 
-    // Когда шрифты загрузятся — скрываем SplashScreen
     useEffect(() => {
         if (loaded) {
             SplashScreen.hideAsync();
         }
     }, [loaded]);
 
-    // Пока шрифты не загрузились, возвращаем null
     if (!loaded) return null;
 
     return <RootLayoutNav />;
@@ -81,11 +77,26 @@ function RootLayoutNav() {
         <PaperProvider theme={theme}>
             <AuthProvider>
                 <FiltersProvider>
-                    <Stack>
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    </Stack>
+                    <View style={styles.wrapper}>
+                        <View style={styles.content}>
+                            <Stack>
+                                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                            </Stack>
+                        </View>
+                        <Footer />
+                    </View>
                 </FiltersProvider>
             </AuthProvider>
         </PaperProvider>
     );
 }
+
+const styles = StyleSheet.create({
+    wrapper: {
+        flex: 1,
+        justifyContent: 'space-between',
+    },
+    content: {
+        flex: 1,
+    },
+});

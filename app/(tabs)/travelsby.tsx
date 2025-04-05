@@ -1,10 +1,17 @@
-import React, { Suspense} from 'react';
-import ListTravel from "@/components/ListTravel";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import ListTravel from '@/components/ListTravel';
 
 export default function TravelScreen() {
-  return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <ListTravel />
-      </Suspense>
-  );
+    return (
+        <View style={styles.container}>
+            <ListTravel />
+        </View>
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+});
