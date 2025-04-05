@@ -15,7 +15,7 @@ export const useWebAnalytics = () => {
         if (!(window as any).gtag) {
             (window as any).dataLayer = (window as any).dataLayer || [];
 
-            function gtag(...args: any[]) {
+          /*  function gtag(...args: any[]) {
                 (window as any).dataLayer.push(args);
             }
 
@@ -28,7 +28,7 @@ export const useWebAnalytics = () => {
 
             gtag('js', new Date());
             gtag('config', GA_MEASUREMENT_ID);
-        }
+        }*/
 
         // --- Yandex Metrica ---
         if (!(window as any).ym) {

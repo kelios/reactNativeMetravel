@@ -16,6 +16,17 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
             <ScrollViewStyleReset />
             <script type="text/javascript" src="https://app.termly.io/resource-blocker/031ae6f7-458d-4853-98e5-098ad6cee542?autoBlock=on" />
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-GBT9YNPXKB"></script>
+            <script
+                dangerouslySetInnerHTML={{
+                    __html: `
+                      window.dataLayer = window.dataLayer || [];
+                      function gtag(){dataLayer.push(arguments);}
+                      gtag('js', new Date());
+                      gtag('config', 'G-GBT9YNPXKB');
+                    `,
+                }}
+            />
             <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
 
             <link rel="icon" href="/favicon.ico" />
