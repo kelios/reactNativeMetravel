@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { SearchBar } from 'react-native-elements';
 
@@ -10,7 +10,6 @@ interface Props {
 }
 
 export default function SearchAndFilterBar({ search, setSearch, onToggleFilters }: Props) {
-    // Хук вызываем только на верхнем уровне
     const { width } = useWindowDimensions();
     const isMobile = width <= 768;
 
@@ -22,6 +21,7 @@ export default function SearchAndFilterBar({ search, setSearch, onToggleFilters 
                     size={24}
                     onPress={onToggleFilters}
                     style={styles.filterIcon}
+                    accessibilityLabel="Открыть фильтры"
                 />
             )}
 
@@ -34,8 +34,8 @@ export default function SearchAndFilterBar({ search, setSearch, onToggleFilters 
                     containerStyle={styles.searchBar}
                     inputContainerStyle={styles.searchInputContainer}
                     inputStyle={styles.searchInput}
-                    searchIcon={{ color: '#333' }}  // Цвет иконки поиска
-                    clearIcon={{ color: '#333' }}   // Цвет иконки очистки
+                    searchIcon={{ color: '#333' }}
+                    clearIcon={{ color: '#333' }}
                 />
             </View>
         </View>
@@ -62,9 +62,7 @@ const styles = StyleSheet.create({
     },
     searchBar: {
         backgroundColor: 'transparent',
-        marginBottom: 0,
         padding: 0,
-        height: 42,
         borderBottomColor: 'transparent',
         borderTopColor: 'transparent',
     },
@@ -73,11 +71,39 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         height: 38,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#ccc',
+        marginBottom: 4,
+
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+            },
+            android: {
+                elevation: 2,
+            },
+            web: {
+                boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
+                outlineStyle: 'none',
+                outlineWidth: 0,
+                boxShadow: 'none',
+            },
+        }),
     },
     searchInput: {
         color: '#333',
         fontSize: 14,
         padding: 0,
+        ...Platform.select({
+            web: {
+                outlineStyle: 'none',
+                outlineWidth: 0,
+                outlineColor: 'transparent',
+                boxShadow: 'none',
+                caretColor: '#000', // Курсор чёрный вместо синего
+            },
+        }),
     },
 });

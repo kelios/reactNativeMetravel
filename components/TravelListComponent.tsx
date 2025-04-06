@@ -1,6 +1,6 @@
 import React from 'react';
 import { FlatList, StyleSheet, View, Dimensions, Text } from 'react-native';
-import TravelListItem from '@/components/TravelListItem';
+import TravelListItem from '@/components/listTravel/TravelListItem';
 import { Travel } from '@/src/types/types';
 
 interface TravelListComponentProps {

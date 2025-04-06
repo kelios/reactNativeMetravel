@@ -1,5 +1,5 @@
 import React from 'react';
-import ListTravel from '@/components/ListTravel';
+import ListTravel from '@/components/listTravel/ListTravel';
 import {StyleSheet, View} from "react-native";
 
 export default function TravelScreen() {

@@ -1,5 +1,5 @@
 import React, { Suspense} from 'react'
-import ListTravel from "@/components/ListTravel";
+import ListTravel from "@/components/listTravel/ListTravel";
 
 export default function MeTravelScreen() {
   return (
