@@ -18,9 +18,9 @@ import {
 } from '@/src/api/travels';
 import { TravelFormData, MarkerData, Travel } from '@/src/types/types';
 
-import FiltersUpsertComponent from '@/components/FiltersUpsertComponent';
-import ContentUpsertSection from '@/components/ContentUpsertSection';
-import GallerySection from '@/components/GallerySection';
+import FiltersUpsertComponent from '@/components/travel/FiltersUpsertComponent';
+import ContentUpsertSection from '@/components/travel/ContentUpsertSection';
+import GallerySection from '@/components/travel/GallerySection';
 
 import { useAutoSaveForm } from '@/hooks/useAutoSaveForm';
 

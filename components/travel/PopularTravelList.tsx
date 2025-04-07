@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { TravelsMap, Travel } from '@/src/types/types';
 import { fetchTravelsPopular } from '@/src/api/travels';
-import TravelTmlRound from '@/components/TravelTmlRound';
+import TravelTmlRound from '@/components/travel/TravelTmlRound';
 import { Title } from 'react-native-paper';
 
 type PopularTravelListProps = {

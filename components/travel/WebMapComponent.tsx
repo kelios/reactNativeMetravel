@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import MarkersListComponent from './MarkersListComponent';
+import MarkersListComponent from '../MarkersListComponent';
 
 // Иконка маркера
 const markerIcon = new L.Icon({

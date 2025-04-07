@@ -12,7 +12,7 @@ import {
 import { Title } from 'react-native-paper';
 import { Travel } from '@/src/types/types';
 import { fetchTravelsNear } from '@/src/api/travels';
-import TravelTmlRound from '@/components/TravelTmlRound';
+import TravelTmlRound from '@/components/travel/TravelTmlRound';
 import MapClientSideComponent from '@/components/Map';
 
 const CARD_WIDTH = 220;

@@ -3,7 +3,7 @@ import { View, SafeAreaView, StyleSheet, ScrollView, Text } from 'react-native';
 import { TravelFormData, MarkerData } from '@/src/types/types';
 import TextInputComponent from '@/components/TextInputComponent';
 import YoutubeLinkComponent from '@/components/YoutubeLinkComponent';
-import WebMapComponent from '@/components/WebMapComponent';
+import WebMapComponent from '@/components/travel/WebMapComponent';
 import ArticleEditor from '@/components/ArticleEditor';
 import { UPLOAD_IMAGE } from '@/src/api/travels';
 

@@ -12,7 +12,7 @@ import { Button } from 'react-native-paper';
 
 import MultiSelectField from '@/components/MultiSelectField';
 import CheckboxComponent from '@/components/CheckboxComponent';
-import ImageUploadComponent from '@/components/ImageUploadComponent';
+import ImageUploadComponent from '@/components/imageUpload/ImageUploadComponent';
 import { TravelFormData, TravelFilters, Travel } from '@/src/types/types';
 
 const { width } = Dimensions.get('window');
@@ -168,13 +168,21 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                 valueField="id"
             />
 
+            <MultiSelectField
+                label="Месяц путешествия"
+                items={filters.month}
+                value={formData.month ?? []}
+                onChange={(month) => setFormData({ ...formData, month })}
+                labelField="name"
+                valueField="id"
+            />
+            {renderInput('Год путешествия', 'year')}
             <CheckboxComponent
                 label="Требуется виза"
                 value={formData.visa ?? false}
                 onChange={(visa) => setFormData({ ...formData, visa })}
             />
 
-            {renderInput('Год путешествия', 'year')}
             {renderInput('Количество участников', 'number_peoples')}
             {renderInput('Длительность (дней)', 'number_days')}
             {renderInput('Бюджет (руб.)', 'budget')}

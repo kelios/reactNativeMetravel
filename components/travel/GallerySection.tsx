@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, useColorScheme } from 'react-native';
-import ImageGalleryComponent from '@/components/ImageGalleryComponent';
+import ImageGalleryComponent from '@/components/travel/ImageGalleryComponent';
 import { TravelFormData, Travel } from '@/src/types/types';
 
 interface GallerySectionProps {

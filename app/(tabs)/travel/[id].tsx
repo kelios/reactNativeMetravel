@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 
-const UpsertTravel = React.lazy(() => import('@/components/UpsertTravel'));
+const UpsertTravel = React.lazy(() => import('@/components/travel/UpsertTravel'));
 
 export default function EditTravelScreen() {
   return (

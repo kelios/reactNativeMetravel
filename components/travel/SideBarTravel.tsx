@@ -274,7 +274,7 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(
 
                     <View style={styles.textContainer}>
                         <Text style={[styles.infoText, { color: theme.colors.text }]}>
-                            {travel.year} {travel.monthName}
+                            {travel?.year} {travel?.monthName}
                         </Text>
                         <Text style={[styles.infoText, { color: theme.colors.text }]}>
                             {travel.countryName}

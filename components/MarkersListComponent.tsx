@@ -1,6 +1,6 @@
 import React from 'react';
 import { MarkerData } from "@/src/types/types";
-import ImageUploadComponent from '@/components/ImageUploadComponent';
+import ImageUploadComponent from '@/components/imageUpload/ImageUploadComponent';
 import MultiSelectField from '@/components/MultiSelectField'; // Используем нормальный мультиселект
 
 interface MarkersListComponentProps {
