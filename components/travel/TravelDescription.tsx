@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     View,
     ScrollView,
@@ -20,12 +20,9 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                                                                  title,
                                                              }) => {
     const { width, height } = useWindowDimensions();
+    const pageHeight = Math.round(height * 0.7); // фикс высоты
 
-    // 1) Расчёт высоты для фиксированного блока (70% экрана)
-    const pageHeight = useMemo(() => Math.round(height * 0.7), [height]);
-
-    // 2) Значение анимации скролла для прогресс-бара
-    const animatedScroll = useMemo(() => new Animated.Value(0), []);
+    const animatedScroll = new Animated.Value(0); // ✅ Вынесен из useMemo
     const [scrollPercent, setScrollPercent] = useState(0);
 
     useEffect(() => {
@@ -35,23 +32,21 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
         return () => {
             animatedScroll.removeListener(listenerId);
         };
-    }, [animatedScroll]);
+    }, []);
 
-    // 3) Обрабатываем скролл внутри ScrollView
     const handleScroll = useCallback((event: any) => {
         const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-        const visibleHeight = layoutMeasurement.height;
-        const totalHeight = contentSize.height - visibleHeight;
+        const totalHeight = contentSize.height - layoutMeasurement.height;
         const currentOffset = contentOffset.y;
         const percent = totalHeight > 0 ? (currentOffset / totalHeight) * 100 : 0;
 
         animatedScroll.setValue(percent);
-    }, [animatedScroll]);
+    }, []);
 
     return (
         <View style={styles.wrapper}>
-            {/* Заголовок и прогресс-бар */}
             <Text style={styles.title}>{title}</Text>
+
             <View style={styles.progressContainer}>
                 <View style={styles.progressBackground}>
                     <Animated.View
@@ -61,6 +56,7 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                                 width: animatedScroll.interpolate({
                                     inputRange: [0, 100],
                                     outputRange: ["0%", "100%"],
+                                    extrapolate: "clamp",
                                 }),
                             },
                         ]}
@@ -69,7 +65,6 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                 <Text style={styles.pageText}>{scrollPercent}%</Text>
             </View>
 
-            {/* Сам блок «книжный», фиксированной высоты, в котором скроллится текст */}
             <View style={[styles.fixedHeightBlock, { height: pageHeight }]}>
                 <ScrollView
                     style={styles.scrollArea}
@@ -77,13 +72,11 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                     scrollEventThrottle={16}
                     showsVerticalScrollIndicator={true}
                 >
-                    {/* Stamp / логотип / watermark */}
                     <Image
                         source={require("@/assets/travel-stamp.png")}
                         style={styles.stamp}
                     />
 
-                    {/* HTML-контент */}
                     <StableContent
                         html={htmlContent}
                         contentWidth={Math.min(width, 900) - 60}

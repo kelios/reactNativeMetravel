@@ -38,277 +38,149 @@ const SideBarTravel: React.FC<SideBarTravelProps> = memo(
     ({ handlePress, closeMenu, isMobile, travel, refs, isSuperuser, storedUserId }) => {
         const theme = useTheme();
         const { width } = useWindowDimensions();
-        const isSmallScreen = width < 768; // Определение мобильного устройства
+        const isSmallScreen = width < 768;
 
         const handlePressUserTravel = useCallback(() => {
             const url = `/?user_id=${travel.userIds}`;
-            Linking.openURL(url);
+            Platform.OS === 'web' ? (window.location.href = url) : Linking.openURL(url);
         }, [travel.userIds]);
 
         const handleEditPress = useCallback(() => {
             const url = `/travel/${travel.id}`;
-            Linking.openURL(url);
+            Platform.OS === 'web' ? (window.location.href = url) : Linking.openURL(url);
         }, [travel.id]);
-
-        const gallery = travel.gallery;
 
         const canEdit = isSuperuser || storedUserId === travel.userIds?.toString();
 
+        const renderLink = (
+            icon: keyof typeof MaterialIcons.glyphMap,
+            label: string,
+            ref: React.RefObject<View>
+        ) => (
+            <Pressable
+                style={({ pressed }) => [
+                    styles.linkButton,
+                    pressed && styles.linkButtonPressed,
+                ]}
+                onPress={() => {
+                    handlePress(ref)();
+                    if (isMobile) closeMenu();
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={label}
+            >
+                <MaterialIcons name={icon} size={24} color="#6B4F4F" />
+                <Text style={styles.linkText}>{label}</Text>
+            </Pressable>
+        );
+
         return (
-            <ScrollView style={[styles.sideMenu, { width: isSmallScreen ? '100%' : 300 }]}>
-                {gallery?.length > 0 && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.galleryRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Перейти к галерее"
-                    >
-                        <MaterialIcons name="photo-library" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Галерея</Text>
-                    </Pressable>
-                )}
+            <View style={styles.container}>
+                <ScrollView style={[styles.sideMenu, { width: isSmallScreen ? '100%' : 300 }]}>
+                    {travel.gallery?.length > 0 && renderLink('photo-library', 'Галерея', refs.galleryRef)}
+                    {travel.youtube_link && renderLink('ondemand-video', 'Видео', refs.videoRef)}
+                    {travel.description && renderLink('description', 'Описание', refs.descriptionRef)}
+                    {travel.recommendation && renderLink('recommend', 'Рекомендации', refs.recommendationRef)}
+                    {travel.plus && renderLink('add', 'Плюсы', refs.plusRef)}
+                    {travel.minus && renderLink('remove', 'Минусы', refs.minusRef)}
+                    {renderLink('map', 'Карта', refs.mapRef)}
+                    {travel.travelAddress && renderLink('list', 'Координаты мест', refs.pointsRef)}
+                    {renderLink('location-on', 'Рядом (~60км)...', refs.nearRef)}
+                    {renderLink('star', 'Популярные маршруты', refs.popularRef)}
 
-                {travel.youtube_link && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.videoRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Видео"
-                    >
-                        <MaterialIcons name="ondemand-video" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Видео</Text>
-                    </Pressable>
-                )}
+                    <View style={styles.userInfo}>
+                        <View style={styles.imageWrapper}>
+                            {travel.travel_image_thumb_small_url ? (
+                                <Image
+                                    source={{ uri: travel.travel_image_thumb_small_url }}
+                                    style={styles.image}
+                                    accessibilityLabel="Изображение путешественника"
+                                />
+                            ) : (
+                                <MaterialIcons name="image" size={100} color="#ccc" />
+                            )}
+                        </View>
 
-                {travel.description && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.descriptionRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Перейти к описанию"
-                    >
-                        <MaterialIcons name="description" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Описание</Text>
-                    </Pressable>
-                )}
-
-                {travel.recommendation && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.recommendationRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Перейти к рекомендациям"
-                    >
-                        <MaterialIcons name="recommend" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Рекомендации</Text>
-                    </Pressable>
-                )}
-
-                {travel.plus && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.plusRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Перейти к плюсам"
-                    >
-                        <MaterialIcons name="add" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Плюсы</Text>
-                    </Pressable>
-                )}
-
-                {travel.minus && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.minusRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Перейти к минусам"
-                    >
-                        <MaterialIcons name="remove" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Минусы</Text>
-                    </Pressable>
-                )}
-
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.linkButton,
-                        pressed && styles.linkButtonPressed,
-                    ]}
-                    onPress={() => {
-                        handlePress(refs.mapRef)();
-                        if (isMobile) closeMenu();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Перейти к карте"
-                >
-                    <MaterialIcons name="map" size={24} color="#6B4F4F" />
-                    <Text style={styles.linkText}>Карта</Text>
-                </Pressable>
-
-                {travel.travelAddress && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.linkButton,
-                            pressed && styles.linkButtonPressed,
-                        ]}
-                        onPress={() => {
-                            handlePress(refs.pointsRef)();
-                            if (isMobile) closeMenu();
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Перейти к координатам мест"
-                    >
-                        <MaterialIcons name="list" size={24} color="#6B4F4F" />
-                        <Text style={styles.linkText}>Координаты мест</Text>
-                    </Pressable>
-                )}
-
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.linkButton,
-                        pressed && styles.linkButtonPressed,
-                    ]}
-                    onPress={() => {
-                        handlePress(refs.nearRef)();
-                        if (isMobile) closeMenu();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Перейти к близким маршрутам"
-                >
-                    <MaterialIcons name="location-on" size={24} color="#6B4F4F" />
-                    <Text style={styles.linkText}>Рядом (~60км) можно еще посмотреть...</Text>
-                </Pressable>
-
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.linkButton,
-                        pressed && styles.linkButtonPressed,
-                    ]}
-                    onPress={() => {
-                        handlePress(refs.popularRef)();
-                        if (isMobile) closeMenu();
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Перейти к популярным маршрутам"
-                >
-                    <MaterialIcons name="star" size={24} color="#6B4F4F" />
-                    <Text style={styles.linkText}>Популярные маршруты</Text>
-                </Pressable>
-
-                <View style={styles.userInfo}>
-                    <View style={styles.imageWrapper}>
-                        {travel.travel_image_thumb_small_url ? (
-                            <Image
-                                source={{ uri: travel.travel_image_thumb_small_url }}
-                                style={styles.image}
-                                accessibilityLabel="Изображение путешественника"
-                            />
-                        ) : (
-                            <MaterialIcons name="image" size={100} color="#ccc" />
+                        {canEdit && (
+                            <Pressable
+                                style={({ pressed }) => [
+                                    styles.editButton,
+                                    pressed && styles.editButtonPressed,
+                                ]}
+                                onPress={handleEditPress}
+                            >
+                                <MaterialIcons name="edit" size={20} color="#ffffff" />
+                                <Text style={styles.editButtonText}>Редактировать</Text>
+                            </Pressable>
                         )}
-                    </View>
-                    {canEdit && (
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.editButton,
-                                pressed && styles.editButtonPressed,
-                            ]}
-                            onPress={handleEditPress}
-                            accessibilityRole="button"
-                            accessibilityLabel="Редактировать статью"
-                        >
-                            <MaterialIcons name="edit" size={20} color="#ffffff" />
-                            <Text style={styles.editButtonText}>Редактировать</Text>
-                        </Pressable>
-                    )}
-                    <View style={styles.viewerCount}>
-                        <MaterialIcons name="visibility" size={20} color="#6B4F4F" />
-                        <Text style={[styles.viewerText, { color: theme.colors.text }]}>
-                            {travel.countUnicIpView}
-                        </Text>
-                    </View>
-                    <Pressable
-                        onPress={handlePressUserTravel}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Все путешествия ${travel.userName}`}
-                    >
-                        <Text style={[styles.userTravelText, { color: '#6B4F4F' }]}>
-                            Все путешествия {travel.userName}
-                        </Text>
-                    </Pressable>
 
-                    <View style={styles.textContainer}>
-                        <Text style={[styles.infoText, { color: theme.colors.text }]}>
-                            {travel?.year} {travel?.monthName}
-                        </Text>
-                        <Text style={[styles.infoText, { color: theme.colors.text }]}>
-                            {travel.countryName}
-                        </Text>
-                        <Text style={[styles.infoText, { color: theme.colors.text }]}>
-                            {travel.cityName}
-                        </Text>
-                        {travel.number_days && (
-                            <Text style={[styles.infoText, { color: theme.colors.text }]}>
-                                Количество дней - {travel.number_days}
+                        <View style={styles.viewerCount}>
+                            <MaterialIcons name="visibility" size={20} color="#6B4F4F" />
+                            <Text style={[styles.viewerText, { color: theme.colors.text }]}>
+                                {travel.countUnicIpView}
                             </Text>
-                        )}
+                        </View>
+
+                        <Pressable onPress={handlePressUserTravel}>
+                            <Text style={[styles.userTravelText, { color: '#6B4F4F' }]}>
+                                Все путешествия {travel.userName}
+                            </Text>
+                        </Pressable>
+
+                        <View style={styles.textContainer}>
+                            <Text style={[styles.infoText, { color: theme.colors.text }]}>
+                                {travel?.year} {travel?.monthName}
+                            </Text>
+                            <Text style={[styles.infoText, { color: theme.colors.text }]}>
+                                {travel.countryName}
+                            </Text>
+                            <Text style={[styles.infoText, { color: theme.colors.text }]}>
+                                {travel.cityName}
+                            </Text>
+                            {travel.number_days && (
+                                <Text style={[styles.infoText, { color: theme.colors.text }]}>
+                                    Количество дней - {travel.number_days}
+                                </Text>
+                            )}
+                        </View>
                     </View>
-                </View>
+                </ScrollView>
 
                 {isMobile && (
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.closeButton,
-                            pressed && styles.closeButtonPressed,
-                        ]}
-                        onPress={closeMenu}
-                        accessibilityRole="button"
-                        accessibilityLabel="Закрыть меню"
-                    >
-                        <Text style={styles.closeButtonText}>Закрыть</Text>
-                    </Pressable>
+                    <View style={styles.fixedCloseButton}>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.closeButton,
+                                pressed && styles.closeButtonPressed,
+                            ]}
+                            onPress={closeMenu}
+                        >
+                            <Text style={styles.closeButtonText}>Закрыть</Text>
+                        </Pressable>
+                    </View>
                 )}
-            </ScrollView>
+            </View>
         );
     }
 );
 
+
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        position: 'relative',
+    },
+    fixedCloseButton: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        padding: 16,
+        borderTopWidth: 1,
+        borderColor: '#ddd',
+        zIndex: 10000,
+    },
     sideMenu: {
         padding: 20,
         backgroundColor: '#fff',

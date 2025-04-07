@@ -17,7 +17,7 @@ import RenderHTML from 'react-native-render-html';
 import { WebView } from 'react-native-webview';
 import { Card, useTheme } from 'react-native-paper';
 import Slider from '@/components/travel/Slider';
-import PointList from '@/components/PointList';
+import PointList from '@/components/travel/PointList';
 import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import SideBarTravel from '@/components/travel/SideBarTravel';
 import NearTravelList from '@/components/travel/NearTravelList';
@@ -25,16 +25,11 @@ import PopularTravelList from '@/components/travel/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TravelDescription from '@/components/travel/TravelDescription';
-
+import ToggleableMapSection from "@/components/travel/ToggleableMapSection";
 const TravelDetails: React.FC = () => {
   const searchParams = useLocalSearchParams();
-  const paramValue = useMemo(() => {
-    const p = searchParams.param;
-    if (typeof p === 'string') return p;
-    if (Array.isArray(p)) return p[0];
-    return '';
-  }, [searchParams]);
-
+  const param = searchParams.param;
+  const paramValue = typeof param === 'string' ? param : Array.isArray(param) ? param[0] : '';
   const numericId = Number(paramValue);
   const isNumeric = !isNaN(numericId);
 
@@ -77,7 +72,7 @@ const TravelDetails: React.FC = () => {
     setMenuVisible(!isMobile);
   }, [isMobile]);
 
-  const toggleMenu = useCallback(() => setMenuVisible((prev) => !prev), []);
+  const toggleMenu = useCallback(() => setMenuVisible(prev => !prev), []);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
   useEffect(() => {
@@ -100,11 +95,16 @@ const TravelDetails: React.FC = () => {
         ref.current?.measureLayout(
             scrollRef.current?.getInnerViewNode(),
             (x, y) => scrollRef.current?.scrollTo({ y, animated: true }),
-            (error) => console.warn('Failed to measure layout:', error)
+            error => console.warn('Failed to measure layout:', error)
         );
       },
       []
   );
+
+  const convertYouTubeLink = (url: string): string | null => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  };
 
   if (!travel) {
     return (
@@ -118,47 +118,28 @@ const TravelDetails: React.FC = () => {
   const gallery = travel.gallery;
   const hasGallery = Array.isArray(gallery) && gallery.length > 0;
 
-  const convertYouTubeLink = (url: string): string | null => {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
-    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-  };
-
   return (
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {isMobile && menuVisible && <Pressable onPress={closeMenu} style={styles.overlay} />}
 
-          {isMobile ? (
-              <View
-                  style={[
-                    styles.sideMenu,
-                    styles.mobileSideMenu,
-                    menuVisible && styles.visibleMobileSideMenu,
-                  ]}
-              >
-                <SideBarTravel
-                    handlePress={handlePress}
-                    closeMenu={closeMenu}
-                    isMobile={isMobile}
-                    travel={travel}
-                    refs={refs}
-                    isSuperuser={isSuperuser}
-                    storedUserId={storedUserId}
-                />
-              </View>
-          ) : (
-              <View style={[styles.sideMenu, styles.desktopSideMenu]}>
-                <SideBarTravel
-                    handlePress={handlePress}
-                    closeMenu={closeMenu}
-                    isMobile={isMobile}
-                    travel={travel}
-                    refs={refs}
-                    isSuperuser={isSuperuser}
-                    storedUserId={storedUserId}
-                />
-              </View>
-          )}
+          <View
+              style={[
+                styles.sideMenu,
+                isMobile ? styles.mobileSideMenu : styles.desktopSideMenu,
+                isMobile && menuVisible && styles.visibleMobileSideMenu,
+              ]}
+          >
+            <SideBarTravel
+                handlePress={handlePress}
+                closeMenu={closeMenu}
+                isMobile={isMobile}
+                travel={travel}
+                refs={refs}
+                isSuperuser={isSuperuser}
+                storedUserId={storedUserId}
+            />
+          </View>
 
           <View style={styles.content}>
             {isMobile && !menuVisible && (
@@ -185,14 +166,17 @@ const TravelDetails: React.FC = () => {
                     <Card style={styles.card}>
                       <View ref={refs.videoRef} style={[styles.videoContainer, { height: pageHeight }]}>
                         {Platform.OS === 'web' ? (
-                            <iframe
-                                src={convertYouTubeLink(travel.youtube_link)}
-                                width="100%"
-                                height="100%"
-                                style={{ border: 'none' }}
-                            />
+                            <div style={{ width: '100%', height: '100%' }}>
+                              <iframe
+                                  src={convertYouTubeLink(travel.youtube_link) ?? ''}
+                                  width="100%"
+                                  height="100%"
+                                  style={{ border: 'none' }}
+                                  allowFullScreen
+                              />
+                            </div>
                         ) : (
-                            <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) }} style={{ flex: 1 }} />
+                            <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) ?? '' }} style={{ flex: 1 }} />
                         )}
                       </View>
                     </Card>
@@ -223,8 +207,10 @@ const TravelDetails: React.FC = () => {
                 )}
 
                 {travel.coordsMeTravel?.length > 0 && (
-                    <View ref={refs.mapRef} style={styles.mapBlock}>
-                      <MapClientSideComponent travel={{ data: travel.travelAddress ?? [] }} />
+                    <View ref={refs.mapRef}>
+                      <ToggleableMapSection>
+                        <MapClientSideComponent travel={{ data: travel.travelAddress ?? [] }} />
+                      </ToggleableMapSection>
                     </View>
                 )}
 

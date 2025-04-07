@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 
 type LabelTextProps = {
     label: string;
@@ -29,6 +29,12 @@ const styles = StyleSheet.create({
         textAlign: 'left',
         color: '#333',
         fontSize: 14,
+        ...Platform.select({
+            web: {
+                wordBreak: 'break-word',
+                overflowWrap: 'anywhere',
+            },
+        }),
     },
 });
 

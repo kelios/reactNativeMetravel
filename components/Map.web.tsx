@@ -1,51 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  Pressable,
-  Linking,
-  Platform,
-} from 'react-native';
-
-// Определяем, находимся ли мы в веб-среде
-const isWeb = Platform.OS === 'web' && typeof window !== 'undefined';
-
-// Импорты Leaflet и react-leaflet только в веб-среде
-let MapContainer: any,
-    TileLayer: any,
-    Marker: any,
-    Popup: any,
-    useMap: any,
-    L: any,
-    Icon: any,
-    MapRoute: any;
-
-if (isWeb) {
-  const leaflet = require('leaflet');
-  const reactLeaflet = require('react-leaflet');
-
-  MapContainer = reactLeaflet.MapContainer;
-  TileLayer = reactLeaflet.TileLayer;
-  Marker = reactLeaflet.Marker;
-  Popup = reactLeaflet.Popup;
-  useMap = reactLeaflet.useMap;
-  L = leaflet;
-  Icon = leaflet.Icon;
-
-  require('leaflet/dist/leaflet.css'); // Подключение стилей для Leaflet
-  MapRoute = require('./Map/MapRoute').default; // Компонент маршрута, если он нужен
-}
-
-// Дополнительный компонент для лейблов
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import LabelText from './LabelText';
-
-// ---------------- Типы ----------------
+import { MapPin, SendHorizonal } from 'lucide-react-native';
 
 export type Point = {
   id: number;
-  coord: string;               // 'lat,lng'
+  coord: string;
   address: string;
   travelImageThumbUrl: string;
   categoryName: string;
@@ -68,70 +28,45 @@ interface MapClientSideProps {
   showRoute?: boolean;
 }
 
-// ---------------- Вспомогательные функции ----------------
-
-// Безопасная функция парсинга координат
 const getLatLng = (latlng: string): [number, number] | null => {
   if (!latlng) return null;
   const [lat, lng] = latlng.split(',').map(Number);
   return isNaN(lat) || isNaN(lng) ? null : [lat, lng];
 };
 
-// Компонент, автоматически подгоняющий карту под все маркеры
-const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
-  if (!isWeb) return null; // В нативной среде ничего не делаем
-
-  const map = useMap();
-
-  useEffect(() => {
-    if (!map || !map._loaded || !data?.length) return;
-
-    const coords = data
-        .map((p) => getLatLng(p.coord))
-        .filter(Boolean) as [number, number][]; // отфильтровываем null
-
-    if (!coords.length) return;
-
-    const bounds = L.latLngBounds(coords);
-    if (bounds.isValid()) {
-      // Делаем fitBounds чуть позже, когда браузер готов
-      requestAnimationFrame(() => {
-        if (map && map._loaded) {
-          map.fitBounds(bounds, { padding: [50, 50] });
-        }
-      });
-    }
-  }, [map, data]);
-
-  return null;
-};
-
-// ---------------- Основной компонент ----------------
-
 const MapClientSideComponent: React.FC<MapClientSideProps> = ({
-                                                                travel = { data: [] },           // вместо defaultProps
-                                                                coordinates = {
-                                                                  latitude: 53.8828449,
-                                                                  longitude: 27.7273595,
-                                                                },
-                                                                showRoute = false,
+                                                                travel = { data: [] },
+                                                                coordinates = { latitude: 53.8828449, longitude: 27.7273595 },
                                                               }) => {
-  // Проверяем, не нативная ли это платформа
-  if (!isWeb) {
-    return <Text>Карта доступна только в веб-версии</Text>;
+  const isBrowser = typeof window !== 'undefined' && Platform.OS === 'web';
+  const [isVisible, setIsVisible] = useState(true);
+
+  if (!isBrowser) {
+    return <Text style={{ padding: 20 }}>Карта доступна только в браузере</Text>;
   }
 
-  const travelData = travel?.data || [];
+  const leaflet = require('leaflet');
+  const {
+    MapContainer,
+    TileLayer,
+    Marker,
+    Popup,
+    useMap,
+  } = require('react-leaflet');
+
+  require('leaflet/dist/leaflet.css');
+
+  const travelData = travel.data || [];
+
   const initialCenter: [number, number] = [
     coordinates.latitude,
     coordinates.longitude,
   ];
 
-  // Иконка для маркеров
   const meTravelIcon = useMemo(
       () =>
-          new Icon({
-            iconUrl: require('@/assets/icons/logo_yellow.ico'), // Замените на свою иконку
+          new leaflet.Icon({
+            iconUrl: require('@/assets/icons/logo_yellow.ico'),
             iconSize: [27, 30],
             iconAnchor: [13, 30],
             popupAnchor: [0, -30],
@@ -139,103 +74,150 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
       []
   );
 
+  const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
+    const map = useMap();
+
+    useEffect(() => {
+      const coords = data.map((p) => getLatLng(p.coord)).filter(Boolean) as [number, number][];
+      if (!coords.length) return;
+
+      const bounds = leaflet.latLngBounds(coords);
+      if (bounds.isValid()) {
+        requestAnimationFrame(() => {
+          map.fitBounds(bounds, { padding: [50, 50] });
+        });
+      }
+    }, [map, data]);
+
+    return null;
+  };
+
   return (
-      <MapContainer
-          center={initialCenter}
-          zoom={7}
-          style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <View style={styles.mapContainer}>
+        <MapContainer
+            center={initialCenter}
+            zoom={7}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <FitBoundsOnData data={travelData} />
 
-        {/* Автоматический fitBounds для всех точек */}
-        <FitBoundsOnData data={travelData} />
+          {travelData.map((point, index) => {
+            const latLng = getLatLng(point.coord);
+            if (!latLng) return null;
 
-        {/* Если нужно строить маршрут */}
-        {showRoute && MapRoute && <MapRoute data={travelData} profile="driving" />}
-
-        {/* Маркеры всех точек */}
-        {travelData.map((point, index) => {
-          const latLng = getLatLng(point.coord);
-          if (!latLng) return null;
-
-          return (
-              <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
-                <Popup>
-                  <View style={styles.popupCard}>
-                    {/* Фото точки */}
-                    {point.travelImageThumbUrl ? (
-                        <Image source={{ uri: point.travelImageThumbUrl }} style={styles.pointImage} />
-                    ) : (
-                        <Text style={styles.fallbackText}>
-                          Нет фото. Нажмите, чтобы открыть статью.
-                        </Text>
-                    )}
-
-                    {/* Нажимаемая область */}
-                    <Pressable
-                        onPress={() => {
-                          const url = point.articleUrl || point.urlTravel;
-                          if (url) Linking.openURL(url);
-                        }}
-                        style={({ pressed }) => [
-                          { opacity: pressed ? 0.8 : 1 },
-                          styles.textContainer,
-                        ]}
-                    >
-                      {point.address && <LabelText label="Адрес:" text={point.address} />}
-                      {point.coord && <LabelText label="Координаты:" text={point.coord} />}
-                      {point.categoryName && (
-                          <LabelText label="Категория:" text={point.categoryName} />
+            return (
+                <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
+                  <Popup>
+                    <View style={styles.popupCard}>
+                      {point.travelImageThumbUrl ? (
+                          <Image
+                              source={{ uri: point.travelImageThumbUrl }}
+                              style={styles.pointImage}
+                              resizeMode="contain"
+                          />
+                      ) : (
+                          <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
                       )}
-                    </Pressable>
-                  </View>
-                </Popup>
-              </Marker>
-          );
-        })}
-      </MapContainer>
+
+                      <Pressable
+                          onPress={() => {
+                            const url = point.articleUrl || point.urlTravel;
+                            if (url) Linking.openURL(url);
+                          }}
+                          style={styles.textContainer}
+                      >
+                        <Text style={styles.addressCompact}>{point.address}</Text>
+                        <LabelText label="Координаты:" text={point.coord} />
+                        {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
+                      </Pressable>
+
+                      <View style={styles.iconRow}>
+                        <Pressable
+                            onPress={() => {
+                              const url = `https://www.google.com/maps/search/?api=1&query=${point.coord}`;
+                              Linking.openURL(url);
+                            }}
+                            style={styles.iconBtn}
+                        >
+                          <MapPin size={18} color="#FF8C49" />
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => {
+                              const msg = encodeURIComponent(`Глянь, какая точка: ${point.coord}`);
+                              const url = `https://t.me/share/url?url=${msg}`;
+                              Linking.openURL(url);
+                            }}
+                            style={styles.iconBtn}
+                        >
+                          <SendHorizonal size={18} color="#FF8C49" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  </Popup>
+                </Marker>
+            );
+          })}
+        </MapContainer>
+      </View>
   );
 };
 
 export default MapClientSideComponent;
 
-// ---------------- Стили ----------------
-
 const styles = StyleSheet.create({
+  mapContainer: {
+    height: 550,
+    width: '100%',
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
   popupCard: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 8,
-    width: 220,
-    maxWidth: 250,
-    // Тени для iOS/Android и boxShadow для веб
-    ...Platform.select({
-      web: {
-        boxShadow: '0px 1px 2px rgba(0,0,0,0.2)',
-      },
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-        elevation: 3,
-      },
-    }),
+    borderRadius: 10,
+    padding: 6,
+    width: 200,
+    maxWidth: 220,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   pointImage: {
     width: '100%',
-    height: 120,
+    height: 100,
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 6,
+    backgroundColor: '#eee',
   },
   fallbackText: {
-    marginBottom: 8,
+    marginBottom: 6,
     color: '#555',
     fontStyle: 'italic',
+    fontSize: 13,
   },
   textContainer: {
     paddingHorizontal: 4,
     paddingVertical: 2,
+  },
+  addressCompact: {
+    fontSize: 12,
+    color: '#444',
+    marginBottom: 6,
+    lineHeight: 15,
+  },
+  iconRow: {
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 4,
+  },
+  iconBtn: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: '#f2f2f2',
   },
 });

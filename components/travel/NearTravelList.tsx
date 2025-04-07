@@ -14,6 +14,7 @@ import { Travel } from '@/src/types/types';
 import { fetchTravelsNear } from '@/src/api/travels';
 import TravelTmlRound from '@/components/travel/TravelTmlRound';
 import MapClientSideComponent from '@/components/Map';
+import ToggleableMapSection from '@/components/travel/ToggleableMapSection';
 
 const CARD_WIDTH = 220;
 const MAX_COLUMNS = 3;
@@ -24,7 +25,7 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
     const [error, setError] = useState<string | null>(null);
     const { width, height } = useWindowDimensions();
 
-    const numColumns = Math.min(Math.max(Math.floor(width / CARD_WIDTH), 1), MAX_COLUMNS);
+    const numColumns = useMemo(() => Math.min(Math.max(Math.floor(width / CARD_WIDTH), 1), MAX_COLUMNS), [width]);
     const isMobile = width < 600;
 
     const fetchNearbyTravels = useCallback(async () => {
@@ -47,8 +48,7 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
     }, [fetchNearbyTravels]);
 
     const renderItem = useCallback(
-        ({ item }) => <TravelTmlRound travel={item} />,
-        []
+        ({ item }) => <TravelTmlRound travel={item} />, []
     );
 
     const mapPoints = useMemo(() =>
@@ -94,6 +94,7 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
             <Title style={styles.title}>Рядом (~60км) можно еще посмотреть...</Title>
 
             <FlatList
+                key={numColumns}
                 data={travelsNear}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
@@ -107,14 +108,15 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
                 windowSize={5}
             />
 
-            <View style={styles.mapBlock}>
-                {Platform.OS === 'web' && mapPoints.length > 0 ? (
-                    <MapClientSideComponent showRoute travel={{ data: mapPoints }} />
-                    // Или: <MapClientSideComponent showRoute points={mapPoints} /> — если ты изменишь пропсы
-                ) : (
-                    <Text>Карта только в веб-версии</Text>
-                )}
-            </View>
+            <ToggleableMapSection>
+                <View style={styles.mapBlock}>
+                    {Platform.OS === 'web' && mapPoints.length > 0 ? (
+                        <MapClientSideComponent showRoute travel={{ data: mapPoints }} />
+                    ) : (
+                        <Text>Карта только в веб-версии</Text>
+                    )}
+                </View>
+            </ToggleableMapSection>
         </View>
     );
 });
@@ -130,9 +132,14 @@ const styles = StyleSheet.create({
     mapBlock: {
         width: '100%',
         height: 500,
-        marginBottom: 20,
         borderRadius: 10,
         overflow: 'hidden',
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     loadingContainer: {
         justifyContent: 'center',

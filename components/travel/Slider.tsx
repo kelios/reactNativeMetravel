@@ -1,12 +1,12 @@
 import 'react-native-reanimated';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Image,
     StyleSheet,
     useWindowDimensions,
     TouchableOpacity,
-    ImageBackground
+    ImageBackground,
 } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { AntDesign } from '@expo/vector-icons';
@@ -17,21 +17,23 @@ interface SliderProps {
 
 const Slider: React.FC<SliderProps> = ({ images }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-    const carouselRef = React.useRef<Carousel<any>>(null);
+    const carouselRef = useRef<Carousel<any>>(null);
     const [activeIndex, setActiveIndex] = useState(0);
+
+    if (!images || images.length === 0) return null;
 
     const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
 
     return (
         <View style={[styles.container, { height: sliderHeight }]}>
-            {/* Фон сразу меняется без анимации */}
-            <ImageBackground
-                source={{ uri: images[activeIndex]?.url }}
-                style={styles.backgroundImage}
-                blurRadius={10} // Оптимально для слабых устройств
-            />
+            {images[activeIndex]?.url && (
+                <ImageBackground
+                    source={{ uri: images[activeIndex].url }}
+                    style={styles.backgroundImage}
+                    blurRadius={10}
+                />
+            )}
 
-            {/* Основной карусель слайдер */}
             <Carousel
                 ref={carouselRef}
                 loop
@@ -41,7 +43,7 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
                 autoPlayInterval={8000}
                 data={images}
                 scrollAnimationDuration={10}
-                onSnapToItem={(index) => setActiveIndex(index)} // Меняем фон сразу
+                onSnapToItem={(index) => setActiveIndex(index)}
                 renderItem={({ item }) => (
                     <View style={styles.imageContainer}>
                         <Image source={{ uri: item.url }} style={styles.image} resizeMode="contain" />
@@ -49,28 +51,31 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
                 )}
             />
 
-            {/* Кнопки навигации */}
             <TouchableOpacity
-                style={[styles.navButton, { left: 10 }]}
+                style={[styles.navButton, styles.leftButton]}
                 onPress={() => carouselRef.current?.prev()}
+                hitSlop={10}
             >
                 <AntDesign name="left" size={24} color="white" />
             </TouchableOpacity>
 
             <TouchableOpacity
-                style={[styles.navButton, { right: 10 }]}
+                style={[styles.navButton, styles.rightButton]}
                 onPress={() => carouselRef.current?.next()}
+                hitSlop={10}
             >
                 <AntDesign name="right" size={24} color="white" />
             </TouchableOpacity>
 
-            {/* Индикатор слайдов */}
             <View style={styles.pagination}>
                 {images.map((_, index) => (
-                    <View key={index} style={[
-                        styles.dot,
-                        activeIndex === index ? styles.activeDot : null
-                    ]} />
+                    <View
+                        key={index}
+                        style={[
+                            styles.dot,
+                            activeIndex === index && styles.activeDot,
+                        ]}
+                    />
                 ))}
             </View>
         </View>
@@ -82,6 +87,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
+        backgroundColor: '#000', // fallback фон
+        position: 'relative',
     },
     backgroundImage: {
         ...StyleSheet.absoluteFillObject,
@@ -105,13 +112,21 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         padding: 10,
         borderRadius: 20,
+        zIndex: 10,
+    },
+    leftButton: {
+        left: 10,
+    },
+    rightButton: {
+        right: 10,
     },
     pagination: {
         position: 'absolute',
-        bottom: 10,
+        bottom: 20,
         flexDirection: 'row',
         justifyContent: 'center',
         width: '100%',
+        zIndex: 5,
     },
     dot: {
         width: 8,
