@@ -7,6 +7,7 @@ import {
     useWindowDimensions,
     Pressable,
     ScrollView,
+    Platform
 } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';

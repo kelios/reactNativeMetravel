@@ -9,11 +9,9 @@ import {
 } from 'react-native-paper';
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
-import CookiePopup from '@/components/CookiePopup';
-import Footer from '@/components/Footer'; // ✅ Вот он, Footer
+import Footer from '@/components/Footer';
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
-import { useWebAnalytics } from '@/components/analitic/useWebAnalytics';
 import { View, StyleSheet } from 'react-native';
 
 SplashScreen.preventAutoHideAsync();
@@ -51,7 +49,6 @@ const theme = {
 };
 
 export default function RootLayout() {
-    useWebAnalytics();
 
     const [loaded, error] = useFonts({
         ...FontAwesome.font,

@@ -11,24 +11,78 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 name="viewport"
                 content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover"
             />
-            <meta name="description" content="Платформа путешествий MeTravel" />
-            <title>MeTravel</title>
 
-            <ScrollViewStyleReset />
-            <script type="text/javascript" src="https://app.termly.io/resource-blocker/031ae6f7-458d-4853-98e5-098ad6cee542?autoBlock=on" />
+            <title>MeTravel — Найди место для путешествия и поделись своим</title>
+            <meta
+                name="description"
+                content="MeTravel — платформа, где ты легко найдёшь вдохновение для следующего путешествия и сможешь рассказать о своём. Реальные маршруты, впечатления, места и советы от других путешественников."
+            />
+
+            {/* Open Graph / Facebook */}
+            <meta property="og:type" content="website" />
+            <meta property="og:title" content="MeTravel — Найди место для путешествия и поделись своим" />
+            <meta
+                property="og:description"
+                content="Платформа для поиска маршрутов, мест и впечатлений. Делись своим опытом и находи вдохновение от других путешественников."
+            />
+            <meta property="og:url" content="https://metravel.by" />
+            <meta property="og:image" content="https://metravel.by/og-preview.jpg" />
+
+            {/* Twitter Card */}
+            <meta name="twitter:card" content="summary_large_image" />
+            <meta name="twitter:title" content="MeTravel — Найди место для путешествия и поделись своим" />
+            <meta
+                name="twitter:description"
+                content="Платформа для поиска маршрутов, мест и впечатлений. Делись своим опытом и находи вдохновение от других путешественников."
+            />
+            <meta name="twitter:image" content="https://metravel.by/og-preview.jpg" />
+
+            {/* Google Tag Manager */}
             <script async src="https://www.googletagmanager.com/gtag/js?id=G-GBT9YNPXKB"></script>
             <script
                 dangerouslySetInnerHTML={{
                     __html: `
-                      window.dataLayer = window.dataLayer || [];
-                      function gtag(){dataLayer.push(arguments);}
-                      gtag('js', new Date());
-                      gtag('config', 'G-GBT9YNPXKB');
-                    `,
+                          window.dataLayer = window.dataLayer || [];
+                          function gtag(){dataLayer.push(arguments);}
+                          gtag('js', new Date());
+                          gtag('config', 'G-GBT9YNPXKB');
+                        `,
                 }}
             />
-            <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
 
+            {/* Yandex Metrica */}
+            <script
+                type="text/javascript"
+                dangerouslySetInnerHTML={{
+                    __html: `
+                            (function(m,e,t,r,i,k,a){
+                                m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+                                m[i].l=1*new Date();
+                                k=e.createElement(t),a=e.getElementsByTagName(t)[0],
+                                k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+                            })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+                            ym("62803912", "init", {
+                                clickmap:true,
+                                trackLinks:true,
+                                accurateTrackBounce:true,
+                                ecommerce:"dataLayer"
+                            });
+                        `,
+                }}
+            />
+            <noscript>
+                <div>
+                    <img
+                        src={`https://mc.yandex.ru/watch/62803912`}
+                        style={{ position: 'absolute', left: '-9999px' }}
+                        alt=""
+                    />
+                </div>
+            </noscript>
+
+            <ScrollViewStyleReset />
+            <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
             <link rel="icon" href="/favicon.ico" />
         </head>
         <body>{children}</body>

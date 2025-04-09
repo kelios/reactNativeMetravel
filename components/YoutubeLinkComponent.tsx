@@ -21,6 +21,12 @@ const YoutubeLinkComponent: React.FC<YoutubeLinkComponentProps> = ({ label, valu
     };
 
     const handleBlur = () => {
+        if (inputValue.trim() === '') {
+            setIsValid(true);
+            onChange('');
+            return;
+        }
+
         const valid = validateYoutubeUrl(inputValue);
         setIsValid(valid);
         if (valid) {
