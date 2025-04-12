@@ -118,7 +118,7 @@ const CompactSideBarTravel: React.FC<SideBarTravelProps> = memo(
                                         </Pressable>
                                     )}
                                 </View>
-                                <Text style={styles.compactUserYear}>{travel.year}</Text>
+                                <Text style={styles.compactUserYear}>{travel.year} {travel.monthName}</Text>
                                 <Text style={styles.secondaryText}>
                                     {travel.cityName} • {travel.number_days} дн.
                                 </Text>
