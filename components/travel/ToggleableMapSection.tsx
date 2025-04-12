@@ -41,6 +41,7 @@ export default ToggleableMapSection;
 const styles = StyleSheet.create({
     wrapper: {
         width: '100%',
+        paddingHorizontal: 0,
     },
     toggleButton: {
         flexDirection: 'row',
@@ -83,5 +84,6 @@ const styles = StyleSheet.create({
     },
     mapContainerMobile: {
         minHeight: 300,
+        borderRadius: 0,
     },
 });

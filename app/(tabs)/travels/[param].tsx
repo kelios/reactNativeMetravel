@@ -10,11 +10,9 @@ import {
   TouchableOpacity,
   Text,
   Platform,
-  findNodeHandle,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Travel } from '@/src/types/types';
-import { Card, useTheme } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import Slider from '@/components/travel/Slider';
@@ -36,7 +34,6 @@ const TravelDetails: React.FC = () => {
   const [travel, setTravel] = useState<Travel | null>(null);
   const { width, height } = useWindowDimensions();
   const isMobile = width <= 768;
-  const pageHeight = useMemo(() => height * 0.7, [height]);
   const scrollRef = useRef<ScrollView>(null);
 
   const [menuVisible, setMenuVisible] = useState(!isMobile);
@@ -73,16 +70,8 @@ const TravelDetails: React.FC = () => {
   const toggleMenu = useCallback(() => setMenuVisible(prev => !prev), []);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
-  const scrollToRef = (ref: React.RefObject<View>) => {
-    if (Platform.OS === 'web' && ref.current) {
-      const el = findNodeHandle(ref.current) as HTMLElement;
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   const handlePress = useCallback(
       (ref: React.RefObject<View>) => () => {
-        scrollToRef(ref);
         ref.current?.measureLayout(
             scrollRef.current?.getInnerViewNode(),
             (x, y) => scrollRef.current?.scrollTo({ y, animated: true }),
@@ -158,7 +147,7 @@ const TravelDetails: React.FC = () => {
               <View
                   style={[
                     styles.contentWrapper,
-                    isMobile && styles.contentWrapperMobile,
+                    isMobile && { paddingHorizontal: 0 },
                   ]}
               >
                 {hasGallery && (
@@ -169,35 +158,31 @@ const TravelDetails: React.FC = () => {
 
                 {travel.youtube_link && (
                     <View ref={refs.videoRef} style={styles.card}>
-                      <View style={[styles.videoContainer, { height: pageHeight }]} />
+                      <View style={[styles.videoContainer, { height: height * 0.7 }]} />
                     </View>
                 )}
 
                 {travel.description && (
                     <View ref={refs.descriptionRef} style={styles.card}>
-                      <TravelDescription
-                        htmlContent={travel.description}
-                        title={travel.name}
-                        noBox
-                        />
+                      <TravelDescription htmlContent={travel.description} title={travel.name} noBox />
                     </View>
                 )}
 
                 {travel.recommendation && (
                     <View ref={refs.recommendationRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.recommendation} title="Рекомендации" noBox/>
+                      <TravelDescription htmlContent={travel.recommendation} title="Рекомендации" noBox />
                     </View>
                 )}
 
                 {travel.plus && (
                     <View ref={refs.plusRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.plus} title="Плюсы" noBox/>
+                      <TravelDescription htmlContent={travel.plus} title="Плюсы" noBox />
                     </View>
                 )}
 
                 {travel.minus && (
                     <View ref={refs.minusRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.minus} title="Минусы" noBox/>
+                      <TravelDescription htmlContent={travel.minus} title="Минусы" noBox />
                     </View>
                 )}
 
@@ -254,9 +239,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 16,
   },
-  contentWrapperMobile: {
-    paddingHorizontal: 0,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -272,7 +254,6 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     backgroundColor: 'white',
     borderRadius: 16,
-   // padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
