@@ -8,21 +8,23 @@ const ToggleableMapSection = ({ children }: { children: React.ReactNode }) => {
     const isMobile = width <= 480;
 
     return (
-        <View style={[styles.wrapper, isMobile && styles.wrapperMobile]}>
+        <View style={styles.wrapper}>
             <Pressable
                 onPress={() => setShowMap((prev) => !prev)}
                 style={({ pressed }) => [
                     styles.toggleButton,
-                    styles.toggleButtonFullWidth,
-                    isMobile && styles.toggleButtonMobile,
                     pressed && styles.toggleButtonPressed,
                 ]}
             >
-                <MapPinned size={18} color="#6B4F4F" style={{ marginRight: 6 }} />
+                <MapPinned size={18} color="#3B2C24" style={{ marginRight: 6 }} />
                 <Text style={[styles.toggleText, isMobile && styles.toggleTextMobile]}>
                     {showMap ? 'Скрыть карту' : 'Показать карту'}
                 </Text>
-                {showMap ? <ChevronUp size={18} color="#6B4F4F" /> : <ChevronDown size={18} color="#6B4F4F" />}
+                {showMap ? (
+                    <ChevronUp size={18} color="#3B2C24" />
+                ) : (
+                    <ChevronDown size={18} color="#3B2C24" />
+                )}
             </Pressable>
 
             {showMap && (
@@ -39,68 +41,47 @@ export default ToggleableMapSection;
 const styles = StyleSheet.create({
     wrapper: {
         width: '100%',
-        marginBottom: 24,
-        paddingHorizontal: 16,
-    },
-    wrapperMobile: {
-        paddingHorizontal: 8,
     },
     toggleButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 10,
+        justifyContent: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: '#fff',
+        borderRadius: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.05,
         shadowRadius: 4,
-        elevation: 3,
-        gap: 6,
-    },
-    toggleButtonFullWidth: {
-        width: '100%',
-        justifyContent: 'center',
-    },
-    toggleButtonMobile: {
-        paddingVertical: 8,
-        paddingHorizontal: 10,
+        elevation: 2,
+        gap: 8,
     },
     toggleButtonPressed: {
-        backgroundColor: '#e8e8e8',
+        backgroundColor: '#f0f0f0',
     },
     toggleText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#6B4F4F',
+        color: '#3B2C24',
     },
     toggleTextMobile: {
         fontSize: 14,
     },
     mapContainer: {
-        marginTop: 14,
+        marginTop: 16,
         width: '100%',
         minHeight: 400,
-        borderRadius: 12,
+        borderRadius: 16,
         backgroundColor: '#fff',
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     mapContainerMobile: {
         minHeight: 300,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#3B2C24',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
     },
 });

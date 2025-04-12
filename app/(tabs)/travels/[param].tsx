@@ -10,22 +10,22 @@ import {
   TouchableOpacity,
   Text,
   Platform,
+  findNodeHandle,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Travel } from '@/src/types/types';
-import RenderHTML from 'react-native-render-html';
-import { WebView } from 'react-native-webview';
 import { Card, useTheme } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import Slider from '@/components/travel/Slider';
 import PointList from '@/components/travel/PointList';
-import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import SideBarTravel from '@/components/travel/SideBarTravel';
 import NearTravelList from '@/components/travel/NearTravelList';
 import PopularTravelList from '@/components/travel/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import TravelDescription from '@/components/travel/TravelDescription';
-import ToggleableMapSection from "@/components/travel/ToggleableMapSection";
+import ToggleableMapSection from '@/components/travel/ToggleableMapSection';
+
 const TravelDetails: React.FC = () => {
   const searchParams = useLocalSearchParams();
   const param = searchParams.param;
@@ -37,9 +37,11 @@ const TravelDetails: React.FC = () => {
   const { width, height } = useWindowDimensions();
   const isMobile = width <= 768;
   const pageHeight = useMemo(() => height * 0.7, [height]);
+  const scrollRef = useRef<ScrollView>(null);
 
   const [menuVisible, setMenuVisible] = useState(!isMobile);
-  const scrollRef = useRef<ScrollView>(null);
+  const [isSuperuser, setIsSuperuser] = useState(false);
+  const [storedUserId, setStoredUserId] = useState<string | null>(null);
 
   const refs = {
     galleryRef: useRef<View>(null),
@@ -53,10 +55,6 @@ const TravelDetails: React.FC = () => {
     plusRef: useRef<View>(null),
     minusRef: useRef<View>(null),
   };
-
-  const theme = useTheme();
-  const [isSuperuser, setIsSuperuser] = useState(false);
-  const [storedUserId, setStoredUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkSuperuser = async () => {
@@ -75,6 +73,25 @@ const TravelDetails: React.FC = () => {
   const toggleMenu = useCallback(() => setMenuVisible(prev => !prev), []);
   const closeMenu = useCallback(() => setMenuVisible(false), []);
 
+  const scrollToRef = (ref: React.RefObject<View>) => {
+    if (Platform.OS === 'web' && ref.current) {
+      const el = findNodeHandle(ref.current) as HTMLElement;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handlePress = useCallback(
+      (ref: React.RefObject<View>) => () => {
+        scrollToRef(ref);
+        ref.current?.measureLayout(
+            scrollRef.current?.getInnerViewNode(),
+            (x, y) => scrollRef.current?.scrollTo({ y, animated: true }),
+            error => console.warn('Failed to measure layout:', error)
+        );
+      },
+      []
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -86,25 +103,11 @@ const TravelDetails: React.FC = () => {
         console.log('Failed to fetch travel data:', error);
       }
     };
-
     if (paramValue) fetchData();
   }, [paramValue]);
 
-  const handlePress = useCallback(
-      (ref: React.RefObject<View>) => () => {
-        ref.current?.measureLayout(
-            scrollRef.current?.getInnerViewNode(),
-            (x, y) => scrollRef.current?.scrollTo({ y, animated: true }),
-            error => console.warn('Failed to measure layout:', error)
-        );
-      },
-      []
-  );
-
-  const convertYouTubeLink = (url: string): string | null => {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
-    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-  };
+  const gallery = travel?.gallery;
+  const hasGallery = Array.isArray(gallery) && gallery.length > 0;
 
   if (!travel) {
     return (
@@ -114,9 +117,6 @@ const TravelDetails: React.FC = () => {
         </View>
     );
   }
-
-  const gallery = travel.gallery;
-  const hasGallery = Array.isArray(gallery) && gallery.length > 0;
 
   return (
       <SafeAreaView style={{ flex: 1 }}>
@@ -155,59 +155,54 @@ const TravelDetails: React.FC = () => {
                 contentContainerStyle={styles.contentContainer}
                 keyboardShouldPersistTaps="handled"
             >
-              <View style={styles.centeredContainer}>
+              <View
+                  style={[
+                    styles.contentWrapper,
+                    isMobile && styles.contentWrapperMobile,
+                  ]}
+              >
                 {hasGallery && (
-                    <View ref={refs.galleryRef}>
+                    <View ref={refs.galleryRef} style={styles.card}>
                       <Slider images={gallery} />
                     </View>
                 )}
 
                 {travel.youtube_link && (
-                    <Card style={styles.card}>
-                      <View ref={refs.videoRef} style={[styles.videoContainer, { height: pageHeight }]}>
-                        {Platform.OS === 'web' ? (
-                            <div style={{ width: '100%', height: '100%' }}>
-                              <iframe
-                                  src={convertYouTubeLink(travel.youtube_link) ?? ''}
-                                  width="100%"
-                                  height="100%"
-                                  style={{ border: 'none' }}
-                                  allowFullScreen
-                              />
-                            </div>
-                        ) : (
-                            <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) ?? '' }} style={{ flex: 1 }} />
-                        )}
-                      </View>
-                    </Card>
+                    <View ref={refs.videoRef} style={styles.card}>
+                      <View style={[styles.videoContainer, { height: pageHeight }]} />
+                    </View>
                 )}
 
                 {travel.description && (
-                    <View ref={refs.descriptionRef} style={styles.descriptionContainer}>
-                      <TravelDescription htmlContent={travel.description} title={travel.name} />
+                    <View ref={refs.descriptionRef} style={styles.card}>
+                      <TravelDescription
+                        htmlContent={travel.description}
+                        title={travel.name}
+                        noBox
+                        />
                     </View>
                 )}
 
                 {travel.recommendation && (
-                    <View ref={refs.recommendationRef} style={styles.descriptionContainer}>
-                      <TravelDescription htmlContent={travel.recommendation} title="Рекомендации" />
+                    <View ref={refs.recommendationRef} style={styles.card}>
+                      <TravelDescription htmlContent={travel.recommendation} title="Рекомендации" noBox/>
                     </View>
                 )}
 
                 {travel.plus && (
-                    <View ref={refs.plusRef} style={styles.descriptionContainer}>
-                      <TravelDescription htmlContent={travel.plus} title="Плюсы" />
+                    <View ref={refs.plusRef} style={styles.card}>
+                      <TravelDescription htmlContent={travel.plus} title="Плюсы" noBox/>
                     </View>
                 )}
 
                 {travel.minus && (
-                    <View ref={refs.minusRef} style={styles.descriptionContainer}>
-                      <TravelDescription htmlContent={travel.minus} title="Минусы" />
+                    <View ref={refs.minusRef} style={styles.card}>
+                      <TravelDescription htmlContent={travel.minus} title="Минусы" noBox/>
                     </View>
                 )}
 
                 {travel.coordsMeTravel?.length > 0 && (
-                    <View ref={refs.mapRef}>
+                    <View ref={refs.mapRef} style={styles.card}>
                       <ToggleableMapSection>
                         <MapClientSideComponent travel={{ data: travel.travelAddress ?? [] }} />
                       </ToggleableMapSection>
@@ -215,18 +210,18 @@ const TravelDetails: React.FC = () => {
                 )}
 
                 {travel.travelAddress && (
-                    <View ref={refs.pointsRef} style={styles.pointListContainer}>
+                    <View ref={refs.pointsRef} style={styles.card}>
                       <PointList points={travel.travelAddress} />
                     </View>
                 )}
 
                 {travel.travelAddress && (
-                    <View ref={refs.nearRef} style={styles.pointListContainer}>
+                    <View ref={refs.nearRef} style={styles.card}>
                       <NearTravelList travel={travel} />
                     </View>
                 )}
 
-                <View ref={refs.popularRef} style={styles.pointListContainer}>
+                <View ref={refs.popularRef} style={styles.card}>
                   <PopularTravelList />
                 </View>
               </View>
@@ -241,7 +236,26 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#f4f4f4',
+    backgroundColor: '#f9f8f2',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#f9f8f2',
+  },
+  contentContainer: {
+    paddingBottom: 40,
+  },
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 1000,
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+  },
+  contentWrapperMobile: {
+    paddingHorizontal: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -253,99 +267,61 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333333',
   },
-  mapBlock: {
-    width: '100%',
-    height: 500,
-    marginBottom: 20,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: '#f4f4f4',
-  },
-  contentContainer: {
-    paddingBottom: 20,
-  },
-  centeredContainer: {
-    padding: 20,
-  },
   card: {
     width: '100%',
-    marginVertical: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', // Полупрозрачный фон
-    borderRadius: 12,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    backdropFilter: 'blur(10px)',
-    shadowColor: 'rgba(255, 255, 255, 0.6)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-  },
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#6B4F4F',
-    marginBottom: 10,
-    fontFamily: 'Georgia',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1,
-  },
-  sideMenu: {
-    padding: 20,
-    backgroundColor: '#fff',
+    marginBottom: 32,
+    backgroundColor: 'white',
+    borderRadius: 16,
+   // padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 5, // Поднимаем выше других элементов
+    elevation: 2,
+  },
+  videoContainer: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  sideMenu: {
+    paddingVertical: 16,
+    backgroundColor: '#fff',
   },
   mobileSideMenu: {
     position: 'absolute',
     width: '100%',
     backgroundColor: 'white',
-    zIndex: 1002, // Должно быть выше остального контента
-    elevation: 5, // Тень на Android
+    zIndex: 1002,
     top: 0,
     left: 0,
-    transform: [{ translateX: -1000 }], // По умолчанию скрыто
-
-    width: '100%', // Используется для мобильной версии
-    maxHeight: '85vh', // Ограничиваем высоту
-    overflowY: 'auto',  // Добавляем прокрутку
-    zIndex: 1001, // Поднимаем выше других элементов
+    transform: [{ translateX: -1000 }],
+    maxHeight: '85vh',
+    overflowY: 'auto',
   },
   visibleMobileSideMenu: {
-    transform: [{ translateX: 0 }], // Показываем при нажатии
+    transform: [{ translateX: 0 }],
   },
   desktopSideMenu: {
-    width: 300,
+    width: 280,
+    maxWidth: 320,
+    alignSelf: 'center',
     backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   menuButtonContainer: {
     width: '100%',
-    backgroundColor: '#6B4F4F', // Цвет фона кнопки
+    backgroundColor: '#2F332E',
     paddingVertical: 10,
     marginBottom: 10,
     alignItems: 'center',
     zIndex: 10000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
     elevation: 5,
   },
   menuButtonText: {
@@ -353,41 +329,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: 'Georgia',
-    marginLeft: 10, // Отступ между иконкой и текстом
   },
-  linkText: {
-    color: '#007BFF',
-    fontSize: 16,
-    marginLeft: 15,
-    fontFamily: 'Georgia',
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 1001,
   },
-  pointListContainer: {
-    width: '100%',
-    marginTop: 20,
-  },
-  imageContainer: {
-    width: '50%',
-    padding: 10,
-    alignSelf: 'flex-start',
-  },
-    videoContainer: {
-            width: '100%',
-            maxWidth: '60vw', // Адаптивность, ограничение ширины на больших экранах
-            height: 'auto', // Позволяет сохранять пропорции
-            aspectRatio: 16 / 9, // Поддержка 16:9
-            alignSelf: 'center', // Центрирование
-            marginVertical: 20, // Отступы сверху и снизу
-            borderRadius: 10, // Закругленные углы
-            overflow: 'hidden',
-            backgroundColor: '#000', // Фон, если видео не загрузилось
-        },
-  descriptionContainer: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-  }
 });
 
 export default TravelDetails;

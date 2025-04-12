@@ -96,6 +96,8 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
                     keyExtractor={keyExtractor}
                     numColumns={numColumns}
                     contentContainerStyle={styles.flatListContent}
+                    columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+                    ItemSeparatorComponent={() => <View style={styles.separator} />}
                     showsVerticalScrollIndicator={false}
                     initialNumToRender={10}
                     maxToRenderPerBatch={10}
@@ -107,16 +109,20 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
         );
     }
 );
-
 const styles = StyleSheet.create({
     section: {
-        marginTop: 20,
+        marginTop: 24,
         marginBottom: 40,
-        paddingHorizontal: 20,
-        paddingVertical: 30,
-        backgroundColor: '#f5f5f5', // светло-серый фон секции
-        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 28,
+        backgroundColor: '#fff',
+        borderRadius: 16,
         width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     loadingContainer: {
         justifyContent: 'center',
@@ -130,19 +136,21 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#6B4F4F',
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#3B2C24',
         marginBottom: 20,
         textAlign: 'center',
-        borderBottomWidth: 2,
-        borderBottomColor: '#6B4F4F',
-        paddingBottom: 10,
         fontFamily: 'Georgia',
     },
     flatListContent: {
-        gap: 20,
         paddingBottom: 20,
+    },
+    separator: {
+        height: 20,
+    },
+    columnWrapper: {
+        justifyContent: 'space-between',
     },
 });
 

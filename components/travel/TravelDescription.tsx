@@ -13,16 +13,18 @@ import StableContent from "@/components/travel/StableContent";
 interface TravelDescriptionProps {
     htmlContent: string;
     title: string;
+    noBox?: boolean; // ✨ Флаг для отключения внутреннего блока
 }
 
 const TravelDescription: React.FC<TravelDescriptionProps> = ({
                                                                  htmlContent,
                                                                  title,
+                                                                 noBox = false,
                                                              }) => {
     const { width, height } = useWindowDimensions();
-    const pageHeight = Math.round(height * 0.7); // фикс высоты
+    const pageHeight = Math.round(height * 0.7);
 
-    const animatedScroll = new Animated.Value(0); // ✅ Вынесен из useMemo
+    const animatedScroll = new Animated.Value(0);
     const [scrollPercent, setScrollPercent] = useState(0);
 
     useEffect(() => {
@@ -39,7 +41,6 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
         const totalHeight = contentSize.height - layoutMeasurement.height;
         const currentOffset = contentOffset.y;
         const percent = totalHeight > 0 ? (currentOffset / totalHeight) * 100 : 0;
-
         animatedScroll.setValue(percent);
     }, []);
 
@@ -65,7 +66,8 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                 <Text style={styles.pageText}>{scrollPercent}%</Text>
             </View>
 
-            <View style={[styles.fixedHeightBlock, { height: pageHeight }]}>
+            {/* если noBox — убираем внутренний контейнер */}
+            {noBox ? (
                 <ScrollView
                     style={styles.scrollArea}
                     onScroll={handleScroll}
@@ -76,13 +78,30 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                         source={require("@/assets/travel-stamp.png")}
                         style={styles.stamp}
                     />
-
                     <StableContent
                         html={htmlContent}
                         contentWidth={Math.min(width, 900) - 60}
                     />
                 </ScrollView>
-            </View>
+            ) : (
+                <View style={[styles.fixedHeightBlock, { height: pageHeight }]}>
+                    <ScrollView
+                        style={styles.scrollArea}
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                        showsVerticalScrollIndicator={true}
+                    >
+                        <Image
+                            source={require("@/assets/travel-stamp.png")}
+                            style={styles.stamp}
+                        />
+                        <StableContent
+                            html={htmlContent}
+                            contentWidth={Math.min(width, 900) - 60}
+                        />
+                    </ScrollView>
+                </View>
+            )}
         </View>
     );
 };
@@ -90,7 +109,6 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
 export default TravelDescription;
 
 const styles = StyleSheet.create({
-    // Внешняя обёртка
     wrapper: {
         alignSelf: "center",
         width: "100%",
@@ -100,7 +118,6 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         backgroundColor: "transparent",
     },
-
     title: {
         fontSize: 22,
         fontWeight: "bold",
@@ -108,7 +125,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: "center",
     },
-
     progressContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -125,7 +141,6 @@ const styles = StyleSheet.create({
     },
     progressBar: {
         height: 8,
-        // Задаём "матово оранжевый" цвет
         backgroundColor: "#FFA500",
         borderRadius: 4,
     },
@@ -133,23 +148,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: "#666",
     },
-
     fixedHeightBlock: {
         borderWidth: 1,
         borderColor: "#DDD",
         borderRadius: 10,
         backgroundColor: "#FFF",
         overflow: "hidden",
-        // Тени под iOS
         shadowColor: "#000",
         shadowOpacity: 0.05,
         shadowRadius: 5,
         shadowOffset: { width: 0, height: 2 },
-        // Для Android
         elevation: 2,
     },
     scrollArea: {
-        padding: 20,
+       // padding: 20,
     },
     stamp: {
         position: "absolute",

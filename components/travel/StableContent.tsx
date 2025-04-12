@@ -17,7 +17,7 @@ const StableContent: React.FC<StableContentProps> = React.memo(
         //    Здесь вы можете дополнительно обрабатывать разные сервисы (YouTube, Vimeo и т.д.)
         const renderers = {
             // Картинки будут рендериться вашим компонентом:
-            img: CustomImageRenderer,
+            img: (props) => <CustomImageRenderer {...props} contentWidth={contentWidth} />,
 
             // Обработка <iframe>:
             iframe: (props: TDefaultRendererProps) => {
