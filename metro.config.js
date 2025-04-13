@@ -2,21 +2,20 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname, {
-  // [Web-only]: Enables CSS support in Metro.
   isCSSEnabled: true,
   resolver: {
     sourceExts: ['js', 'ts', 'tsx', 'svg'],
   },
 });
 
-// Добавляем поддержку для react-native-web-maps
+// Поддержка react-native-web-maps
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   'react-native': require.resolve('react-native-web'),
   'react-native-maps': require.resolve('@teovilla/react-native-web-maps'),
 };
 
-// Настройка для поддержки Web
+// Настройка трансформера
 config.transformer.getTransformOptions = async () => ({
   transform: {
     experimentalImportSupport: false,
@@ -24,7 +23,22 @@ config.transformer.getTransformOptions = async () => ({
   },
 });
 
-// Добавляем расширения файлов, которые должны обрабатываться как ассеты
+// Удаление console.* и минификация
+config.transformer.minifierConfig = {
+  compress: {
+    drop_console: true, // 💥 Удаляет console.log и подобные
+    passes: 2,
+  },
+  mangle: {
+    safari10: true,
+  },
+  output: {
+    comments: false,
+    ascii_only: true,
+  },
+};
+
+// Добавляем ассеты
 config.resolver.assetExts.push(
     'db', 'sqlite', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'webp'
 );
