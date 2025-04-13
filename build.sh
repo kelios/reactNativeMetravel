@@ -28,13 +28,19 @@ function build_env() {
 
   echo "🚀 Сборка для $ENV → $DIR"
   apply_env $ENV
-  EXPO_ENV=$ENV EXPO_NO_METRO_LAZY=true npx expo export --output-dir $DIR -p web -c
+
+  echo "🛠️ NODE_ENV=production"
+  NODE_ENV=production EXPO_ENV=$ENV EXPO_NO_METRO_LAZY=true \
+    npx expo export --output-dir $DIR -p web -c
 
   echo "📦 Архивирую $DIR → $ARCHIVE"
   tar -czf "$ARCHIVE" -C dist "$ENV"
 
   echo "🗑️ Удаляю $DIR"
   rm -rf "$DIR"
+
+  echo "📏 Размер архива:"
+  du -sh "$ARCHIVE"
 
   echo "✅ Готово: $ARCHIVE"
 }
