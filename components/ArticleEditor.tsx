@@ -46,6 +46,7 @@ interface ArticleEditorProps {
 }
 
 function cleanHtml(html: string): string {
+    if (typeof html !== 'string') return '';
     return html
         .replace(/<p><br><\/p>/g, '')
         .replace(/<p>\s*<\/p>/g, '')

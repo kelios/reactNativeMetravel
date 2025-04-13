@@ -151,11 +151,11 @@ export interface TravelFormData {
     over_nights_stay: string[];
     complexity: string[];
     companions: string[];
-    description?: string;
-    plus?: string;
-    minus?: string;
-    recommendation?: string;
-    youtube_link?: string;
+    description?: string | null;
+    plus?: string | null;
+    minus?: string | null;
+    recommendation?: | null;
+    youtube_link?: string | null;
     categories: string[];
     countryIds: string[];
     travelAddressIds: string[];

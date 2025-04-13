@@ -101,8 +101,9 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
 const renderEditorSection = (title: string, content: string, onChange: (val: string) => void, idTravel?: string) => (
     <View style={styles.sectionEditor}>
         <ArticleEditor
+            key={`${title}-${idTravel}`}
             label={title}
-            content={content}
+            content={content ?? ''}
             onChange={onChange}
             uploadUrl={UPLOAD_IMAGE}
             idTravel={idTravel}
