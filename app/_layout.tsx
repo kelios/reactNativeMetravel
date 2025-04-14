@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, {lazy, useEffect} from 'react';
 import '@expo/metro-runtime';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Platform, View, StyleSheet } from 'react-native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import {
@@ -9,12 +9,17 @@ import {
 } from 'react-native-paper';
 import { FiltersProvider } from '@/providers/FiltersProvider';
 import { AuthProvider } from '@/context/AuthContext';
-import Footer from '@/components/Footer';
-import 'react-native-reanimated';
-import 'react-native-gesture-handler';
-import { View, StyleSheet } from 'react-native';
 
-SplashScreen.preventAutoHideAsync();
+const Footer = lazy(() => import('@/components/Footer'));
+
+// ⚙️ Только на мобильных подключаем gesture/reanimated
+if (Platform.OS !== 'web') {
+    require('react-native-reanimated');
+    require('react-native-gesture-handler');
+}
+
+// 🎨 Только на мобильных загружаем FontAwesome
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const theme = {
     ...DefaultTheme,
@@ -48,11 +53,16 @@ const theme = {
     },
 };
 
-export default function RootLayout() {
+SplashScreen.preventAutoHideAsync();
 
-    const [loaded, error] = useFonts({
-        ...FontAwesome.font,
-    });
+export default function RootLayout() {
+    const [loaded, error] = useFonts(
+        Platform.OS === 'web'
+            ? {} // не грузим иконки на веб
+            : {
+                ...FontAwesome.font,
+            }
+    );
 
     useEffect(() => {
         if (error) throw error;

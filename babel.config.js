@@ -10,7 +10,6 @@ module.exports = function (api) {
             'react-native-web',
             'react-native-reanimated/plugin',
 
-            // Удаляет все console.* вызовы в production
             isProduction && ['transform-remove-console', { exclude: ['error', 'warn'] }],
         ].filter(Boolean),
     };
