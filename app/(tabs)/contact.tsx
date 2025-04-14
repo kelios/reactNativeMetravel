@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
-  View,
-  TextInput,
-  StyleSheet,
-  ImageBackground,
-  Text,
   Button,
-  Platform,
+  ImageBackground,
   KeyboardAvoidingView,
-  ScrollView,
   NativeSyntheticEvent,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
   TextInputSubmitEditingEventData,
+  View,
 } from 'react-native';
-import { sendFeedback } from '@/src/api/travels';
+import {sendFeedback} from '@/src/api/travels';
 
 export default function FeedbackForm() {
   const [name, setName] = useState('');

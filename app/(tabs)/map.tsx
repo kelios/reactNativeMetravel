@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  SafeAreaView,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { Button, Icon } from 'react-native-elements';
+import React, {useEffect, useState} from 'react';
+import {SafeAreaView, StyleSheet, useWindowDimensions, View,} from 'react-native';
+import {Button, Icon} from 'react-native-elements';
 import * as Location from 'expo-location';
 
 import FiltersPanel from '@/components/MapPage/FiltersPanel';
 import MapPanel from '@/components/MapPage/MapPanel';
 import TravelListPanel from '@/components/MapPage/TravelListPanel';
-import { fetchTravelsForMap, fetchFiltersMap } from '@/src/api/travels';
+import {fetchFiltersMap, fetchTravelsForMap} from '@/src/api/travels';
 
 export default function MapScreen() {
   const { width } = useWindowDimensions();

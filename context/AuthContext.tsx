@@ -1,18 +1,6 @@
-import React, {
-    createContext,
-    useState,
-    useEffect,
-    useContext,
-    ReactNode,
-    FC,
-} from 'react';
+import React, {createContext, FC, ReactNode, useContext, useEffect, useState,} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-    logoutApi,
-    loginApi,
-    resetPasswordLinkApi,
-    setNewPasswordApi,
-} from '@/src/api/travels';
+import {loginApi, logoutApi, resetPasswordLinkApi, setNewPasswordApi,} from '@/src/api/travels';
 
 interface AuthContextType {
     isAuthenticated: boolean;

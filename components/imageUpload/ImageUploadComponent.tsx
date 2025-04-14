@@ -1,18 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import {
-    View,
-    Text,
-    Image,
-    StyleSheet,
-    TouchableOpacity,
-    ActivityIndicator,
-    Platform,
-    Dimensions,
-} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {ActivityIndicator, Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
-import { useDropzone } from 'react-dropzone';
-import { uploadImage } from "@/src/api/travels";
-import { FontAwesome } from '@expo/vector-icons';
+import {useDropzone} from 'react-dropzone';
+import {uploadImage} from "@/src/api/travels";
+import {FontAwesome} from '@expo/vector-icons';
 
 interface ImageUploadComponentProps {
     collection: string;

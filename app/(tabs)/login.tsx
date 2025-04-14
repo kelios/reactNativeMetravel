@@ -1,20 +1,20 @@
-import React, { useRef, useState } from 'react';
+import React, {useRef, useState} from 'react';
 import {
-    StyleSheet,
-    View,
     Dimensions,
     ImageBackground,
-    TextInput,
-    TouchableOpacity,
-    Text,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Card } from 'react-native-paper';
-import { Button } from 'react-native-elements';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '@/context/AuthContext';
+import {Card} from 'react-native-paper';
+import {Button} from 'react-native-elements';
+import {useNavigation} from '@react-navigation/native';
+import {useAuth} from '@/context/AuthContext';
 
 const { width, height } = Dimensions.get('window');
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
-import { IconButton } from 'react-native-paper';
-import { SearchBar } from 'react-native-elements';
+import {Platform, StyleSheet, useWindowDimensions, View} from 'react-native';
+import {IconButton} from 'react-native-paper';
+import {SearchBar} from 'react-native-elements';
 
 interface Props {
     search: string;
@@ -86,9 +86,8 @@ const styles = StyleSheet.create({
             },
             web: {
                 boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
-                outlineStyle: 'none',
-                outlineWidth: 0,
-                boxShadow: 'none',
+                outline: 'none',
+                border: '1px solid #ccc', // 👈 добавить это
             },
         }),
     },

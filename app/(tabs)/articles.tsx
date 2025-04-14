@@ -1,17 +1,11 @@
-import {
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native'
+import {ActivityIndicator, Dimensions, FlatList, SafeAreaView, StyleSheet,} from 'react-native'
 import ArticleListItem from '@/components/ArticleListItem'
-import React, { useEffect, useState, useCallback } from 'react'
-import { Articles } from '@/src/types/types'
-import { fetchArticles } from '@/src/api/travels'
-import { View } from '@/components/Themed'
-import { DataTable } from 'react-native-paper'
-import { useLocalSearchParams } from 'expo-router'
+import React, {useEffect, useState} from 'react'
+import {Articles} from '@/src/types/types'
+import {fetchArticles} from '@/src/api/travels'
+import {View} from '@/components/Themed'
+import {DataTable} from 'react-native-paper'
+import {useLocalSearchParams} from 'expo-router'
 
 export default function TabOneScreen() {
   const initialPage = 0
@@ -19,7 +13,6 @@ export default function TabOneScreen() {
   const styles = getStyles(windowWidth)
 
   const isMobile = windowWidth <= 768
-  const initMenuVisible = !isMobile
 
   const [articles, setArticles] = useState<Articles[]>([])
   const [isLoading, setIsLoading] = useState(false)

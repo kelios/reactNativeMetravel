@@ -122,7 +122,7 @@ export default function ListTravel() {
         } finally {
             setIsLoading(false);
             setIsFirstLoad(false);
-            setIsDataLoaded(true); // 👈 устанавливаем флаг после загрузки данных
+            setIsDataLoaded(true);
         }
     };
 
@@ -140,15 +140,7 @@ export default function ListTravel() {
     };
 
     const renderContent = () => {
-        if (!isDataLoaded) {
-            return (
-                <View style={styles.loaderFull}>
-                    <ActivityIndicator size="large" color="#ff7f50" />
-                </View>
-            );
-        }
-
-        if (isFirstLoad) {
+        if (!isDataLoaded || isFirstLoad) {
             return (
                 <View style={styles.loaderFull}>
                     <ActivityIndicator size="large" color="#ff7f50" />
@@ -168,7 +160,11 @@ export default function ListTravel() {
                     data={travels.data}
                     keyExtractor={(item) => String(item.id)}
                     contentContainerStyle={styles.flatList}
-                    renderItem={({ item }) => (
+                    initialNumToRender={4}
+                    windowSize={5}
+                    maxToRenderPerBatch={5}
+                    removeClippedSubviews={true}
+                    renderItem={({ item, index }) => (
                         <View style={[styles.itemWrapper, isMobile && styles.mobileCard]}>
                             <TravelListItem
                                 travel={item}
@@ -176,6 +172,7 @@ export default function ListTravel() {
                                 isSuperuser={isSuperuser}
                                 isMetravel={isMeTravel}
                                 isMobile={isMobile}
+                                index={index}
                                 onEditPress={() => router.push(`/travel/${item.id}`)}
                                 onDeletePress={() => openDeleteDialog(String(item.id))}
                             />
@@ -284,7 +281,6 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     flatList: {
-        paddingVertical: 16,
         gap: 10,
     },
     itemWrapper: {

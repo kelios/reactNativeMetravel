@@ -1,12 +1,12 @@
 import {
-  Text as DefaultText,
-  TextProps as RNTextProps,
-  View as DefaultView,
-  ViewProps as RNViewProps,
   Button as DefaultButton,
   ButtonProps as RNButtonProps,
-  useColorScheme,
   StyleSheet,
+  Text as DefaultText,
+  TextProps as RNTextProps,
+  useColorScheme,
+  View as DefaultView,
+  ViewProps as RNViewProps,
 } from 'react-native';
 import Colors from '@/constants/Colors';
 

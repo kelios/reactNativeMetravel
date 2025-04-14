@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, ImageBackground, Dimensions } from 'react-native';
-import { Formik, FormikHelpers } from 'formik';
+import React, {useState} from 'react';
+import {Dimensions, ImageBackground, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Formik, FormikHelpers} from 'formik';
 import * as Yup from 'yup';
-import { registration } from '@/src/api/travels';
-import { FormValues } from '@/src/types/types';
-import { Card } from 'react-native-paper';
-import { Button } from 'react-native-elements';
+import {registration} from '@/src/api/travels';
+import {FormValues} from '@/src/types/types';
+import {Card} from 'react-native-paper';
+import {Button} from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { height } = Dimensions.get('window'); // Получаем высоту экрана

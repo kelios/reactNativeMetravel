@@ -84,7 +84,6 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "react-quill": "^2.0.0",
-    "react-world-flags": "^1.6.0",
     "yup": "^1.4.0"
   },
   "devDependencies": {

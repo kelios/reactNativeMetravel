@@ -1,18 +1,9 @@
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    useWindowDimensions,
-    Platform,
-} from 'react-native';
+import React, {useState} from 'react';
+import {ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View,} from 'react-native';
 import MultiSelectField from '@/components/MultiSelectField';
-import { CheckBox } from 'react-native-elements';
-import { useRoute } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {CheckBox} from 'react-native-elements';
+import {useRoute} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const FiltersComponent = ({
                               filters = {},

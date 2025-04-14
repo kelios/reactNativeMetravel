@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { View, Platform, StyleSheet } from "react-native";
+import React, {useEffect, useRef, useState} from "react";
+import {Platform, StyleSheet, View} from "react-native";
 
 interface InstagramEmbedProps {
     url: string;

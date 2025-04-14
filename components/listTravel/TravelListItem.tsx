@@ -1,16 +1,8 @@
-import React, { memo, useState } from 'react';
-import {
-    View,
-    Text,
-    Pressable,
-    StyleSheet,
-    Image,
-    Platform,
-} from 'react-native';
-import { Card } from 'react-native-paper';
-import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import Flag from 'react-world-flags';
+import React, {memo, useState} from 'react';
+import {Image, Platform, Pressable, StyleSheet, Text, View,} from 'react-native';
+import {Card} from 'react-native-paper';
+import {Feather} from '@expo/vector-icons';
+import {router} from 'expo-router';
 
 const placeholderImage = require('@/assets/placeholder.png');
 
@@ -22,7 +14,7 @@ const TravelListItem = ({
                             onEditPress,
                             onDeletePress,
                             isMobile,
-                            index = 0, // 👈 чтобы мы могли не lazy-грузить первые карточки
+                            index = 0,
                         }) => {
     const {
         id,
@@ -36,11 +28,11 @@ const TravelListItem = ({
 
     const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
     const [imageError, setImageError] = useState(false);
-    const [imageLoaded, setImageLoaded] = useState(false);
-    const canEdit = isMetravel || isSuperuser;
 
     const CARD_HEIGHT = isMobile ? 320 : 460;
     const IMAGE_HEIGHT = isMobile ? 200 : 340;
+
+    const canEdit = isMetravel || isSuperuser;
 
     const handlePress = () => {
         router.push(`/travels/${slug}`);
@@ -63,18 +55,21 @@ const TravelListItem = ({
                                 alt={name}
                                 loading={index === 0 ? 'eager' : 'lazy'}
                                 decoding="async"
-                                width="100%"
-                                height={IMAGE_HEIGHT}
+                                fetchpriority={index === 0 ? 'high' : undefined}
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    borderRadius: 8,
+                                    aspectRatio: '3 / 2',
+                                }}
                                 onError={() => setImageError(true)}
-                                onLoad={() => setImageLoaded(true)}
-                                style={styles.webImage}
                             />
                         ) : (
                             <Image
                                 source={{ uri: travel_image_thumb_url }}
                                 style={styles.image}
                                 resizeMode="cover"
-                                onLoad={() => setImageLoaded(true)}
                                 onError={() => setImageError(true)}
                             />
                         )
@@ -102,7 +97,6 @@ const TravelListItem = ({
                         <View style={styles.countryContainer}>
                             {countries.map((country, index) => (
                                 <View style={styles.countryItem} key={index}>
-                                    <Flag code={country.toUpperCase()} style={styles.flagIcon} />
                                     <Text style={styles.countryText}>{country}</Text>
                                 </View>
                             ))}
@@ -148,13 +142,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
-        borderRadius: 8,
-    },
-    webImage: {
-        objectFit: 'cover',
-        width: '100%',
-        height: '100%',
-        border: 'none',
         borderRadius: 8,
     },
     noImage: {

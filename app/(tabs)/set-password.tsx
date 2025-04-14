@@ -1,11 +1,5 @@
 import React, {useState} from 'react'
-import {
-    StyleSheet,
-    View,
-    Dimensions,
-    Image,
-    TextInput
-} from 'react-native'
+import {Dimensions, Image, StyleSheet, TextInput, View} from 'react-native'
 import {Card} from 'react-native-paper'
 import {Button} from 'react-native-elements'
 import {useNavigation} from '@react-navigation/native'
