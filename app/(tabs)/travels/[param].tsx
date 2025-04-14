@@ -1,20 +1,19 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
-  View,
-  ScrollView,
   ActivityIndicator,
-  useWindowDimensions,
-  StyleSheet,
-  SafeAreaView,
   Pressable,
-  TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
   Text,
-  Platform,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Travel } from '@/src/types/types';
+import {useLocalSearchParams} from 'expo-router';
+import {Travel} from '@/src/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
+import {fetchTravel, fetchTravelBySlug} from '@/src/api/travels';
 import Slider from '@/components/travel/Slider';
 import PointList from '@/components/travel/PointList';
 import SideBarTravel from '@/components/travel/SideBarTravel';
@@ -39,6 +38,7 @@ const TravelDetails: React.FC = () => {
   const [menuVisible, setMenuVisible] = useState(!isMobile);
   const [isSuperuser, setIsSuperuser] = useState(false);
   const [storedUserId, setStoredUserId] = useState<string | null>(null);
+  const [isTravelReady, setIsTravelReady] = useState(false);
 
   const refs = {
     galleryRef: useRef<View>(null),
@@ -82,16 +82,21 @@ const TravelDetails: React.FC = () => {
   );
 
   useEffect(() => {
+    setTravel(null); // 💣 очистка старого travel
+    setIsTravelReady(false);
+
     const fetchData = async () => {
       try {
         const travelData = isNumeric
             ? await fetchTravel(numericId)
             : await fetchTravelBySlug(paramValue);
         setTravel(travelData);
+        setIsTravelReady(true); // ✅ только теперь показываем
       } catch (error) {
         console.log('Failed to fetch travel data:', error);
       }
     };
+
     if (paramValue) fetchData();
   }, [paramValue]);
 
@@ -150,9 +155,9 @@ const TravelDetails: React.FC = () => {
                     isMobile && { paddingHorizontal: 0 },
                   ]}
               >
-                {hasGallery && (
+                {travel && travel.id && hasGallery && (
                     <View ref={refs.galleryRef} style={styles.card}>
-                      <Slider images={gallery} />
+                      <Slider key={travel.id} images={gallery} />
                     </View>
                 )}
 
@@ -189,7 +194,9 @@ const TravelDetails: React.FC = () => {
                 {travel.coordsMeTravel?.length > 0 && (
                     <View ref={refs.mapRef} style={styles.card}>
                       <ToggleableMapSection>
-                        <MapClientSideComponent travel={{ data: travel.travelAddress ?? [] }} />
+                        {travel.travelAddress && (
+                            <MapClientSideComponent travel={{ data: travel.travelAddress }} />
+                        )}
                       </ToggleableMapSection>
                     </View>
                 )}

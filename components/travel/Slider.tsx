@@ -1,5 +1,4 @@
-import 'react-native-reanimated';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Image,
@@ -7,6 +6,7 @@ import {
     useWindowDimensions,
     TouchableOpacity,
     ImageBackground,
+    Platform,
 } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { AntDesign } from '@expo/vector-icons';
@@ -19,16 +19,29 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     const carouselRef = useRef<Carousel<any>>(null);
     const [activeIndex, setActiveIndex] = useState(0);
-
-    if (!images || images.length === 0) return null;
+    const [isMounted, setIsMounted] = useState(false);
 
     const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
 
+    useEffect(() => {
+        // ⚠️ сбрасываем индекс и ждём, пока React отрендерит всё
+        setActiveIndex(0);
+        setIsMounted(false);
+        const timeout = setTimeout(() => {
+            setIsMounted(true);
+        }, 50); // минимальная пауза, чтобы DOM инициализировался
+        return () => clearTimeout(timeout);
+    }, [images]);
+
+    if (!images || images.length === 0) return null;
+
+    const currentImageUrl = isMounted ? images[activeIndex]?.url : null;
+
     return (
         <View style={[styles.container, { height: sliderHeight }]}>
-            {images[activeIndex]?.url && (
+            {currentImageUrl && (
                 <ImageBackground
-                    source={{ uri: images[activeIndex].url }}
+                    source={{ uri: currentImageUrl }}
                     style={styles.backgroundImage}
                     blurRadius={10}
                 />
@@ -44,9 +57,27 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
                 data={images}
                 scrollAnimationDuration={10}
                 onSnapToItem={(index) => setActiveIndex(index)}
-                renderItem={({ item }) => (
+                renderItem={({ item, index }) => (
                     <View style={styles.imageContainer}>
-                        <Image source={{ uri: item.url }} style={styles.image} resizeMode="contain" />
+                        {Platform.OS === 'web' ? (
+                            <img
+                                src={item.url}
+                                alt={`slide-${index}`}
+                                loading={index === 0 ? 'eager' : 'lazy'}
+                                decoding="async"
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'contain',
+                                }}
+                            />
+                        ) : (
+                            <Image
+                                source={{ uri: item.url }}
+                                style={styles.image}
+                                resizeMode="contain"
+                            />
+                        )}
                     </View>
                 )}
             />
@@ -87,7 +118,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        backgroundColor: '#000', // fallback фон
+        backgroundColor: '#000',
         position: 'relative',
     },
     backgroundImage: {

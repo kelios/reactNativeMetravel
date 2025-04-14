@@ -1,5 +1,11 @@
 import React from 'react';
-import { FlatList, StyleSheet, View, Dimensions, Text } from 'react-native';
+import {
+    FlatList,
+    StyleSheet,
+    View,
+    Text,
+    useWindowDimensions,
+} from 'react-native';
 import TravelListItem from '@/components/listTravel/TravelListItem';
 import { Travel } from '@/src/types/types';
 
@@ -20,7 +26,7 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
                                                                      handleEdit,
                                                                      handleDelete,
                                                                  }) => {
-    const windowWidth = Dimensions.get('window').width;
+    const { width: windowWidth } = useWindowDimensions();
     const isMobile = windowWidth <= 768;
     const numColumns = isMobile ? 1 : 2;
 
@@ -31,7 +37,7 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
     return (
         <FlatList
             data={travels}
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
                 <View style={styles.cardContainer}>
                     <TravelListItem
                         travel={item}
@@ -40,6 +46,8 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
                         isMetravel={isMetravel}
                         onEditPress={handleEdit}
                         onDeletePress={handleDelete}
+                        isMobile={isMobile}
+                        index={index} // ✅ добавили index для контроля lazy-loading
                     />
                 </View>
             )}
@@ -50,7 +58,7 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
             }
             style={styles.list}
             contentContainerStyle={styles.contentContainer}
-            extraData={{ isSuperuser, isMetravel, userId }} // гарантируем перерисовку при смене этих значений
+            extraData={{ isSuperuser, isMetravel, userId }} // ✅ чтобы перерисовалось при изменении
         />
     );
 };

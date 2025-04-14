@@ -40,6 +40,12 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
                                                               }) => {
   const isBrowser = typeof window !== 'undefined' && Platform.OS === 'web';
   const [isVisible, setIsVisible] = useState(true);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setIsReady(true), 100); // ждем готовности DOM
+    return () => clearTimeout(timeout);
+  }, []);
 
   if (!isBrowser) {
     return <Text style={{ padding: 20 }}>Карта доступна только в браузере</Text>;
@@ -94,73 +100,75 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
 
   return (
       <View style={styles.mapContainer}>
-        <MapContainer
-            center={initialCenter}
-            zoom={7}
-            style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom
-        >
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <FitBoundsOnData data={travelData} />
+        {isReady && (
+            <MapContainer
+                center={initialCenter}
+                zoom={7}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <FitBoundsOnData data={travelData} />
 
-          {travelData.map((point, index) => {
-            const latLng = getLatLng(point.coord);
-            if (!latLng) return null;
+              {travelData.map((point, index) => {
+                const latLng = getLatLng(point.coord);
+                if (!latLng) return null;
 
-            return (
-                <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
-                  <Popup>
-                    <View style={styles.popupCard}>
-                      {point.travelImageThumbUrl ? (
-                          <Image
-                              source={{ uri: point.travelImageThumbUrl }}
-                              style={styles.pointImage}
-                              resizeMode="contain"
-                          />
-                      ) : (
-                          <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
-                      )}
+                return (
+                    <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
+                      <Popup>
+                        <View style={styles.popupCard}>
+                          {point.travelImageThumbUrl ? (
+                              <Image
+                                  source={{ uri: point.travelImageThumbUrl }}
+                                  style={styles.pointImage}
+                                  resizeMode="contain"
+                              />
+                          ) : (
+                              <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
+                          )}
 
-                      <Pressable
-                          onPress={() => {
-                            const url = point.articleUrl || point.urlTravel;
-                            if (url) Linking.openURL(url);
-                          }}
-                          style={styles.textContainer}
-                      >
-                        <Text style={styles.addressCompact}>{point.address}</Text>
-                        <LabelText label="Координаты:" text={point.coord} />
-                        {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
-                      </Pressable>
+                          <Pressable
+                              onPress={() => {
+                                const url = point.articleUrl || point.urlTravel;
+                                if (url) Linking.openURL(url);
+                              }}
+                              style={styles.textContainer}
+                          >
+                            <Text style={styles.addressCompact}>{point.address}</Text>
+                            <LabelText label="Координаты:" text={point.coord} />
+                            {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
+                          </Pressable>
 
-                      <View style={styles.iconRow}>
-                        <Pressable
-                            onPress={() => {
-                              const url = `https://www.google.com/maps/search/?api=1&query=${point.coord}`;
-                              Linking.openURL(url);
-                            }}
-                            style={styles.iconBtn}
-                        >
-                          <MapPin size={18} color="#FF8C49" />
-                        </Pressable>
+                          <View style={styles.iconRow}>
+                            <Pressable
+                                onPress={() => {
+                                  const url = `https://www.google.com/maps/search/?api=1&query=${point.coord}`;
+                                  Linking.openURL(url);
+                                }}
+                                style={styles.iconBtn}
+                            >
+                              <MapPin size={18} color="#FF8C49" />
+                            </Pressable>
 
-                        <Pressable
-                            onPress={() => {
-                              const msg = encodeURIComponent(`Глянь, какая точка: ${point.coord}`);
-                              const url = `https://t.me/share/url?url=${msg}`;
-                              Linking.openURL(url);
-                            }}
-                            style={styles.iconBtn}
-                        >
-                          <SendHorizonal size={18} color="#FF8C49" />
-                        </Pressable>
-                      </View>
-                    </View>
-                  </Popup>
-                </Marker>
-            );
-          })}
-        </MapContainer>
+                            <Pressable
+                                onPress={() => {
+                                  const msg = encodeURIComponent(`Глянь, какая точка: ${point.coord}`);
+                                  const url = `https://t.me/share/url?url=${msg}`;
+                                  Linking.openURL(url);
+                                }}
+                                style={styles.iconBtn}
+                            >
+                              <SendHorizonal size={18} color="#FF8C49" />
+                            </Pressable>
+                          </View>
+                        </View>
+                      </Popup>
+                    </Marker>
+                );
+              })}
+            </MapContainer>
+        )}
       </View>
   );
 };

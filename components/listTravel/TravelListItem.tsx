@@ -10,7 +10,7 @@ import {
 import { Card } from 'react-native-paper';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import Flag from 'react-world-flags'; // Импортируем библиотеку для флагов
+import Flag from 'react-world-flags';
 
 const placeholderImage = require('@/assets/placeholder.png');
 
@@ -22,6 +22,7 @@ const TravelListItem = ({
                             onEditPress,
                             onDeletePress,
                             isMobile,
+                            index = 0, // 👈 чтобы мы могли не lazy-грузить первые карточки
                         }) => {
     const {
         id,
@@ -60,7 +61,7 @@ const TravelListItem = ({
                             <img
                                 src={travel_image_thumb_url}
                                 alt={name}
-                                loading="lazy"
+                                loading={index === 0 ? 'eager' : 'lazy'}
                                 decoding="async"
                                 width="100%"
                                 height={IMAGE_HEIGHT}
@@ -107,9 +108,9 @@ const TravelListItem = ({
                             ))}
                         </View>
                     )}
-                    <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{name}</Text>
+                    <Text style={styles.title} numberOfLines={1}>{name}</Text>
                     <View style={styles.metaRow}>
-                        <Text style={styles.metaText} numberOfLines={1}>👤 {userName || 'Неизвестно'}</Text>
+                        <Text style={styles.metaText}>👤 {userName || 'Неизвестно'}</Text>
                         <Text style={styles.metaText}>👁 {countUnicIpView ?? 0}</Text>
                     </View>
                 </View>

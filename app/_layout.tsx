@@ -1,14 +1,13 @@
 import React, {lazy, useEffect} from 'react';
 import '@expo/metro-runtime';
-import { Platform, View, StyleSheet } from 'react-native';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
-import {
-    MD3LightTheme as DefaultTheme,
-    PaperProvider,
-} from 'react-native-paper';
-import { FiltersProvider } from '@/providers/FiltersProvider';
-import { AuthProvider } from '@/context/AuthContext';
+import {Platform, StyleSheet, View} from 'react-native';
+import {useFonts} from 'expo-font';
+import {SplashScreen, Stack} from 'expo-router';
+import {MD3LightTheme as DefaultTheme, PaperProvider,} from 'react-native-paper';
+import {FiltersProvider} from '@/providers/FiltersProvider';
+import {AuthProvider} from '@/context/AuthContext';
+// 🎨 Только на мобильных загружаем FontAwesome
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const Footer = lazy(() => import('@/components/Footer'));
 
@@ -17,9 +16,6 @@ if (Platform.OS !== 'web') {
     require('react-native-reanimated');
     require('react-native-gesture-handler');
 }
-
-// 🎨 Только на мобильных загружаем FontAwesome
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const theme = {
     ...DefaultTheme,

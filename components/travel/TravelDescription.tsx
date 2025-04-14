@@ -1,13 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import {
-    View,
-    ScrollView,
-    Text,
-    Image,
-    StyleSheet,
-    Animated,
-    useWindowDimensions,
-} from "react-native";
+import React from "react";
+import {Image, ScrollView, StyleSheet, Text, useWindowDimensions, View,} from "react-native";
 import StableContent from "@/components/travel/StableContent";
 
 interface TravelDescriptionProps {
@@ -24,53 +16,13 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
     const { width, height } = useWindowDimensions();
     const pageHeight = Math.round(height * 0.7);
 
-    const animatedScroll = new Animated.Value(0);
-    const [scrollPercent, setScrollPercent] = useState(0);
-
-    useEffect(() => {
-        const listenerId = animatedScroll.addListener(({ value }) => {
-            setScrollPercent(Math.round(value));
-        });
-        return () => {
-            animatedScroll.removeListener(listenerId);
-        };
-    }, []);
-
-    const handleScroll = useCallback((event: any) => {
-        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-        const totalHeight = contentSize.height - layoutMeasurement.height;
-        const currentOffset = contentOffset.y;
-        const percent = totalHeight > 0 ? (currentOffset / totalHeight) * 100 : 0;
-        animatedScroll.setValue(percent);
-    }, []);
-
     return (
         <View style={styles.wrapper}>
             <Text style={styles.title}>{title}</Text>
 
-            <View style={styles.progressContainer}>
-                <View style={styles.progressBackground}>
-                    <Animated.View
-                        style={[
-                            styles.progressBar,
-                            {
-                                width: animatedScroll.interpolate({
-                                    inputRange: [0, 100],
-                                    outputRange: ["0%", "100%"],
-                                    extrapolate: "clamp",
-                                }),
-                            },
-                        ]}
-                    />
-                </View>
-                <Text style={styles.pageText}>{scrollPercent}%</Text>
-            </View>
-
-            {/* если noBox — убираем внутренний контейнер */}
             {noBox ? (
                 <ScrollView
                     style={styles.scrollArea}
-                    onScroll={handleScroll}
                     scrollEventThrottle={16}
                     showsVerticalScrollIndicator={true}
                 >
@@ -87,7 +39,6 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
                 <View style={[styles.fixedHeightBlock, { height: pageHeight }]}>
                     <ScrollView
                         style={styles.scrollArea}
-                        onScroll={handleScroll}
                         scrollEventThrottle={16}
                         showsVerticalScrollIndicator={true}
                     >
