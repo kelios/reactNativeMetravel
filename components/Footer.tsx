@@ -88,7 +88,7 @@ const Footer: React.FC = () => {
 
                 <View style={styles.footerTextContainer}>
                     <Image
-                        source={require('../assets/icons/logo_yellow.png')}
+                        source={require('../assets/icons/logo_yellow_60x60.png')}
                         style={styles.footerLogo}
                     />
                     <Text style={styles.footerText}>© MeTravel 2020</Text>
@@ -157,8 +157,8 @@ const getStyles = (width: number) => StyleSheet.create({
         height: 15,
     },
     footerLogo: {
-        width: 24,
-        height: 24,
+        width: 30,
+        height: 30,
         marginRight: 8,
     },
     linkRow: {

@@ -7,6 +7,7 @@ import {
     Image,
     useWindowDimensions,
     Platform,
+    useColorScheme,
 } from 'react-native';
 import { Menu, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -21,8 +22,9 @@ function RenderRightMenu() {
 
     const [visible, setVisible] = useState(false);
 
-    const width = useWindowDimensions().width;
+    const { width } = useWindowDimensions();
     const isMobile = width <= 768;
+    const colorScheme = useColorScheme();
 
     const openMenu = () => setVisible(true);
     const closeMenu = () => setVisible(false);
@@ -48,23 +50,33 @@ function RenderRightMenu() {
                     if (visible) closeMenu();
                     navigation.navigate('index');
                 }}
-                style={styles.homeButton}
+                style={styles.logoContainer}
             >
-                <Image source={require('../assets/icons/logo_yellow.png')} style={styles.logo} />
-                <Text style={styles.homeButtonText}>MeTravel</Text>
+                <Image
+                    source={require('../assets/icons/logo_yellow_60x60.png')}
+                    style={[styles.logo, isMobile && styles.logoMobile]}
+                    resizeMode="contain"
+                />
+                {!isMobile && (
+                    <Text style={styles.logoText}>
+                        <Text style={styles.logoTextMe}>Me</Text>
+                        <Text style={styles.logoTextTravel}>Travel</Text>
+                    </Text>
+                )}
             </TouchableOpacity>
 
             <View style={styles.rightContainer}>
                 {username && !isMobile && (
                     <View style={styles.userContainer}>
                         <Icon name="account-circle" size={24} color="#333" />
-                        <Text style={styles.username}>{username}</Text>
+                        <Text style={styles.username} numberOfLines={1}>{username}</Text>
                     </View>
                 )}
 
                 <Menu
                     visible={visible}
                     onDismiss={closeMenu}
+                    contentStyle={styles.menuContent}
                     anchor={
                         <TouchableOpacity onPress={openMenu} style={styles.menuButton}>
                             <Icon name="menu" size={24} color="#333" />
@@ -73,16 +85,8 @@ function RenderRightMenu() {
                 >
                     {!isAuthenticated ? (
                         <>
-                            <Menu.Item
-                                onPress={() => handleNavigate('login')}
-                                title="Войти"
-                                leadingIcon="login"
-                            />
-                            <Menu.Item
-                                onPress={() => handleNavigate('registration')}
-                                title="Зарегистрироваться"
-                                leadingIcon="account-plus"
-                            />
+                            <Menu.Item onPress={() => handleNavigate('login')} title="Войти" leadingIcon="login" />
+                            <Menu.Item onPress={() => handleNavigate('registration')} title="Зарегистрироваться" leadingIcon="account-plus" />
                         </>
                     ) : (
                         <>
@@ -93,19 +97,19 @@ function RenderRightMenu() {
                                     )
                                 }
                                 title="Мои путешествия"
-                                leadingIcon="earth"
+                                leadingIcon={({ size }) => <Icon name="earth" size={size} color="#6aaaaa" />}
                             />
                             <Divider />
                             <Menu.Item
                                 onPress={() => handleNavigate('travel/new')}
                                 title="Добавить путешествие"
-                                leadingIcon="map-plus"
+                                leadingIcon={({ size }) => <Icon name="map-plus" size={size} color="#6aaaaa" />}
                             />
                             <Divider />
                             <Menu.Item
                                 onPress={handleLogout}
                                 title="Выход"
-                                leadingIcon="logout"
+                                leadingIcon={({ size }) => <Icon name="logout" size={size} color="#6aaaaa" />}
                             />
                         </>
                     )}
@@ -118,54 +122,73 @@ function RenderRightMenu() {
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#ffffff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        justifyContent: 'space-between',
         width: '100%',
     },
-    homeButton: {
+    logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    homeButtonText: {
+    logo: {
+        width: 32,
+        height: 32,
+    },
+    logoMobile: {
+        width: 26,
+        height: 26,
+    },
+    logoText: {
         fontSize: 20,
-        fontWeight: '400',
-        color: '#6aaaaa',
+        fontWeight: '600',
         marginLeft: 8,
+        flexDirection: 'row',
+    },
+    logoTextMe: {
+        color: '#f28c28',
+    },
+    logoTextTravel: {
+        color: '#6aaaaa',
     },
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
     },
     userContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ddd',
+        backgroundColor: '#f5f5f5',
         paddingVertical: 6,
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         borderRadius: 20,
+        maxWidth: 180,
         marginRight: 8,
     },
     username: {
         fontSize: 16,
         color: '#333',
-        marginLeft: 5,
+        marginLeft: 6,
     },
     menuButton: {
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f0f0f0',
         borderRadius: 24,
-        padding: 8,
+        padding: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    logo: {
-        width: 30,
-        height: 30,
-        resizeMode: 'contain',
+    menuContent: {
+        backgroundColor: '#ffffff',
+        borderRadius: 12,
+        paddingVertical: 4,
+        elevation: 5,
+        minWidth: 200,
+        borderColor: '#e0e0e0',
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     },
 });
 

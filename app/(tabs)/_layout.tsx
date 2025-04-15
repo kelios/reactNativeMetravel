@@ -1,35 +1,17 @@
+// TabLayout.tsx — кастомный header с полным отключением встроенного
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Image } from 'react-native';
-import RenderRightMenu from '@/components/RenderRightMenu';
+import CustomHeader from '@/components/CustomHeader';
 
 export default function TabLayout() {
     return (
         <Tabs
             screenOptions={{
-                tabBarStyle: {
-                    width: '100%',
-                    padding: 0,
-                    position: 'absolute',
-                    bottom: 0,
-                    height: 0, // скрыт, если не нужен
-                },
+                tabBarStyle: { display: 'none' },
+                header: () => <CustomHeader />, // наш кастомный хедер
             }}
         >
-            <Tabs.Screen
-                name="index"
-                options={{
-                    title: '',
-                    tabBarIcon: ({ color }) => (
-                        <Image
-                            style={{ width: 10, height: 10 }}
-                            source={require('@/assets/icons/logo_yellow.ico')}
-                        />
-                    ),
-                    headerRight: () => <RenderRightMenu />,
-                }}
-            />
-
+            <Tabs.Screen name="index" />
             <Tabs.Screen name="travelsby" options={hiddenTabOptions()} />
             <Tabs.Screen name="map" options={hiddenTabOptions()} />
             <Tabs.Screen name="about" options={hiddenTabOptions(true)} />
@@ -51,9 +33,7 @@ export default function TabLayout() {
 
 function hiddenTabOptions(hideFromHref: boolean = false) {
     return {
-        tabBarIconStyle: { display: 'none' },
         title: '',
         href: hideFromHref ? null : undefined,
-        headerRight: () => <RenderRightMenu />,
     };
 }
