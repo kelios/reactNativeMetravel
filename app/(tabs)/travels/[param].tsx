@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
-  ActivityIndicator,
+  ActivityIndicator, Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -22,6 +22,7 @@ import PopularTravelList from '@/components/travel/PopularTravelList';
 import MapClientSideComponent from '@/components/Map';
 import TravelDescription from '@/components/travel/TravelDescription';
 import ToggleableMapSection from '@/components/travel/ToggleableMapSection';
+import {WebView} from "react-native-webview";
 
 const TravelDetails: React.FC = () => {
   const searchParams = useLocalSearchParams();
@@ -80,6 +81,11 @@ const TravelDetails: React.FC = () => {
       },
       []
   );
+
+  const convertYouTubeLink = (url: string): string | null => {
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  };
 
   useEffect(() => {
     setTravel(null); // 💣 очистка старого travel
@@ -163,7 +169,21 @@ const TravelDetails: React.FC = () => {
 
                 {travel.youtube_link && (
                     <View ref={refs.videoRef} style={styles.card}>
-                      <View style={[styles.videoContainer, { height: height * 0.7 }]} />
+                      <View style={[styles.videoContainer, { height: height * 0.7 }]} >
+                      {Platform.OS === 'web' ? (
+                          <div style={{ width: '100%', height: '100%' }}>
+                            <iframe
+                                src={convertYouTubeLink(travel.youtube_link) ?? ''}
+                                width="100%"
+                                height="100%"
+                                style={{ border: 'none' }}
+                                allowFullScreen
+                            />
+                          </div>
+                      ) : (
+                          <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) ?? '' }} style={{ flex: 1 }} />
+                      )}
+                    </View>
                     </View>
                 )}
 
