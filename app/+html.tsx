@@ -37,6 +37,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
             />
             <meta name="twitter:image" content="https://metravel.by/og-preview.jpg" />
 
+            <script type="text/javascript" src="https://app.termly.io/resource-blocker/031ae6f7-458d-4853-98e5-098ad6cee542?autoBlock=on" />
             {/* Google Tag Manager */}
             <script async src="https://www.googletagmanager.com/gtag/js?id=G-GBT9YNPXKB"></script>
             <script
