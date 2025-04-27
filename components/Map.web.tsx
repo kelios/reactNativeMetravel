@@ -41,10 +41,28 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
   const isBrowser = typeof window !== 'undefined' && Platform.OS === 'web';
   const [isVisible, setIsVisible] = useState(true);
   const [isReady, setIsReady] = useState(false);
+  const [userCoordinates, setUserCoordinates] = useState<Coordinates | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => setIsReady(true), 100); // ждем готовности DOM
     return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    if (isBrowser && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserCoordinates({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => {
+            console.warn('Не удалось получить геолокацию пользователя:', error.message);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
   }, []);
 
   if (!isBrowser) {
@@ -64,10 +82,9 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
 
   const travelData = travel.data || [];
 
-  const initialCenter: [number, number] = [
-    coordinates.latitude,
-    coordinates.longitude,
-  ];
+  const initialCenter: [number, number] = userCoordinates
+      ? [userCoordinates.latitude, userCoordinates.longitude]
+      : [coordinates.latitude, coordinates.longitude];
 
   const meTravelIcon = useMemo(
       () =>
