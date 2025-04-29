@@ -175,12 +175,44 @@ const MapClientSideComponent: React.FC<Props> = ({
       <View style={styles.wrapper}>
         <MapContainer center={[coordinates.latitude, coordinates.longitude]} zoom={13} style={styles.map}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+
           {!disableFitBounds && <FitBounds />}
           <ClickHandler />
 
+          {/* Маркер старта */}
+          {routePoints.length >= 1 && L && (
+              <Marker
+                  position={[routePoints[0][1], routePoints[0][0]]}
+                  icon={new L.Icon({
+                    iconUrl: require('@/assets/icons/start.ico'),
+                    iconSize: [30, 40],
+                    iconAnchor: [15, 40],
+                    popupAnchor: [0, -40],
+                  })}
+              >
+                <Popup>Старт</Popup>
+              </Marker>
+          )}
+
+          {/* Маркер финиша */}
+          {routePoints.length === 2 && L && (
+              <Marker
+                  position={[routePoints[1][1], routePoints[1][0]]}
+                  icon={new L.Icon({
+                    iconUrl: require('@/assets/icons/end.ico'), // если у тебя пока один файл, можно оставить start.ico
+                    iconSize: [30, 40],
+                    iconAnchor: [15, 40],
+                    popupAnchor: [0, -40],
+                  })}
+              >
+                <Popup>Финиш</Popup>
+              </Marker>
+          )}
+
+          {/* Маршрут */}
           {mode === 'route' && (
               <RoutingMachine
-                  key={JSON.stringify(routePoints)} // ✅ Пересоздание маршрута!
+                  key={JSON.stringify(routePoints)}
                   routePoints={routePoints}
                   transportMode={transportMode}
                   setRoutingLoading={setRoutingLoading}
@@ -190,12 +222,14 @@ const MapClientSideComponent: React.FC<Props> = ({
               />
           )}
 
+          {/* Местоположение пользователя */}
           {userLocation && (
               <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon || undefined}>
                 <Popup>Ваше местоположение</Popup>
               </Marker>
           )}
 
+          {/* Маркеры всех точек */}
           {travel.data.map((p, i) => {
             const ll = strToLatLng(p.coord);
             return ll ? (
@@ -222,13 +256,13 @@ const MapClientSideComponent: React.FC<Props> = ({
             ) : null;
           })}
 
+          {/* Статусы маршрута */}
           {routingLoading && (
               <View style={styles.routingProgress}>
                 <ActivityIndicator size="small" color="#fff" />
                 <Text style={styles.routingProgressText}>Строим маршрут…</Text>
               </View>
           )}
-
           {errors.routing && (
               <View style={styles.routingError}>
                 <Text style={styles.routingErrorText}>Ошибка маршрута</Text>
