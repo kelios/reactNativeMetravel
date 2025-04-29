@@ -37,7 +37,7 @@ let SAVE_TRAVEL = '';
     SETNEWPASSWORD = `${URLAPI}/api/user/set-password-after-reset/`;
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`;
     SAVE_TRAVEL = `${URLAPI}/api/travels/upsert/`;
-export const SEARCH_TRAVELS_NEAR_ROUTE = '/api/travels/near-route';
+export const SEARCH_TRAVELS_NEAR_ROUTE = '/api/travels/near-route/';
 
 
 // Экспортируем некоторые пути

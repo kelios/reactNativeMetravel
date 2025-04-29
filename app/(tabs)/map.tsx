@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+// MapScreen.tsx (обновлённый с кешированием fetchTravels)
+
+import React, { useEffect, useState, useRef } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -6,7 +8,6 @@ import {
   Text,
   useWindowDimensions,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { Button, Icon } from 'react-native-elements';
 import * as Location from 'expo-location';
@@ -47,6 +48,8 @@ export default function MapScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
+  const dataCache = useRef<Record<string, any[]>>({});
+
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -54,25 +57,17 @@ export default function MapScreen() {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
           const loc = await Location.getCurrentPositionAsync({});
-          if (isMounted) {
-            setCoordinates({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
-          }
+          if (isMounted) setCoordinates({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
         } else {
           console.log('Геолокация запрещена, fallback Минск');
-          if (isMounted) {
-            setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
-          }
+          if (isMounted) setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
         }
       } catch (error) {
         console.log('Ошибка геолокации:', error);
-        if (isMounted) {
-          setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
-        }
+        if (isMounted) setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
       }
     })();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -81,19 +76,13 @@ export default function MapScreen() {
       try {
         const newData = await fetchFiltersMap();
         if (isMounted) {
-          setFilters({
-            categories: newData?.categories || [],
-            radius: newData?.radius || [],
-            address: '',
-          });
+          setFilters({ categories: newData?.categories || [], radius: newData?.radius || [], address: '' });
         }
       } catch (error) {
         console.log('Ошибка загрузки фильтров:', error);
       }
     })();
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -102,17 +91,36 @@ export default function MapScreen() {
     }
   }, [filters.radius]);
 
+  const getCacheKey = () => {
+    if (!coordinates) return '';
+    if (mode === 'route') {
+      return `route:${JSON.stringify(fullRouteCoords)}`;
+    }
+    return `radius:${filterValue.radius}:${coordinates.latitude}:${coordinates.longitude}`;
+  };
+
   useEffect(() => {
     if (!filterValue.radius || !coordinates) return;
     let isMounted = true;
+    const key = getCacheKey();
 
     (async () => {
+      if (dataCache.current[key]) {
+        console.log('📦 Из кеша:', key);
+        if (isMounted) {
+          if (mode === 'route') setPlacesAlongRoute(dataCache.current[key]);
+          else setRawTravelsData(dataCache.current[key]);
+        }
+        return;
+      }
+
       try {
         let data = [];
         if (mode === 'route' && fullRouteCoords.length >= 2) {
           data = await fetchTravelsNearRoute(fullRouteCoords, 20);
           if (isMounted) {
-            setPlacesAlongRoute(data || []);
+            setPlacesAlongRoute(data);
+            dataCache.current[key] = data;
             setRawTravelsData([]);
           }
         } else {
@@ -122,7 +130,8 @@ export default function MapScreen() {
             lng: coordinates.longitude,
           });
           if (isMounted) {
-            setRawTravelsData(data || []);
+            setRawTravelsData(data);
+            dataCache.current[key] = data;
             setPlacesAlongRoute([]);
           }
         }
@@ -131,34 +140,26 @@ export default function MapScreen() {
       }
     })();
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [filterValue.radius, currentPage, itemsPerPage, fullRouteCoords, coordinates, mode]);
 
   useEffect(() => {
     const normalize = (str: string) => str.trim().toLowerCase();
     const selectedCategories = filterValue.categories.map(normalize);
-
     const filtered = rawTravelsData.filter(travel => {
       const travelCategories = travel.categoryName?.split(',').map(normalize) || [];
       const categoryMatch = selectedCategories.length === 0 || travelCategories.some(cat => selectedCategories.includes(cat));
       const addressMatch = !filterValue.address || (travel.address && travel.address.toLowerCase().includes(filterValue.address.toLowerCase()));
       return categoryMatch && addressMatch;
     });
-
     setTravelsData(filtered);
   }, [filterValue.categories, filterValue.address, rawTravelsData]);
 
-  const onFilterChange = (field: string, value: any) => {
-    setFilterValue(prev => ({ ...prev, [field]: value }));
-  };
-
-  const onTextFilterChange = (value: string) => {
-    setFilterValue(prev => ({ ...prev, address: value }));
-  };
+  const onFilterChange = (field: string, value: any) => setFilterValue(prev => ({ ...prev, [field]: value }));
+  const onTextFilterChange = (value: string) => setFilterValue(prev => ({ ...prev, address: value }));
 
   const resetFilters = () => {
+    dataCache.current = {}; // 💥 Очищаем кеш при сбросе
     setFilterValue({ radius: filters.radius[0]?.id || '', categories: [], address: '' });
     setStartAddress('');
     setEndAddress('');
