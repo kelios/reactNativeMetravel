@@ -54,7 +54,6 @@ const RadiusSelect: React.FC<RadiusSelectProps> = ({
 
     const renderWebSelect = () => (
         <View style={[styles.container, disabled && styles.disabled]}>
-            <Text style={styles.label}>{label}</Text>
             <div style={{ position: 'relative' }}>
                 <select
                     value={value ?? ''}

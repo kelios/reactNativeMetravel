@@ -37,6 +37,7 @@ let SAVE_TRAVEL = '';
     SETNEWPASSWORD = `${URLAPI}/api/user/set-password-after-reset/`;
     GET_LIST_COUNTRIES = `${URLAPI}/location/countries`;
     SAVE_TRAVEL = `${URLAPI}/api/travels/upsert/`;
+export const SEARCH_TRAVELS_NEAR_ROUTE = '/api/travels/near-route';
 
 
 // Экспортируем некоторые пути
@@ -438,12 +439,15 @@ export const fetchTravelsForMap = async (
 ): Promise<TravelsForMap> => {
     try {
         const radius = parseInt(filter?.radius ?? '60', 10);
+        const lat = filter?.lat ?? '53.9006';
+        const lng = filter?.lng ?? '27.5590';
+
         const whereObject = {
             publish: 1,
             moderation: 1,
-            lat: 50.0170649,
-            lng: 19.8933367,
-            radius: radius,
+            lat,
+            lng,
+            radius,
         };
 
         const paramsObj = {
@@ -457,7 +461,39 @@ export const fetchTravelsForMap = async (
         const res = await fetch(urlTravel);
         return await res.json();
     } catch (e) {
-        console.log('Error fetching fetchTravelsNear:', e);
+        console.log('Error fetching fetchTravelsForMap:', e);
+        return [];
+    }
+};
+
+
+export const fetchTravelsNearRoute = async (
+    routeCoords: [number, number][], // массив [lng, lat]
+    toleranceKm: number = 5, // радиус в километрах от маршрута
+): Promise<TravelsForMap> => {
+    try {
+        const body = {
+            route: {
+                type: 'LineString',
+                coordinates: routeCoords,
+            },
+            tolerance: toleranceKm,
+        };
+
+        const res = await fetch(SEARCH_TRAVELS_NEAR_ROUTE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+            console.log('Ошибка при загрузке маршрута:', await res.text());
+            return [];
+        }
+
+        return await res.json();
+    } catch (e) {
+        console.log('Error fetching fetchTravelsNearRoute:', e);
         return [];
     }
 };

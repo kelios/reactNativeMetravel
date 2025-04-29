@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
-import LabelText from './LabelText';
-import { MapPin, SendHorizonal } from 'lucide-react-native';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import * as Location from 'expo-location';
+import RoutingMachine from '@/components/MapPage/RoutingMachine';
 
 export type Point = {
   id: number;
@@ -13,238 +13,256 @@ export type Point = {
   urlTravel?: string;
 };
 
-type TravelPropsType = {
-  data?: Point[];
-};
-
 interface Coordinates {
   latitude: number;
   longitude: number;
 }
 
-interface MapClientSideProps {
-  travel?: TravelPropsType;
-  coordinates?: Coordinates | null;
-  showRoute?: boolean;
+interface Props {
+  travel?: { data?: Point[] };
+  coordinates: Coordinates;
+  routePoints: [number, number][];
+  setRoutePoints: (points: [number, number][]) => void;
+  onMapClick: (lng: number, lat: number) => void;
+  mode: 'radius' | 'route';
+  transportMode: 'car' | 'bike' | 'foot';
+  setRouteDistance: (distance: number) => void;
 }
 
-const getLatLng = (latlng: string): [number, number] | null => {
-  if (!latlng) return null;
-  const [lat, lng] = latlng.split(',').map(Number);
-  return isNaN(lat) || isNaN(lng) ? null : [lat, lng];
+const DEFAULT_CENTER: [number, number] = [53.8828449, 27.7273595];
+
+const strToLatLng = (s: string): [number, number] | null => {
+  const [lat, lng] = s.split(',').map(Number);
+  return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
 };
 
-const MapClientSideComponent: React.FC<MapClientSideProps> = ({
-                                                                travel = { data: [] },
-                                                                coordinates = { latitude: 53.8828449, longitude: 27.7273595 },
-                                                              }) => {
-  const isBrowser = typeof window !== 'undefined' && Platform.OS === 'web';
-  const [isVisible, setIsVisible] = useState(true);
-  const [isReady, setIsReady] = useState(false);
-  const [userCoordinates, setUserCoordinates] = useState<Coordinates | null>(null);
+const MapClientSideComponent: React.FC<Props> = ({
+                                                   travel = { data: [] },
+                                                   coordinates,
+                                                   routePoints,
+                                                   setRoutePoints,
+                                                   onMapClick,
+                                                   mode,
+                                                   transportMode,
+                                                   setRouteDistance,
+                                                 }) => {
+  const [leafletModules, setLeafletModules] = useState<null | any>(null);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [errors, setErrors] = useState<{ location?: boolean; loadingModules?: boolean; routing?: boolean }>({});
+  const [loading, setLoading] = useState(true);
+  const [routingLoading, setRoutingLoading] = useState(false);
+  const [disableFitBounds, setDisableFitBounds] = useState(false);
+
+  const ORS_API_KEY = process.env.EXPO_PUBLIC_ROUTE_SERVICE!;
 
   useEffect(() => {
-    const timeout = setTimeout(() => setIsReady(true), 100); // ждем готовности DOM
-    return () => clearTimeout(timeout);
+    if (typeof window === 'undefined') return;
+
+    const loadLeaflet = async () => {
+      try {
+        const L = await import('leaflet');
+        (window as any).L = L;
+        await import('leaflet/dist/leaflet.css');
+        await import('leaflet-routing-machine');
+        await import('leaflet-routing-machine/dist/leaflet-routing-machine.css');
+        const RL = await import('react-leaflet');
+        setLeafletModules({ L, ...RL });
+      } catch (e) {
+        console.error('Ошибка загрузки Leaflet:', e);
+        setErrors(prev => ({ ...prev, loadingModules: true }));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLeaflet();
   }, []);
 
   useEffect(() => {
-    if (isBrowser && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserCoordinates({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            });
-          },
-          (error) => {
-            console.warn('Не удалось получить геолокацию пользователя:', error.message);
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    }
+    const requestLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') throw new Error('Разрешение на геолокацию не получено');
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      } catch (e) {
+        console.error('Ошибка получения локации:', e);
+        setErrors(prev => ({ ...prev, location: true }));
+      }
+    };
+
+    requestLocation();
   }, []);
 
-  if (!isBrowser) {
-    return <Text style={{ padding: 20 }}>Карта доступна только в браузере</Text>;
-  }
+  const { L, MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } = leafletModules || {};
 
-  const leaflet = require('leaflet');
-  const {
-    MapContainer,
-    TileLayer,
-    Marker,
-    Popup,
-    useMap,
-  } = require('react-leaflet');
+  const meTravelIcon = useMemo(() => {
+    if (!L) return null;
+    return new L.Icon({
+      iconUrl: require('@/assets/icons/logo_yellow.ico'),
+      iconSize: [27, 30],
+      iconAnchor: [13, 30],
+      popupAnchor: [0, -30],
+    });
+  }, [L]);
 
-  require('leaflet/dist/leaflet.css');
+  const userLocationIcon = useMemo(() => {
+    if (!L) return null;
+    return new L.Icon({
+      iconUrl: require('@/assets/icons/user_location.ico'),
+      iconSize: [27, 30],
+      iconAnchor: [13, 30],
+      popupAnchor: [0, -30],
+    });
+  }, [L]);
 
-  const travelData = travel.data || [];
+  const handleMapClick = useCallback((e: any) => {
+    if (mode !== 'route' || routePoints.length >= 2) return;
+    setRoutePoints([...routePoints, [e.latlng.lng, e.latlng.lat]]);
+    setDisableFitBounds(true);
+    onMapClick(e.latlng.lng, e.latlng.lat);
+  }, [mode, routePoints, setRoutePoints, onMapClick]);
 
-  const initialCenter: [number, number] = userCoordinates
-      ? [userCoordinates.latitude, userCoordinates.longitude]
-      : [coordinates.latitude, coordinates.longitude];
+  const allPoints = useMemo(() => {
+    const points: [number, number][] = [];
+    if (userLocation) points.push([userLocation.latitude, userLocation.longitude]);
+    travel.data.forEach(p => {
+      const coords = strToLatLng(p.coord);
+      if (coords) points.push(coords);
+    });
+    return points;
+  }, [travel.data, userLocation]);
 
-  const meTravelIcon = useMemo(
-      () =>
-          new leaflet.Icon({
-            iconUrl: require('@/assets/icons/logo_yellow.ico'),
-            iconSize: [27, 30],
-            iconAnchor: [13, 30],
-            popupAnchor: [0, -30],
-          }),
-      []
-  );
-
-  const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
+  const FitBounds: React.FC = () => {
     const map = useMap();
+    const pointsToFit = mode === 'route' && routePoints.length
+        ? routePoints.map(p => L.latLng(p[1], p[0]))
+        : allPoints.map(p => L.latLng(p));
 
     useEffect(() => {
-      const coords = data.map((p) => getLatLng(p.coord)).filter(Boolean) as [number, number][];
-      if (!coords.length) return;
-
-      const bounds = leaflet.latLngBounds(coords);
-      if (bounds.isValid()) {
-        requestAnimationFrame(() => {
-          map.fitBounds(bounds, { padding: [50, 50] });
-        });
-      }
-    }, [map, data]);
+      if (disableFitBounds || !pointsToFit.length) return;
+      const bounds = L.latLngBounds(pointsToFit);
+      map.fitBounds(bounds.pad(0.2));
+    }, [map, pointsToFit, disableFitBounds]);
 
     return null;
   };
 
+  const ClickHandler: React.FC = () => {
+    useMapEvents({ click: handleMapClick });
+    return null;
+  };
+
+  if (loading || !leafletModules) {
+    return <Loader message="Загрузка карты..." />;
+  }
+
+  if (errors.loadingModules) {
+    return <Error message="Не удалось загрузить карту." />;
+  }
+
   return (
-      <View style={styles.mapContainer}>
-        {isReady && (
-            <MapContainer
-                center={initialCenter}
-                zoom={7}
-                style={{ height: '100%', width: '100%' }}
-                scrollWheelZoom
-            >
-              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-              <FitBoundsOnData data={travelData} />
+      <View style={styles.wrapper}>
+        <MapContainer center={[coordinates.latitude, coordinates.longitude]} zoom={13} style={styles.map}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+          <FitBounds />
+          <ClickHandler />
 
-              {travelData.map((point, index) => {
-                const latLng = getLatLng(point.coord);
-                if (!latLng) return null;
+          {mode === 'route' && (
+              <RoutingMachine
+                  key={JSON.stringify(routePoints)} // ✅ Пересоздание маршрута!
+                  routePoints={routePoints}
+                  transportMode={transportMode}
+                  setRoutingLoading={setRoutingLoading}
+                  setErrors={setErrors}
+                  setRouteDistance={setRouteDistance}
+                  ORS_API_KEY={ORS_API_KEY}
+              />
+          )}
 
-                return (
-                    <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
-                      <Popup>
-                        <View style={styles.popupCard}>
-                          {point.travelImageThumbUrl ? (
-                              <Image
-                                  source={{ uri: point.travelImageThumbUrl }}
-                                  style={styles.pointImage}
-                                  resizeMode="contain"
-                              />
-                          ) : (
-                              <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
-                          )}
+          {userLocation && (
+              <Marker position={[userLocation.latitude, userLocation.longitude]} icon={userLocationIcon || undefined}>
+                <Popup>Ваше местоположение</Popup>
+              </Marker>
+          )}
 
-                          <Pressable
-                              onPress={() => {
-                                const url = point.articleUrl || point.urlTravel;
-                                if (url) Linking.openURL(url);
-                              }}
-                              style={styles.textContainer}
+          {travel.data.map((p, i) => {
+            const ll = strToLatLng(p.coord);
+            return ll ? (
+                <Marker key={p.id ?? i} position={ll} icon={meTravelIcon || undefined}>
+                  <Popup>
+                    <View style={styles.popup}>
+                      {p.travelImageThumbUrl ? (
+                          <Image source={{ uri: p.travelImageThumbUrl }} style={styles.img} />
+                      ) : (
+                          <Text style={styles.noImg}>Нет фото</Text>
+                      )}
+                      <Text style={styles.addr}>{p.address}</Text>
+                      {(p.articleUrl || p.urlTravel) && (
+                          <Text
+                              style={styles.link}
+                              onPress={() => typeof window !== 'undefined' && window.open(p.articleUrl || p.urlTravel)}
                           >
-                            <Text style={styles.addressCompact}>{point.address}</Text>
-                            <LabelText label="Координаты:" text={point.coord} />
-                            {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
-                          </Pressable>
+                            Подробнее
+                          </Text>
+                      )}
+                    </View>
+                  </Popup>
+                </Marker>
+            ) : null;
+          })}
 
-                          <View style={styles.iconRow}>
-                            <Pressable
-                                onPress={() => {
-                                  const url = `https://www.google.com/maps/search/?api=1&query=${point.coord}`;
-                                  Linking.openURL(url);
-                                }}
-                                style={styles.iconBtn}
-                            >
-                              <MapPin size={18} color="#FF8C49" />
-                            </Pressable>
+          {routingLoading && (
+              <View style={styles.routingProgress}>
+                <ActivityIndicator size="small" color="#fff" />
+                <Text style={styles.routingProgressText}>Строим маршрут…</Text>
+              </View>
+          )}
 
-                            <Pressable
-                                onPress={() => {
-                                  const msg = encodeURIComponent(`Глянь, какая точка: ${point.coord}`);
-                                  const url = `https://t.me/share/url?url=${msg}`;
-                                  Linking.openURL(url);
-                                }}
-                                style={styles.iconBtn}
-                            >
-                              <SendHorizonal size={18} color="#FF8C49" />
-                            </Pressable>
-                          </View>
-                        </View>
-                      </Popup>
-                    </Marker>
-                );
-              })}
-            </MapContainer>
-        )}
+          {errors.routing && (
+              <View style={styles.routingError}>
+                <Text style={styles.routingErrorText}>Ошибка маршрута</Text>
+              </View>
+          )}
+        </MapContainer>
       </View>
   );
 };
 
-export default MapClientSideComponent;
+const Loader = ({ message }: { message: string }) => (
+    <View style={styles.loader}>
+      <ActivityIndicator size="large" />
+      <Text>{message}</Text>
+    </View>
+);
+
+const Error = ({ message }: { message: string }) => (
+    <View style={styles.loader}>
+      <Text>{message}</Text>
+    </View>
+);
 
 const styles = StyleSheet.create({
-  mapContainer: {
-    flex: 1,
-    width: '100%',
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
+  wrapper: { flex: 1, borderRadius: 16, overflow: 'hidden' },
+  map: { width: '100%', height: '100%' },
+  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  popup: { padding: 8, backgroundColor: '#fff', borderRadius: 4, maxWidth: 240 },
+  img: { width: '100%', height: 100, borderRadius: 8, marginBottom: 6 },
+  noImg: { fontStyle: 'italic', color: '#888', marginBottom: 6 },
+  addr: { fontWeight: '500', marginBottom: 4, fontSize: 14 },
+  link: { color: '#007AFF', textDecorationLine: 'underline', marginTop: 4 },
+  routingProgress: {
+    position: 'absolute', top: 60, left: '10%', right: '10%',
+    backgroundColor: 'rgba(100,100,255,0.9)', padding: 10,
+    borderRadius: 8, zIndex: 1000, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
   },
-  popupCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 8,
-    width: 220,
-    maxWidth: 240,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+  routingProgressText: { color: '#fff', marginLeft: 8 },
+  routingError: {
+    position: 'absolute', top: 20, left: '10%', right: '10%',
+    backgroundColor: 'rgba(255,80,80,0.9)', padding: 10,
+    borderRadius: 8, zIndex: 1000, alignItems: 'center',
   },
-  pointImage: {
-    width: '100%',
-    height: 100,
-    borderRadius: 10,
-    marginBottom: 8,
-    backgroundColor: '#f2f2f2',
-  },
-  fallbackText: {
-    marginBottom: 6,
-    color: '#666',
-    fontStyle: 'italic',
-    fontSize: 13,
-  },
-  textContainer: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  addressCompact: {
-    fontSize: 13,
-    color: '#333',
-    marginBottom: 6,
-    lineHeight: 16,
-    fontWeight: '500',
-  },
-  iconRow: {
-    marginTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 4,
-  },
-  iconBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: '#f6f6f6',
-  },
+  routingErrorText: { color: '#fff', fontWeight: '600' },
 });
+
+export default MapClientSideComponent;

@@ -1,63 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import PropTypes from 'prop-types';
+import React, { useState } from 'react';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 
-let MapClientSideComponent = null;
-if (typeof window !== 'undefined') {
-    // Импортируем компонент только на клиенте
+let MapClientSideComponent: React.FC<any> | null = null;
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
     MapClientSideComponent = require('@/components/Map').default;
 }
 
-const LoadingIndicator = () => (
-    <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#ff9f5a" accessibilityLabel="Loading map" />
-    </View>
-);
+interface MapPanelProps {
+    travelsData: any[];
+    coordinates: { latitude: number; longitude: number };
+    routePoints?: [number, number][];
+    placesAlongRoute?: any[];
+    mode?: 'radius' | 'route';
+    setRoutePoints?: (points: [number, number][]) => void;
+    onMapClick?: (lng: number, lat: number) => void;
+    transportMode?: 'car' | 'bike' | 'foot';
+    setRouteDistance: (distance: number) => void; // ✅ добавили
+}
 
-const MapPanel = ({ travelsData, coordinates, style = {} }) => {
-    const [isClient, setIsClient] = useState(false);
+const MapPanel: React.FC<MapPanelProps> = ({
+                                               travelsData,
+                                               coordinates,
+                                               routePoints = [],
+                                               placesAlongRoute = [],
+                                               mode = 'radius',
+                                               setRoutePoints = () => {},
+                                               onMapClick = () => {},
+                                               transportMode = 'car',
+                                               setRouteDistance, // ✅ добавили
+                                           }) => {
+    const [isBrowser, setIsBrowser] = useState(Platform.OS === 'web');
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+    if (!isBrowser || !MapClientSideComponent) {
+        return (
+            <View style={styles.placeholder}>
+                <Text style={styles.placeholderText}>Карта доступна только в браузере</Text>
+            </View>
+        );
+    }
 
     return (
-        <View style={[styles.map, style]}>
-            {isClient && MapClientSideComponent ? (
-                <MapClientSideComponent travel={{ data: travelsData }} coordinates={coordinates} />
-            ) : (
-                <LoadingIndicator />
-            )}
+        <View style={styles.mapContainer}>
+            <MapClientSideComponent
+                travel={{ data: travelsData }}
+                coordinates={coordinates}
+                routePoints={routePoints}
+                placesAlongRoute={placesAlongRoute}
+                mode={mode}
+                setRoutePoints={setRoutePoints}
+                onMapClick={onMapClick}
+                transportMode={transportMode}
+                setRouteDistance={setRouteDistance} // ✅ ПЕРЕДАЁМ!
+            />
         </View>
     );
 };
 
-MapPanel.propTypes = {
-    travelsData: PropTypes.array.isRequired,
-    coordinates: PropTypes.shape({
-        latitude: PropTypes.number.isRequired,
-        longitude: PropTypes.number.isRequired,
-    }).isRequired,
-    style: PropTypes.object,
-};
-
-export default React.memo(MapPanel);
+export default MapPanel;
 
 const styles = StyleSheet.create({
-    map: {
+    mapContainer: {
         flex: 1,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 5,
-        margin: 10,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
     },
-    loadingContainer: {
+    placeholder: {
         flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+    },
+    placeholderText: {
+        fontSize: 16,
+        color: '#666',
     },
 });

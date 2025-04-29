@@ -1,11 +1,5 @@
 import React, { useRef } from 'react';
-import {
-    FlatList,
-    Text,
-    View,
-    StyleSheet,
-    useWindowDimensions,
-} from 'react-native';
+import { FlatList, Text, View, StyleSheet, useWindowDimensions, Button as RNButton } from 'react-native';
 import AddressListItem from '@/components/MapPage/AddressListItem';
 import PaginationComponent from '@/components/PaginationComponent';
 
@@ -16,6 +10,7 @@ const TravelListPanel = ({
                              itemsPerPageOptions,
                              onPageChange,
                              onItemsPerPageChange,
+                             buildRouteTo, // ➔ новый проп
                          }) => {
     const isLoading = travelsData === null;
     const totalItems = travelsData?.length || 0;
@@ -55,10 +50,17 @@ const TravelListPanel = ({
                         ref={listRef}
                         data={paginatedData}
                         renderItem={({ item }) => (
-                            <AddressListItem
-                                travel={item}
-                                isMobile={isMobile}
-                            />
+                            <View style={styles.itemWrapper}>
+                                <AddressListItem
+                                    travel={item}
+                                    isMobile={isMobile}
+                                />
+                                <RNButton
+                                    title="Маршрут сюда"
+                                    onPress={() => buildRouteTo(item)}
+                                    color="#6AAAAA"
+                                />
+                            </View>
                         )}
                         keyExtractor={(item, index) =>
                             item?.id?.toString() || index.toString()
@@ -136,6 +138,17 @@ const styles = StyleSheet.create({
     },
     paginationWrapper: {
         marginTop: 12,
+    },
+    itemWrapper: {
+        paddingHorizontal: 8,
+        paddingVertical: 6,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        marginBottom: 10,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
     },
 });
 
