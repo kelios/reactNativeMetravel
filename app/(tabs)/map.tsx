@@ -168,6 +168,7 @@ export default function MapScreen() {
   const buildRouteTo = async (dest: any) => {
     const [lat, lng] = dest.coord.split(',').map(Number);
     const destAddr = await getAddressFromCoords(lat, lng);
+    (window as any).disableFitBounds = false;
     setRoutePoints([
       [coordinates!.longitude, coordinates!.latitude],
       [lng, lat],

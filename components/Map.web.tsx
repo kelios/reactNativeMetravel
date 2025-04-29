@@ -175,7 +175,7 @@ const MapClientSideComponent: React.FC<Props> = ({
       <View style={styles.wrapper}>
         <MapContainer center={[coordinates.latitude, coordinates.longitude]} zoom={13} style={styles.map}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-          <FitBounds />
+          {!disableFitBounds && <FitBounds />}
           <ClickHandler />
 
           {mode === 'route' && (

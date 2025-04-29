@@ -172,9 +172,11 @@ const RoutingMachine: React.FC<RoutingMachineProps> = ({
                         setRouteDistance(route.summary.totalDistance);
                     }
 
+                    if ((window as any).disableFitBounds) return; // 👈 прочитать глобальную переменную
                     const bounds = L.latLngBounds(
                         route.coordinates.map((latlng: any) => L.latLng(latlng.lat, latlng.lng))
                     );
+                    (window as any).disableFitBounds = false;
                     map.fitBounds(bounds.pad(0.2));
                 });
 
