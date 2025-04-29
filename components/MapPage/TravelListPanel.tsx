@@ -52,11 +52,6 @@ const TravelListPanel = ({
                         renderItem={({ item }) => (
                             <View style={styles.itemWrapper}>
                                 <AddressListItem travel={item} isMobile={isMobile} />
-                                <RNButton
-                                    title="Маршрут сюда"
-                                    onPress={() => buildRouteTo(item)}
-                                    color="#6AAAAA"
-                                />
                             </View>
                         )}
                         keyExtractor={(item, index) => item?.id?.toString() || index.toString()}

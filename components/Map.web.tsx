@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator, Platform } from 'react-native';
-import * as Location from 'expo-location';
-import RoutingMachine from '@/components/MapPage/RoutingMachine';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import LabelText from './LabelText';
+import { MapPin, SendHorizonal } from 'lucide-react-native';
 
-type Point = {
-  id?: number; // Сделали id опциональным
+export type Point = {
+  id: number;
   coord: string;
   address: string;
   travelImageThumbUrl: string;
@@ -13,413 +13,221 @@ type Point = {
   urlTravel?: string;
 };
 
+type TravelPropsType = {
+  data?: Point[];
+};
+
 interface Coordinates {
   latitude: number;
   longitude: number;
 }
 
-type TransportMode = 'car' | 'bike' | 'foot';
-type MapMode = 'radius' | 'route';
-
-interface LeafletModules {
-  L: typeof import('leaflet');
-  MapContainer: React.ComponentType<any>;
-  TileLayer: React.ComponentType<any>;
-  Marker: React.ComponentType<any>;
-  Popup: React.ComponentType<any>;
-  useMap: () => any;
-  useMapEvents: (events: any) => void;
+interface MapClientSideProps {
+  travel?: TravelPropsType;
+  coordinates?: Coordinates | null;
+  showRoute?: boolean;
 }
 
-interface Props {
-  travel?: { data?: Point[] };
-  coordinates: Coordinates;
-  routePoints: [number, number][];
-  setRoutePoints: (points: [number, number][]) => void;
-  onMapClick: (lng: number, lat: number) => void;
-  mode: MapMode;
-  transportMode: TransportMode;
-  setRouteDistance: (distance: number) => void;
-  setFullRouteCoords: (coords: [number, number][]) => void;
-}
-
-const strToLatLng = (s: string): [number, number] | null => {
-  const [lat, lng] = s.split(',').map(Number);
-  return Number.isFinite(lat) && Number.isFinite(lng) ? [lng, lat] : null;
+const getLatLng = (latlng: string): [number, number] | null => {
+  if (!latlng) return null;
+  const [lat, lng] = latlng.split(',').map(Number);
+  return isNaN(lat) || isNaN(lng) ? null : [lat, lng];
 };
 
-const generateUniqueKey = (point: Point, index: number, coords: [number, number] | null): string => {
-  if (point.id) return `point-${point.id}`;
-  if (coords) return `point-${index}-${coords.join('-')}`;
-  return `point-${index}-${Date.now()}`;
-};
-
-const MapClientSideComponent: React.FC<Props> = ({
-                                                   travel = { data: [] },
-                                                   coordinates,
-                                                   routePoints,
-                                                   setRoutePoints,
-                                                   onMapClick,
-                                                   mode,
-                                                   transportMode,
-                                                   setRouteDistance,
-                                                   setFullRouteCoords,
-                                                 }) => {
-  const [leafletModules, setLeafletModules] = useState<LeafletModules | null>(null);
-  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  const [errors, setErrors] = useState({
-    location: false,
-    loadingModules: false,
-    routing: false,
-  });
-  const [loading, setLoading] = useState(true);
-  const [routingLoading, setRoutingLoading] = useState(false);
-  const [disableFitBounds, setDisableFitBounds] = useState(false);
-
-  const ORS_API_KEY = process.env.EXPO_PUBLIC_ROUTE_SERVICE;
-  if (!ORS_API_KEY) console.warn('ORS API key is missing');
-
-  const customIcons = useMemo(() => {
-    if (!leafletModules?.L) return null;
-
-    return {
-      meTravel: new leafletModules.L.Icon({
-        iconUrl: require('@/assets/icons/logo_yellow.ico'),
-        iconSize: [27, 30],
-        iconAnchor: [13, 30],
-        popupAnchor: [0, -30],
-      }),
-      userLocation: new leafletModules.L.Icon({
-        iconUrl: require('@/assets/icons/user_location.ico'),
-        iconSize: [27, 30],
-        iconAnchor: [13, 30],
-        popupAnchor: [0, -30],
-      }),
-      start: new leafletModules.L.Icon({
-        iconUrl: require('@/assets/icons/start.ico'),
-        iconSize: [30, 40],
-        iconAnchor: [15, 40],
-        popupAnchor: [0, -40],
-      }),
-      end: new leafletModules.L.Icon({
-        iconUrl: require('@/assets/icons/end.ico'),
-        iconSize: [30, 40],
-        iconAnchor: [15, 40],
-        popupAnchor: [0, -40],
-      }),
-    };
-  }, [leafletModules?.L]);
+const MapClientSideComponent: React.FC<MapClientSideProps> = ({
+                                                                travel = { data: [] },
+                                                                coordinates = { latitude: 53.8828449, longitude: 27.7273595 },
+                                                              }) => {
+  const isBrowser = typeof window !== 'undefined' && Platform.OS === 'web';
+  const [isVisible, setIsVisible] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const loadLeaflet = async () => {
-      try {
-        const L = await import('leaflet');
-        (window as any).L = L;
-
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-          iconUrl: require('leaflet/dist/images/marker-icon.png'),
-          shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-        });
-
-        if (Platform.OS === 'web') {
-          await import('leaflet/dist/leaflet.css');
-          await import('leaflet-routing-machine/dist/leaflet-routing-machine.css');
-        }
-
-        await import('leaflet-routing-machine');
-        const RL = await import('react-leaflet');
-
-        setLeafletModules({ L, ...RL });
-      } catch (error) {
-        console.error('Error loading Leaflet:', error);
-        setErrors(prev => ({ ...prev, loadingModules: true }));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLeaflet();
+    const timeout = setTimeout(() => setIsReady(true), 100); // ждем готовности DOM
+    return () => clearTimeout(timeout);
   }, []);
 
-  useEffect(() => {
-    const requestLocation = async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') throw new Error('Permission denied');
-
-        const loc = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.BestForNavigation,
-        });
-
-        setUserLocation({
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude
-        });
-      } catch (error) {
-        console.error('Location error:', error);
-        setErrors(prev => ({ ...prev, location: true }));
-      }
-    };
-
-    requestLocation();
-  }, []);
-
-  const handleMapClick = useCallback((e: any) => {
-    if (mode !== 'route' || routePoints.length >= 2) return;
-
-    const newPoint: [number, number] = [e.latlng.lng, e.latlng.lat];
-    setRoutePoints([...routePoints, newPoint]);
-    setDisableFitBounds(true);
-    onMapClick(e.latlng.lng, e.latlng.lat);
-  }, [mode, routePoints, setRoutePoints, onMapClick]);
-
-  if (loading || !leafletModules) {
-    return <Loader message="Loading map..." />;
+  if (!isBrowser) {
+    return <Text style={{ padding: 20 }}>Карта доступна только в браузере</Text>;
   }
 
-  if (errors.loadingModules) {
-    return <Error message="Map loading failed" />;
-  }
-
+  const leaflet = require('leaflet');
   const {
     MapContainer,
     TileLayer,
     Marker,
     Popup,
     useMap,
-    useMapEvents,
-  } = leafletModules;
+  } = require('react-leaflet');
 
-  const MapLogic = () => {
+  require('leaflet/dist/leaflet.css');
+
+  const travelData = travel.data || [];
+
+  const initialCenter: [number, number] = [
+    coordinates.latitude,
+    coordinates.longitude,
+  ];
+
+  const meTravelIcon = useMemo(
+      () =>
+          new leaflet.Icon({
+            iconUrl: require('@/assets/icons/logo_yellow.ico'),
+            iconSize: [27, 30],
+            iconAnchor: [13, 30],
+            popupAnchor: [0, -30],
+          }),
+      []
+  );
+
+  const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
     const map = useMap();
 
-    useMapEvents({
-      click: handleMapClick,
-    });
-
     useEffect(() => {
-      if (disableFitBounds || !map || !leafletModules.L) return;
+      const coords = data.map((p) => getLatLng(p.coord)).filter(Boolean) as [number, number][];
+      if (!coords.length) return;
 
-      const points: [number, number][] = mode === 'route' && routePoints.length
-          ? routePoints
-          : (travel.data || [])
-              .map(p => strToLatLng(p.coord))
-              .filter(Boolean) as [number, number][];
-
-      if (points.length) {
-        const bounds = leafletModules.L.latLngBounds(
-            points.map(([lng, lat]) => leafletModules.L.latLng(lat, lng))
-        );
-        map.fitBounds(bounds.pad(0.2));
+      const bounds = leaflet.latLngBounds(coords);
+      if (bounds.isValid()) {
+        requestAnimationFrame(() => {
+          map.fitBounds(bounds, { padding: [50, 50] });
+        });
       }
-    }, [disableFitBounds, mode, routePoints, travel.data, map, leafletModules.L]);
+    }, [map, data]);
 
     return null;
   };
 
   return (
-      <View style={styles.wrapper}>
-        <MapContainer
-            center={[coordinates.latitude, coordinates.longitude]}
-            zoom={13}
-            style={styles.map}
-        >
-          <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          />
+      <View style={styles.mapContainer}>
+        {isReady && (
+            <MapContainer
+                center={initialCenter}
+                zoom={7}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <FitBoundsOnData data={travelData} />
 
-          <MapLogic />
+              {travelData.map((point, index) => {
+                const latLng = getLatLng(point.coord);
+                if (!latLng) return null;
 
-          {routePoints.length >= 1 && customIcons && (
-              <Marker
-                  position={[routePoints[0][1], routePoints[0][0]]}
-                  icon={customIcons.start}
-              >
-                <Popup>Start</Popup>
-              </Marker>
-          )}
+                return (
+                    <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
+                      <Popup>
+                        <View style={styles.popupCard}>
+                          {point.travelImageThumbUrl ? (
+                              <Image
+                                  source={{ uri: point.travelImageThumbUrl }}
+                                  style={styles.pointImage}
+                                  resizeMode="contain"
+                              />
+                          ) : (
+                              <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
+                          )}
 
-          {routePoints.length === 2 && customIcons && (
-              <Marker
-                  position={[routePoints[1][1], routePoints[1][0]]}
-                  icon={customIcons.end}
-              >
-                <Popup>End</Popup>
-              </Marker>
-          )}
-
-          {mode === 'route' && routePoints.length >= 2 && ORS_API_KEY && (
-              <RoutingMachine
-                  routePoints={routePoints}
-                  transportMode={transportMode}
-                  setRoutingLoading={setRoutingLoading}
-                  setErrors={setErrors}
-                  setRouteDistance={setRouteDistance}
-                  setFullRouteCoords={setFullRouteCoords}
-                  ORS_API_KEY={ORS_API_KEY}
-              />
-          )}
-
-          {userLocation && customIcons && (
-              <Marker
-                  position={[userLocation.latitude, userLocation.longitude]}
-                  icon={customIcons.userLocation}
-              >
-                <Popup>Your location</Popup>
-              </Marker>
-          )}
-
-          {customIcons && (travel.data || []).map((point, index) => {
-            const coords = strToLatLng(point.coord);
-            if (!coords) return null;
-
-            return (
-                <Marker
-                    key={generateUniqueKey(point, index, coords)}
-                    position={[coords[1], coords[0]]}
-                    icon={customIcons.meTravel}
-                >
-                  <Popup>
-                    <View style={styles.popup}>
-                      {point.travelImageThumbUrl ? (
-                          <Image
-                              source={{ uri: point.travelImageThumbUrl }}
-                              style={styles.img}
-                          />
-                      ) : (
-                          <Text style={styles.noImg}>No image</Text>
-                      )}
-                      <Text style={styles.addr}>{point.address}</Text>
-                      {(point.articleUrl || point.urlTravel) && (
-                          <Text
-                              style={styles.link}
-                              onPress={() => window.open(point.articleUrl || point.urlTravel)}
+                          <Pressable
+                              onPress={() => {
+                                const url = point.articleUrl || point.urlTravel;
+                                if (url) Linking.openURL(url);
+                              }}
+                              style={styles.textContainer}
                           >
-                            Details
-                          </Text>
-                      )}
-                    </View>
-                  </Popup>
-                </Marker>
-            );
-          })}
+                            <Text style={styles.addressCompact}>{point.address}</Text>
+                            <LabelText label="Координаты:" text={point.coord} />
+                            {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
+                          </Pressable>
 
-          {routingLoading && (
-              <View style={styles.routingProgress}>
-                <ActivityIndicator size="small" color="#fff" />
-                <Text style={styles.routingProgressText}>Building route...</Text>
-              </View>
-          )}
+                          <View style={styles.iconRow}>
+                            <Pressable
+                                onPress={() => {
+                                  const url = `https://www.google.com/maps/search/?api=1&query=${point.coord}`;
+                                  Linking.openURL(url);
+                                }}
+                                style={styles.iconBtn}
+                            >
+                              <MapPin size={18} color="#FF8C49" />
+                            </Pressable>
 
-          {errors.routing && (
-              <View style={styles.routingError}>
-                <Text style={styles.routingErrorText}>Routing error</Text>
-              </View>
-          )}
-        </MapContainer>
+                            <Pressable
+                                onPress={() => {
+                                  const msg = encodeURIComponent(`Глянь, какая точка: ${point.coord}`);
+                                  const url = `https://t.me/share/url?url=${msg}`;
+                                  Linking.openURL(url);
+                                }}
+                                style={styles.iconBtn}
+                            >
+                              <SendHorizonal size={18} color="#FF8C49" />
+                            </Pressable>
+                          </View>
+                        </View>
+                      </Popup>
+                    </Marker>
+                );
+              })}
+            </MapContainer>
+        )}
       </View>
   );
 };
 
-const Loader: React.FC<{ message: string }> = ({ message }) => (
-    <View style={styles.loader}>
-      <ActivityIndicator size="large" />
-      <Text>{message}</Text>
-    </View>
-);
-
-const Error: React.FC<{ message: string }> = ({ message }) => (
-    <View style={styles.loader}>
-      <Text style={styles.errorText}>{message}</Text>
-    </View>
-);
+export default MapClientSideComponent;
 
 const styles = StyleSheet.create({
-  wrapper: {
+  mapContainer: {
     flex: 1,
+    width: '100%',
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#f5f5f5',
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-    minHeight: 300,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    color: '#d32f2f',
-    textAlign: 'center',
-  },
-  popup: {
-    padding: 8,
     backgroundColor: '#fff',
-    borderRadius: 4,
-    maxWidth: 240,
   },
-  img: {
+  popupCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    width: 220,
+    maxWidth: 240,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  pointImage: {
     width: '100%',
     height: 100,
-    borderRadius: 8,
-    marginBottom: 6,
+    borderRadius: 10,
+    marginBottom: 8,
+    backgroundColor: '#f2f2f2',
   },
-  noImg: {
+  fallbackText: {
+    marginBottom: 6,
+    color: '#666',
     fontStyle: 'italic',
-    color: '#888',
+    fontSize: 13,
+  },
+  textContainer: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  addressCompact: {
+    fontSize: 13,
+    color: '#333',
     marginBottom: 6,
-  },
-  addr: {
+    lineHeight: 16,
     fontWeight: '500',
-    marginBottom: 4,
-    fontSize: 14,
   },
-  link: {
-    color: '#007AFF',
-    textDecorationLine: 'underline',
-    marginTop: 4,
-  },
-  routingProgress: {
-    position: 'absolute',
-    top: 60,
-    left: '10%',
-    right: '10%',
-    backgroundColor: 'rgba(100,100,255,0.9)',
-    padding: 10,
-    borderRadius: 8,
-    zIndex: 1000,
+  iconRow: {
+    marginTop: 10,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 4,
   },
-  routingProgressText: {
-    color: '#fff',
-    marginLeft: 8,
-  },
-  routingError: {
-    position: 'absolute',
-    top: 20,
-    left: '10%',
-    right: '10%',
-    backgroundColor: 'rgba(255,80,80,0.9)',
-    padding: 10,
+  iconBtn: {
+    padding: 6,
     borderRadius: 8,
-    zIndex: 1000,
-    alignItems: 'center',
-  },
-  routingErrorText: {
-    color: '#fff',
-    fontWeight: '600',
+    backgroundColor: '#f6f6f6',
   },
 });
-
-export default React.memo(MapClientSideComponent);

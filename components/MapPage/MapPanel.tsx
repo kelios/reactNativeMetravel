@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Platform, Text } from 'react-native';
 
-let MapClientSideComponent: React.FC<any> | null = null;
+let MapPageComponent: React.FC<any> | null = null;
 if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    MapClientSideComponent = require('@/components/Map').default;
+    MapPageComponent = require('@/components/MapPage/Map').default;
 }
 
 interface MapPanelProps {
@@ -33,7 +33,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
                                            }) => {
     const [isBrowser] = useState(Platform.OS === 'web');
 
-    if (!isBrowser || !MapClientSideComponent) {
+    if (!isBrowser || !MapPageComponent) {
         return (
             <View style={styles.placeholder}>
                 <Text style={styles.placeholderText}>Карта доступна только в браузере</Text>
@@ -43,7 +43,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
 
     return (
         <View style={styles.mapContainer}>
-            <MapClientSideComponent
+            <MapPageComponent
                 travel={{ data: travelsData }}
                 coordinates={coordinates}
                 routePoints={routePoints}

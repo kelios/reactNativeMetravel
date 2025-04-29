@@ -1,5 +1,3 @@
-// MapScreen.tsx (обновлённый с кешированием fetchTravels)
-
 import React, { useEffect, useState, useRef } from 'react';
 import {
   SafeAreaView,
