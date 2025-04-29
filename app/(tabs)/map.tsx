@@ -48,32 +48,52 @@ export default function MapScreen() {
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
           const loc = await Location.getCurrentPositionAsync({});
-          setCoordinates({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+          if (isMounted) {
+            setCoordinates({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+          }
         } else {
           console.log('Геолокация запрещена, fallback Минск');
-          setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
+          if (isMounted) {
+            setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
+          }
         }
       } catch (error) {
         console.log('Ошибка геолокации:', error);
-        setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
+        if (isMounted) {
+          setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
+        }
       }
     })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const newData = await fetchFiltersMap();
-        setFilters({ categories: newData?.categories || [], radius: newData?.radius || [], address: '' });
+        if (isMounted) {
+          setFilters({
+            categories: newData?.categories || [],
+            radius: newData?.radius || [],
+            address: '',
+          });
+        }
       } catch (error) {
         console.log('Ошибка загрузки фильтров:', error);
       }
     })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -84,27 +104,36 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (!filterValue.radius || !coordinates) return;
+    let isMounted = true;
 
     (async () => {
       try {
         let data = [];
         if (mode === 'route' && fullRouteCoords.length >= 2) {
           data = await fetchTravelsNearRoute(fullRouteCoords, 20);
-          setPlacesAlongRoute(data || []);
-          setRawTravelsData([]);
+          if (isMounted) {
+            setPlacesAlongRoute(data || []);
+            setRawTravelsData([]);
+          }
         } else {
           data = await fetchTravelsForMap(currentPage, itemsPerPage, {
             radius: filterValue.radius,
             lat: coordinates.latitude,
             lng: coordinates.longitude,
           });
-          setRawTravelsData(data || []);
-          setPlacesAlongRoute([]);
+          if (isMounted) {
+            setRawTravelsData(data || []);
+            setPlacesAlongRoute([]);
+          }
         }
       } catch (error) {
         console.log('Ошибка загрузки travels:', error);
       }
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, [filterValue.radius, currentPage, itemsPerPage, fullRouteCoords, coordinates, mode]);
 
   useEffect(() => {
@@ -121,11 +150,13 @@ export default function MapScreen() {
     setTravelsData(filtered);
   }, [filterValue.categories, filterValue.address, rawTravelsData]);
 
-  const onFilterChange = (field: string, value: any) =>
-      setFilterValue(prev => ({ ...prev, [field]: value }));
+  const onFilterChange = (field: string, value: any) => {
+    setFilterValue(prev => ({ ...prev, [field]: value }));
+  };
 
-  const onTextFilterChange = (value: string) =>
-      setFilterValue(prev => ({ ...prev, address: value }));
+  const onTextFilterChange = (value: string) => {
+    setFilterValue(prev => ({ ...prev, address: value }));
+  };
 
   const resetFilters = () => {
     setFilterValue({ radius: filters.radius[0]?.id || '', categories: [], address: '' });
@@ -135,6 +166,7 @@ export default function MapScreen() {
     setPlacesAlongRoute([]);
     setRouteDistance(null);
     setFullRouteCoords([]);
+    setTravelsData([]);
   };
 
   const getAddressFromCoords = async (lat: number, lng: number) => {
@@ -142,7 +174,7 @@ export default function MapScreen() {
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
       const data = await response.json();
       return data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    } catch (e) {
+    } catch {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     }
   };
