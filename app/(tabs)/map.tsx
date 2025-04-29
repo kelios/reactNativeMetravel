@@ -138,17 +138,6 @@ export default function MapScreen() {
     setRoutePoints([]);
     setPlacesAlongRoute([]);
     setRouteDistance(null);
-
-    if (mode === 'route') {
-      // Показываем уведомление, что нужно заново выбрать точки маршрута
-      if (Platform.OS === 'web') {
-        alert('Маршрут сброшен. Выберите новую стартовую и конечную точку.');
-      } else {
-        // Можешь использовать свой Snackbar или Toast
-        // Например через react-native-root-toast или Snackbar из react-native-paper
-        console.log('Маршрут сброшен. Выберите новую стартовую и конечную точку.');
-      }
-    }
   };
 
   const getAddressFromCoords = async (lat: number, lng: number) => {
