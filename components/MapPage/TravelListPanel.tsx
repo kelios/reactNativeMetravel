@@ -1,3 +1,5 @@
+/* Обновленный файл TravelListPanel.tsx — вынос кнопки "Очистить маршрут" наружу, адаптация под ScrollView */
+
 import React, { useRef } from 'react';
 import { FlatList, Text, View, StyleSheet, useWindowDimensions, Button as RNButton } from 'react-native';
 import AddressListItem from '@/components/MapPage/AddressListItem';
@@ -26,14 +28,12 @@ const TravelListPanel = ({
 
     return (
         <View style={styles.container}>
-            {/* Заголовок */}
             <View style={styles.header}>
                 <Text style={styles.resultsCount}>
                     Найдено {totalItems} объектов
                 </Text>
             </View>
 
-            {/* Список */}
             <View style={styles.listContainer}>
                 {isLoading ? (
                     <FlatList
@@ -42,7 +42,7 @@ const TravelListPanel = ({
                         renderItem={() => <View style={styles.skeletonItem} />}
                         contentContainerStyle={[
                             styles.flatListContent,
-                            { paddingBottom: isMobile ? 80 : 16 }
+                            { paddingBottom: isMobile ? 140 : 16 },
                         ]}
                     />
                 ) : (
@@ -51,10 +51,7 @@ const TravelListPanel = ({
                         data={paginatedData}
                         renderItem={({ item }) => (
                             <View style={styles.itemWrapper}>
-                                <AddressListItem
-                                    travel={item}
-                                    isMobile={isMobile}
-                                />
+                                <AddressListItem travel={item} isMobile={isMobile} />
                                 <RNButton
                                     title="Маршрут сюда"
                                     onPress={() => buildRouteTo(item)}
@@ -62,12 +59,8 @@ const TravelListPanel = ({
                                 />
                             </View>
                         )}
-                        keyExtractor={(item, index) =>
-                            item?.id?.toString() || index.toString()
-                        }
-                        ItemSeparatorComponent={() => (
-                            <View style={{ height: 12 }} />
-                        )}
+                        keyExtractor={(item, index) => item?.id?.toString() || index.toString()}
+                        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
                         ListEmptyComponent={
                             <View style={styles.emptyList}>
                                 <Text style={styles.emptyText}>
@@ -77,13 +70,12 @@ const TravelListPanel = ({
                         }
                         contentContainerStyle={[
                             styles.flatListContent,
-                            { paddingBottom: isMobile ? 80 : 16 }
+                            { paddingBottom: isMobile ? 140 : 16 },
                         ]}
                     />
                 )}
             </View>
 
-            {/* Пагинация */}
             {totalItems > 0 && (
                 <View style={styles.paginationWrapper}>
                     <PaginationComponent
@@ -149,6 +141,11 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOpacity: 0.05,
         shadowRadius: 4,
+    },
+    clearRouteWrapper: {
+        marginTop: 16,
+        paddingHorizontal: 12,
+        marginBottom: 12,
     },
 });
 

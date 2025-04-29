@@ -15,7 +15,8 @@ interface MapPanelProps {
     setRoutePoints?: (points: [number, number][]) => void;
     onMapClick?: (lng: number, lat: number) => void;
     transportMode?: 'car' | 'bike' | 'foot';
-    setRouteDistance: (distance: number) => void; // ✅ добавили
+    setRouteDistance: (distance: number) => void;
+    setFullRouteCoords: (coords: [number, number][]) => void; // ✅ добавлено
 }
 
 const MapPanel: React.FC<MapPanelProps> = ({
@@ -27,9 +28,10 @@ const MapPanel: React.FC<MapPanelProps> = ({
                                                setRoutePoints = () => {},
                                                onMapClick = () => {},
                                                transportMode = 'car',
-                                               setRouteDistance, // ✅ добавили
+                                               setRouteDistance,
+                                               setFullRouteCoords, // ✅ деструктурируем
                                            }) => {
-    const [isBrowser, setIsBrowser] = useState(Platform.OS === 'web');
+    const [isBrowser] = useState(Platform.OS === 'web');
 
     if (!isBrowser || !MapClientSideComponent) {
         return (
@@ -50,7 +52,8 @@ const MapPanel: React.FC<MapPanelProps> = ({
                 setRoutePoints={setRoutePoints}
                 onMapClick={onMapClick}
                 transportMode={transportMode}
-                setRouteDistance={setRouteDistance} // ✅ ПЕРЕДАЁМ!
+                setRouteDistance={setRouteDistance}
+                setFullRouteCoords={setFullRouteCoords} // ✅ передаём
             />
         </View>
     );

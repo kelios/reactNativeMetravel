@@ -27,6 +27,7 @@ interface Props {
   mode: 'radius' | 'route';
   transportMode: 'car' | 'bike' | 'foot';
   setRouteDistance: (distance: number) => void;
+  setFullRouteCoords: (coords: [number, number][]) => void;
 }
 
 const DEFAULT_CENTER: [number, number] = [53.8828449, 27.7273595];
@@ -45,6 +46,7 @@ const MapClientSideComponent: React.FC<Props> = ({
                                                    mode,
                                                    transportMode,
                                                    setRouteDistance,
+                                                   setFullRouteCoords
                                                  }) => {
   const [leafletModules, setLeafletModules] = useState<null | any>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
@@ -218,6 +220,7 @@ const MapClientSideComponent: React.FC<Props> = ({
                   setRoutingLoading={setRoutingLoading}
                   setErrors={setErrors}
                   setRouteDistance={setRouteDistance}
+                  setFullRouteCoords={setFullRouteCoords}
                   ORS_API_KEY={ORS_API_KEY}
               />
           )}

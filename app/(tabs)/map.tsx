@@ -32,11 +32,11 @@ export default function MapScreen() {
   const [rawTravelsData, setRawTravelsData] = useState<any[]>([]);
   const [travelsData, setTravelsData] = useState<any[]>([]);
   const [placesAlongRoute, setPlacesAlongRoute] = useState<any[]>([]);
+  const [fullRouteCoords, setFullRouteCoords] = useState<[number, number][]>([]);
 
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null);
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [routeDistance, setRouteDistance] = useState<number | null>(null);
-
   const [startAddress, setStartAddress] = useState('');
   const [endAddress, setEndAddress] = useState('');
   const [transportMode, setTransportMode] = useState<'car' | 'bike' | 'foot'>('car');
@@ -47,7 +47,6 @@ export default function MapScreen() {
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(30);
 
-  // Геолокация
   useEffect(() => {
     (async () => {
       try {
@@ -66,7 +65,6 @@ export default function MapScreen() {
     })();
   }, []);
 
-  // Загрузка фильтров
   useEffect(() => {
     (async () => {
       try {
@@ -84,15 +82,14 @@ export default function MapScreen() {
     }
   }, [filters.radius]);
 
-  // Загрузка данных
   useEffect(() => {
     if (!filterValue.radius || !coordinates) return;
 
     (async () => {
       try {
         let data = [];
-        if (mode === 'route' && routePoints.length >= 2) {
-          data = await fetchTravelsNearRoute(routePoints, 20);
+        if (mode === 'route' && fullRouteCoords.length >= 2) {
+          data = await fetchTravelsNearRoute(fullRouteCoords, 20);
           setPlacesAlongRoute(data || []);
           setRawTravelsData([]);
         } else {
@@ -108,9 +105,8 @@ export default function MapScreen() {
         console.log('Ошибка загрузки travels:', error);
       }
     })();
-  }, [filterValue.radius, currentPage, itemsPerPage, routePoints, coordinates, mode]);
+  }, [filterValue.radius, currentPage, itemsPerPage, fullRouteCoords, coordinates, mode]);
 
-  // Локальная фильтрация
   useEffect(() => {
     const normalize = (str: string) => str.trim().toLowerCase();
     const selectedCategories = filterValue.categories.map(normalize);
@@ -138,6 +134,7 @@ export default function MapScreen() {
     setRoutePoints([]);
     setPlacesAlongRoute([]);
     setRouteDistance(null);
+    setFullRouteCoords([]);
   };
 
   const getAddressFromCoords = async (lat: number, lng: number) => {
@@ -185,6 +182,7 @@ export default function MapScreen() {
     setStartAddress('');
     setEndAddress('');
     setRouteDistance(null);
+    setFullRouteCoords([]);
   };
 
   if (!coordinates) {
@@ -236,6 +234,7 @@ export default function MapScreen() {
                 onMapClick={handleMapClick}
                 transportMode={transportMode}
                 setRouteDistance={setRouteDistance}
+                setFullRouteCoords={setFullRouteCoords}
             />
 
             {infoVisible && (
