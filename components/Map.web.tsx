@@ -135,15 +135,25 @@ const MapClientSideComponent: React.FC<Props> = ({
 
   const FitBounds: React.FC = () => {
     const map = useMap();
-    const pointsToFit = mode === 'route' && routePoints.length
-        ? routePoints.map(p => L.latLng(p[1], p[0]))
-        : allPoints.map(p => L.latLng(p));
+
+    const pointsToFit = useMemo(() => {
+      if (mode === 'route' && routePoints.length) {
+        return routePoints.map(p => L.latLng(p[1], p[0]));
+      }
+      if (travel.data.length) {
+        return travel.data
+            .map(p => strToLatLng(p.coord))
+            .filter(Boolean)
+            .map(([lat, lng]) => L.latLng(lat, lng));
+      }
+      return [];
+    }, [mode, routePoints, travel.data]);
 
     useEffect(() => {
-      if (disableFitBounds || !pointsToFit.length) return;
+      if (!pointsToFit.length) return;
       const bounds = L.latLngBounds(pointsToFit);
       map.fitBounds(bounds.pad(0.2));
-    }, [map, pointsToFit, disableFitBounds]);
+    }, [pointsToFit, map]);
 
     return null;
   };
