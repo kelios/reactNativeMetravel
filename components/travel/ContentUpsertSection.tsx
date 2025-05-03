@@ -7,7 +7,6 @@ import WebMapComponent from '@/components/travel/WebMapComponent';
 import ArticleEditor from '@/components/ArticleEditor';
 import { UPLOAD_IMAGE } from '@/src/api/travels';
 
-// Явный интерфейс для filters (подставь реальные типы, если знаешь)
 interface Filters {
     categoryTravelAddress: any[];
     countries: any[];
@@ -32,7 +31,6 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                                                                        handleCountrySelect,
                                                                        handleCountryDeselect,
                                                                    }) => {
-
     const handleChange = <T extends keyof TravelFormData>(name: T, value: TravelFormData[T]) => {
         setFormData((prevData) => ({
             ...prevData,
@@ -57,9 +55,25 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
         }));
     };
 
+    const renderEditorSection = (title: string, content: string, onChange: (val: string) => void) => (
+        <View style={styles.sectionEditor}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <ArticleEditor
+                key={`${title}-${formData.id}`}
+                content={content ?? ''}
+                onChange={onChange}
+                uploadUrl={UPLOAD_IMAGE}
+                idTravel={formData.id}
+            />
+        </View>
+    );
+
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+            <ScrollView
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={styles.section}>
                     <TextInputComponent
                         label="Название"
@@ -87,34 +101,23 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                     />
                 </View>
 
-                {renderEditorSection('Описание', formData.description, (val) => handleChange('description', val),formData.id)}
-                {renderEditorSection('Плюсы', formData.plus, (val) => handleChange('plus', val),formData.id)}
-                {renderEditorSection('Минусы', formData.minus, (val) => handleChange('minus', val),formData.id)}
-                {renderEditorSection('Рекомендации', formData.recommendation, (val) => handleChange('recommendation', val),formData.id)}
-
+                {renderEditorSection('Описание', formData.description, (val) => handleChange('description', val))}
+                {renderEditorSection('Плюсы', formData.plus, (val) => handleChange('plus', val))}
+                {renderEditorSection('Минусы', formData.minus, (val) => handleChange('minus', val))}
+                {renderEditorSection('Рекомендации', formData.recommendation, (val) => handleChange('recommendation', val))}
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-// Универсальная функция для секции редактора
-const renderEditorSection = (title: string, content: string, onChange: (val: string) => void, idTravel?: string) => (
-    <View style={styles.sectionEditor}>
-        <ArticleEditor
-            key={`${title}-${idTravel}`}
-            label={title}
-            content={content ?? ''}
-            onChange={onChange}
-            uploadUrl={UPLOAD_IMAGE}
-            idTravel={idTravel}
-        />
-    </View>
-);
-
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#f9f9f9',
+    },
     container: {
         padding: 20,
-        backgroundColor: '#f9f9f9',
+        paddingBottom: 40,
     },
     section: {
         marginBottom: 20,
@@ -123,32 +126,31 @@ const styles = StyleSheet.create({
         padding: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderColor: '#eee',
     },
     sectionEditor: {
         marginBottom: 20,
         backgroundColor: '#fff',
         borderRadius: 8,
-        padding: 12,
+        padding: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-        elevation: 3,
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
         borderWidth: 1,
-        borderColor: '#e0e0e0',
-        overflow: 'hidden'
+        borderColor: '#eee',
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
-        marginBottom: 8,
+        marginBottom: 12,
         color: '#333',
     },
 });
 
-export default ContentUpsertSection;
+export default React.memo(ContentUpsertSection);

@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-    Platform,
     View,
     Text,
     StyleSheet,
@@ -10,30 +8,36 @@ import {
     Alert,
     Modal,
     SafeAreaView,
-    ScrollView
+    ScrollView,
+    Platform,
 } from 'react-native';
-
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor';
-import * as ImagePicker from 'expo-image-picker';
 import { uploadImage } from '@/src/api/travels';
 
 let ReactQuill: any = null;
-if (Platform.OS === 'web') {
+
+const isWeb = Platform.OS === 'web';
+const isClient = typeof window !== 'undefined';
+
+if (isWeb && isClient) {
     ReactQuill = require('react-quill');
     require('react-quill/dist/quill.snow.css');
 
-    // Добавим стили для изображений в редакторе
     const style = document.createElement('style');
     style.innerHTML = `
-        .ql-editor img {
-            max-width: 30% !important;
-            height: auto;
-            border-radius: 8px;
-            margin: 12px auto;
-            display: block;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }`;
+    .ql-editor {
+      min-height: 200px;
+      font-size: 16px;
+      line-height: 1.5;
+      padding: 12px;
+    }
+    .ql-editor img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 12px auto;
+      display: block;
+    }`;
     document.head.appendChild(style);
 }
 
@@ -46,8 +50,7 @@ interface ArticleEditorProps {
 }
 
 function cleanHtml(html: string): string {
-    if (typeof html !== 'string') return '';
-    return html
+    return (typeof html === 'string' ? html : '')
         .replace(/<p><br><\/p>/g, '')
         .replace(/<p>\s*<\/p>/g, '')
         .replace(/(<br>\s*){2,}/g, '<br>')
@@ -55,52 +58,56 @@ function cleanHtml(html: string): string {
         .trim();
 }
 
-function WebEditor(props: ArticleEditorProps) {
-    const { label = 'Описание', content, onChange, uploadUrl, idTravel } = props;
-    const [html, setHtml] = useState(content);
-    const quillRef = useRef<any>(null);
-    const [showHtmlMode, setShowHtmlMode] = useState(false);
+const WebEditor: React.FC<ArticleEditorProps> = ({ label = 'Описание', content, onChange, uploadUrl, idTravel }) => {
+    const [isMounted, setIsMounted] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
+    const [showHtmlMode, setShowHtmlMode] = useState(false);
+    const lastHtmlRef = useRef(content);
+    const quillRef = useRef<any>(null);
 
     useEffect(() => {
-        if (cleanHtml(content) !== cleanHtml(html)) {
-            setHtml(content);
-        }
-    }, [content, html]);
+        if (isWeb && isClient) setIsMounted(true);
+    }, []);
 
-    const handleChange = useCallback((val: string) => {
-        const cleaned = cleanHtml(val);
-        if (cleaned !== html) {
-            setHtml(cleaned);
+    const handleHtmlChange = (text: string) => {
+        const cleaned = cleanHtml(text);
+        if (cleaned !== lastHtmlRef.current) {
+            lastHtmlRef.current = cleaned;
             onChange(cleaned);
         }
-    }, [html, onChange]);
+    };
 
     const handleInsertImage = async () => {
-        if (!uploadUrl) {
-            Alert.alert('Ошибка', 'Не указан uploadUrl');
+        if (!uploadUrl || !quillRef.current) {
+            Alert.alert('Ошибка', 'Редактор не готов или не указан uploadUrl');
             return;
         }
+
+        const editor = quillRef.current.getEditor();
+        const range = editor.getSelection();
+        const index = range?.index || 0;
+
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
-            if (file) {
+            if (!file) return;
+
+            try {
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('collection', 'description');
                 if (idTravel) formData.append('id', idTravel);
-                try {
-                    const res = await uploadImage(formData);
-                    if (res?.url && quillRef.current) {
-                        const editor = quillRef.current.getEditor();
-                        const range = editor.getSelection();
-                        editor.insertEmbed(range?.index || 0, 'image', res.url);
-                    }
-                } catch (error) {
-                    console.error('Ошибка загрузки картинки', error);
+
+                const res = await uploadImage(formData);
+                if (res?.url) {
+                    editor.insertEmbed(index, 'image', res.url);
+                    setTimeout(() => editor.setSelection(index + 1, 0), 50);
                 }
+            } catch (error) {
+                console.error('Ошибка загрузки картинки', error);
+                Alert.alert('Ошибка', 'Не удалось загрузить изображение');
             }
         };
         input.click();
@@ -131,37 +138,49 @@ function WebEditor(props: ArticleEditorProps) {
         </View>
     );
 
-    const editorProps = {
-        ref: quillRef,
-        theme: 'snow',
-        modules: {
-            toolbar: [
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ header: [1, 2, 3, false] }],
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                [{ align: [] }],
-                [{ color: [] }, { background: [] }],
-                ['link'],
-                ['clean']
-            ],
-            history: { userOnly: true }
-        },
-        value: html,
-        onChange: handleChange,
-        style: isFullScreen ? styles.fullscreenQuill : styles.quillArea
+    const renderEditor = () => {
+        if (!isMounted || !ReactQuill) {
+            return <Text style={styles.placeholderText}>Загрузка редактора...</Text>;
+        }
+
+        if (showHtmlMode) {
+            return (
+                <ScrollView>
+                    <TextInput
+                        style={[styles.htmlArea, isFullScreen && { minHeight: 600 }]}
+                        multiline
+                        value={content}
+                        onChangeText={handleHtmlChange}
+                    />
+                </ScrollView>
+            );
+        }
+
+        return (
+            <ReactQuill
+                ref={quillRef}
+                theme="snow"
+                value={content}
+                onChange={handleHtmlChange}
+                modules={{
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ header: [1, 2, 3, false] }],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['link', 'image'],
+                        ['clean']
+                    ],
+                }}
+                style={isFullScreen ? styles.fullscreenQuill : styles.quillArea}
+            />
+        );
     };
 
-    const editor = showHtmlMode ? (
-        <ScrollView>
-            <TextInput
-                style={[styles.htmlArea, isFullScreen && { minHeight: 600 }]}
-                multiline
-                value={html}
-                onChangeText={handleChange}
-            />
-        </ScrollView>
-    ) : (
-        <ReactQuill {...editorProps} />
+    const contentView = (
+        <View style={styles.container}>
+            {renderTopBar()}
+            {renderEditor()}
+        </View>
     );
 
     if (isFullScreen) {
@@ -169,47 +188,80 @@ function WebEditor(props: ArticleEditorProps) {
             <Modal visible={true} animationType="fade">
                 <SafeAreaView style={styles.fullscreenRoot}>
                     {renderTopBar()}
-                    <View style={styles.fullscreenContent}>{editor}</View>
+                    <View style={styles.fullscreenContent}>{renderEditor()}</View>
                 </SafeAreaView>
             </Modal>
         );
     }
 
-    return <View style={styles.container}>{renderTopBar()}{editor}</View>;
-}
+    return contentView;
+};
 
 export default function ArticleEditor(props: ArticleEditorProps) {
-    if (Platform.OS === 'web') {
+    if (isWeb && isClient) {
         return <WebEditor {...props} />;
     }
-    return null; // Мобильную часть можно добавить аналогично, если надо
+    return null;
 }
 
 const styles = StyleSheet.create({
-    container: { marginVertical: 8 },
+    container: {
+        marginVertical: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 6,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+    },
     topBar: {
-        backgroundColor: '#eee',
+        backgroundColor: '#f5f5f5',
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderTopLeftRadius: 6,
-        borderTopRightRadius: 6,
-        justifyContent: 'space-between'
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
+        justifyContent: 'space-between',
     },
-    labelText: { fontSize: 15, fontWeight: '600', color: '#333' },
-    topBarButtons: { flexDirection: 'row' },
-    iconButton: { marginLeft: 12 },
-    quillArea: { minHeight: 200 },
-    fullscreenQuill: { minHeight: 600 },
+    labelText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333',
+    },
+    topBarButtons: {
+        flexDirection: 'row',
+    },
+    iconButton: {
+        marginLeft: 12,
+    },
+    quillArea: {
+        minHeight: 200,
+        backgroundColor: '#fff',
+    },
+    fullscreenQuill: {
+        minHeight: '80vh',
+        backgroundColor: '#fff',
+    },
     htmlArea: {
         borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 8,
+        borderColor: '#eee',
+        padding: 12,
         fontSize: 14,
         textAlignVertical: 'top',
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        minHeight: 200,
     },
-    fullscreenRoot: { flex: 1, backgroundColor: '#fff' },
-    fullscreenContent: { flex: 1, margin: 8 }
+    fullscreenRoot: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    fullscreenContent: {
+        flex: 1,
+        padding: 8,
+    },
+    placeholderText: {
+        padding: 20,
+        textAlign: 'center',
+        color: '#999',
+    },
 });
