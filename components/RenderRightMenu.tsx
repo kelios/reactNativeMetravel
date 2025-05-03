@@ -58,10 +58,10 @@ function RenderRightMenu() {
                     resizeMode="contain"
                 />
                 {!isMobile && (
-                    <Text style={styles.logoText}>
+                    <View style={styles.logoTextRow}>
                         <Text style={styles.logoTextMe}>Me</Text>
                         <Text style={styles.logoTextTravel}>Travel</Text>
-                    </Text>
+                    </View>
                 )}
             </TouchableOpacity>
 
@@ -169,6 +169,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
         marginLeft: 6,
+    },
+    logoTextRow: {
+        flexDirection: 'row',
+        marginLeft: 8,
     },
     menuButton: {
         backgroundColor: '#f0f0f0',

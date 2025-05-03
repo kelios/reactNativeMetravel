@@ -24,12 +24,11 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
     const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
 
     useEffect(() => {
-        // ⚠️ сбрасываем индекс и ждём, пока React отрендерит всё
         setActiveIndex(0);
         setIsMounted(false);
         const timeout = setTimeout(() => {
             setIsMounted(true);
-        }, 50); // минимальная пауза, чтобы DOM инициализировался
+        }, 50);
         return () => clearTimeout(timeout);
     }, [images]);
 
@@ -57,27 +56,13 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
                 data={images}
                 scrollAnimationDuration={10}
                 onSnapToItem={(index) => setActiveIndex(index)}
-                renderItem={({ item, index }) => (
+                renderItem={({ item }) => (
                     <View style={styles.imageContainer}>
-                        {Platform.OS === 'web' ? (
-                            <img
-                                src={item.url}
-                                alt={`slide-${index}`}
-                                loading={index === 0 ? 'eager' : 'lazy'}
-                                decoding="async"
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'contain',
-                                }}
-                            />
-                        ) : (
-                            <Image
-                                source={{ uri: item.url }}
-                                style={styles.image}
-                                resizeMode="contain"
-                            />
-                        )}
+                        <Image
+                            source={{ uri: item.url }}
+                            style={styles.image}
+                            resizeMode="contain"
+                        />
                     </View>
                 )}
             />
@@ -140,10 +125,15 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: '50%',
         transform: [{ translateY: -20 }],
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         padding: 10,
         borderRadius: 20,
         zIndex: 10,
+        ...Platform.select({
+            web: {
+                cursor: 'pointer',
+            },
+        }),
     },
     leftButton: {
         left: 10,
