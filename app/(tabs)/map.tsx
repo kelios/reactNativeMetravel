@@ -57,11 +57,9 @@ export default function MapScreen() {
           const loc = await Location.getCurrentPositionAsync({});
           if (isMounted) setCoordinates({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
         } else {
-          console.log('Геолокация запрещена, fallback Минск');
           if (isMounted) setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
         }
-      } catch (error) {
-        console.log('Ошибка геолокации:', error);
+      } catch {
         if (isMounted) setCoordinates({ latitude: 53.9006, longitude: 27.5590 });
       }
     })();
@@ -91,10 +89,9 @@ export default function MapScreen() {
 
   const getCacheKey = () => {
     if (!coordinates) return '';
-    if (mode === 'route') {
-      return `route:${JSON.stringify(fullRouteCoords)}`;
-    }
-    return `radius:${filterValue.radius}:${coordinates.latitude}:${coordinates.longitude}`;
+    return mode === 'route'
+        ? `route:${JSON.stringify(fullRouteCoords)}`
+        : `radius:${filterValue.radius}:${coordinates.latitude}:${coordinates.longitude}`;
   };
 
   useEffect(() => {
@@ -104,7 +101,6 @@ export default function MapScreen() {
 
     (async () => {
       if (dataCache.current[key]) {
-        console.log('📦 Из кеша:', key);
         if (isMounted) {
           if (mode === 'route') setPlacesAlongRoute(dataCache.current[key]);
           else setRawTravelsData(dataCache.current[key]);
@@ -157,7 +153,7 @@ export default function MapScreen() {
   const onTextFilterChange = (value: string) => setFilterValue(prev => ({ ...prev, address: value }));
 
   const resetFilters = () => {
-    dataCache.current = {}; // 💥 Очищаем кеш при сбросе
+    dataCache.current = {};
     setFilterValue({ radius: filters.radius[0]?.id || '', categories: [], address: '' });
     setStartAddress('');
     setEndAddress('');
@@ -247,11 +243,13 @@ export default function MapScreen() {
                   routeDistance={routeDistance}
               />
           ) : (
-              <Button
-                  title="Показать фильтры"
-                  onPress={() => setFiltersVisible(true)}
-                  buttonStyle={styles.toggleButton}
-              />
+              <View style={styles.floatingTopLeftButton}>
+                <Button
+                    icon={<Icon name="tune" type="material" color="#fff" />}
+                    onPress={() => setFiltersVisible(true)}
+                    buttonStyle={styles.iconButton}
+                />
+              </View>
           )}
 
           <View style={styles.mainContent}>
@@ -280,17 +278,22 @@ export default function MapScreen() {
                       buildRouteTo={buildRouteTo}
                   />
                   {routePoints.length > 1 && (
-                      <Button title="Очистить маршрут" onPress={clearRoute} buttonStyle={styles.toggleButton} />
+                      <Button title="Очистить маршрут" onPress={clearRoute} buttonStyle={styles.iconButton} />
                   )}
                 </View>
             )}
 
             <View style={isMobile ? styles.mobileFloatingButton : styles.desktopFloatingButton}>
               <Button
-                  title={infoVisible ? 'Скрыть объекты' : 'Показать объекты'}
+                  icon={
+                    <Icon
+                        name={infoVisible ? 'expand-more' : 'expand-less'}
+                        type="material"
+                        color="#fff"
+                    />
+                  }
                   onPress={() => setInfoVisible(prev => !prev)}
-                  icon={<Icon name={infoVisible ? 'keyboard-arrow-down' : 'keyboard-arrow-up'} color="#fff" />}
-                  buttonStyle={styles.floatingShowButton}
+                  buttonStyle={styles.iconButton}
               />
             </View>
           </View>
@@ -299,14 +302,59 @@ export default function MapScreen() {
   );
 }
 
-const getStyles = (isMobile: boolean) => StyleSheet.create({
-  safeContainer: { flex: 1, backgroundColor: '#f2f4f7' },
-  container: { flex: 1, padding: isMobile ? 8 : 16 },
-  mainContent: { flex: 1, flexDirection: isMobile ? 'column' : 'row', position: 'relative' },
-  desktopInfoPanel: { width: 380, marginLeft: 12, backgroundColor: '#fff', borderRadius: 16, padding: 12, elevation: 3 },
-  mobileInfoPanel: { position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '60%', backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 12 },
-  toggleButton: { backgroundColor: '#6AAAAA', borderRadius: 12, paddingVertical: 10, marginTop: 12 },
-  desktopFloatingButton: { position: 'absolute', top: 20, right: 20, zIndex: 999 },
-  mobileFloatingButton: { position: 'absolute', bottom: 20, right: 20, zIndex: 999 },
-  floatingShowButton: { backgroundColor: '#6AAAAA', borderRadius: 50, paddingHorizontal: 20, paddingVertical: 10, elevation: 6 },
-});
+const getStyles = (isMobile: boolean) =>
+    StyleSheet.create({
+      safeContainer: { flex: 1, backgroundColor: '#f2f4f7' },
+      container: { flex: 1, padding: isMobile ? 8 : 16 },
+      mainContent: { flex: 1, flexDirection: isMobile ? 'column' : 'row', position: 'relative' },
+      desktopInfoPanel: {
+        width: 380,
+        marginLeft: 12,
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 12,
+        elevation: 3,
+      },
+      mobileInfoPanel: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        maxHeight: '60%',
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        padding: 12,
+      },
+      floatingTopLeftButton: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        zIndex: 999,
+      },
+      desktopFloatingButton: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        zIndex: 999,
+      },
+      mobileFloatingButton: {
+        position: 'absolute',
+        bottom: 20,
+        right: 20,
+        zIndex: 999,
+      },
+      iconButton: {
+        backgroundColor: 'rgba(75, 163, 163, 0.85)',
+        borderRadius: 30,
+        width: 52,
+        height: 52,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 5,
+        elevation: 4,
+      },
+    });
