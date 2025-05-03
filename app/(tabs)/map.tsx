@@ -41,7 +41,7 @@ export default function MapScreen() {
   const [transportMode, setTransportMode] = useState<'car' | 'bike' | 'foot'>('car');
 
   const [filtersVisible, setFiltersVisible] = useState(!isMobile);
-  const [infoVisible, setInfoVisible] = useState(isMobile);
+  const [infoVisible, setInfoVisible] = useState(!isMobile);
 
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(30);
