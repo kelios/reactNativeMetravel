@@ -85,7 +85,7 @@ const MapPageComponent: React.FC<Props> = ({
 
     return {
       meTravel: new leafletModules.L.Icon({
-        iconUrl: require('@/assets/icons/logo_yellow.ico'),
+        iconUrl: require('@/assets/icons/marker.ico'),
         iconSize: [27, 30],
         iconAnchor: [13, 30],
         popupAnchor: [0, -30],

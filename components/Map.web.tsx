@@ -72,7 +72,7 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
   const meTravelIcon = useMemo(
       () =>
           new leaflet.Icon({
-            iconUrl: require('@/assets/icons/logo_yellow.ico'),
+            iconUrl: require('@/assets/icons/marker.ico'),
             iconSize: [27, 30],
             iconAnchor: [13, 30],
             popupAnchor: [0, -30],
