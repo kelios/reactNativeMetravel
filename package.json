@@ -72,7 +72,7 @@
     "react-native-multiple-select": "^0.5.12",
     "react-native-paper": "^5.13.1",
     "react-native-pell-rich-editor": "^1.9.0",
-    "react-native-reanimated": "~3.17.1",
+    "react-native-reanimated": "^3.17.5",
     "react-native-reanimated-carousel": "^4.0.2",
     "react-native-render-html": "^6.3.4",
     "react-native-responsive-screen": "^1.4.2",

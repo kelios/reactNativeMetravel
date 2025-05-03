@@ -125,12 +125,15 @@ const styles = StyleSheet.create({
     backgroundImage: {
         width: '100%',
         height: '100%',
+        transform: [{ scale: 1.1 }], // Мобильный эффект с "вылезанием"
     },
     backgroundImageWeb: {
         width: '100%',
         height: '100%',
         objectFit: 'cover',
+        objectPosition: 'center',
         borderRadius: 18,
+        transform: 'scale(1.1)', // Эффект для веба
     },
     contentOverlay: {
         flex: 1,

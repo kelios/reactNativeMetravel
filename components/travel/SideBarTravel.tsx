@@ -1,4 +1,4 @@
-// Компактная и адаптивная версия SideBarTravel с современным дизайном и дополнительными улучшениями
+// Исправленная версия CompactSideBarTravel с корректным отображением кнопки закрытия на мобильных устройствах
 
 import React, { memo, useCallback, useState } from 'react';
 import {
@@ -91,8 +91,9 @@ const CompactSideBarTravel: React.FC<SideBarTravelProps> = memo(
                         paddingHorizontal: isSmallScreen ? 12 : 16,
                         maxWidth: 320,
                         alignSelf: 'center',
+                        marginBottom: isMobile ? 60 : 0, // Добавлен отступ для кнопки закрытия
                     }]}
-                    contentContainerStyle={{ paddingBottom: isMobile ? 100 : 40 }}
+                    contentContainerStyle={{ paddingBottom: isMobile ? 80 : 40 }} // Увеличен paddingBottom
                 >
                     <View style={styles.userCard}>
                         <View style={styles.userHeader}>
@@ -144,7 +145,13 @@ const CompactSideBarTravel: React.FC<SideBarTravelProps> = memo(
 
                 {isMobile && (
                     <View style={styles.fixedCloseButton}>
-                        <Pressable onPress={closeMenu} style={styles.closeButton}>
+                        <Pressable
+                            onPress={closeMenu}
+                            style={({ pressed }) => [
+                                styles.closeButton,
+                                pressed && styles.closeButtonPressed
+                            ]}
+                        >
                             <MaterialIcons name="close" size={20} color="#fff" />
                             <Text style={styles.closeButtonText}>Закрыть</Text>
                         </Pressable>
@@ -257,7 +264,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         backgroundColor: '#2F332E',
-        paddingVertical: 12,
+        paddingVertical: 16,
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
@@ -266,10 +273,16 @@ const styles = StyleSheet.create({
     closeButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+    },
+    closeButtonPressed: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
     },
     closeButtonText: {
         color: '#fff',
-        fontSize: 15,
+        fontSize: 16,
         fontFamily: 'Georgia',
         marginLeft: 8,
     },

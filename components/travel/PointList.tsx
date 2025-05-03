@@ -1,17 +1,19 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback } from 'react';
 import {
-  StyleSheet,
   View,
-  Text,
-  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
   ImageBackground,
-  Pressable,
   Linking,
-  useWindowDimensions,
   Platform,
-} from "react-native";
-import { Card, Button } from "react-native-paper";
-import { ChevronDown, ChevronUp, MapPinned } from "lucide-react-native";
+  useWindowDimensions,
+  ScrollView,
+  Pressable,
+} from 'react-native';
+import { Text, IconButton } from 'react-native-paper';
+import * as Clipboard from 'expo-clipboard';
+import { MapPinned, ChevronUp, ChevronDown } from 'lucide-react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 type Point = {
   id: string;
@@ -29,36 +31,80 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
   const { width } = useWindowDimensions();
   const isMobile = width <= 480;
   const isLargeScreen = width >= 768;
+  const isWideScreen = width >= 1024;
+
   const [showCoords, setShowCoords] = useState(false);
 
-  const handleOpenGoogle = useCallback((coordStr: string) => {
-    const [latStr, lonStr] = coordStr.split(",").map((s) => s.trim());
-    const lat = parseFloat(latStr);
-    const lon = parseFloat(lonStr);
-    if (!isNaN(lat) && !isNaN(lon)) {
-      const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
-      Linking.openURL(url).catch((err) => console.warn(err));
-    }
+  const handleCopyCoords = useCallback((coordStr: string) => {
+    Platform.OS === 'web'
+        ? navigator.clipboard.writeText(coordStr)
+        : Clipboard.setStringAsync(coordStr);
   }, []);
 
   const handleSendToTelegram = useCallback((coordStr: string) => {
-    try {
-      const telegramUrl =
-          "https://t.me/share/url?url=" +
-          encodeURIComponent(coordStr) +
-          "&text=" +
-          encodeURIComponent(`Координаты места: ${coordStr}`);
-      Linking.openURL(telegramUrl).catch((err) => {
-        console.error("Failed to open Telegram URL:", err);
-      });
-    } catch (error) {
-      console.warn("Telegram share error:", error);
-      if (Platform.OS === "web") {
-        navigator.clipboard.writeText(coordStr);
-        alert("Координаты скопированы в буфер обмена!");
-      }
+    const url = `https://t.me/share/url?url=${encodeURIComponent(coordStr)}&text=${encodeURIComponent(`Координаты: ${coordStr}`)}`;
+    Linking.openURL(url).catch(console.error);
+  }, []);
+
+  const handleOpenMap = useCallback((coordStr: string) => {
+    const [latStr, lonStr] = coordStr.split(',').map((s) => s.trim());
+    const lat = parseFloat(latStr);
+    const lon = parseFloat(lonStr);
+    if (!isNaN(lat) && !isNaN(lon)) {
+      const url = `https://maps.google.com/?q=${lat},${lon}`;
+      Linking.openURL(url).catch(console.warn);
     }
   }, []);
+
+  const renderCardContent = (point: Point) => (
+      <>
+        <View style={styles.iconButtons}>
+          <View style={styles.iconButton}>
+            <IconButton
+                icon="content-copy"
+                size={18}
+                onPress={() => handleCopyCoords(point.coord)}
+                iconColor="#fff"
+            />
+          </View>
+          <View style={styles.iconButton}>
+            <IconButton
+                icon="send"
+                size={18}
+                onPress={() => handleSendToTelegram(point.coord)}
+                iconColor="#fff"
+            />
+          </View>
+          <View style={styles.iconButton}>
+            <IconButton
+                icon="map-marker"
+                size={18}
+                onPress={() => handleOpenMap(point.coord)}
+                iconColor="#fff"
+            />
+          </View>
+        </View>
+
+        <View style={styles.overlay}>
+          <Text style={styles.title} numberOfLines={1}>
+            {point.address}
+          </Text>
+          <TouchableOpacity onPress={() => handleOpenMap(point.coord)}>
+            <Text style={styles.coord}>{point.coord}</Text>
+          </TouchableOpacity>
+
+          {point.categoryName && (
+              <View style={styles.categoryContainer}>
+                {point.categoryName.split(',').map((cat, index) => (
+                    <View key={index} style={styles.category}>
+                      <Text style={styles.categoryText}>{cat.trim()}</Text>
+                    </View>
+                ))}
+              </View>
+          )}
+        </View>
+      </>
+  );
 
   return (
       <View style={styles.wrapper}>
@@ -71,7 +117,7 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
         >
           <MapPinned size={18} color="#3B2C24" style={{ marginRight: 6 }} />
           <Text style={[styles.toggleText, isMobile && styles.toggleTextMobile]}>
-            {showCoords ? "Скрыть координаты мест" : "Показать координаты мест"}
+            {showCoords ? 'Скрыть координаты мест' : 'Показать координаты мест'}
           </Text>
           {showCoords ? (
               <ChevronUp size={18} color="#3B2C24" />
@@ -80,63 +126,49 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
           )}
         </Pressable>
 
-        {showCoords && (
-            <ScrollView
-                contentContainerStyle={[
-                  styles.scrollArea,
-                  isLargeScreen && styles.scrollAreaLarge,
-                ]}
-            >
-              {points.map((point) => (
-                  <View
-                      key={point.id}
-                      style={[styles.cardContainer, isLargeScreen && styles.cardContainerLarge]}
-                  >
-                    <Card style={styles.card} mode="elevated">
-                      {point.travelImageThumbUrl ? (
-                          <ImageBackground
-                              source={{ uri: point.travelImageThumbUrl }}
-                              style={styles.cardImage}
-                              resizeMode="cover"
-                          />
-                      ) : (
-                          <View style={[styles.cardImage, styles.noPhoto]}>
-                            <Text style={styles.noPhotoText}>Нет фото</Text>
-                          </View>
-                      )}
-                      <View style={styles.content}>
-                        <Text style={styles.coordText}>{point.coord}</Text>
-                        <Text style={styles.label}>Адрес:</Text>
-                        <Text style={styles.value}>{point.address}</Text>
-                        <Text style={styles.label}>Категория:</Text>
-                        <Text style={styles.value}>{point.categoryName || "Не указано"}</Text>
-                        <View style={styles.actions}>
-                          <Button
-                              icon="map-marker"
-                              mode="contained"
-                              textColor="#fff"
-                              buttonColor="#ff8c49"
-                              style={styles.actionBtn}
-                              onPress={() => handleOpenGoogle(point.coord)}
-                          >
-                            В Google
-                          </Button>
-                          <Button
-                              icon="send"
-                              mode="outlined"
-                              textColor="#ff8c49"
-                              style={styles.actionBtn}
-                              onPress={() => handleSendToTelegram(point.coord)}
-                          >
-                            Telegram
-                          </Button>
-                        </View>
-                      </View>
-                    </Card>
-                  </View>
-              ))}
-            </ScrollView>
-        )}
+        <Animated.View
+            style={{ overflow: 'hidden' }}
+            entering={FadeIn.duration(150)}
+        >
+          {showCoords && (
+              <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={[
+                    styles.scrollContainer,
+                    isLargeScreen && styles.scrollContainerLarge,
+                    isWideScreen && styles.scrollContainerWide,
+                  ]}
+              >
+                {points.map((point, index) => (
+                    <Animated.View
+                        key={point.id}
+                        entering={FadeIn.delay(index * 40)}
+                        style={[
+                          styles.card,
+                          isLargeScreen && styles.cardLarge,
+                          isWideScreen && styles.cardWide,
+                        ]}
+                    >
+                      <TouchableOpacity activeOpacity={0.85}>
+                        {point.travelImageThumbUrl ? (
+                            <ImageBackground
+                                source={{ uri: point.travelImageThumbUrl }}
+                                style={styles.image}
+                                imageStyle={{ borderRadius: 12 }}
+                            >
+                              {renderCardContent(point)}
+                            </ImageBackground>
+                        ) : (
+                            <View style={[styles.image, styles.noImage]}>
+                              {renderCardContent(point)}
+                            </View>
+                        )}
+                      </TouchableOpacity>
+                    </Animated.View>
+                ))}
+              </ScrollView>
+          )}
+        </Animated.View>
       </View>
   );
 };
@@ -145,8 +177,7 @@ export default PointList;
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: "100%",
-    paddingHorizontal: 0,
+    width: '100%',
   },
   toggleButton: {
     flexDirection: 'row',
@@ -156,94 +187,102 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#fff',
     borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
     elevation: 2,
     gap: 8,
+    marginBottom: 8,
   },
   toggleButtonPressed: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: '#f0f0f0',
   },
   toggleText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#3B2C24",
+    fontWeight: '600',
+    color: '#3B2C24',
   },
   toggleTextMobile: {
     fontSize: 14,
   },
-  scrollArea: {
-    paddingTop: 16,
+  scrollContainer: {
     paddingBottom: 40,
   },
-  scrollAreaLarge: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  scrollContainerLarge: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 16,
   },
-  cardContainer: {
-    width: "100%",
-    marginBottom: 24,
-  },
-  cardContainerLarge: {
-    width: "48%",
+  scrollContainerWide: {
+    gap: 20,
   },
   card: {
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: "#fff",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#f3f3f3',
+    elevation: 3,
+    flexBasis: '100%',
+    maxWidth: '100%',
   },
-  cardImage: {
-    width: "100%",
-    height: 200,
-    backgroundColor: "#eee",
-    justifyContent: "center",
-    alignItems: "center",
+  cardLarge: {
+    flexBasis: '48%',
+    maxWidth: '48%',
   },
-  noPhoto: {
-    backgroundColor: "#f2f2f2",
+  cardWide: {
+    flexBasis: '31%',
+    maxWidth: '31%',
   },
-  noPhotoText: {
-    color: "#999",
-    fontSize: 14,
-    fontWeight: "600",
+  image: {
+    minHeight: 280,
+    justifyContent: 'flex-end',
   },
-  content: {
-    padding: 16,
+  noImage: {
+    backgroundColor: '#ccc',
   },
-  coordText: {
-    fontSize: 13,
-    color: "#555",
-    fontWeight: "700",
-    marginBottom: 8,
+  iconButtons: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    zIndex: 2,
   },
-  label: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3B2C24",
+  iconButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 6,
+    marginLeft: 4,
   },
-  value: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
+  overlay: {
+    padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
-  actions: {
-    marginTop: 16,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+  title: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
+    marginBottom: 4,
   },
-  actionBtn: {
-    borderRadius: 24,
-    paddingHorizontal: 12,
+  coord: {
+    color: '#cceeff',
+    textDecorationLine: 'underline',
+    fontSize: 12,
+    marginBottom: 6,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  category: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignSelf: 'flex-start',
+  },
+  categoryText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
