@@ -1,7 +1,7 @@
 import React from 'react';
-import {Platform, StyleSheet, useWindowDimensions, View} from 'react-native';
-import {IconButton} from 'react-native-paper';
-import {SearchBar} from 'react-native-elements';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { IconButton } from 'react-native-paper';
+import { SearchBar, Icon } from 'react-native-elements';
 
 interface Props {
     search: string;
@@ -34,8 +34,8 @@ export default function SearchAndFilterBar({ search, setSearch, onToggleFilters 
                     containerStyle={styles.searchBar}
                     inputContainerStyle={styles.searchInputContainer}
                     inputStyle={styles.searchInput}
-                    searchIcon={{ color: '#333' }}
-                    clearIcon={{ color: '#333' }}
+                    searchIcon={<Icon type="feather" name="search" color="#333" />}
+                    clearIcon={<Icon type="feather" name="x" color="#333" />}
                 />
             </View>
         </View>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
             },
             web: {
                 boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
-                border: '1px solid #ccc', // 👈 добавить это
+                border: '1px solid #ccc',
             },
         }),
     },
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
                 outlineWidth: 0,
                 outlineColor: 'transparent',
                 boxShadow: 'none',
-                caretColor: '#000', // Курсор чёрный вместо синего
+                caretColor: '#000',
             },
         }),
     },

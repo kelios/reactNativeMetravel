@@ -169,12 +169,19 @@ export default function ListTravel() {
                         data={items}
                         keyExtractor={(item) => String(item.id)}
                         contentContainerStyle={styles.flatList}
+                        columnWrapperStyle={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}
                         initialNumToRender={4}
                         windowSize={5}
                         maxToRenderPerBatch={5}
                         removeClippedSubviews={true}
                         renderItem={({ item, index }) => (
-                            <View style={[styles.itemWrapper, isMobile && styles.mobileCard]}>
+                            <View
+                                style={[
+                                    styles.itemWrapper,
+                                    isMobile && styles.mobileCard,
+                                    isLargeScreen && styles.largeScreenItem,
+                                ]}
+                            >
                                 <TravelListItem
                                     travel={item}
                                     currentUserId={userId ?? ''}
@@ -296,6 +303,11 @@ const styles = StyleSheet.create({
     itemWrapper: {
         flex: 1,
         padding: 8,
+        maxWidth: 480,
+        alignSelf: 'center',
+    },
+    largeScreenItem: {
+        maxWidth: 400,
     },
     mobileCard: {
         maxHeight: 360,
