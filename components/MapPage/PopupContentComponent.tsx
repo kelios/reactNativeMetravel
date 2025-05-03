@@ -1,271 +1,205 @@
-import React, { useState } from 'react';
-import {
-    StyleSheet,
-    View,
-    Image,
-    Platform,
-    TouchableOpacity,
-    Linking,
-} from 'react-native';
-import { Text, IconButton, Snackbar, Divider } from 'react-native-paper';
-import * as Clipboard from 'expo-clipboard';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useCallback, memo } from 'react';
 
-interface Props {
-    travel: {
-        address: string;
-        coord: string;
-        travelImageThumbUrl?: string;
-        categoryName?: string;
-        articleUrl?: string;
-        urlTravel?: string;
-    };
+interface Travel {
+    address: string;
+    coord: string;
+    travelImageThumbUrl?: string;
+    categoryName?: string;
+    articleUrl?: string;
+    urlTravel?: string;
 }
 
-const PopupContentComponent: React.FC<Props> = ({ travel }) => {
-    const {
-        address,
-        coord,
-        travelImageThumbUrl,
-        categoryName,
-        articleUrl,
-        urlTravel,
-    } = travel;
+interface PopupContentWebProps {
+    travel: Travel;
+}
 
-    const shortCoord =
-        typeof coord === 'string' && coord.length > 20
-            ? coord.substring(0, 20) + '...'
-            : coord || '';
+const PopupContentWeb: React.FC<PopupContentWebProps> = memo(({ travel }) => {
+    const { address, coord, travelImageThumbUrl, categoryName, articleUrl, urlTravel } = travel;
 
-    const [snackbarVisible, setSnackbarVisible] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-
-    const handleCopyCoords = () => {
-        if (!coord) return;
-        Clipboard.setString(coord);
-        setSnackbarMessage('Координаты скопированы!');
-        setSnackbarVisible(true);
-    };
-
-    const handleOpenTelegram = () => {
-        if (!coord) return;
-        const url =
-            'https://t.me/share/url?url=' +
-            encodeURIComponent(coord) +
-            '&text=' +
-            encodeURIComponent(`Координаты места: ${coord}`);
-        Linking.openURL(url);
-    };
-
-    const handleOpenLink = () => {
+    const openLink = useCallback(() => {
         const url = articleUrl || urlTravel;
-        if (url) Linking.openURL(url);
-    };
+        if (url) window.open(url, '_blank');
+    }, [articleUrl, urlTravel]);
 
-    const handleOpenMap = () => {
-        if (coord) Linking.openURL(`https://maps.google.com/?q=${coord}`);
-    };
+    const copyCoord = useCallback(() => {
+        navigator.clipboard.writeText(coord);
+    }, [coord]);
 
-    const categoryIcon = getCategoryIcon(categoryName);
-    const badgeStyle = getCategoryBadgeStyle(categoryName);
+    const openMap = useCallback(() => {
+        window.open(`https://maps.google.com/?q=${coord}`, '_blank');
+    }, [coord]);
+
+    const shareTelegram = useCallback(() => {
+        const url = `https://t.me/share/url?url=${encodeURIComponent(coord)}&text=${encodeURIComponent(`Координаты: ${coord}`)}`;
+        window.open(url, '_blank');
+    }, [coord]);
+
+    const handleAction = useCallback((e: React.MouseEvent, fn: () => void) => {
+        e.stopPropagation();
+        fn();
+    }, []);
 
     return (
-        <>
-            <View style={styles.popup}>
-                {travelImageThumbUrl ? (
-                    <Image source={{ uri: travelImageThumbUrl }} style={styles.img} />
-                ) : (
-                    <Text style={styles.noImg}>Нет изображения</Text>
-                )}
-
-                {address && (
-                    <>
-                        <Text style={styles.title} numberOfLines={1}>
-                            {address}
-                        </Text>
-                        <Divider style={styles.divider} />
-                    </>
-                )}
-
-                {shortCoord && (
-                    <>
-                        <Text style={styles.label}>Координаты:</Text>
-                        <TouchableOpacity onPress={handleOpenMap}>
-                            <Text style={styles.coordLink} numberOfLines={1}>
-                                {shortCoord}
-                            </Text>
-                        </TouchableOpacity>
-                        <View style={styles.actions}>
-                            <Tooltip icon="content-copy" onPress={handleCopyCoords} tooltip="Скопировать" />
-                            <Tooltip icon="send" onPress={handleOpenTelegram} tooltip="В Telegram" />
-                            <Tooltip icon="link" onPress={handleOpenLink} tooltip="Подробнее" />
-                        </View>
-                        <Divider style={styles.divider} />
-                    </>
-                )}
-
-                {!!categoryName && (
-                    <View style={[styles.categoryWrapper, badgeStyle]}>
-                        {categoryIcon && (
-                            <MaterialCommunityIcons name={categoryIcon} size={14} color="#fff" style={{ marginRight: 4 }} />
-                        )}
-                        <Text style={styles.categoryText}>{categoryName}</Text>
-                    </View>
-                )}
-            </View>
-
-            <Snackbar
-                visible={snackbarVisible}
-                onDismiss={() => setSnackbarVisible(false)}
-                duration={2000}
-                style={styles.snackbar}
-                action={{ label: 'OK', onPress: () => setSnackbarVisible(false) }}
+        <div className="popup-card" onClick={openLink} title="Открыть статью">
+            <div
+                className="popup-image"
+                style={{
+                    backgroundImage: travelImageThumbUrl ? `url(${travelImageThumbUrl})` : 'none',
+                    backgroundColor: travelImageThumbUrl ? undefined : '#ccc'
+                }}
             >
-                {snackbarMessage}
-            </Snackbar>
-        </>
+                <div className="popup-icons-top">
+                    <button onClick={(e) => handleAction(e, openLink)} title="Открыть статью"><LinkIcon /></button>
+                    <button onClick={(e) => handleAction(e, copyCoord)} title="Скопировать координаты"><CopyIcon /></button>
+                    <button onClick={(e) => handleAction(e, shareTelegram)} title="Поделиться в Telegram"><SendIcon /></button>
+                </div>
+
+                <div className="popup-overlay">
+                    <div className="popup-text">
+                        <p className="popup-title" title={address}>{address}</p>
+
+                        {coord && (
+                            <div className="popup-coord">
+                                <span>Координаты:</span>
+                                <a onClick={(e) => handleAction(e, openMap)}>{coord}</a>
+                            </div>
+                        )}
+
+                        {categoryName && <div className="popup-category">{categoryName}</div>}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
-};
-
-const Tooltip = ({
-                     icon,
-                     onPress,
-                     tooltip,
-                 }: {
-    icon: string;
-    onPress: () => void;
-    tooltip: string;
-}) => {
-    const [hovered, setHovered] = useState(false);
-
-    if (Platform.OS !== 'web') {
-        return <IconButton icon={icon} size={20} onPress={onPress} color="#6AAAAA" />;
-    }
-
-    return (
-        <View
-            style={{ position: 'relative', display: 'inline-flex' }}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-        >
-            <IconButton icon={icon} size={20} onPress={onPress} color="#6AAAAA" />
-            {hovered && (
-                <View style={styles.tooltip}>
-                    <Text style={styles.tooltipText}>{tooltip}</Text>
-                </View>
-            )}
-        </View>
-    );
-};
-
-const getCategoryIcon = (category?: string) => {
-    switch (category?.toLowerCase()) {
-        case 'природа':
-            return 'tree';
-        case 'город':
-            return 'city-variant';
-        case 'музей':
-            return 'bank';
-        default:
-            return undefined;
-    }
-};
-
-const getCategoryBadgeStyle = (category?: string) => {
-    let backgroundColor = '#bbb';
-    switch (category?.toLowerCase()) {
-        case 'природа':
-            backgroundColor = '#4CAF50';
-            break;
-        case 'город':
-            backgroundColor = '#2196F3';
-            break;
-        case 'музей':
-            backgroundColor = '#9C27B0';
-            break;
-        default:
-            backgroundColor = '#ccc';
-    }
-    return { backgroundColor };
-};
-
-const styles = StyleSheet.create({
-    popup: {
-        padding: 8,
-        backgroundColor: '#fff',
-        borderRadius: 4,
-        maxWidth: 240,
-    },
-    img: {
-        width: '100%',
-        height: 100,
-        borderRadius: 8,
-        marginBottom: 6,
-    },
-    noImg: {
-        fontStyle: 'italic',
-        color: '#888',
-        marginBottom: 6,
-    },
-    title: {
-        fontWeight: '600',
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    label: {
-        fontSize: 12,
-        color: '#555',
-        fontWeight: '500',
-    },
-    coordLink: {
-        fontSize: 13,
-        color: '#007AFF',
-    },
-    divider: {
-        marginVertical: 6,
-        height: 1,
-        backgroundColor: '#e0e0e0',
-    },
-    actions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        marginTop: 6,
-    },
-    categoryWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        alignSelf: 'flex-start',
-        marginTop: 6,
-    },
-    categoryText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    tooltip: {
-        position: 'absolute',
-        bottom: '100%',
-        left: 0,
-        backgroundColor: '#333',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 4,
-        marginBottom: 6,
-        zIndex: 1000,
-    },
-    tooltipText: {
-        color: '#fff',
-        fontSize: 12,
-    },
-    snackbar: {
-        backgroundColor: '#333',
-        marginHorizontal: 16,
-        borderRadius: 8,
-    },
 });
 
-export default PopupContentComponent;
+// SVG Иконки
+const IconBase: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <svg viewBox="0 0 24 24" className="popup-svg">{children}</svg>
+);
+
+const LinkIcon = () => (
+    <IconBase><path d="M3.9,12A5.1,5.1,0,0,1,9,6.9h3v1.8H9A3.3,3.3,0,0,0,5.7,12,3.3,3.3,0,0,0,9,15.3h3v1.8H9A5.1,5.1,0,0,1,3.9,12Zm11.1-.9H9.9v1.8h5.1ZM15,6.9h-3v1.8h3A3.3,3.3,0,0,1,18.3,12,3.3,3.3,0,0,1,15,15.3h-3v1.8h3A5.1,5.1,0,0,0,20.1,12,5.1,5.1,0,0,0,15,6.9Z" /></IconBase>
+);
+
+const CopyIcon = () => (
+    <IconBase><path d="M16,1H4A2,2,0,0,0,2,3V15H4V3H16ZM20,5H8A2,2,0,0,0,6,7V21a2,2,0,0,0,2,2H20a2,2,0,0,0,2-2V7A2,2,0,0,0,20,5Zm0,16H8V7H20Z" /></IconBase>
+);
+
+const SendIcon = () => (
+    <IconBase><path d="M2.01,21L23,12,2.01,3,2,10l15,2-15,2Z" /></IconBase>
+);
+
+// Стили
+const styles = `
+.popup-card {
+  width: 260px;
+  border-radius: 12px;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  background: #f3f3f3;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.popup-card:hover {
+  transform: scale(1.02);
+}
+
+.popup-image {
+  position: relative;
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.popup-icons-top {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+.popup-icons-top button {
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.popup-icons-top button:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.popup-overlay {
+  width: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.2));
+  padding: 5px 5px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-text {
+  color: #fff;
+  font-size: 13px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.popup-title {
+  font-weight: 600;
+  font-size: 15px;  
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 !important;
+}
+
+.popup-coord {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.popup-coord span {
+  color: #ccc;
+}
+.popup-coord a {
+  color: #cceeff;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.popup-category {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-block;
+  color: #fff;
+  text-shadow: 0 0 3px rgba(0,0,0,0.6);
+  margin-top: 8px;
+}
+
+.popup-svg {
+  width: 20px;
+  height: 20px;
+  fill: #fff;
+}
+`;
+
+if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.innerHTML = styles;
+    document.head.appendChild(style);
+}
+
+export default PopupContentWeb;

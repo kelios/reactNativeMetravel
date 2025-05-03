@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import LabelText from './LabelText';
 import { MapPin, SendHorizonal } from 'lucide-react-native';
+import PopupContentComponent from "@/components/MapPage/PopupContentComponent";
 
 export type Point = {
   id: number;
@@ -117,52 +118,7 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
                 return (
                     <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
                       <Popup>
-                        <View style={styles.popupCard}>
-                          {point.travelImageThumbUrl ? (
-                              <Image
-                                  source={{ uri: point.travelImageThumbUrl }}
-                                  style={styles.pointImage}
-                                  resizeMode="contain"
-                              />
-                          ) : (
-                              <Text style={styles.fallbackText}>Нет фото. Нажмите, чтобы открыть статью.</Text>
-                          )}
-
-                          <Pressable
-                              onPress={() => {
-                                const url = point.articleUrl || point.urlTravel;
-                                if (url) Linking.openURL(url);
-                              }}
-                              style={styles.textContainer}
-                          >
-                            <Text style={styles.addressCompact}>{point.address}</Text>
-                            <LabelText label="Координаты:" text={point.coord} />
-                            {point.categoryName && <LabelText label="Категория:" text={point.categoryName} />}
-                          </Pressable>
-
-                          <View style={styles.iconRow}>
-                            <Pressable
-                                onPress={() => {
-                                  const url = `https://www.google.com/maps/search/?api=1&query=${point.coord}`;
-                                  Linking.openURL(url);
-                                }}
-                                style={styles.iconBtn}
-                            >
-                              <MapPin size={18} color="#FF8C49" />
-                            </Pressable>
-
-                            <Pressable
-                                onPress={() => {
-                                  const msg = encodeURIComponent(`Глянь, какая точка: ${point.coord}`);
-                                  const url = `https://t.me/share/url?url=${msg}`;
-                                  Linking.openURL(url);
-                                }}
-                                style={styles.iconBtn}
-                            >
-                              <SendHorizonal size={18} color="#FF8C49" />
-                            </Pressable>
-                          </View>
-                        </View>
+                        <PopupContentComponent travel={point} />
                       </Popup>
                     </Marker>
                 );
