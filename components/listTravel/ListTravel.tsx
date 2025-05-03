@@ -68,14 +68,11 @@ export default function ListTravel() {
             setUserId(storedUserId);
             setIsSuperuser(superuserFlag === 'true');
         };
-
         loadUserData();
         loadFilters();
     }, []);
 
-    useEffect(() => {
-        setCurrentPage(0);
-    }, [itemsPerPage, search, filterValue, userId]);
+    useEffect(() => setCurrentPage(0), [itemsPerPage, search, filterValue, userId]);
 
     useEffect(() => {
         if (isMeTravel && !userId) return;
@@ -90,11 +87,11 @@ export default function ListTravel() {
         setFilters({ ...filtersData, countries });
     };
 
-    const cleanFilters = (filtersObject) => {
-        return Object.fromEntries(
+    const cleanFilters = (filtersObject) => (
+        Object.fromEntries(
             Object.entries(filtersObject).filter(([_, v]) => v && v.length)
-        );
-    };
+        )
+    );
 
     const fetchMore = async () => {
         setIsLoading(true);
@@ -106,11 +103,8 @@ export default function ListTravel() {
             params.moderation = 0;
         } else {
             if (isMeTravel) params.user_id = userId;
-            else if (isTravelBy) {
-                Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
-            } else {
-                Object.assign(params, { publish: 1, moderation: 1 });
-            }
+            else if (isTravelBy) Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
+            else Object.assign(params, { publish: 1, moderation: 1 });
             if (user_id) params.user_id = user_id;
         }
 
@@ -152,33 +146,49 @@ export default function ListTravel() {
             return <Text>Путешествий не найдено</Text>;
         }
 
+        const items = travels.data;
+
         return (
             <>
-                <FlatList
-                    key={`columns-${numColumns}`}
-                    numColumns={numColumns}
-                    data={travels.data}
-                    keyExtractor={(item) => String(item.id)}
-                    contentContainerStyle={styles.flatList}
-                    initialNumToRender={4}
-                    windowSize={5}
-                    maxToRenderPerBatch={5}
-                    removeClippedSubviews={true}
-                    renderItem={({ item, index }) => (
-                        <View style={[styles.itemWrapper, isMobile && styles.mobileCard]}>
-                            <TravelListItem
-                                travel={item}
-                                currentUserId={userId ?? ''}
-                                isSuperuser={isSuperuser}
-                                isMetravel={isMeTravel}
-                                isMobile={isMobile}
-                                index={index}
-                                onEditPress={() => router.push(`/travel/${item.id}`)}
-                                onDeletePress={() => openDeleteDialog(String(item.id))}
-                            />
-                        </View>
-                    )}
-                />
+                {items.length === 1 ? (
+                    <View style={[styles.singleItemWrapper, isMobile && styles.mobileCard]}>
+                        <TravelListItem
+                            travel={items[0]}
+                            currentUserId={userId ?? ''}
+                            isSuperuser={isSuperuser}
+                            isMetravel={isMeTravel}
+                            isMobile={isMobile}
+                            onEditPress={() => router.push(`/travel/${items[0].id}`)}
+                            onDeletePress={() => openDeleteDialog(String(items[0].id))}
+                        />
+                    </View>
+                ) : (
+                    <FlatList
+                        key={`columns-${numColumns}`}
+                        numColumns={numColumns}
+                        data={items}
+                        keyExtractor={(item) => String(item.id)}
+                        contentContainerStyle={styles.flatList}
+                        initialNumToRender={4}
+                        windowSize={5}
+                        maxToRenderPerBatch={5}
+                        removeClippedSubviews={true}
+                        renderItem={({ item, index }) => (
+                            <View style={[styles.itemWrapper, isMobile && styles.mobileCard]}>
+                                <TravelListItem
+                                    travel={item}
+                                    currentUserId={userId ?? ''}
+                                    isSuperuser={isSuperuser}
+                                    isMetravel={isMeTravel}
+                                    isMobile={isMobile}
+                                    index={index}
+                                    onEditPress={() => router.push(`/travel/${item.id}`)}
+                                    onDeletePress={() => openDeleteDialog(String(item.id))}
+                                />
+                            </View>
+                        )}
+                    />
+                )}
                 {isLoading && (
                     <View style={styles.loaderOverlay}>
                         <ActivityIndicator size="large" color="#ff7f50" />
@@ -311,5 +321,11 @@ const styles = StyleSheet.create({
         bottom: 0,
         backgroundColor: '#fff',
         zIndex: 999,
+    },
+    singleItemWrapper: {
+        alignSelf: 'center',
+        width: 380,
+        maxWidth: '90%',
+        padding: 8,
     },
 });
