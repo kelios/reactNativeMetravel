@@ -1,8 +1,7 @@
-import React, {memo, useState} from 'react';
-import {Image, Platform, Pressable, StyleSheet, Text, View,} from 'react-native';
-import {Card} from 'react-native-paper';
-import {Feather} from '@expo/vector-icons';
-import {router} from 'expo-router';
+import React, { memo, useState } from 'react';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const placeholderImage = require('@/assets/placeholder.png');
 
@@ -28,9 +27,7 @@ const TravelListItem = ({
 
     const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
     const [imageError, setImageError] = useState(false);
-
     const CARD_HEIGHT = isMobile ? 320 : 460;
-    const IMAGE_HEIGHT = isMobile ? 200 : 340;
 
     const canEdit = isMetravel || isSuperuser;
 
@@ -43,72 +40,68 @@ const TravelListItem = ({
             onPress={handlePress}
             style={({ pressed }) => [
                 styles.pressableContainer,
-                { opacity: pressed ? 0.9 : 1 },
+                { opacity: pressed ? 0.95 : 1 },
             ]}
         >
-            <Card style={[styles.card, { height: CARD_HEIGHT }]}>
-                <View style={[styles.imageContainer, { height: IMAGE_HEIGHT }]}>
+            <View style={[styles.card, { height: CARD_HEIGHT }]}>
+                {/* Фото фоном */}
+                <View style={styles.imageWrapper}>
                     {!imageError && travel_image_thumb_url ? (
                         Platform.OS === 'web' ? (
                             <img
                                 src={travel_image_thumb_url}
                                 alt={name}
-                                loading={index === 0 ? 'eager' : 'lazy'}
-                                decoding="async"
-                                fetchpriority={index === 0 ? 'high' : undefined}
-                                style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover',
-                                    borderRadius: 8,
-                                    aspectRatio: '3 / 2',
-                                }}
+                                style={styles.backgroundImageWeb}
                                 onError={() => setImageError(true)}
                             />
                         ) : (
                             <Image
                                 source={{ uri: travel_image_thumb_url }}
-                                style={styles.image}
+                                style={styles.backgroundImage}
                                 resizeMode="cover"
                                 onError={() => setImageError(true)}
                             />
                         )
                     ) : (
-                        <View style={styles.noImage}>
-                            <Image source={placeholderImage} style={styles.noImageIcon} resizeMode="contain" />
-                            <Text style={styles.noImageText}>Нет изображения</Text>
-                        </View>
+                        <Image
+                            source={placeholderImage}
+                            style={styles.backgroundImage}
+                            resizeMode="cover"
+                        />
                     )}
+                </View>
 
+                {/* Контент поверх */}
+                <View style={styles.contentOverlay}>
                     {canEdit && (
                         <View style={styles.actions}>
                             <Pressable onPress={() => onEditPress(id)} style={styles.iconButton}>
-                                <Feather name="edit" size={18} color="#333" />
+                                <Feather name="edit" size={18} color="#fff" />
                             </Pressable>
                             <Pressable onPress={() => onDeletePress(id)} style={styles.iconButton}>
-                                <Feather name="trash-2" size={18} color="#333" />
+                                <Feather name="trash-2" size={18} color="#fff" />
                             </Pressable>
                         </View>
                     )}
-                </View>
 
-                <View style={styles.content}>
-                    {countries.length > 0 && (
-                        <View style={styles.countryContainer}>
-                            {countries.map((country, index) => (
-                                <View style={styles.countryItem} key={index}>
-                                    <Text style={styles.countryText}>{country}</Text>
-                                </View>
-                            ))}
+                    <View style={styles.textBackground}>
+                        {countries.length > 0 && (
+                            <View style={styles.countryContainer}>
+                                {countries.map((country, index) => (
+                                    <View style={styles.countryItem} key={index}>
+                                        <Text style={styles.countryText}>{country}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                        <Text style={styles.title} numberOfLines={1}>{name}</Text>
+                        <View style={styles.metaRow}>
+                            <Text style={styles.metaText}>👤 {userName || 'Неизвестно'}</Text>
+                            <Text style={styles.metaText}>👁 {countUnicIpView ?? 0}</Text>
                         </View>
-                    )}
-                    <Text style={styles.title} numberOfLines={1}>{name}</Text>
-                    <View style={styles.metaRow}>
-                        <Text style={styles.metaText}>👤 {userName || 'Неизвестно'}</Text>
-                        <Text style={styles.metaText}>👁 {countUnicIpView ?? 0}</Text>
                     </View>
                 </View>
-            </Card>
+            </View>
         </Pressable>
     );
 };
@@ -121,106 +114,75 @@ const styles = StyleSheet.create({
     card: {
         borderRadius: 18,
         overflow: 'hidden',
-        borderWidth: 0,
-        backgroundColor: '#fff',
-        width: '100%',
-        alignSelf: 'center',
-        elevation: 5,
-        ...Platform.select({
-            web: {
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            },
-            android: { elevation: 3 },
-        }),
-    },
-    imageContainer: {
+        backgroundColor: '#000',
         width: '100%',
         position: 'relative',
-        backgroundColor: '#f6f6f6',
     },
-    image: {
+    imageWrapper: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 0,
+    },
+    backgroundImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 8,
     },
-    noImage: {
+    backgroundImageWeb: {
         width: '100%',
         height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
+        objectFit: 'cover',
+        borderRadius: 18,
     },
-    noImageIcon: {
-        width: 36,
-        height: 36,
-        tintColor: '#ccc',
-    },
-    noImageText: {
-        fontSize: 12,
-        color: '#999',
-        marginTop: 4,
-    },
-    actions: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        flexDirection: 'row',
+    contentOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        padding: 16,
         zIndex: 1,
     },
+    textBackground: {
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        borderRadius: 12,
+        padding: 12,
+    },
+    actions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginBottom: 8,
+    },
     iconButton: {
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 18,
         width: 30,
         height: 30,
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 8,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-    },
-    content: {
-        padding: 16,
-        flex: 1,
-        justifyContent: 'flex-start',
     },
     countryContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     countryItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: 12,
+        marginRight: 10,
         marginBottom: 4,
     },
-    flagIcon: {
-        width: 20,
-        height: 20,
-        marginRight: 6,
-    },
     countryText: {
-        fontSize: 14,
-        color: '#555',
+        fontSize: 13,
+        color: '#fff',
     },
     title: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: '600',
-        color: '#111',
-        marginBottom: 6,
+        color: '#fff',
+        marginBottom: 4,
     },
     metaRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
     },
     metaText: {
-        fontSize: 14,
-        color: '#555',
+        fontSize: 13,
+        color: '#eee',
     },
 });
 
