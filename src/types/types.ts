@@ -185,7 +185,6 @@ export interface MarkerData {
     lat: number;
     lng: number;
     country: number | null;
-    city: number | null;
     address: string;
     categories: number[];
     image: string;

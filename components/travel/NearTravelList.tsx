@@ -5,7 +5,6 @@ import {
     useWindowDimensions,
     ActivityIndicator,
     Text,
-    Platform,
     TouchableOpacity,
     ScrollView,
     Pressable,
@@ -83,27 +82,27 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
         fetchNearbyTravels();
     }, [fetchNearbyTravels]);
 
-    const mapPoints = useMemo(
-        () =>
-            travelsNear.flatMap((item) => {
-                if (!item.coordsMeTravelArr?.length) return [];
-                return item.coordsMeTravelArr
-                    .map((coordStr) => {
-                        const [lat, lng] = coordStr.split(',').map((n) => parseFloat(n.trim()));
-                        if (isNaN(lat) || isNaN(lng)) return null;
-                        return {
-                            id: item.id,
-                            coord: coordStr.trim(),
-                            address: item.travelAddressAdress?.[0] || '',
-                            travelImageThumbUrl: item.travel_image_thumb_url || '',
-                            categoryName: item.countryName || '',
-                            articleUrl: item.url,
-                        };
-                    })
-                    .filter(Boolean);
-            }),
-        [travelsNear]
-    );
+    const mapPoints = useMemo(() => {
+        return travelsNear.flatMap((item) => {
+            if (!Array.isArray(item.points)) return [];
+
+            return item.points
+                .map((point, index) => {
+                    const [lat, lng] = point.coord?.split(',')?.map(Number) || [];
+                    if (isNaN(lat) || isNaN(lng)) return null;
+
+                    return {
+                        id: `${item.id}-${index}`,
+                        coord: point.coord,
+                        address: point.address || '',
+                        travelImageThumbUrl: point.travelImageThumbUrl || item.travel_image_thumb_url || '',
+                        categoryName: point.categoryName || item.countryName || '',
+                        articleUrl: point.urlTravel, // абсолютный путь
+                    };
+                })
+                .filter(Boolean);
+        });
+    }, [travelsNear]);
 
     if (isLoading) {
         return (
@@ -124,6 +123,8 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
             </View>
         );
     }
+
+    const canRenderMap = typeof window !== 'undefined' && mapPoints.length > 0;
 
     return (
         <View style={styles.section} onLayout={onLayout}>
@@ -148,10 +149,10 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
                     </View>
 
                     <View style={styles.mapColumn}>
-                        {Platform.OS === 'web' && mapPoints.length > 0 ? (
+                        {canRenderMap ? (
                             <MapClientSideComponent showRoute travel={{ data: mapPoints }} />
                         ) : (
-                            <Text>Карта только в веб-версии</Text>
+                            <Text>Нет точек для отображения карты или вы не в браузере</Text>
                         )}
                     </View>
                 </View>
@@ -169,10 +170,10 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
 
             {isMobile && viewMode === 'map' && (
                 <View style={styles.mobileMapWrapper}>
-                    {Platform.OS === 'web' && mapPoints.length > 0 ? (
+                    {canRenderMap ? (
                         <MapClientSideComponent showRoute travel={{ data: mapPoints }} />
                     ) : (
-                        <Text>Карта только в веб-версии</Text>
+                        <Text>Нет точек для отображения карты или вы не в браузере</Text>
                     )}
                 </View>
             )}
@@ -181,6 +182,7 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
 });
 
 export default NearTravelList;
+
 const styles = StyleSheet.create({
     section: {
         marginTop: 24,
@@ -278,4 +280,3 @@ const segmentStyles = StyleSheet.create({
         color: brandOrange,
     },
 });
-

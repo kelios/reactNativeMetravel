@@ -47,7 +47,6 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                 lat: marker.lat,
                 lng: marker.lng,
                 country: marker.country,
-                city: marker.city,
                 address: marker.address,
                 categories: marker.categories,
                 image: marker.image,

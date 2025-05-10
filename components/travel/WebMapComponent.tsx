@@ -73,7 +73,6 @@ const WebMapComponent = ({
             categories: [],
             image: null,
             country: null,
-            city: null,
         };
 
         if (country) {
