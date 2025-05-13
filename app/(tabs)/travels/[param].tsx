@@ -10,7 +10,8 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import {useLocalSearchParams} from 'expo-router';
+import { useLocalSearchParams} from 'expo-router';
+import Head from 'expo-router/head';
 import {Travel} from '@/src/types/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {fetchTravel, fetchTravelBySlug} from '@/src/api/travels';
@@ -118,7 +119,22 @@ const TravelDetails: React.FC = () => {
     );
   }
 
+  const plainTextDescription = travel.description
+      ?.replace(/<[^>]+>/g, '') // убираем HTML-теги
+      .replace(/\s+/g, ' ')     // убираем лишние пробелы
+      .trim()
+      .slice(0, 160);
+
   return (
+      <>
+        <Head>
+          <title>{travel.name} — metravel.by</title>
+          <meta name="description" content={plainTextDescription || 'Описание путешествия, интересные места и маршруты.'} />
+          <meta property="og:title" content={travel.name} />
+          <meta property="og:description" content={plainTextDescription || 'Маршрут и впечатления'} />
+          <meta property="og:url" content={`https://metravel.by/travels/${paramValue}`} />
+          <link rel="canonical" href={`https://metravel.by/travels/${isNumeric ? travel.id : paramValue}`} />
+        </Head>
       <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.mainContainer}>
           {isMobile && menuVisible && <Pressable onPress={closeMenu} style={styles.overlay} />}
@@ -241,6 +257,7 @@ const TravelDetails: React.FC = () => {
           </View>
         </View>
       </SafeAreaView>
+      </>
   );
 };
 
