@@ -169,6 +169,24 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             />
 
             <MultiSelectField
+                label="Путешествуете с..."
+                items={filters.companions}
+                value={formData.companions ?? []}
+                onChange={(companions) => setFormData({ ...formData, companions })}
+                labelField="name"
+                valueField="id"
+            />
+
+            <MultiSelectField
+                label="Ночлег..."
+                items={filters.over_nights_stay}
+                value={formData.over_nights_stay ?? []}
+                onChange={(over_nights_stay) => setFormData({ ...formData, over_nights_stay })}
+                labelField="name"
+                valueField="id"
+            />
+
+            <MultiSelectField
                 label="Месяц путешествия"
                 items={filters.month}
                 value={formData.month ?? []}

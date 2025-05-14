@@ -96,8 +96,16 @@ const TravelListItem = ({
                         )}
                         <Text style={styles.title} numberOfLines={1}>{name}</Text>
                         <View style={styles.metaRow}>
-                            <Text style={styles.metaText}>👤 {userName || 'Неизвестно'}</Text>
-                            <Text style={styles.metaText}>👁 {countUnicIpView ?? 0}</Text>
+                            {userName?.length > 0 && (
+                                <View style={styles.metaItem}>
+                                    <Feather name="user" size={14} color="#eee" />
+                                    <Text style={styles.metaText}>{userName}</Text>
+                                </View>
+                            )}
+                            <View style={styles.metaItem}>
+                                <Feather name="eye" size={14} color="#eee" />
+                                <Text style={styles.metaText}>{countUnicIpView ?? 0}</Text>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -186,6 +194,12 @@ const styles = StyleSheet.create({
     metaText: {
         fontSize: 13,
         color: '#eee',
+    },
+    metaItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 4,
+        margin: 5,
     },
 });
 

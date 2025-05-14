@@ -13,7 +13,7 @@ import {
     findNodeHandle
 } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { Travel } from '@/src/types/types';
 
 const sectionKeys = ['content', 'info', 'rating', 'map'];
@@ -97,16 +97,22 @@ const CompactSideBarTravel: React.FC<SideBarTravelProps> = memo(
                 >
                     <View style={styles.userCard}>
                         <View style={styles.userHeader}>
-                            <View style={styles.avatarContainer}>
-                                {travel.travel_image_thumb_small_url ? (
-                                    <Image
-                                        source={{ uri: travel.travel_image_thumb_small_url }}
-                                        style={styles.avatar}
-                                        accessibilityLabel="Фото путешествия"
-                                    />
-                                ) : (
-                                    <MaterialIcons name="image" size={60} color="#ccc" />
-                                )}
+                            <View style={styles.avatarWithStats}>
+                                <View style={styles.avatarContainer}>
+                                    {travel.travel_image_thumb_small_url ? (
+                                        <Image
+                                            source={{ uri: travel.travel_image_thumb_small_url }}
+                                            style={styles.avatar}
+                                            accessibilityLabel="Фото путешествия"
+                                        />
+                                    ) : (
+                                        <MaterialIcons name="image" size={60} color="#ccc" />
+                                    )}
+                                </View>
+                                <View style={styles.viewCountBlock}>
+                                    <Feather name="eye" size={14} color="#2F332E" />
+                                    <Text style={styles.viewCountText}>{travel.countUnicIpView}</Text>
+                                </View>
                             </View>
                             <View style={styles.userInfoBlock}>
                                 <View style={styles.userInfoRow}>
@@ -121,7 +127,7 @@ const CompactSideBarTravel: React.FC<SideBarTravelProps> = memo(
                                 </View>
                                 <Text style={styles.compactUserYear}>{travel.monthName} {travel.year}</Text>
                                 <Text style={styles.secondaryText}>
-                                    {travel.cityName} • {travel.number_days} дн.
+                                    • {travel.number_days} дн.
                                 </Text>
                             </View>
                         </View>
@@ -285,6 +291,23 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: 'Georgia',
         marginLeft: 8,
+    },
+    avatarWithStats: {
+        alignItems: 'center',
+        marginRight: 12,
+    },
+
+    viewCountBlock: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6,
+    },
+
+    viewCountText: {
+        marginLeft: 4,
+        fontSize: 12,
+        color: '#2F332E',
+        fontFamily: 'Georgia',
     },
 });
 

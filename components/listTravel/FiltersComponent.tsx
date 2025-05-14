@@ -180,7 +180,7 @@ const FiltersComponent = React.memo(({
                         {renderMultiSelect('Категории...', 'categories', filters.categories || [], 'id', 'name')}
                         {renderMultiSelect('Объекты...', 'categoryTravelAddress', filters.categoryTravelAddress || [], 'id', 'name')}
                         {renderMultiSelect('Транспорт...', 'transports', filters.transports || [], 'id', 'name')}
-                        {renderMultiSelect('Компаньоны...', 'companions', filters.companions || [], 'id', 'name')}
+                        {renderMultiSelect('Путешествуете с...', 'companions', filters.companions || [], 'id', 'name')}
                         {renderMultiSelect('Сложность...', 'complexity', filters.complexity || [], 'id', 'name')}
                         {renderMultiSelect('Месяц...', 'month', filters.month || [], 'id', 'name')}
                         {renderMultiSelect('Ночлег...', 'over_nights_stay', filters.over_nights_stay || [], 'id', 'name')}

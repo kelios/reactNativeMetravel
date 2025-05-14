@@ -139,6 +139,8 @@ export interface TravelFilters {
     categories: Array<{ id: string; name: string }>;
     transports: Array<{ id: string; name: string }>;
     complexity: Array<{ id: string; name: string }>;
+    companions: Array<{ id: string; name: string }>;
+    over_nights_stay: Array<{ id: string; name: string }>;
     month: Array<{ id: string; name: string }>;
 }
 

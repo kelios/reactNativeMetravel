@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap} from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -14,11 +14,13 @@ const markerIcon = new L.Icon({
 
 const FitBounds = ({ markers }) => {
     const map = useMap();
+    const hasFit = useRef(false);
 
     useEffect(() => {
-        if (markers.length > 0) {
+        if (!hasFit.current && markers.length > 0) {
             const bounds = L.latLngBounds(markers.map(marker => [marker.lat, marker.lng]));
-            map.fitBounds(bounds, { padding: [50, 50], maxZoom:6,});
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
+            hasFit.current = true;
         }
     }, [markers, map]);
 

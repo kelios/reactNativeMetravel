@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, SafeAreaView, StyleSheet, ScrollView, Text } from 'react-native';
 import { TravelFormData, MarkerData } from '@/src/types/types';
 import TextInputComponent from '@/components/TextInputComponent';
@@ -31,18 +31,21 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                                                                        handleCountrySelect,
                                                                        handleCountryDeselect,
                                                                    }) => {
-    const handleChange = <T extends keyof TravelFormData>(name: T, value: TravelFormData[T]) => {
-        setFormData((prevData) => ({
+    const handleChange = useCallback(<T extends keyof TravelFormData>(
+        name: T,
+        value: TravelFormData[T]
+    ) => {
+        setFormData(prevData => ({
             ...prevData,
             [name]: value,
         }));
-    };
+    }, [setFormData]);
 
-    const handleMarkersChange = (updatedMarkers: MarkerData[]) => {
+    const handleMarkersChange = useCallback((updatedMarkers: MarkerData[]) => {
         setMarkers(updatedMarkers);
-        setFormData((prevData) => ({
+        setFormData(prevData => ({
             ...prevData,
-            coordsMeTravel: updatedMarkers.map((marker) => ({
+            coordsMeTravel: updatedMarkers.map(marker => ({
                 id: marker.id,
                 lat: marker.lat,
                 lng: marker.lng,
@@ -52,26 +55,32 @@ const ContentUpsertSection: React.FC<ContentUpsertSectionProps> = ({
                 image: marker.image,
             })),
         }));
-    };
+    }, [setMarkers, setFormData]);
 
-    const renderEditorSection = (title: string, content: string, onChange: (val: string) => void) => (
+    const renderEditorSection = useCallback((
+        title: string,
+        content: string,
+        onChange: (val: string) => void
+    ) => (
         <View style={styles.sectionEditor}>
-            <Text style={styles.sectionTitle}>{title}</Text>
+
             <ArticleEditor
                 key={`${title}-${formData.id}`}
                 content={content ?? ''}
                 onChange={onChange}
                 uploadUrl={UPLOAD_IMAGE}
                 idTravel={formData.id}
+                label={title}
             />
         </View>
-    );
+    ), [formData.id]);
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView
                 contentContainerStyle={styles.container}
                 keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
             >
                 <View style={styles.section}>
                     <TextInputComponent
