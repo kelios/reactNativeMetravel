@@ -1,6 +1,4 @@
-// Полный обновлённый компонент ListTravel с адаптацией отступов и текста
-
-import React, { useState, useEffect, useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import {
     SafeAreaView,
     View,
@@ -9,6 +7,7 @@ import {
     ActivityIndicator,
     useWindowDimensions,
     StyleSheet,
+    Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -59,7 +58,6 @@ export default function ListTravel() {
     const cardStyles = useMemo(() => {
         const baseStyle = {
             maxHeight: isMobile ? 400 : 480,
-           // aspectRatio: 0.75,
         };
         if (isMobile) return { ...baseStyle, maxWidth: '100%' };
         if (isTablet) return { ...baseStyle, maxWidth: '48%' };
@@ -85,30 +83,23 @@ export default function ListTravel() {
         return params;
     }, [filterValue, isMeTravel, isTravelBy, userId, user_id]);
 
-    useEffect(() => {
-        const loadUserData = async () => {
-            const storedUserId = await AsyncStorage.getItem('userId');
-            const superuserFlag = await AsyncStorage.getItem('isSuperuser');
-            setUserId(storedUserId);
-            setIsSuperuser(superuserFlag === 'true');
-        };
-        loadUserData();
-        loadFilters();
+    const handleEditPress = useCallback((id) => {
+        router.push(`/travel/${id}`);
+    }, [router]);
+
+    const loadUserData = useCallback(async () => {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        const superuserFlag = await AsyncStorage.getItem('isSuperuser');
+        setUserId(storedUserId);
+        setIsSuperuser(superuserFlag === 'true');
     }, []);
 
-    useEffect(() => setCurrentPage(0), [itemsPerPage, search, filterValue, userId]);
-
-    useEffect(() => {
-        if (isMeTravel && !userId) return;
-        fetchMore();
-    }, [currentPage, itemsPerPage, search, queryParams]);
-
-    const loadFilters = async () => {
+    const loadFilters = useCallback(async () => {
         const [filtersData, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
         setFilters({ ...filtersData, countries });
-    };
+    }, []);
 
-    const fetchMore = async () => {
+    const fetchMore = useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await fetchTravels(currentPage, itemsPerPage, search, queryParams);
@@ -120,32 +111,50 @@ export default function ListTravel() {
             setIsFirstLoad(false);
             setIsDataLoaded(true);
         }
-    };
+    }, [currentPage, itemsPerPage, search, queryParams]);
 
-    const handleDelete = async () => {
+    const handleDelete = useCallback(async () => {
         if (currentDeleteId) {
             await deleteTravel(currentDeleteId);
             fetchMore();
             setDeleteDialogVisible(false);
         }
-    };
+    }, [currentDeleteId, fetchMore]);
 
-    const openDeleteDialog = (id) => {
+    const openDeleteDialog = useCallback((id) => {
         setCurrentDeleteId(id);
         setDeleteDialogVisible(true);
-    };
+    }, []);
 
-    const renderTravelItem = (item) => (
-        <TravelListItem
-            travel={item}
-            currentUserId={userId ?? ''}
-            isSuperuser={isSuperuser}
-            isMetravel={isMeTravel}
-            isMobile={isMobile}
-            onEditPress={() => router.push(`/travel/${item.id}`)}
-            onDeletePress={() => openDeleteDialog(String(item.id))}
-        />
-    );
+    const emptyFunction = useMemo(() => () => {}, []);
+
+    const renderTravelItem = useCallback(({ item }) => (
+        <View style={[styles.cardContainer, cardStyles]}>
+            <TravelListItem
+                travel={item}
+                currentUserId={userId ?? ''}
+                isSuperuser={isSuperuser}
+                isMetravel={isMeTravel}
+                isMobile={isMobile}
+                onEditPress={handleEditPress}
+                onDeletePress={openDeleteDialog}
+            />
+        </View>
+    ), [isMobile, isSuperuser, isMeTravel, userId, cardStyles, handleEditPress, openDeleteDialog]);
+
+    useEffect(() => {
+        loadUserData();
+        loadFilters();
+    }, [loadUserData, loadFilters]);
+
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [itemsPerPage, search, filterValue, userId]);
+
+    useEffect(() => {
+        if (isMeTravel && !userId) return;
+        fetchMore();
+    }, [currentPage, itemsPerPage, search, queryParams, isMeTravel, userId, fetchMore]);
 
     const renderContent = () => {
         if (!isDataLoaded || isFirstLoad) {
@@ -167,37 +176,35 @@ export default function ListTravel() {
         const items = travels.data;
 
         if (items.length === 1) {
-            return <View style={styles.singleItemContainer}>{renderTravelItem(items[0])}</View>;
+            return <View style={styles.singleItemContainer}>{renderTravelItem({ item: items[0] })}</View>;
         }
 
         return (
-            <>
-                <FlatList
-                    key={`columns-${numColumns}`}
-                    numColumns={numColumns}
-                    data={items}
-                    keyExtractor={(item) => String(item.id)}
-                    contentContainerStyle={[
-                        styles.listContainer,
-                        { paddingBottom: isMobile ? 80 : 32 },
-                    ]}
-                    columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
-                    initialNumToRender={4}
-                    windowSize={5}
-                    maxToRenderPerBatch={5}
-                    removeClippedSubviews
-                    renderItem={({ item }) => (
-                        <View style={[styles.cardContainer, cardStyles]}>
-                            {renderTravelItem(item)}
-                        </View>
-                    )}
-                />
-                {isLoading && (
-                    <View style={styles.loaderOverlay}>
-                        <ActivityIndicator size="large" color="#ff7f50" />
-                    </View>
-                )}
-            </>
+            <FlatList
+                key={`columns-${numColumns}`}
+                numColumns={numColumns}
+                data={items}
+                keyExtractor={(item) => String(item.id)}
+                contentContainerStyle={[
+                    styles.listContainer,
+                    { paddingBottom: isMobile ? 80 : 32 },
+                ]}
+                columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
+                initialNumToRender={4}
+                windowSize={5}
+                maxToRenderPerBatch={5}
+                updateCellsBatchingPeriod={100}
+                removeClippedSubviews
+                renderItem={renderTravelItem}
+                onScrollBeginDrag={emptyFunction}
+                onScrollEndDrag={emptyFunction}
+                scrollEventThrottle={16}
+                getItemLayout={(data, index) => ({
+                    length: isMobile ? 400 : 480,
+                    offset: (isMobile ? 400 : 480) * index,
+                    index,
+                })}
+            />
         );
     };
 

@@ -1,7 +1,8 @@
-import React, { memo, useState } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { memo, useState, useCallback, useMemo } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { FastImage } from 'expo-fast-image';
 
 const placeholderImage = require('@/assets/placeholder.png');
 
@@ -31,9 +32,51 @@ const TravelListItem = ({
 
     const canEdit = isMetravel || isSuperuser;
 
-    const handlePress = () => {
+    const handlePress = useCallback(() => {
         router.push(`/travels/${slug}`);
-    };
+    }, [slug]);
+
+    const handleEditPress = useCallback(() => {
+        onEditPress(id);
+    }, [id, onEditPress]);
+
+    const handleDeletePress = useCallback(() => {
+        onDeletePress(id);
+    }, [id, onDeletePress]);
+
+    const handleImageError = useCallback(() => {
+        setImageError(true);
+    }, []);
+
+    const imageSource = useMemo(() => {
+        if (!imageError && travel_image_thumb_url) {
+            return { uri: travel_image_thumb_url };
+        }
+        return placeholderImage;
+    }, [travel_image_thumb_url, imageError]);
+
+    const ImageComponent = useMemo(() => memo(({ source, onError }) => {
+        if (Platform.OS === 'web') {
+            return (
+                <img
+                    src={source.uri}
+                    alt="travel"
+                    style={styles.backgroundImageWeb}
+                    onError={onError}
+                    loading="lazy"
+                />
+            );
+        }
+
+        return (
+            <FastImage
+                source={source}
+                style={styles.backgroundImage}
+                resizeMode={FastImage.resizeMode.cover}
+                onError={onError}
+            />
+        );
+    }), []);
 
     return (
         <Pressable
@@ -44,41 +87,20 @@ const TravelListItem = ({
             ]}
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
-                {/* Фото фоном */}
                 <View style={styles.imageWrapper}>
-                    {!imageError && travel_image_thumb_url ? (
-                        Platform.OS === 'web' ? (
-                            <img
-                                src={travel_image_thumb_url}
-                                alt={name}
-                                style={styles.backgroundImageWeb}
-                                onError={() => setImageError(true)}
-                            />
-                        ) : (
-                            <Image
-                                source={{ uri: travel_image_thumb_url }}
-                                style={styles.backgroundImage}
-                                resizeMode="cover"
-                                onError={() => setImageError(true)}
-                            />
-                        )
-                    ) : (
-                        <Image
-                            source={placeholderImage}
-                            style={styles.backgroundImage}
-                            resizeMode="cover"
-                        />
-                    )}
+                    <ImageComponent
+                        source={imageSource}
+                        onError={handleImageError}
+                    />
                 </View>
 
-                {/* Контент поверх */}
                 <View style={styles.contentOverlay}>
                     {canEdit && (
                         <View style={styles.actions}>
-                            <Pressable onPress={() => onEditPress(id)} style={styles.iconButton}>
+                            <Pressable onPress={handleEditPress} style={styles.iconButton}>
                                 <Feather name="edit" size={18} color="#fff" />
                             </Pressable>
-                            <Pressable onPress={() => onDeletePress(id)} style={styles.iconButton}>
+                            <Pressable onPress={handleDeletePress} style={styles.iconButton}>
                                 <Feather name="trash-2" size={18} color="#fff" />
                             </Pressable>
                         </View>
