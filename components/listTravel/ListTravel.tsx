@@ -25,6 +25,7 @@ import {
     fetchFiltersCountry,
     deleteTravel,
 } from '@/src/api/travels';
+import RenderTravelItem from "@/components/listTravel/RenderTravelItem";
 
 const initialFilterValue = { showModerationPending: false, year: '' };
 
@@ -128,19 +129,21 @@ export default function ListTravel() {
 
     const emptyFunction = useMemo(() => () => {}, []);
 
-    const renderTravelItem = useCallback(({ item }) => (
-        <View style={[styles.cardContainer, cardStyles]}>
-            <TravelListItem
-                travel={item}
-                currentUserId={userId ?? ''}
+    const renderItem = useCallback(
+        ({ item }) => (
+            <RenderTravelItem
+                item={item}
+                isMobile={isMobile}
                 isSuperuser={isSuperuser}
                 isMetravel={isMeTravel}
-                isMobile={isMobile}
+                userId={userId ?? ''}
                 onEditPress={handleEditPress}
                 onDeletePress={openDeleteDialog}
+                cardStyles={cardStyles}
             />
-        </View>
-    ), [isMobile, isSuperuser, isMeTravel, userId, cardStyles, handleEditPress, openDeleteDialog]);
+        ),
+        [isMobile, isSuperuser, isMeTravel, userId, handleEditPress, openDeleteDialog, cardStyles]
+    );
 
     useEffect(() => {
         loadUserData();
@@ -176,7 +179,7 @@ export default function ListTravel() {
         const items = travels.data;
 
         if (items.length === 1) {
-            return <View style={styles.singleItemContainer}>{renderTravelItem({ item: items[0] })}</View>;
+            return <View style={styles.singleItemContainer}>{renderItem({ item: items[0] })}</View>;
         }
 
         return (
@@ -190,12 +193,12 @@ export default function ListTravel() {
                     { paddingBottom: isMobile ? 80 : 32 },
                 ]}
                 columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
-                initialNumToRender={4}
-                windowSize={5}
-                maxToRenderPerBatch={5}
-                updateCellsBatchingPeriod={100}
-                removeClippedSubviews
-                renderItem={renderTravelItem}
+                initialNumToRender={10}
+                windowSize={50}
+                maxToRenderPerBatch={30}
+                updateCellsBatchingPeriod={30}
+                removeClippedSubviews={false} // важный фикс!
+                renderItem={renderItem}
                 onScrollBeginDrag={emptyFunction}
                 onScrollEndDrag={emptyFunction}
                 scrollEventThrottle={16}

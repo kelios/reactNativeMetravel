@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
     View,
     Image,
@@ -19,22 +19,24 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     const carouselRef = useRef<Carousel<any>>(null);
     const [activeIndex, setActiveIndex] = useState(0);
-    const [isMounted, setIsMounted] = useState(false);
 
     const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
+    const currentImageUrl = images[activeIndex]?.url;
 
-    useEffect(() => {
-        setActiveIndex(0);
-        setIsMounted(false);
-        const timeout = setTimeout(() => {
-            setIsMounted(true);
-        }, 50);
-        return () => clearTimeout(timeout);
-    }, [images]);
+    const renderItem = useCallback(
+        ({ item }: { item: { url: string; id: number } }) => (
+            <View style={styles.imageContainer}>
+                <Image
+                    source={{ uri: item.url }}
+                    style={styles.image}
+                    resizeMode="contain"
+                />
+            </View>
+        ),
+        []
+    );
 
     if (!images || images.length === 0) return null;
-
-    const currentImageUrl = isMounted ? images[activeIndex]?.url : null;
 
     return (
         <View style={[styles.container, { height: sliderHeight }]}>
@@ -53,18 +55,10 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
                 height={sliderHeight}
                 autoPlay
                 autoPlayInterval={8000}
-                data={images}
                 scrollAnimationDuration={10}
-                onSnapToItem={(index) => setActiveIndex(index)}
-                renderItem={({ item }) => (
-                    <View style={styles.imageContainer}>
-                        <Image
-                            source={{ uri: item.url }}
-                            style={styles.image}
-                            resizeMode="contain"
-                        />
-                    </View>
-                )}
+                data={images}
+                onSnapToItem={setActiveIndex}
+                renderItem={renderItem}
             />
 
             <TouchableOpacity

@@ -1,8 +1,14 @@
 import React, { memo, useState, useCallback, useMemo } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+    Image,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { FastImage } from 'expo-fast-image';
 
 const placeholderImage = require('@/assets/placeholder.png');
 
@@ -14,7 +20,6 @@ const TravelListItem = ({
                             onEditPress,
                             onDeletePress,
                             isMobile,
-                            index = 0,
                         }) => {
     const {
         id,
@@ -29,7 +34,6 @@ const TravelListItem = ({
     const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
     const [imageError, setImageError] = useState(false);
     const CARD_HEIGHT = isMobile ? 320 : 460;
-
     const canEdit = isMetravel || isSuperuser;
 
     const handlePress = useCallback(() => {
@@ -55,29 +59,6 @@ const TravelListItem = ({
         return placeholderImage;
     }, [travel_image_thumb_url, imageError]);
 
-    const ImageComponent = useMemo(() => memo(({ source, onError }) => {
-        if (Platform.OS === 'web') {
-            return (
-                <img
-                    src={source.uri}
-                    alt="travel"
-                    style={styles.backgroundImageWeb}
-                    onError={onError}
-                    loading="lazy"
-                />
-            );
-        }
-
-        return (
-            <FastImage
-                source={source}
-                style={styles.backgroundImage}
-                resizeMode={FastImage.resizeMode.cover}
-                onError={onError}
-            />
-        );
-    }), []);
-
     return (
         <Pressable
             onPress={handlePress}
@@ -88,8 +69,14 @@ const TravelListItem = ({
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
                 <View style={styles.imageWrapper}>
-                    <ImageComponent
+                    <Image
                         source={imageSource}
+                        style={
+                            Platform.OS === 'web'
+                                ? styles.backgroundImageWeb
+                                : styles.backgroundImage
+                        }
+                        resizeMode="cover"
                         onError={handleImageError}
                     />
                 </View>
@@ -116,7 +103,9 @@ const TravelListItem = ({
                                 ))}
                             </View>
                         )}
-                        <Text style={styles.title} numberOfLines={1}>{name}</Text>
+                        <Text style={styles.title} numberOfLines={1}>
+                            {name}
+                        </Text>
                         <View style={styles.metaRow}>
                             {userName?.length > 0 && (
                                 <View style={styles.metaItem}>
@@ -135,6 +124,16 @@ const TravelListItem = ({
         </Pressable>
     );
 };
+
+export default memo(TravelListItem, (prev, next) => {
+    return (
+        prev.travel.id === next.travel.id &&
+        prev.currentUserId === next.currentUserId &&
+        prev.isSuperuser === next.isSuperuser &&
+        prev.isMetravel === next.isMetravel &&
+        prev.isMobile === next.isMobile
+    );
+});
 
 const styles = StyleSheet.create({
     pressableContainer: {
@@ -155,7 +154,7 @@ const styles = StyleSheet.create({
     backgroundImage: {
         width: '100%',
         height: '100%',
-        transform: [{ scale: 1.1 }], // Мобильный эффект с "вылезанием"
+        transform: [{ scale: 1.1 }],
     },
     backgroundImageWeb: {
         width: '100%',
@@ -163,7 +162,7 @@ const styles = StyleSheet.create({
         objectFit: 'cover',
         objectPosition: 'center',
         borderRadius: 18,
-        transform: 'scale(1.1)', // Эффект для веба
+        transform: 'scale(1.1)',
     },
     contentOverlay: {
         flex: 1,
@@ -224,5 +223,3 @@ const styles = StyleSheet.create({
         margin: 5,
     },
 });
-
-export default memo(TravelListItem);
