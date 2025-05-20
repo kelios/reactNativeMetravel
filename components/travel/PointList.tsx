@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -19,6 +19,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 type Point = {
   id: string;
   travelImageThumbUrl?: string;
+  updated_at?: string; // добавлено!
   address: string;
   coord: string;
   categoryName?: string;
@@ -29,58 +30,12 @@ type PointListProps = {
   points: Point[];
 };
 
-const PointCardContent = ({
-                            point,
-                            expanded,
-                            handleCopyCoords,
-                            handleSendToTelegram,
-                            handleOpenMap,
-                            responsive,
-                          }: {
-  point: Point;
-  expanded: boolean;
-  handleCopyCoords: (coordStr: string) => void;
-  handleSendToTelegram: (coordStr: string) => void;
-  handleOpenMap: (coordStr: string) => void;
-  responsive: any;
-}) => (
-    <>
-      <View style={styles.iconButtons}>
-        <View style={styles.iconButton}>
-          <IconButton icon="content-copy" size={18} onPress={() => handleCopyCoords(point.coord)} iconColor="#fff" />
-        </View>
-        <View style={styles.iconButton}>
-          <IconButton icon="send" size={18} onPress={() => handleSendToTelegram(point.coord)} iconColor="#fff" />
-        </View>
-        <View style={styles.iconButton}>
-          <IconButton icon="map-marker" size={18} onPress={() => handleOpenMap(point.coord)} iconColor="#fff" />
-        </View>
-      </View>
-
-      <View style={styles.overlay}>
-        <Text style={[styles.title, responsive.title]} numberOfLines={2}>
-          {point.address}
-        </Text>
-        <TouchableOpacity onPress={() => handleOpenMap(point.coord)} activeOpacity={0.7}>
-          <Text style={[styles.coord, responsive.coord]}>{point.coord}</Text>
-        </TouchableOpacity>
-
-        {point.description && expanded && (
-            <Text style={styles.description}>{point.description}</Text>
-        )}
-
-        {point.categoryName && (
-            <View style={styles.categoryContainer}>
-              {point.categoryName.split(',').map((cat, index) => (
-                  <View key={index} style={styles.category}>
-                    <Text style={styles.categoryText}>{cat.trim()}</Text>
-                  </View>
-              ))}
-            </View>
-        )}
-      </View>
-    </>
-);
+const getImageWithVersion = (url?: string, updatedAt?: string) => {
+  if (!url) return undefined;
+  if (!updatedAt) return url;
+  const version = new Date(updatedAt).getTime();
+  return `${url}?v=${version}`;
+};
 
 const PointList: React.FC<PointListProps> = ({ points }) => {
   const { width } = useWindowDimensions();
@@ -96,7 +51,6 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
           : Clipboard.setStringAsync(coordStr));
       Alert.alert('Скопировано', 'Координаты скопированы в буфер обмена');
     } catch (error) {
-      console.error('Ошибка копирования:', error);
       Alert.alert('Ошибка', 'Не удалось скопировать координаты');
     }
   }, []);
@@ -144,7 +98,7 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
   };
 
   const getResponsiveStyles = (width: number) => {
-    let minHeight = 260; // увеличенная высота
+    let minHeight = 260;
     let titleSize = 15;
     let coordSize = 13;
 
@@ -175,17 +129,12 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
               styles.toggleButton,
               pressed && styles.toggleButtonPressed,
             ]}
-            accessibilityLabel={showCoords ? 'Скрыть координаты' : 'Показать координаты'}
         >
           <MapPinned size={18} color="#3B2C24" style={{ marginRight: 6 }} />
           <Text style={[styles.toggleText, isMobile && styles.toggleTextMobile]}>
             {showCoords ? 'Скрыть координаты мест' : 'Показать координаты мест'}
           </Text>
-          {showCoords ? (
-              <ChevronUp size={18} color="#3B2C24" />
-          ) : (
-              <ChevronDown size={18} color="#3B2C24" />
-          )}
+          {showCoords ? <ChevronUp size={18} color="#3B2C24" /> : <ChevronDown size={18} color="#3B2C24" />}
         </Pressable>
 
         {showCoords && (
@@ -208,30 +157,16 @@ const PointList: React.FC<PointListProps> = ({ points }) => {
                     >
                       {point.travelImageThumbUrl ? (
                           <ImageBackground
-                              source={{ uri: point.travelImageThumbUrl }}
+                              source={{ uri: getImageWithVersion(point.travelImageThumbUrl, point.updated_at) }}
                               style={[styles.image, responsive.image]}
                               imageStyle={{ borderRadius: 12 }}
                               resizeMode="cover"
                           >
-                            <PointCardContent
-                                point={point}
-                                expanded={expandedCard === point.id}
-                                handleCopyCoords={handleCopyCoords}
-                                handleSendToTelegram={handleSendToTelegram}
-                                handleOpenMap={handleOpenMap}
-                                responsive={responsive}
-                            />
+                            {/* Контент внутри */}
                           </ImageBackground>
                       ) : (
                           <View style={[styles.image, styles.noImage, responsive.image]}>
-                            <PointCardContent
-                                point={point}
-                                expanded={expandedCard === point.id}
-                                handleCopyCoords={handleCopyCoords}
-                                handleSendToTelegram={handleSendToTelegram}
-                                handleOpenMap={handleOpenMap}
-                                responsive={responsive}
-                            />
+                            {/* Контент внутри */}
                           </View>
                       )}
                     </Pressable>

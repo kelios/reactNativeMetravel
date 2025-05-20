@@ -14,8 +14,23 @@ type Props = {
     travel: TravelCoords;
 };
 
+const getImageWithVersion = (url?: string, updatedAt?: string) => {
+    if (!url) return undefined;
+    if (!updatedAt) return url;
+    const version = new Date(updatedAt).getTime();
+    return `${url}?v=${version}`;
+};
+
 const AddressListItem: React.FC<Props> = ({ travel }) => {
-    const { address, categoryName, coord, travelImageThumbUrl, articleUrl, urlTravel } = travel;
+    const {
+        address,
+        categoryName,
+        coord,
+        travelImageThumbUrl,
+        articleUrl,
+        urlTravel,
+        updated_at,
+    } = travel;
 
     const handleCopyCoords = () => {
         if (coord) Clipboard.setString(coord);
@@ -42,7 +57,7 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
                 <ImageBackground
                     source={
                         travelImageThumbUrl
-                            ? { uri: travelImageThumbUrl }
+                            ? { uri: getImageWithVersion(travelImageThumbUrl, updated_at) }
                             : require('@/assets/no-data.png')
                     }
                     style={styles.image}

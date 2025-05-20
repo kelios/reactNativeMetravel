@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
     View,
     Image,
@@ -11,9 +11,25 @@ import {
 import Carousel from 'react-native-reanimated-carousel';
 import { AntDesign } from '@expo/vector-icons';
 
-interface SliderProps {
-    images: { url: string; id: number }[];
+interface SliderImage {
+    url: string;
+    id: number;
+    updated_at?: string;
 }
+
+interface SliderProps {
+    images: SliderImage[];
+}
+
+const appendVersion = (url: string, updated_at?: string | number) => {
+    if (!url) return '';
+    const version = updated_at
+        ? typeof updated_at === 'string'
+            ? Date.parse(updated_at)
+            : updated_at
+        : '';
+    return version ? `${url}?v=${version}` : url;
+};
 
 const Slider: React.FC<SliderProps> = ({ images }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
@@ -21,13 +37,17 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
     const [activeIndex, setActiveIndex] = useState(0);
 
     const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
-    const currentImageUrl = images[activeIndex]?.url;
+
+    const currentImageUrl = useMemo(() => {
+        const img = images[activeIndex];
+        return img ? appendVersion(img.url, img.updated_at ?? img.id) : null;
+    }, [images, activeIndex]);
 
     const renderItem = useCallback(
-        ({ item }: { item: { url: string; id: number } }) => (
+        ({ item }: { item: SliderImage }) => (
             <View style={styles.imageContainer}>
                 <Image
-                    source={{ uri: item.url }}
+                    source={{ uri: appendVersion(item.url, item.updated_at ?? item.id) }}
                     style={styles.image}
                     resizeMode="contain"
                 />

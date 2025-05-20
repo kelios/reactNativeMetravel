@@ -53,11 +53,12 @@ const TravelListItem = ({
     }, []);
 
     const imageSource = useMemo(() => {
-        if (!imageError && travel_image_thumb_url) {
-            return { uri: travel_image_thumb_url };
+        if (!imageError && travel.travel_image_thumb_url) {
+            const version = travel.updated_at ? Date.parse(travel.updated_at) : travel.id;
+            return { uri: `${travel.travel_image_thumb_url}?v=${version}` };
         }
         return placeholderImage;
-    }, [travel_image_thumb_url, imageError]);
+    }, [travel.travel_image_thumb_url, travel.updated_at, travel.id, imageError]);
 
     return (
         <Pressable

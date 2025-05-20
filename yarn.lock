@@ -7600,9 +7600,9 @@ react-native-multiple-select@^0.5.12:
     prop-types "^15.7.2"
 
 react-native-paper@^5.13.1:
-  version "5.14.4"
-  resolved "https://registry.yarnpkg.com/react-native-paper/-/react-native-paper-5.14.4.tgz#8ff978d1aebd6388c752287d557a5f8cb3716fe5"
-  integrity sha512-XtL9ilZGNZfGopt469vNCYqePNvHrZ1v6if0EXIQfXUx0vZ+lY0Cq7wi0Ap4CBxJTPbj71A1BcRyZDu6ogJKpg==
+  version "5.14.5"
+  resolved "https://registry.yarnpkg.com/react-native-paper/-/react-native-paper-5.14.5.tgz#7995a2f8171c8355c1cb55c81a6d2074a7dd5abb"
+  integrity sha512-eaIH5bUQjJ/mYm4AkI6caaiyc7BcHDwX6CqNDi6RIxfxfWxROsHpll1oBuwn/cFvknvA8uEAkqLk/vzVihI3AQ==
   dependencies:
     "@callstack/react-theme-provider" "^3.0.9"
     color "^3.1.2"
