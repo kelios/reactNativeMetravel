@@ -11,6 +11,7 @@ const RenderTravelItem = ({
                               onEditPress,
                               onDeletePress,
                               cardStyles,
+                              isFirst,
                           }) => (
     <View style={[styles.cardContainer, cardStyles]}>
         <TravelListItem
@@ -21,6 +22,7 @@ const RenderTravelItem = ({
             isMobile={isMobile}
             onEditPress={onEditPress}
             onDeletePress={onDeletePress}
+            isFirst={isFirst}
         />
     </View>
 );

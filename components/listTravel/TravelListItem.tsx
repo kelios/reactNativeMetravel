@@ -20,6 +20,7 @@ const TravelListItem = ({
                             onEditPress,
                             onDeletePress,
                             isMobile,
+                            isFirst,
                         }) => {
     const {
         id,
@@ -48,17 +49,13 @@ const TravelListItem = ({
         onDeletePress(id);
     }, [id, onDeletePress]);
 
-    const handleImageError = useCallback(() => {
-        setImageError(true);
-    }, []);
-
     const imageSource = useMemo(() => {
-        if (!imageError && travel.travel_image_thumb_url) {
+        if (!imageError && travel_image_thumb_url) {
             const version = travel.updated_at ? Date.parse(travel.updated_at) : travel.id;
-            return { uri: `${travel.travel_image_thumb_url}?v=${version}` };
+            return { uri: `${travel_image_thumb_url}?v=${version}` };
         }
         return placeholderImage;
-    }, [travel.travel_image_thumb_url, travel.updated_at, travel.id, imageError]);
+    }, [travel_image_thumb_url, travel.updated_at, travel.id, imageError]);
 
     return (
         <Pressable
@@ -70,16 +67,30 @@ const TravelListItem = ({
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
                 <View style={styles.imageWrapper}>
-                    <Image
-                        source={imageSource}
-                        style={
-                            Platform.OS === 'web'
-                                ? styles.backgroundImageWeb
-                                : styles.backgroundImage
-                        }
-                        resizeMode="cover"
-                        onError={handleImageError}
-                    />
+                    {Platform.OS === 'web' ? (
+                        <img
+                            src={imageSource.uri}
+                            alt={name}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                                transform: 'scale(1.1)',
+                                borderRadius: 18,
+                            }}
+                            fetchpriority={isFirst ? 'high' : undefined}
+                            loading={isFirst ? 'eager' : 'lazy'}
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <Image
+                            source={imageSource}
+                            style={styles.backgroundImage}
+                            resizeMode="cover"
+                            onError={() => setImageError(true)}
+                        />
+                    )}
                 </View>
 
                 <View style={styles.contentOverlay}>
@@ -132,7 +143,8 @@ export default memo(TravelListItem, (prev, next) => {
         prev.currentUserId === next.currentUserId &&
         prev.isSuperuser === next.isSuperuser &&
         prev.isMetravel === next.isMetravel &&
-        prev.isMobile === next.isMobile
+        prev.isMobile === next.isMobile &&
+        prev.isFirst === next.isFirst
     );
 });
 
@@ -156,14 +168,6 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         transform: [{ scale: 1.1 }],
-    },
-    backgroundImageWeb: {
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        objectPosition: 'center',
-        borderRadius: 18,
-        transform: 'scale(1.1)',
     },
     contentOverlay: {
         flex: 1,

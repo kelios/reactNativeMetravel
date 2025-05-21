@@ -68,6 +68,26 @@ const Slider: React.FC<SliderProps> = ({ images }) => {
                 />
             )}
 
+            {Platform.OS === 'web' && currentImageUrl && (
+                <img
+                    src={currentImageUrl}
+                    alt="Обложка путешествия"
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                        zIndex: -1,
+                        borderRadius: 0,
+                    }}
+                    fetchpriority="high"
+                    loading="eager"
+                />
+            )}
+
             <Carousel
                 ref={carouselRef}
                 loop

@@ -130,7 +130,7 @@ export default function ListTravel() {
     const emptyFunction = useMemo(() => () => {}, []);
 
     const renderItem = useCallback(
-        ({ item }) => (
+        ({ item, index }) => (
             <RenderTravelItem
                 item={item}
                 isMobile={isMobile}
@@ -140,6 +140,7 @@ export default function ListTravel() {
                 onEditPress={handleEditPress}
                 onDeletePress={openDeleteDialog}
                 cardStyles={cardStyles}
+                isFirst={index === 0}
             />
         ),
         [isMobile, isSuperuser, isMeTravel, userId, handleEditPress, openDeleteDialog, cardStyles]
