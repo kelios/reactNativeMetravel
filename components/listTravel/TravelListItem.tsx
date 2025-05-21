@@ -32,7 +32,7 @@ const TravelListItem = ({
         countUnicIpView = 0,
     } = travel;
 
-    const countries = countryName ? countryName.split(',').map((c) => c.trim()) : [];
+    const countries = countryName ? countryName.split(',').map(c => c.trim()) : [];
     const [imageError, setImageError] = useState(false);
     const CARD_HEIGHT = isMobile ? 320 : 460;
     const canEdit = isMetravel || isSuperuser;
@@ -71,12 +71,14 @@ const TravelListItem = ({
                         <img
                             src={imageSource.uri}
                             alt={name}
+                            width="600"
+                            height={CARD_HEIGHT}
                             style={{
                                 width: '100%',
                                 height: '100%',
                                 objectFit: 'cover',
                                 objectPosition: 'center',
-                                transform: 'scale(1.1)',
+                                transform: 'scale(1.05)',
                                 borderRadius: 18,
                             }}
                             fetchpriority={isFirst ? 'high' : undefined}
@@ -86,7 +88,7 @@ const TravelListItem = ({
                     ) : (
                         <Image
                             source={imageSource}
-                            style={styles.backgroundImage}
+                            style={[styles.backgroundImage, { height: CARD_HEIGHT }]}
                             resizeMode="cover"
                             onError={() => setImageError(true)}
                         />
@@ -115,9 +117,7 @@ const TravelListItem = ({
                                 ))}
                             </View>
                         )}
-                        <Text style={styles.title} numberOfLines={1}>
-                            {name}
-                        </Text>
+                        <Text style={styles.title} numberOfLines={1}>{name}</Text>
                         <View style={styles.metaRow}>
                             {userName?.length > 0 && (
                                 <View style={styles.metaItem}>
@@ -137,16 +137,14 @@ const TravelListItem = ({
     );
 };
 
-export default memo(TravelListItem, (prev, next) => {
-    return (
-        prev.travel.id === next.travel.id &&
-        prev.currentUserId === next.currentUserId &&
-        prev.isSuperuser === next.isSuperuser &&
-        prev.isMetravel === next.isMetravel &&
-        prev.isMobile === next.isMobile &&
-        prev.isFirst === next.isFirst
-    );
-});
+export default memo(TravelListItem, (prev, next) => (
+    prev.travel.id === next.travel.id &&
+    prev.currentUserId === next.currentUserId &&
+    prev.isSuperuser === next.isSuperuser &&
+    prev.isMetravel === next.isMetravel &&
+    prev.isMobile === next.isMobile &&
+    prev.isFirst === next.isFirst
+));
 
 const styles = StyleSheet.create({
     pressableContainer: {
@@ -166,8 +164,7 @@ const styles = StyleSheet.create({
     },
     backgroundImage: {
         width: '100%',
-        height: '100%',
-        transform: [{ scale: 1.1 }],
+        transform: [{ scale: 1.05 }],
     },
     contentOverlay: {
         flex: 1,
@@ -217,14 +214,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
     },
+    metaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 10,
+    },
     metaText: {
         fontSize: 13,
         color: '#eee',
-    },
-    metaItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        gap: 4,
-        margin: 5,
+        marginLeft: 4,
     },
 });
