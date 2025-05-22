@@ -1,20 +1,30 @@
-import React, { memo, useState, useCallback, useMemo } from 'react';
-import {
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-    Image,
-} from 'react-native';
+import React, { memo, useCallback, useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 const placeholderImage = require('@/assets/placeholder.png');
 
+const CARD_HEIGHT_MOBILE = 320;
+const CARD_HEIGHT_DESKTOP = 460;
+
+const IconButton = ({ icon, onPress }) => (
+    <Pressable onPress={onPress} style={styles.iconButton}>
+        <Feather name={icon} size={18} color="#fff" />
+    </Pressable>
+);
+
+const Meta = ({ icon, text }) => (
+    <View style={styles.metaItem}>
+        <Feather name={icon} size={14} color="#eee" />
+        <Text style={styles.metaText}>{text}</Text>
+    </View>
+);
+
 const TravelListItem = ({
                             travel,
-                            currentUserId,
+                            currentUserId, // reserved for future feature usage
                             isSuperuser,
                             isMetravel,
                             onEditPress,
@@ -30,105 +40,70 @@ const TravelListItem = ({
         countryName = '',
         userName,
         countUnicIpView = 0,
+        updated_at,
     } = travel;
 
-    const countries = countryName ? countryName.split(',').map(c => c.trim()) : [];
-    const [imageError, setImageError] = useState(false);
-    const CARD_HEIGHT = isMobile ? 320 : 460;
+    const CARD_HEIGHT = isMobile ? CARD_HEIGHT_MOBILE : CARD_HEIGHT_DESKTOP;
     const canEdit = isMetravel || isSuperuser;
 
-    const handlePress = useCallback(() => {
-        router.push(`/travels/${slug}`);
-    }, [slug]);
-
-    const handleEditPress = useCallback(() => {
-        onEditPress(id);
-    }, [id, onEditPress]);
-
-    const handleDeletePress = useCallback(() => {
-        onDeletePress(id);
-    }, [id, onDeletePress]);
+    const countries = useMemo(
+        () => (countryName ? countryName.split(',').map((c) => c.trim()) : []),
+        [countryName],
+    );
 
     const imageSource = useMemo(() => {
-        if (!imageError && travel_image_thumb_url) {
-            const version = travel.updated_at ? Date.parse(travel.updated_at) : travel.id;
+        if (travel_image_thumb_url) {
+            const version = updated_at ? Date.parse(updated_at) : id;
             return { uri: `${travel_image_thumb_url}?v=${version}` };
         }
         return placeholderImage;
-    }, [travel_image_thumb_url, travel.updated_at, travel.id, imageError]);
+    }, [travel_image_thumb_url, updated_at, id]);
+
+    const handlePress = useCallback(() => router.push(`/travels/${slug}`), [slug]);
+    const handleEditPress = useCallback(() => onEditPress(id), [id, onEditPress]);
+    const handleDeletePress = useCallback(() => onDeletePress(id), [id, onDeletePress]);
 
     return (
         <Pressable
             onPress={handlePress}
-            style={({ pressed }) => [
-                styles.pressableContainer,
-                { opacity: pressed ? 0.95 : 1 },
-            ]}
+            style={({ pressed }) => [styles.container, pressed && styles.pressed]}
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
-                <View style={styles.imageWrapper}>
-                    {Platform.OS === 'web' ? (
-                        <img
-                            src={imageSource.uri}
-                            alt={name}
-                            width="600"
-                            height={CARD_HEIGHT}
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                objectPosition: 'center',
-                                transform: 'scale(1.05)',
-                                borderRadius: 18,
-                            }}
-                            fetchpriority={isFirst ? 'high' : undefined}
-                            loading={isFirst ? 'eager' : 'lazy'}
-                            onError={() => setImageError(true)}
-                        />
-                    ) : (
-                        <Image
-                            source={imageSource}
-                            style={[styles.backgroundImage, { height: CARD_HEIGHT }]}
-                            resizeMode="cover"
-                            onError={() => setImageError(true)}
-                        />
-                    )}
-                </View>
+                <Image
+                    style={[styles.image, { height: CARD_HEIGHT }]}
+                    source={imageSource}      // понимает и require, и строку
+                    contentFit="cover"
+                    transition={150}
+                    priority={isFirst ? 'high' : 'normal'}
+                    placeholder={placeholderImage}
+                    />
 
-                <View style={styles.contentOverlay}>
+                <View style={styles.overlay} pointerEvents="box-none">
                     {canEdit && (
-                        <View style={styles.actions}>
-                            <Pressable onPress={handleEditPress} style={styles.iconButton}>
-                                <Feather name="edit" size={18} color="#fff" />
-                            </Pressable>
-                            <Pressable onPress={handleDeletePress} style={styles.iconButton}>
-                                <Feather name="trash-2" size={18} color="#fff" />
-                            </Pressable>
+                        <View style={styles.actions} pointerEvents="box-none">
+                            <IconButton icon="edit" onPress={handleEditPress} />
+                            <IconButton icon="trash-2" onPress={handleDeletePress} />
                         </View>
                     )}
 
-                    <View style={styles.textBackground}>
+                    <View style={styles.textBox} pointerEvents="box-none">
                         {countries.length > 0 && (
                             <View style={styles.countryContainer}>
-                                {countries.map((country, index) => (
-                                    <View style={styles.countryItem} key={index}>
-                                        <Text style={styles.countryText}>{country}</Text>
-                                    </View>
+                                {countries.map((country) => (
+                                    <Text key={country} style={styles.countryText}>
+                                        {country}
+                                    </Text>
                                 ))}
                             </View>
                         )}
-                        <Text style={styles.title} numberOfLines={1}>{name}</Text>
+
+                        <Text style={styles.title} numberOfLines={1}>
+                            {name}
+                        </Text>
+
                         <View style={styles.metaRow}>
-                            {userName?.length > 0 && (
-                                <View style={styles.metaItem}>
-                                    <Feather name="user" size={14} color="#eee" />
-                                    <Text style={styles.metaText}>{userName}</Text>
-                                </View>
-                            )}
-                            <View style={styles.metaItem}>
-                                <Feather name="eye" size={14} color="#eee" />
-                                <Text style={styles.metaText}>{countUnicIpView ?? 0}</Text>
-                            </View>
+                            {userName?.length > 0 && <Meta icon="user" text={userName} />}
+                            <Meta icon="eye" text={countUnicIpView} />
                         </View>
                     </View>
                 </View>
@@ -137,42 +112,38 @@ const TravelListItem = ({
     );
 };
 
-export default memo(TravelListItem, (prev, next) => (
-    prev.travel.id === next.travel.id &&
-    prev.currentUserId === next.currentUserId &&
-    prev.isSuperuser === next.isSuperuser &&
-    prev.isMetravel === next.isMetravel &&
-    prev.isMobile === next.isMobile &&
-    prev.isFirst === next.isFirst
-));
+export default memo(
+    TravelListItem,
+    (prev, next) =>
+        prev.travel.id === next.travel.id &&
+        prev.isSuperuser === next.isSuperuser &&
+        prev.isMetravel === next.isMetravel &&
+        prev.isMobile === next.isMobile &&
+        prev.isFirst === next.isFirst,
+);
 
 const styles = StyleSheet.create({
-    pressableContainer: {
+    container: {
         padding: 8,
         width: '100%',
     },
+    pressed: { opacity: 0.95 },
     card: {
         borderRadius: 18,
         overflow: 'hidden',
         backgroundColor: '#000',
         width: '100%',
-        position: 'relative',
     },
-    imageWrapper: {
-        ...StyleSheet.absoluteFillObject,
-        zIndex: 0,
-    },
-    backgroundImage: {
+    image: {
         width: '100%',
         transform: [{ scale: 1.05 }],
     },
-    contentOverlay: {
-        flex: 1,
+    overlay: {
+        ...StyleSheet.absoluteFillObject,
         justifyContent: 'flex-end',
         padding: 16,
-        zIndex: 1,
     },
-    textBackground: {
+    textBox: {
         backgroundColor: 'rgba(0, 0, 0, 0.45)',
         borderRadius: 12,
         padding: 12,
@@ -196,13 +167,11 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginBottom: 6,
     },
-    countryItem: {
-        marginRight: 10,
-        marginBottom: 4,
-    },
     countryText: {
         fontSize: 13,
         color: '#fff',
+        marginRight: 10,
+        marginBottom: 4,
     },
     title: {
         fontSize: 20,

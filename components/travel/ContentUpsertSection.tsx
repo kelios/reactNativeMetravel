@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
     },
     sectionEditor: {
         marginBottom: 20,
+        paddingBottom: 60,
         backgroundColor: '#fff',
         borderRadius: 8,
         padding: 16,
