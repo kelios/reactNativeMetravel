@@ -1,13 +1,12 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
-    View,
-    Image,
     StyleSheet,
-    useWindowDimensions,
     TouchableOpacity,
-    ImageBackground,
+    View,
+    useWindowDimensions,
     Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Carousel from 'react-native-reanimated-carousel';
 import { AntDesign } from '@expo/vector-icons';
 
@@ -31,170 +30,166 @@ const appendVersion = (url: string, updated_at?: string | number) => {
     return version ? `${url}?v=${version}` : url;
 };
 
-const Slider: React.FC<SliderProps> = ({ images }) => {
-    const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-    const carouselRef = useRef<Carousel<any>>(null);
-    const [activeIndex, setActiveIndex] = useState(0);
+const NavButton = ({ direction, onPress }: { direction: 'left' | 'right'; onPress: () => void }) => (
+    <TouchableOpacity
+        onPress={onPress}
+        style={[styles.navButton, direction === 'left' ? styles.left : styles.right]}
+        hitSlop={10}
+    >
+        <AntDesign name={direction} size={24} color="#fff" />
+    </TouchableOpacity>
+);
 
-    const sliderHeight = Math.min(Math.max(windowHeight * 0.6, 400), 700);
+/**
+ * Синхронный фон: перенос blur-изображения внутрь слайда,
+ * чтобы во время перелистывания фон всегда соответствовал картинке.
+ */
+const Slider: React.FC<SliderProps> = ({ images = [] }) => {
+    const { width, height } = useWindowDimensions();
+    const carouselRef = useRef<Carousel<SliderImage>>(null);
+    const [index, setIndex] = useState(0);
 
-    const currentImageUrl = useMemo(() => {
-        const img = images[activeIndex];
-        return img ? appendVersion(img.url, img.updated_at ?? img.id) : null;
-    }, [images, activeIndex]);
+    const sliderHeight = useMemo(() => Math.min(Math.max(height * 0.6, 400), 700), [height]);
 
+    /* ---------------------------- рендер одного слайда ---------------------------- */
     const renderItem = useCallback(
-        ({ item }: { item: SliderImage }) => (
-            <View style={styles.imageContainer}>
-                <Image
-                    source={{ uri: appendVersion(item.url, item.updated_at ?? item.id) }}
-                    style={styles.image}
-                    resizeMode="contain"
-                />
-            </View>
-        ),
-        []
+        ({ item }: { item: SliderImage }) => {
+            const uri = appendVersion(item.url, item.updated_at ?? item.id);
+            return (
+                <View style={styles.slide}>
+                    {/* Синхронный фон */}
+                    <Image
+                        style={styles.slideBg}
+                        source={{ uri }}
+                        contentFit="cover"
+                        blurRadius={20}
+                        priority="low"
+                    />
+
+                    {/* Основное изображение */}
+                    <Image
+                        style={styles.slideImg}
+                        source={{ uri }}
+                        contentFit="contain"
+                        priority="high"
+                        transition={200}
+                    />
+                </View>
+            );
+        },
+        [],
     );
 
-    if (!images || images.length === 0) return null;
+    if (!images.length) return null;
+
+    const currentUrl = appendVersion(images[index]?.url, images[index]?.updated_at ?? images[index]?.id);
 
     return (
-        <View style={[styles.container, { height: sliderHeight }]}>
-            {currentImageUrl && (
-                <ImageBackground
-                    source={{ uri: currentImageUrl }}
-                    style={styles.backgroundImage}
-                    blurRadius={10}
-                />
-            )}
+        <View style={[styles.container, { height: sliderHeight }]}
+              accessibilityRole="group"
+              accessibilityLabel="Слайдер изображений">
 
-            {Platform.OS === 'web' && currentImageUrl && (
+            {/* LCP hero-img для Web / SEO */}
+            {Platform.OS === 'web' && currentUrl && (
                 <img
-                    src={currentImageUrl}
+                    src={currentUrl}
                     alt="Обложка путешествия"
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center',
-                        zIndex: -1,
-                        borderRadius: 0,
-                    }}
+                    width="1920"
+                    height="1080"
+                    style={styles.heroImg}
                     fetchpriority="high"
                     loading="eager"
+                    decoding="async"
                 />
             )}
 
             <Carousel
                 ref={carouselRef}
-                loop
-                width={windowWidth}
+                data={images}
+                width={width}
                 height={sliderHeight}
+                loop
                 autoPlay
                 autoPlayInterval={8000}
-                scrollAnimationDuration={10}
-                data={images}
-                onSnapToItem={setActiveIndex}
+                onSnapToItem={setIndex}
                 renderItem={renderItem}
             />
 
-            <TouchableOpacity
-                style={[styles.navButton, styles.leftButton]}
-                onPress={() => carouselRef.current?.prev()}
-                hitSlop={10}
-            >
-                <AntDesign name="left" size={24} color="white" />
-            </TouchableOpacity>
+            <NavButton direction="left" onPress={() => carouselRef.current?.prev()} />
+            <NavButton direction="right" onPress={() => carouselRef.current?.next()} />
 
-            <TouchableOpacity
-                style={[styles.navButton, styles.rightButton]}
-                onPress={() => carouselRef.current?.next()}
-                hitSlop={10}
-            >
-                <AntDesign name="right" size={24} color="white" />
-            </TouchableOpacity>
-
-            <View style={styles.pagination}>
-                {images.map((_, index) => (
-                    <View
-                        key={index}
-                        style={[
-                            styles.dot,
-                            activeIndex === index && styles.activeDot,
-                        ]}
-                    />
+            <View style={styles.dotsRow} pointerEvents="none">
+                {images.map((_, i) => (
+                    <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
                 ))}
             </View>
         </View>
     );
 };
 
+export default memo(Slider);
+
+/* -------------------------------------------------------------------------- */
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
         backgroundColor: '#000',
-        position: 'relative',
+        overflow: 'hidden',
     },
-    backgroundImage: {
-        ...StyleSheet.absoluteFillObject,
+    heroImg: {
+        position: 'absolute',
+        inset: 0,
         width: '100%',
         height: '100%',
+        objectFit: 'cover',
+        objectPosition: 'center',
+        zIndex: -2,
     },
-    imageContainer: {
+    /* --- slide --- */
+    slide: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    slideBg: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    slideImg: {
         width: '100%',
         height: '100%',
     },
-    image: {
-        width: '100%',
-        height: '100%',
-    },
+    /* --- nav buttons --- */
     navButton: {
         position: 'absolute',
         top: '50%',
-        transform: [{ translateY: -20 }],
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        marginTop: -20,
+        backgroundColor: 'rgba(0,0,0,0.4)',
         padding: 10,
         borderRadius: 20,
         zIndex: 10,
-        ...Platform.select({
-            web: {
-                cursor: 'pointer',
-            },
-        }),
+        ...Platform.select({ web: { cursor: 'pointer' } }),
     },
-    leftButton: {
-        left: 10,
-    },
-    rightButton: {
-        right: 10,
-    },
-    pagination: {
+    left: { left: 10 },
+    right: { right: 10 },
+    /* --- dots --- */
+    dotsRow: {
         position: 'absolute',
         bottom: 20,
         flexDirection: 'row',
-        justifyContent: 'center',
-        width: '100%',
-        zIndex: 5,
     },
     dot: {
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        backgroundColor: 'rgba(255,255,255,0.5)',
         marginHorizontal: 5,
     },
-    activeDot: {
-        backgroundColor: 'white',
+    dotActive: {
+        backgroundColor: '#fff',
         width: 10,
         height: 10,
     },
 });
-
-export default Slider;

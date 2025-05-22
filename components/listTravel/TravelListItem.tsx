@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -9,6 +9,7 @@ const placeholderImage = require('@/assets/placeholder.png');
 const CARD_HEIGHT_MOBILE = 320;
 const CARD_HEIGHT_DESKTOP = 460;
 
+/* -------------------------------------------------------------------------- */
 const IconButton = ({ icon, onPress }) => (
     <Pressable onPress={onPress} style={styles.iconButton}>
         <Feather name={icon} size={18} color="#fff" />
@@ -24,7 +25,6 @@ const Meta = ({ icon, text }) => (
 
 const TravelListItem = ({
                             travel,
-                            currentUserId, // reserved for future feature usage
                             isSuperuser,
                             isMetravel,
                             onEditPress,
@@ -43,6 +43,7 @@ const TravelListItem = ({
         updated_at,
     } = travel;
 
+    /* --------------------------- вычисляемые данные --------------------------- */
     const CARD_HEIGHT = isMobile ? CARD_HEIGHT_MOBILE : CARD_HEIGHT_DESKTOP;
     const canEdit = isMetravel || isSuperuser;
 
@@ -51,32 +52,47 @@ const TravelListItem = ({
         [countryName],
     );
 
-    const imageSource = useMemo(() => {
+    const imageUrl = useMemo(() => {
         if (travel_image_thumb_url) {
             const version = updated_at ? Date.parse(updated_at) : id;
-            return { uri: `${travel_image_thumb_url}?v=${version}` };
+            return `${travel_image_thumb_url}?v=${version}`;
         }
-        return placeholderImage;
+        return null;
     }, [travel_image_thumb_url, updated_at, id]);
 
+    /* -------------------------------- handlers ------------------------------- */
     const handlePress = useCallback(() => router.push(`/travels/${slug}`), [slug]);
     const handleEditPress = useCallback(() => onEditPress(id), [id, onEditPress]);
     const handleDeletePress = useCallback(() => onDeletePress(id), [id, onDeletePress]);
 
+    /* -------------------------------- рендер --------------------------------- */
     return (
         <Pressable
             onPress={handlePress}
             style={({ pressed }) => [styles.container, pressed && styles.pressed]}
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
+                {Platform.OS === 'web' && imageUrl && (
+                    <img
+                        src={imageUrl}
+                        alt={name}
+                        width="600"
+                        height={CARD_HEIGHT}
+                        style={styles.htmlImage}
+                        fetchpriority={isFirst ? 'high' : 'auto'}
+                        loading={isFirst ? 'eager' : 'lazy'}
+                        decoding="async"
+                    />
+                )}
+
                 <Image
                     style={[styles.image, { height: CARD_HEIGHT }]}
-                    source={imageSource}      // понимает и require, и строку
+                    source={imageUrl ? { uri: imageUrl } : placeholderImage}
                     contentFit="cover"
                     transition={150}
-                    priority={isFirst ? 'high' : 'normal'}
+                    priority={isFirst ? 'high' : 'normal'} /* expo-image → fetchpriority */
                     placeholder={placeholderImage}
-                    />
+                />
 
                 <View style={styles.overlay} pointerEvents="box-none">
                     {canEdit && (
@@ -102,7 +118,7 @@ const TravelListItem = ({
                         </Text>
 
                         <View style={styles.metaRow}>
-                            {userName?.length > 0 && <Meta icon="user" text={userName} />}
+                            {!!userName && <Meta icon="user" text={userName} />}
                             <Meta icon="eye" text={countUnicIpView} />
                         </View>
                     </View>
@@ -122,6 +138,7 @@ export default memo(
         prev.isFirst === next.isFirst,
 );
 
+/* -------------------------------------------------------------------------- */
 const styles = StyleSheet.create({
     container: {
         padding: 8,
@@ -133,10 +150,20 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         backgroundColor: '#000',
         width: '100%',
+        position: 'relative',
     },
     image: {
         width: '100%',
-        transform: [{ scale: 1.05 }],
+    },
+    htmlImage: {
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        objectPosition: 'center',
+        borderRadius: 18,
+        zIndex: -2,
     },
     overlay: {
         ...StyleSheet.absoluteFillObject,
