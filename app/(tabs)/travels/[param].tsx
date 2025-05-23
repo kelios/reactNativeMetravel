@@ -1,365 +1,290 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+/* исправленный TravelDetails с центрированием и видео */
+import React, {
+  lazy, Suspense, useCallback, useEffect, useRef, useState,
+} from 'react';
 import {
-  ActivityIndicator, Platform,
+  ActivityIndicator,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import { useLocalSearchParams} from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import Head from 'expo-router/head';
-import {Travel} from '@/src/types/types';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {fetchTravel, fetchTravelBySlug} from '@/src/api/travels';
-import Slider from '@/components/travel/Slider';
-import PointList from '@/components/travel/PointList';
-import SideBarTravel from '@/components/travel/SideBarTravel';
-import NearTravelList from '@/components/travel/NearTravelList';
-import PopularTravelList from '@/components/travel/PopularTravelList';
-import MapClientSideComponent from '@/components/Map';
-import TravelDescription from '@/components/travel/TravelDescription';
-import ToggleableMapSection from '@/components/travel/ToggleableMapSection';
-import {WebView} from "react-native-webview";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useInView } from 'react-intersection-observer';
 
-const TravelDetails: React.FC = () => {
-  const searchParams = useLocalSearchParams();
-  const param = searchParams.param;
-  const paramValue = typeof param === 'string' ? param : Array.isArray(param) ? param[0] : '';
-  const numericId = Number(paramValue);
-  const isNumeric = !isNaN(numericId);
+import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
+import type { Travel } from '@/src/types/types';
 
-  const [travel, setTravel] = useState<Travel | null>(null);
-  const { width, height } = useWindowDimensions();
-  const isMobile = width <= 768;
-  const scrollRef = useRef<ScrollView>(null);
+const Slider            = lazy(() => import('@/components/travel/Slider'));
+const TravelDescription = lazy(() => import('@/components/travel/TravelDescription'));
+const PointList         = lazy(() => import('@/components/travel/PointList'));
+const NearTravelList    = lazy(() => import('@/components/travel/NearTravelList'));
+const PopularTravelList = lazy(() => import('@/components/travel/PopularTravelList'));
+const ToggleableMap     = lazy(() => import('@/components/travel/ToggleableMapSection'));
+const MapClientSide     = lazy(() => import('@/components/Map'));
+const SideBarTravel     = lazy(() => import('@/components/travel/CompactSideBarTravel'));
+const WebView = Platform.select({
+  native: () => lazy(() => import('react-native-webview').then(m => ({ default: m.WebView }))),
+  web:   () => () => null,
+})();
 
-  const [menuVisible, setMenuVisible] = useState(!isMobile);
+const ytId    = (u: string) => u.match(/(?:youtu\.be\/|(?:v=|embed\/))([^?&]+)/)?.[1] || '';
+const ytEmbed = (u?: string) => (u ? `https://www.youtube.com/embed/${ytId(u)}?rel=0&playsinline=1&enablejsapi=1` : '');
+const Fallback = () => <View style={styles.fallback}><ActivityIndicator size="small" color="#6B4F4F" /></View>;
+
+const SIDE_DESKTOP = 260;
+const HEADER_OFFSET_DESKTOP = 72;
+const HEADER_OFFSET_MOBILE  = 56;
+
+export default function TravelDetails() {
+  const { width } = useWindowDimensions();
+  const isMobile  = width <= 768;
+  const headerOffset = isMobile ? HEADER_OFFSET_MOBILE : HEADER_OFFSET_DESKTOP;
+  const insets    = useSafeAreaInsets();
+
+  const { param } = useLocalSearchParams();
+  const slug = Array.isArray(param) ? param[0] : param ?? '';
+  const id   = Number(slug);
+  const isId = !Number.isNaN(id);
+
+  const { data: travel, isLoading, isError } = useQuery<Travel>({
+    queryKey: ['travel', slug],
+    queryFn : () => (isId ? fetchTravel(id) : fetchTravelBySlug(slug)),
+    staleTime: 600_000,
+    placeholderData: keepPreviousData,
+  });
+
   const [isSuperuser, setIsSuperuser] = useState(false);
-  const [storedUserId, setStoredUserId] = useState<string | null>(null);
-  const [isTravelReady, setIsTravelReady] = useState(false);
-
-  const refs = {
-    galleryRef: useRef<View>(null),
-    videoRef: useRef<View>(null),
-    descriptionRef: useRef<View>(null),
-    mapRef: useRef<View>(null),
-    pointsRef: useRef<View>(null),
-    nearRef: useRef<View>(null),
-    popularRef: useRef<View>(null),
-    recommendationRef: useRef<View>(null),
-    plusRef: useRef<View>(null),
-    minusRef: useRef<View>(null),
-  };
-
+  const [userId,      setUserId]      = useState<string|null>(null);
   useEffect(() => {
-    const checkSuperuser = async () => {
-      const flag = await AsyncStorage.getItem('isSuperuser');
-      const uid = await AsyncStorage.getItem('userId');
-      setStoredUserId(uid);
-      setIsSuperuser(flag === 'true');
-    };
-    checkSuperuser();
+    AsyncStorage.multiGet(['isSuperuser','userId']).then(([[,su],[,uid]])=>{
+      setIsSuperuser(su==='true'); setUserId(uid);
+    });
   }, []);
 
-  useEffect(() => {
-    setMenuVisible(!isMobile);
-  }, [isMobile]);
+  const [menu, setMenu] = useState(!isMobile);
+  useEffect(()=>{ setMenu(!isMobile); },[isMobile]);
+  const toggleMenu = () => setMenu(v=>!v);
+  const closeMenu  = () => setMenu(false);
 
-  const toggleMenu = useCallback(() => setMenuVisible(prev => !prev), []);
-  const closeMenu = useCallback(() => setMenuVisible(false), []);
+  const scrollRef = useRef<ScrollView>(null);
+  const anchor = {
+    gallery       : useRef<View>(null),
+    video         : useRef<View>(null),
+    description   : useRef<View>(null),
+    recommendation: useRef<View>(null),
+    plus          : useRef<View>(null),
+    minus         : useRef<View>(null),
+    map           : useRef<View>(null),
+    points        : useRef<View>(null),
+    near          : useRef<View>(null),
+    popular       : useRef<View>(null),
+  } as const;
 
-  const handlePress = useCallback(
-      (ref: React.RefObject<View>) => () => {
-        ref.current?.measureLayout(
-            scrollRef.current?.getInnerViewNode(),
-            (x, y) => scrollRef.current?.scrollTo({ y, animated: true }),
-            error => console.warn('Failed to measure layout:', error)
-        );
-      },
-      []
-  );
-
-  const convertYouTubeLink = (url: string): string | null => {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
-    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-  };
-
-  useEffect(() => {
-    setTravel(null); // 💣 очистка старого travel
-    setIsTravelReady(false);
-
-    const fetchData = async () => {
-      try {
-        const travelData = isNumeric
-            ? await fetchTravel(numericId)
-            : await fetchTravelBySlug(paramValue);
-        setTravel(travelData);
-        setIsTravelReady(true); // ✅ только теперь показываем
-      } catch (error) {
-        console.log('Failed to fetch travel data:', error);
-      }
-    };
-
-    if (paramValue) fetchData();
-  }, [paramValue]);
-
-  const gallery = travel?.gallery;
-  const hasGallery = Array.isArray(gallery) && gallery.length > 0;
-
-  if (!travel) {
-    return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6B4F4F" />
-          <Text style={styles.loadingText}>Загрузка данных...</Text>
-        </View>
+  const scrollTo = useCallback((k: keyof typeof anchor) => {
+    const node = anchor[k]?.current;
+    if (!node || !scrollRef.current) return;
+    node.measureLayout(
+        scrollRef.current.getInnerViewNode(),
+        (_x, y) => {
+          scrollRef.current!.scrollTo({ y: Math.max(0, y - headerOffset), animated: true });
+        },
+        () => {},
     );
-  }
+    if (isMobile) closeMenu();
+  }, [headerOffset,isMobile]);
 
-  const plainTextDescription = travel.description
-      ?.replace(/<[^>]+>/g, '') // убираем HTML-теги
-      .replace(/\s+/g, ' ')     // убираем лишние пробелы
-      .trim()
-      .slice(0, 160);
+  const [refMap,  inMap]      = useInView({ rootMargin:'200px', triggerOnce:true });
+  const [refPts,  inPoints]   = useInView({ rootMargin:'200px', triggerOnce:true });
+  const [refNear, inNear]     = useInView({ rootMargin:'200px', triggerOnce:true });
+  const [refPop,  inPopular]  = useInView({ rootMargin:'200px', triggerOnce:true });
+
+  if (isLoading) return <View style={styles.center}><ActivityIndicator size="large" color="#6B4F4F"/></View>;
+  if (isError || !travel) return <View style={styles.center}><Text>Ошибка загрузки</Text></View>;
+
+  const descTxt = travel.description?.replace(/<[^>]+>/g,'').slice(0,160) || '';
+  const scrollStyle = [styles.scroll, { marginLeft: isMobile ? 0 : SIDE_DESKTOP, alignItems: 'center' }];
+  const sidebarStyle = [
+    styles.sidebarBase,
+    isMobile ? styles.sidebarMobile : styles.sidebarDesktop,
+    isMobile && (menu ? styles.sideInMobile : styles.sideOutMobile),
+  ];
 
   return (
       <>
         <Head>
           <title>{travel.name} — metravel.by</title>
-          <meta name="description" content={plainTextDescription || 'Описание путешествия, интересные места и маршруты.'} />
-          <meta property="og:title" content={travel.name} />
-          <meta property="og:description" content={plainTextDescription || 'Маршрут и впечатления'} />
-          <meta property="og:url" content={`https://metravel.by/travels/${paramValue}`} />
-          <link rel="canonical" href={`https://metravel.by/travels/${isNumeric ? travel.id : paramValue}`} />
+          <meta name="description" content={descTxt}/>
+          <link rel="canonical" href={`https://metravel.by/travels/${slug}`}/>
         </Head>
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.mainContainer}>
-          {isMobile && menuVisible && <Pressable onPress={closeMenu} style={styles.overlay} />}
 
-          <View
-              style={[
-                styles.sideMenu,
-                isMobile ? styles.mobileSideMenu : styles.desktopSideMenu,
-                isMobile && menuVisible && styles.visibleMobileSideMenu,
-              ]}
-          >
-            <SideBarTravel
-                handlePress={handlePress}
-                closeMenu={closeMenu}
-                isMobile={isMobile}
-                travel={travel}
-                refs={refs}
-                isSuperuser={isSuperuser}
-                storedUserId={storedUserId}
-            />
-          </View>
+        <SafeAreaView style={{ flex:1 }}>
+          {isMobile && menu && <Pressable style={styles.overlay} onPress={closeMenu}/>}
+          <View style={[styles.root, isMobile && styles.rootMobile]}>
+            <View style={sidebarStyle}>
+              <Suspense fallback={<Fallback/>}>
+                <SideBarTravel
+                    travel={travel}
+                    isSuperuser={isSuperuser}
+                    storedUserId={userId}
+                    isMobile={isMobile}
+                    refs={anchor}
+                    closeMenu={closeMenu}
+                    onNavigate={scrollTo}
+                />
+              </Suspense>
+            </View>
 
-          <View style={styles.content}>
-            {isMobile && !menuVisible && (
-                <TouchableOpacity style={styles.menuButtonContainer} onPress={toggleMenu}>
-                  <Text style={styles.menuButtonText}>Меню</Text>
+            {isMobile && !menu && (
+                <TouchableOpacity onPress={toggleMenu} style={[styles.fab,{ top: insets.top+8 }]} hitSlop={12}>
+                  <MaterialIcons name="menu" size={20} color="#fff"/>
                 </TouchableOpacity>
             )}
 
             <ScrollView
-                key={paramValue}
-                style={styles.scrollView}
                 ref={scrollRef}
-                contentContainerStyle={styles.contentContainer}
+                contentContainerStyle={scrollStyle}
                 keyboardShouldPersistTaps="handled"
             >
-              <View
-                  style={[
-                    styles.contentWrapper,
-                    isMobile && { paddingHorizontal: 0 },
-                  ]}
-              >
-                {travel && travel.id && hasGallery && (
-                    <View ref={refs.galleryRef} style={styles.card}>
-                      <Slider key={travel.id} images={gallery} />
+              <View ref={anchor.gallery}/>
+              {!!travel.gallery?.length && (
+                  <Suspense fallback={<Fallback/>}>
+                    <View style={styles.containerInner}>
+                      <View style={styles.card}>
+                        <Slider
+                            images={travel.gallery}
+                            showArrows={!isMobile}
+                            showDots={isMobile}
+                        />
+                      </View>
                     </View>
-                )}
+                  </Suspense>
+              )}
 
-                {travel.youtube_link && (
-                    <View ref={refs.videoRef} style={styles.card}>
-                      <View style={[styles.videoContainer, { height: height * 0.7 }]} >
-                      {Platform.OS === 'web' ? (
-                          <div style={{ width: '100%', height: '100%' }}>
-                            <iframe
-                                src={convertYouTubeLink(travel.youtube_link) ?? ''}
-                                width="100%"
-                                height="100%"
-                                style={{ border: 'none' }}
-                                allowFullScreen
-                            />
-                          </div>
-                      ) : (
-                          <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) ?? '' }} style={{ flex: 1 }} />
-                      )}
+              <View ref={anchor.video}/>
+              {travel.youtube_link && (
+                  <View style={styles.containerInner}>
+                    <View style={styles.video}>
+                      <YouTubeLazy url={travel.youtube_link}/>
                     </View>
-                    </View>
-                )}
+                  </View>
+              )}
 
-                {travel.description && (
-                    <View ref={refs.descriptionRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.description} title={travel.name} noBox />
+              {[{ ref: anchor.description, html: travel.description, title: travel.name },
+                { ref: anchor.recommendation, html: travel.recommendation, title: 'Рекомендации' },
+                { ref: anchor.plus, html: travel.plus, title: 'Плюсы' },
+                { ref: anchor.minus, html: travel.minus, title: 'Минусы' },
+              ].map(({ ref, html, title }) => html && (
+                  <React.Fragment key={title}>
+                    <View ref={ref}/>
+                    <View style={styles.containerInner}>
+                      <View style={styles.card}>
+                        <Suspense fallback={<Fallback/>}>
+                          <TravelDescription title={title} htmlContent={html} noBox/>
+                        </Suspense>
+                      </View>
                     </View>
-                )}
+                  </React.Fragment>
+              ))}
 
-                {travel.recommendation && (
-                    <View ref={refs.recommendationRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.recommendation} title="Рекомендации" noBox />
+              <View ref={refMap}/>
+              {inMap && travel.coordsMeTravel?.length > 0 && (
+                  <>
+                    <View ref={anchor.map}/>
+                    <View style={styles.containerInner}>
+                      <View style={styles.card}>
+                        <Suspense fallback={<Fallback/>}>
+                          <ToggleableMap>
+                            <MapClientSide travel={{ data: travel.travelAddress }}/>
+                          </ToggleableMap>
+                        </Suspense>
+                      </View>
                     </View>
-                )}
-
-                {travel.plus && (
-                    <View ref={refs.plusRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.plus} title="Плюсы" noBox />
-                    </View>
-                )}
-
-                {travel.minus && (
-                    <View ref={refs.minusRef} style={styles.card}>
-                      <TravelDescription htmlContent={travel.minus} title="Минусы" noBox />
-                    </View>
-                )}
-
-                {travel.coordsMeTravel?.length > 0 && (
-                    <View ref={refs.mapRef} style={styles.card}>
-                      <ToggleableMapSection>
-                        {travel.travelAddress && (
-                            <MapClientSideComponent travel={{ data: travel.travelAddress }} />
-                        )}
-                      </ToggleableMapSection>
-                    </View>
-                )}
-
-                {travel.travelAddress && (
-                    <View ref={refs.pointsRef} style={styles.card}>
-                      <PointList points={travel.travelAddress} />
-                    </View>
-                )}
-
-                {travel.travelAddress && (
-                    <View ref={refs.nearRef} style={styles.card}>
-                      <NearTravelList travel={travel} />
-                    </View>
-                )}
-
-                <View ref={refs.popularRef} style={styles.card}>
-                  <PopularTravelList />
-                </View>
-              </View>
+                  </>
+              )}
             </ScrollView>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
       </>
   );
-};
+}
+
+function YouTubeLazy({ url }: { url: string }) {
+  const [play,setPlay] = useState(false);
+  const [error,setError] = useState(false);
+  const ytUrl = ytEmbed(url);
+
+  if (error) return <View style={styles.ytError}><Text style={styles.ytErrorText}>Не удалось загрузить видео</Text></View>;
+
+  if (Platform.OS==='web') {
+    return play ? (
+        <iframe
+            src={ytUrl}
+            width="100%"
+            height="100%"
+            style={{ border:'none', display:'block' }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            onError={() => setError(true)}
+        />
+    ) : (
+        <Pressable style={styles.ytStub} onPress={()=>setPlay(true)}>
+          <MaterialIcons name="play-circle" size={64} color="#fff"/>
+        </Pressable>
+    );
+  }
+
+  return play ? (
+      <Suspense fallback={<Fallback/>}>
+        <WebView
+            source={{ uri: ytUrl }}
+            style={{ flex:1 }}
+            onError={() => setError(true)}
+            allowsFullscreenVideo
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+        />
+      </Suspense>
+  ) : (
+      <Pressable style={styles.ytStub} onPress={()=>setPlay(true)}>
+        <MaterialIcons name="play-circle" size={64} color="#fff"/>
+      </Pressable>
+  );
+}
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#f9f8f2',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    backgroundColor: '#f9f8f2',
-  },
-  contentContainer: {
-    paddingBottom: 40,
-  },
-  contentWrapper: {
-    width: '100%',
-    maxWidth: 1000,
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333333',
-  },
-  card: {
-    width: '100%',
-    marginBottom: 32,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  videoContainer: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#000',
-  },
-  sideMenu: {
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-  },
-  mobileSideMenu: {
-    position: 'absolute',
-    width: '100%',
-    backgroundColor: 'white',
-    zIndex: 1002,
-    top: 0,
-    left: 0,
-    transform: [{ translateX: -1000 }],
-    maxHeight: '85vh',
-    overflowY: 'auto',
-  },
-  visibleMobileSideMenu: {
-    transform: [{ translateX: 0 }],
-  },
-  desktopSideMenu: {
-    width: 280,
-    maxWidth: 320,
-    alignSelf: 'center',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  menuButtonContainer: {
-    width: '100%',
-    backgroundColor: '#2F332E',
-    paddingVertical: 10,
-    marginBottom: 10,
-    alignItems: 'center',
-    zIndex: 10000,
-    elevation: 5,
-  },
-  menuButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: 'Georgia',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 1001,
-  },
+  root:{ flex:1, flexDirection:'row', backgroundColor:'#f9f8f2' },
+  rootMobile:{ flexDirection:'column' },
+  sidebarBase:{ backgroundColor:'#fff', paddingVertical:12,
+    shadowColor:'#000', shadowOffset:{width:0,height:2},
+    shadowOpacity:0.08, shadowRadius:4, elevation:3, zIndex:900 },
+  sidebarDesktop:{ width:SIDE_DESKTOP, maxWidth:300 },
+  sidebarMobile:{ position:'absolute', left:0, top:0, bottom:0, width:SIDE_DESKTOP, maxWidth:300 },
+  sideOutMobile:{ transform:[{ translateX:-SIDE_DESKTOP-20 }] },
+  sideInMobile :{ transform:[{ translateX:0 }] },
+  overlay:{ ...StyleSheet.absoluteFillObject, backgroundColor:'rgba(0,0,0,0.35)', zIndex:899 },
+  fab:{ position:'absolute', right:14, width:32, height:32, borderRadius:16,
+    backgroundColor:'rgba(47,51,46,0.65)', justifyContent:'center', alignItems:'center', zIndex:901 },
+  scroll:{ flexGrow:1, paddingBottom:40, paddingHorizontal:16 },
+  containerInner: { width: '100%', maxWidth: 1000, alignSelf: 'center' },
+  card:{ width:'100%', marginBottom:32, backgroundColor:'#fff',
+    borderRadius:16, shadowColor:'#000', shadowOffset:{width:0,height:2},
+    shadowOpacity:0.05, shadowRadius:4, elevation:2 },
+  video:{ width:'100%', aspectRatio:16/9, borderRadius:12,
+    overflow:'hidden', backgroundColor:'#000', marginBottom:24 },
+  ytStub:{ flex:1, justifyContent:'center', alignItems:'center', backgroundColor:'#000' },
+  ytError: { padding: 24, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },
+  ytErrorText: { color: '#fff', fontSize: 14, textAlign: 'center' },
+  center:{ flex:1, justifyContent:'center', alignItems:'center' },
+  fallback:{ paddingVertical:40, alignItems:'center' },
 });
-
-export default TravelDetails;

@@ -1,362 +1,156 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import {
-    ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    useWindowDimensions,
     View,
-    Keyboard,
-    Platform,
+    Text,
+    Pressable,
+    TextInput,
+    useWindowDimensions,
+    ScrollView,
 } from 'react-native';
-import MultiSelectField from '@/components/MultiSelectField';
 import { CheckBox } from 'react-native-elements';
-import { useRoute } from '@react-navigation/native';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { debounce } from 'lodash';
+import { useRoute } from '@react-navigation/native';
 
-const FiltersComponent = React.memo(({
-                                         filters = {},
-                                         filterValue = {},
-                                         onSelectedItemsChange,
-                                         handleTextFilterChange,
-                                         handleApplyFilters,
-                                         resetFilters,
-                                         closeMenu,
-                                         isSuperuser,
-                                     }) => {
+function FiltersComponent({
+                              filters = {},
+                              filterValue = {},
+                              onSelectedItemsChange,
+                              handleApplyFilters,
+                              resetFilters,
+                              closeMenu,
+                              isSuperuser,
+                          }) {
     const { width } = useWindowDimensions();
-    const route = useRoute();
     const insets = useSafeAreaInsets();
     const isMobile = width <= 768;
-    const isTravelsByPage = route.name === 'travelsby';
+    const { name } = useRoute();
+    const isTravelsByPage = name === 'travelsby';
 
-    // State
-    const [yearInput, setYearInput] = useState(filterValue.year || '');
-    const [showModerationPending, setShowModerationPending] = useState(
-        filterValue.showModerationPending || false
-    );
-    const [isFocused, setIsFocused] = useState(false);
+    /* -------------------------------- groups ------------------------------- */
+    const groups = useMemo(() => [
+        { label: 'Страны', field: 'countries', items: filters.countries ?? [], valKey: 'country_id', labelKey: 'title_ru', hidden: isTravelsByPage },
+        { label: 'Категории', field: 'categories', items: filters.categories ?? [], valKey: 'id', labelKey: 'name' },
+        { label: 'Объекты', field: 'categoryTravelAddress', items: filters.categoryTravelAddress ?? [], valKey: 'id', labelKey: 'name' },
+        { label: 'Транспорт', field: 'transports', items: filters.transports ?? [], valKey: 'id', labelKey: 'name' },
+        { label: 'Спутники', field: 'companions', items: filters.companions ?? [], valKey: 'id', labelKey: 'name' },
+        { label: 'Сложность', field: 'complexity', items: filters.complexity ?? [], valKey: 'id', labelKey: 'name' },
+        { label: 'Месяц', field: 'month', items: filters.month ?? [], valKey: 'id', labelKey: 'name' },
+        { label: 'Ночлег', field: 'over_nights_stay', items: filters.over_nights_stay ?? [], valKey: 'id', labelKey: 'name' },
+    ], [filters, isTravelsByPage]);
 
-    // Memoized values
-    const containerStyle = useMemo(() => ({
-        maxWidth: width > 1200 ? 400 : width > 768 ? 360 : undefined,
-    }), [width]);
+    /* ------------------------------ local state ---------------------------- */
+    const [open, setOpen] = useState(() => groups.reduce((acc, g) => ({ ...acc, [g.field]: false }), {}));
+    const [yearOpen, setYearOpen] = useState(false);
+    const [year, setYear] = useState(filterValue.year ?? '');
 
-    const footerStyle = useMemo(() => ({
-        paddingBottom: Math.max(insets.bottom, 20),
-    }), [insets.bottom]);
+    /* ------------------------------ handlers ------------------------------- */
+    const toggle = useCallback((f) => setOpen((p) => ({ ...p, [f]: !p[f] })), []);
 
-    // Handlers
-    const applyFilters = useCallback(() => {
-        Keyboard.dismiss();
+    const handleCheck = useCallback((field, id) => {
+        const selected = filterValue[field] ?? [];
+        const nextArr = selected.includes(id) ? selected.filter((v) => v !== id) : [...selected, id];
+        onSelectedItemsChange(field, nextArr);
+    }, [filterValue, onSelectedItemsChange]);
 
-        const updatedFilters = {
-            ...filterValue,
-            year: yearInput.trim() || undefined,
-            showModerationPending,
-            ...(showModerationPending ? { publish: 1, moderation: 0 } : {}),
-        };
+    const handleYearChange = useCallback((txt) => {
+        const val = txt.replace(/[^0-9]/g, '').slice(0, 4);
+        setYear(val);
+    }, []);
 
-        handleApplyFilters(updatedFilters);
-        if (isMobile) closeMenu();
-    }, [filterValue, yearInput, showModerationPending, isMobile]);
+    const applyYear = useCallback(() => handleApplyFilters({ ...filterValue, year: year || undefined }), [handleApplyFilters, filterValue, year]);
 
-    const debouncedApplyFilters = useMemo(
-        () => debounce(applyFilters, 300),
-        [applyFilters]
-    );
-
-    const handleResetFilters = useCallback(() => {
-        setYearInput('');
-        setShowModerationPending(false);
+    const handleReset = useCallback(() => {
+        setYear('');
         resetFilters();
         if (isMobile) closeMenu();
-    }, [isMobile]);
+    }, [resetFilters, isMobile, closeMenu]);
 
-    const handleYearChange = useCallback((text) => {
-        const cleanedText = text.replace(/[^0-9]/g, '');
-        setYearInput(cleanedText);
-        if (cleanedText.length === 4) {
-            debouncedApplyFilters();
-        }
-    }, [debouncedApplyFilters]);
-
-    const renderSelectedChips = useCallback(() => {
-        const filterGroups = [
-            { field: 'countries', items: filters.countries || [] },
-            { field: 'categories', items: filters.categories || [] },
-            { field: 'categoryTravelAddress', items: filters.categoryTravelAddress || [] },
-            { field: 'transports', items: filters.transports || [] },
-            { field: 'companions', items: filters.companions || [] },
-            { field: 'complexity', items: filters.complexity || [] },
-            { field: 'month', items: filters.month || [] },
-            { field: 'over_nights_stay', items: filters.over_nights_stay || [] },
-        ];
-
-        return filterGroups.flatMap(({ field, items }) => {
-            const selected = filterValue[field] || [];
-            return selected.map((id) => {
-                const item = items.find((i) => i.id == id || i.country_id == id);
-                return item ? (
-                    <View key={`${field}-${id}`} style={styles.chip}>
-                        <Text style={styles.chipText}>{item.name || item.title_ru}</Text>
-                        <TouchableOpacity
-                            onPress={() => onSelectedItemsChange(
-                                field,
-                                selected.filter((v) => v !== id)
-                            )}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
-                            <Text style={styles.chipClose}>✖</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : null;
-            });
-        }).filter(Boolean);
-    }, [filters, filterValue]);
-
-    const renderMultiSelect = useCallback((placeholder, field, items, uniqueKey, displayKey) => (
-        <MultiSelectField
-            key={field}
-            items={items}
-            value={filterValue[field] || []}
-            onChange={(selected) => onSelectedItemsChange(field, Array.isArray(selected) ? selected : [])}
-            labelField={displayKey}
-            valueField={uniqueKey}
-            placeholder={placeholder}
-            searchPlaceholder={`Поиск ${placeholder.toLowerCase()}`}
-            renderSelectedItem={() => <></>}
-            autoFocus={false}
-        />
-    ), [filterValue]);
-
+    /* -------------------------------- render ------------------------------- */
     return (
-        <View style={[styles.container, containerStyle]}>
-            {isMobile && (
-                <View style={styles.header}>
-                    <Text style={styles.title}>Фильтры</Text>
-                    <TouchableOpacity onPress={closeMenu} style={styles.closeButton}>
-                        <Text style={styles.closeIcon}>✖</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+        <View style={styles.root}>
+            {/* scrollable content to fit mobile height */}
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+                {groups.map(({ label, field, items, valKey, labelKey, hidden }) => hidden ? null : (
+                    <View key={field} style={styles.groupBox}>
+                        <Pressable style={styles.groupHeader} onPress={() => toggle(field)}>
+                            <Text style={styles.groupLabel}>{label}</Text>
+                            <Feather name={open[field] ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
+                        </Pressable>
+                        {open[field] && (
+                            <View style={styles.itemsBox}>
+                                {items.map((it) => {
+                                    const id = it[valKey];
+                                    const title = it[labelKey];
+                                    const checked = (filterValue[field] ?? []).includes(id);
+                                    return (
+                                        <CheckBox
+                                            key={id}
+                                            title={title}
+                                            checked={checked}
+                                            onPress={() => handleCheck(field, id)}
+                                            containerStyle={styles.itemCheckbox}
+                                            textStyle={styles.itemText}
+                                            checkedColor="#4a7c59"
+                                            uncheckedColor="#4a7c59"
+                                        />
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+                ))}
 
-            <ScrollView
-                style={styles.scrollArea}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-            >
-                <View style={styles.content}>
-                    {isSuperuser && (
-                        <View style={styles.filterBlock}>
-                            <CheckBox
-                                title="Показать статьи на модерации"
-                                checked={showModerationPending}
-                                onPress={() => setShowModerationPending(!showModerationPending)}
-                                containerStyle={styles.checkbox}
-                                textStyle={styles.checkboxText}
-                                checkedColor="#4a7c59"
-                                uncheckedColor="#4a7c59"
+                {/* Year picker */}
+                <View style={styles.groupBox}>
+                    <Pressable style={styles.groupHeader} onPress={() => setYearOpen((v) => !v)}>
+                        <Text style={styles.groupLabel}>Год</Text>
+                        <Feather name={yearOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
+                    </Pressable>
+                    {yearOpen && (
+                        <View style={styles.yearBox}>
+                            <TextInput
+                                style={styles.yearInput}
+                                value={year}
+                                onChangeText={handleYearChange}
+                                placeholder="2023"
+                                keyboardType="numeric"
+                                maxLength={4}
+                                returnKeyType="done"
+                                onSubmitEditing={applyYear}
                             />
                         </View>
                     )}
-
-                    <View style={styles.chipsContainer}>
-                        {renderSelectedChips()}
-                    </View>
-
-                    <View style={styles.filtersGrid}>
-                        {!isTravelsByPage && renderMultiSelect(
-                            'Страны...',
-                            'countries',
-                            filters.countries || [],
-                            'country_id',
-                            'title_ru'
-                        )}
-
-                        {renderMultiSelect('Категории...', 'categories', filters.categories || [], 'id', 'name')}
-                        {renderMultiSelect('Объекты...', 'categoryTravelAddress', filters.categoryTravelAddress || [], 'id', 'name')}
-                        {renderMultiSelect('Транспорт...', 'transports', filters.transports || [], 'id', 'name')}
-                        {renderMultiSelect('Путешествуете с...', 'companions', filters.companions || [], 'id', 'name')}
-                        {renderMultiSelect('Сложность...', 'complexity', filters.complexity || [], 'id', 'name')}
-                        {renderMultiSelect('Месяц...', 'month', filters.month || [], 'id', 'name')}
-                        {renderMultiSelect('Ночлег...', 'over_nights_stay', filters.over_nights_stay || [], 'id', 'name')}
-
-                        <View style={styles.filterBlock}>
-                            <Text style={styles.inputLabel}>Год путешествия</Text>
-                            <TextInput
-                                style={[styles.input, isFocused && styles.inputFocused]}
-                                value={yearInput}
-                                onChangeText={handleYearChange}
-                                placeholder="Например: 2023"
-                                keyboardType="numeric"
-                                maxLength={4}
-                                onFocus={() => setIsFocused(true)}
-                                onBlur={() => setIsFocused(false)}
-                                onSubmitEditing={applyFilters}
-                            />
-                        </View>
-                    </View>
                 </View>
             </ScrollView>
 
-            <View style={[styles.footer, footerStyle]}>
-                <TouchableOpacity
-                    style={[styles.button, styles.resetButton]}
-                    onPress={handleResetFilters}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.buttonText}>Сбросить</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.button, styles.applyButton]}
-                    onPress={applyFilters}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.buttonText}>Применить</Text>
-                </TouchableOpacity>
+            {/* footer buttons */}
+            <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }] }>
+                <Pressable style={[styles.btn, styles.reset]} onPress={handleReset}><Text style={styles.btnTxt}>Сбросить</Text></Pressable>
+                <Pressable style={[styles.btn, styles.apply]} onPress={() => handleApplyFilters({ ...filterValue, year: year || undefined })}><Text style={styles.btnTxt}>Применить</Text></Pressable>
             </View>
         </View>
     );
-});
+}
+
+export default memo(FiltersComponent);
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f8f9fa',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#333',
-    },
-    closeButton: {
-        padding: 8,
-    },
-    closeIcon: {
-        fontSize: 20,
-        color: '#666',
-    },
-    scrollArea: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingBottom: 120,
-    },
-    content: {
-        paddingHorizontal: 16,
-        paddingTop: 8,
-    },
-    chipsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 16,
-    },
-    chip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#4a7c59',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-    },
-    chipText: {
-        color: '#fff',
-        fontSize: 14,
-        marginRight: 6,
-    },
-    chipClose: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    filtersGrid: {
-        gap: 16,
-    },
-    filterBlock: {
-        marginBottom: 8,
-    },
-    checkbox: {
-        backgroundColor: 'transparent',
-        borderWidth: 0,
-        padding: 0,
-        marginLeft: 0,
-        marginRight: 0,
-        marginBottom: 0,
-    },
-    checkboxText: {
-        fontSize: 15,
-        color: '#333',
-        fontWeight: '500',
-    },
-    inputLabel: {
-        fontSize: 14,
-        color: '#555',
-        marginBottom: 6,
-    },
-    input: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 15,
-        color: '#333',
-    },
-    inputFocused: {
-        borderColor: '#4a7c59',
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: -2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-            },
-            android: {
-                elevation: 8,
-            },
-        }),
-    },
-    button: {
-        flex: 1,
-        paddingVertical: 14,
-        alignItems: 'center',
-        borderRadius: 8,
-        justifyContent: 'center',
-    },
-    resetButton: {
-        backgroundColor: '#e0e0e0',
-        marginRight: 8,
-    },
-    applyButton: {
-        backgroundColor: '#4a7c59',
-    },
-    buttonText: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 15,
-    },
+    root: { flex: 1, backgroundColor: '#fff' },
+    scroll: { flex: 1 },
+    scrollContent: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 16 },
+    groupBox: { marginBottom: 6 },
+    groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+    groupLabel: { fontSize: 15, fontWeight: '600', color: '#333' },
+    itemsBox: { paddingLeft: 4, paddingBottom: 4 },
+    itemCheckbox: { backgroundColor: 'transparent', borderWidth: 0, paddingVertical: 2, margin: 0 },
+    itemText: { fontSize: 14, color: '#333' },
+    yearBox: { paddingLeft: 4, paddingBottom: 4 },
+    yearInput: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, width: 100, fontSize: 15, color: '#333' },
+    footer: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#e0e0e0' },
+    btn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8, justifyContent: 'center' },
+    reset: { backgroundColor: '#e0e0e0', marginRight: 8 },
+    apply: { backgroundColor: '#4a7c59' },
+    btnTxt: { color: '#fff', fontWeight: '600', fontSize: 15 },
 });
-
-export default FiltersComponent;

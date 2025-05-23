@@ -1,22 +1,36 @@
-import React, {lazy, useEffect} from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import '@expo/metro-runtime';
-import {Platform, StyleSheet, View} from 'react-native';
-import {useFonts} from 'expo-font';
-import {SplashScreen, Stack} from 'expo-router';
-import {MD3LightTheme as DefaultTheme, PaperProvider,} from 'react-native-paper';
-import {FiltersProvider} from '@/providers/FiltersProvider';
-import {AuthProvider} from '@/context/AuthContext';
-// 🎨 Только на мобильных загружаем FontAwesome
+import {
+    ActivityIndicator,
+    Platform,
+    StyleSheet,
+    View,
+} from 'react-native';
+import { useFonts } from 'expo-font';
+import { SplashScreen, Stack } from 'expo-router';
+import {
+    MD3LightTheme as DefaultTheme,
+    PaperProvider,
+} from 'react-native-paper';
+import { FiltersProvider } from '@/providers/FiltersProvider';
+import { AuthProvider } from '@/context/AuthContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import {
+    QueryClient,
+    QueryClientProvider,
+} from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
+/* ---------------- lazy footer ---------------- */
 const Footer = lazy(() => import('@/components/Footer'));
 
-// ⚙️ Только на мобильных подключаем gesture/reanimated
+/* reanimated / gestures only native */
 if (Platform.OS !== 'web') {
     require('react-native-reanimated');
     require('react-native-gesture-handler');
 }
 
+/* ---------------- theme ---------------- */
 const theme = {
     ...DefaultTheme,
     colors: {
@@ -31,14 +45,6 @@ const theme = {
         onBackground: '#000',
         onSurface: '#000',
         onError: '#fff',
-        elevation: {
-            level0: 'transparent',
-            level1: '#f0f0f0',
-            level2: '#e0e0e0',
-            level3: '#d0d0d0',
-            level4: '#c0c0c0',
-            level5: '#b0b0b0',
-        },
     },
     fonts: {
         ...DefaultTheme.fonts,
@@ -49,25 +55,34 @@ const theme = {
     },
 };
 
+/* ---------------- query client ---------------- */
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 5 * 60 * 1000, // 5 min cache
+            refetchOnWindowFocus: false,
+            retry: 1,
+        },
+    },
+});
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
     const [loaded, error] = useFonts(
         Platform.OS === 'web'
-            ? {} // не грузим иконки на веб
-            : {
-                ...FontAwesome.font,
-            }
+            ? {}
+            : { ...FontAwesome.font },
     );
 
+    /* throw font‑error */
     useEffect(() => {
         if (error) throw error;
     }, [error]);
 
+    /* hide splash when fonts ready */
     useEffect(() => {
-        if (loaded) {
-            SplashScreen.hideAsync();
-        }
+        if (loaded) SplashScreen.hideAsync();
     }, [loaded]);
 
     if (!loaded) return null;
@@ -79,27 +94,33 @@ function RootLayoutNav() {
     return (
         <PaperProvider theme={theme}>
             <AuthProvider>
-                <FiltersProvider>
-                    <View style={styles.wrapper}>
-                        <View style={styles.content}>
-                            <Stack>
-                                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                            </Stack>
+                <QueryClientProvider client={queryClient}>
+                    {__DEV__ && Platform.OS !== 'web' && (
+                        <ReactQueryDevtools initialIsOpen={false} />
+                    )}
+                    <FiltersProvider>
+                        <View style={styles.wrapper}>
+                            <View style={styles.content}>
+                                <Stack>
+                                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                                </Stack>
+                            </View>
+                            {/* lazy footer with fallback */}
+                            <Suspense
+                                fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
+                            >
+                                <Footer />
+                            </Suspense>
                         </View>
-                        <Footer />
-                    </View>
-                </FiltersProvider>
+                    </FiltersProvider>
+                </QueryClientProvider>
             </AuthProvider>
         </PaperProvider>
     );
 }
 
 const styles = StyleSheet.create({
-    wrapper: {
-        flex: 1,
-        justifyContent: 'space-between',
-    },
-    content: {
-        flex: 1,
-    },
+    wrapper: { flex: 1, justifyContent: 'space-between' },
+    content: { flex: 1 },
+    loading: { padding: 8 },
 });

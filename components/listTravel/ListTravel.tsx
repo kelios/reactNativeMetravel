@@ -4,6 +4,7 @@ import React, {
     useEffect,
     useMemo,
     useState,
+    useRef,
 } from 'react';
 import {
     ActivityIndicator,
@@ -35,6 +36,17 @@ const INITIAL_FILTER = { showModerationPending: false, year: '' };
 const MOBILE_CARD_HEIGHT = 400;
 const DESKTOP_CARD_HEIGHT = 480;
 
+/* ----------------------------- debounce hook ------------------------------ */
+function useDebounce(value, delay = 400) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+        const id = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(id);
+    }, [value, delay]);
+    return debounced;
+}
+
+/* ----------------------------- list component ----------------------------- */
 function ListTravel() {
     /* --------------------------------- layout -------------------------------- */
     const { width } = useWindowDimensions();
@@ -52,6 +64,7 @@ function ListTravel() {
 
     /* ---------------------------------- state -------------------------------- */
     const [search, setSearch] = useState('');
+    const debouncedSearch = useDebounce(search);
     const [filterValue, setFilterValue] = useState(INITIAL_FILTER);
     const [travels, setTravels] = useState(null); // null ➜ not fetched, [] ➜ no data
     const [filters, setFilters] = useState({});
@@ -62,6 +75,12 @@ function ListTravel() {
     const [currentPage, setCurrentPage] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(30);
     const [isFiltersVisible, setFiltersVisible] = useState(false);
+
+    // keep track of mounted state to avoid setState after unmount
+    const isMounted = useRef(true);
+    useEffect(() => () => {
+        isMounted.current = false;
+    }, []);
 
     /* --------------------------------- helpers ------------------------------- */
     const cardStyles = useMemo(() => {
@@ -89,30 +108,42 @@ function ListTravel() {
 
     /* -------------------------------- fetchers ------------------------------- */
     const loadUser = useCallback(async () => {
-        const [storedUserId, superFlag] = await Promise.all([
-            AsyncStorage.getItem('userId'),
-            AsyncStorage.getItem('isSuperuser'),
-        ]);
-        setUserId(storedUserId);
-        setIsSuperuser(superFlag === 'true');
+        try {
+            const [ [ , storedUserId ], [ , superFlag ] ] = await AsyncStorage.multiGet([
+                'userId',
+                'isSuperuser',
+            ]);
+            if (!isMounted.current) return;
+            setUserId(storedUserId);
+            setIsSuperuser(superFlag === 'true');
+        } catch (err) {
+            console.warn('Failed to load user info', err);
+        }
     }, []);
 
     const loadFilters = useCallback(async () => {
-        const [rawFilters, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
-        setFilters({ ...rawFilters, countries });
+        try {
+            const [rawFilters, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
+            if (!isMounted.current) return;
+            setFilters({ ...rawFilters, countries });
+        } catch (err) {
+            console.warn('Failed to load filters', err);
+        }
     }, []);
 
     const loadTravels = useCallback(async () => {
         setStatus('loading');
         try {
-            const data = await fetchTravels(currentPage, itemsPerPage, search, queryParams);
+            const data = await fetchTravels(currentPage, itemsPerPage, debouncedSearch, queryParams);
+            if (!isMounted.current) return;
             setTravels(data);
             setStatus('success');
         } catch (err) {
             console.warn('Failed to fetch travels', err);
+            if (!isMounted.current) return;
             setStatus('error');
         }
-    }, [currentPage, itemsPerPage, search, queryParams]);
+    }, [currentPage, itemsPerPage, debouncedSearch, queryParams]);
 
     /* -------------------------------- effects -------------------------------- */
     useEffect(() => {
@@ -121,7 +152,7 @@ function ListTravel() {
     }, [loadUser, loadFilters]);
 
     // reset to first page when dependencies change
-    useEffect(() => setCurrentPage(0), [itemsPerPage, search, filterValue, userId]);
+    useEffect(() => setCurrentPage(0), [itemsPerPage, debouncedSearch, filterValue, userId]);
 
     // fetch travels when page or query changes
     useEffect(() => {
@@ -157,6 +188,8 @@ function ListTravel() {
         [isMobile, isSuperuser, isMeTravel, userId, handleEditPress, openDeleteDialog, cardStyles],
     );
 
+    const listKey = useMemo(() => `columns-${numColumns}`, [numColumns]);
+
     const renderContent = () => {
         if (status === 'loading' || travels === null) {
             return (
@@ -182,17 +215,18 @@ function ListTravel() {
 
         return (
             <FlatList
-                key={`columns-${numColumns}`}
+                key={listKey}
                 numColumns={numColumns}
                 data={items}
                 keyExtractor={(item) => String(item.id)}
                 contentContainerStyle={[styles.listContainer, { paddingBottom: isMobile ? 80 : 32 }]}
                 columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
-                initialNumToRender={10}
-                windowSize={50}
-                maxToRenderPerBatch={30}
-                updateCellsBatchingPeriod={30}
-                removeClippedSubviews={false}
+                initialNumToRender={6}
+                windowSize={15}
+                maxToRenderPerBatch={20}
+                updateCellsBatchingPeriod={25}
+                removeClippedSubviews={true}
+                showsVerticalScrollIndicator={false}
                 renderItem={renderItem}
                 getItemLayout={(data, index) => ({
                     length: CARD_HEIGHT,

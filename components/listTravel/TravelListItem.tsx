@@ -4,25 +4,24 @@ import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-const placeholderImage = require('@/assets/placeholder.png');
-
 const CARD_HEIGHT_MOBILE = 320;
 const CARD_HEIGHT_DESKTOP = 460;
 
 /* -------------------------------------------------------------------------- */
-const IconButton = ({ icon, onPress }) => (
+const IconButton = memo(({ icon, onPress }) => (
     <Pressable onPress={onPress} style={styles.iconButton}>
         <Feather name={icon} size={18} color="#fff" />
     </Pressable>
-);
+));
 
-const Meta = ({ icon, text }) => (
+const Meta = memo(({ icon, text }) => (
     <View style={styles.metaItem}>
         <Feather name={icon} size={14} color="#eee" />
         <Text style={styles.metaText}>{text}</Text>
     </View>
-);
+));
 
+/* -------------------------------------------------------------------------- */
 const TravelListItem = ({
                             travel,
                             isSuperuser,
@@ -53,11 +52,9 @@ const TravelListItem = ({
     );
 
     const imageUrl = useMemo(() => {
-        if (travel_image_thumb_url) {
-            const version = updated_at ? Date.parse(updated_at) : id;
-            return `${travel_image_thumb_url}?v=${version}`;
-        }
-        return null;
+        if (!travel_image_thumb_url) return null;
+        const version = updated_at ? Date.parse(updated_at) : id;
+        return `${travel_image_thumb_url}?v=${version}`;
     }, [travel_image_thumb_url, updated_at, id]);
 
     /* -------------------------------- handlers ------------------------------- */
@@ -72,27 +69,29 @@ const TravelListItem = ({
             style={({ pressed }) => [styles.container, pressed && styles.pressed]}
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
-                {Platform.OS === 'web' && imageUrl && (
-                    <img
-                        src={imageUrl}
-                        alt={name}
-                        width="600"
-                        height={CARD_HEIGHT}
-                        style={styles.htmlImage}
-                        fetchpriority={isFirst ? 'high' : 'auto'}
-                        loading={isFirst ? 'eager' : 'lazy'}
-                        decoding="async"
-                    />
-                )}
-
-                <Image
-                    style={[styles.image, { height: CARD_HEIGHT }]}
-                    source={imageUrl ? { uri: imageUrl } : placeholderImage}
-                    contentFit="cover"
-                    transition={150}
-                    priority={isFirst ? 'high' : 'normal'} /* expo-image → fetchpriority */
-                    placeholder={placeholderImage}
-                />
+                {imageUrl &&
+                    (Platform.OS === 'web' ? (
+                        /* Native <img> tag gives faster first paint on web */
+                        <img
+                            src={imageUrl}
+                            alt={name}
+                            width="600"
+                            height={CARD_HEIGHT}
+                            style={styles.htmlImage}
+                            fetchpriority={isFirst ? 'high' : 'low'}
+                            loading={isFirst ? 'eager' : 'lazy'}
+                            decoding="async"
+                        />
+                    ) : (
+                        /* expo-image on native platforms with aggressive caching */
+                        <Image
+                            style={[styles.image, { height: CARD_HEIGHT }]}
+                            source={{ uri: imageUrl, cachePolicy: 'memory-disk' }}
+                            contentFit="cover"
+                            transition={0} /* no fade — avoids an extra pass */
+                            priority={isFirst ? 'high' : 'normal'}
+                        />
+                    ))}
 
                 <View style={styles.overlay} pointerEvents="box-none">
                     {canEdit && (
@@ -128,15 +127,19 @@ const TravelListItem = ({
     );
 };
 
-export default memo(
-    TravelListItem,
-    (prev, next) =>
-        prev.travel.id === next.travel.id &&
+export default memo(TravelListItem, (prev, next) => {
+    const prevTravel = prev.travel;
+    const nextTravel = next.travel;
+
+    return (
+        prevTravel.id === nextTravel.id &&
+        prevTravel.updated_at === nextTravel.updated_at &&
         prev.isSuperuser === next.isSuperuser &&
         prev.isMetravel === next.isMetravel &&
         prev.isMobile === next.isMobile &&
-        prev.isFirst === next.isFirst,
-);
+        prev.isFirst === next.isFirst
+    );
+});
 
 /* -------------------------------------------------------------------------- */
 const styles = StyleSheet.create({
