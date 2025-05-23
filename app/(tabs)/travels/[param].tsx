@@ -172,7 +172,7 @@ export default function TravelDetails() {
     );
 
     const descTxt = travel.description?.replace(/<[^>]+>/g, '').slice(0, 160) || '';
-    const contentWidth = Math.min(width - (isMobile ? 0 : MENU_WIDTH) - 32, MAX_CONTENT_WIDTH);
+    const contentWidth = isMobile ? '100%' : Math.min(width - MENU_WIDTH - 32, MAX_CONTENT_WIDTH);
 
     return (
         <>
@@ -231,8 +231,10 @@ export default function TravelDetails() {
                                 }
                             ]}
                         >
-                            <View style={[styles.contentWrapper, { width: contentWidth }]}>
-                                <View ref={anchor.gallery} />
+                            <View style={styles.contentOuter}>
+                                <View style={styles.contentWrapper}>
+
+                            <View ref={anchor.gallery} />
                                 {!!travel.gallery?.length && (
                                     <Suspense fallback={<Fallback />}>
                                         <View style={styles.sliderContainer}>
@@ -325,6 +327,7 @@ export default function TravelDetails() {
                                     )}
                                 </View>
                             </View>
+                            </View>
                         </ScrollView>
                     </View>
                 </SafeAreaView>
@@ -340,6 +343,8 @@ const styles = StyleSheet.create({
     },
     safeArea: {
         flex: 1,
+        paddingTop: 0,
+        paddingBottom: 0,
     },
     mainContainer: {
         flex: 1,
@@ -356,18 +361,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 5,
-    },
-    overlayWrapper: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        zIndex: 999,
-    },
-    overlayPressable: {
-        flex: 1,
     },
     fab: {
         position: 'absolute',
@@ -387,10 +380,15 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingBottom: 40,
     },
+    contentOuter: {
+        width: '100%',
+        alignItems: 'center',
+    },
     contentWrapper: {
         flex: 1,
-        alignSelf: 'center',
-        paddingHorizontal: 16,
+        width: '100%',
+        maxWidth: 1200,
+        paddingHorizontal: 0,
     },
     sliderContainer: {
         width: '100%',
@@ -398,7 +396,7 @@ const styles = StyleSheet.create({
     },
     videoContainer: {
         width: '100%',
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
         borderRadius: 12,
         overflow: 'hidden',
         backgroundColor: '#000',
@@ -419,50 +417,18 @@ const styles = StyleSheet.create({
     mapContainer: {
         width: '100%',
         marginBottom: 32,
-        backgroundColor: 'white',
-        borderRadius: 16,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     pointsContainer: {
         width: '100%',
         marginBottom: 32,
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     nearContainer: {
         width: '100%',
         marginBottom: 32,
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     popularContainer: {
         width: '100%',
         marginBottom: 32,
-        backgroundColor: 'white',
-        borderRadius: 16,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
     },
     fallback: {
         paddingVertical: 40,
