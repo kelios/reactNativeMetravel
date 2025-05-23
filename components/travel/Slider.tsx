@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
     Platform,
     StyleSheet,
@@ -124,6 +124,7 @@ const Slider: React.FC<SliderProps> = ({ images = [], showArrows = true, showDot
             accessibilityLabel="Слайдер изображений"
         >
             <Carousel
+                key={images.map(img => img.id).join('-')}
                 ref={carouselRef}
                 data={images}
                 width={maxWidth}

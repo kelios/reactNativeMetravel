@@ -78,6 +78,10 @@ export default function TravelDetails() {
     const [userId, setUserId] = useState<string | null>(null);
 
     useEffect(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }, [slug]);
+
+    useEffect(() => {
         AsyncStorage.multiGet(['isSuperuser', 'userId']).then(([[, su], [, uid]]) => {
             setIsSuperuser(su === 'true');
             setUserId(uid);
