@@ -107,6 +107,9 @@ const Slider: React.FC<SliderProps> = ({
     const carouselRef = useRef<Carousel<SliderImage>>(null);
     const [index, setIndex] = useState(0);
 
+    // Unique key -> forces full remount when dataset changes, eliminating old frames
+    const carouselKey = useMemo(() => images.map((i) => i.id).join('-'), [images]);
+
     // Reset index when navigating to a new article
     useEffect(() => {
         setIndex(0);
@@ -146,6 +149,7 @@ const Slider: React.FC<SliderProps> = ({
             accessibilityLabel="Слайдер изображений"
         >
             <Carousel
+                key={carouselKey}
                 ref={carouselRef}
                 data={images}
                 width={maxWidth}
