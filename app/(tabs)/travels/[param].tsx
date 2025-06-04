@@ -25,6 +25,7 @@ import { useInView } from 'react-intersection-observer';
 
 import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import type { Travel } from '@/src/types/types';
+import FlightWidget from "@/components/aviosales/FlightWidget";
 
 const Slider = lazy(() => import('@/components/travel/Slider'));
 const TravelDescription = lazy(() => import('@/components/travel/TravelDescription'));
@@ -330,6 +331,8 @@ export default function TravelDetails() {
                                         </Suspense>
                                     )}
                                 </View>
+
+                                    <FlightWidget country={travel.countryName} />
                             </View>
                             </View>
                         </ScrollView>
