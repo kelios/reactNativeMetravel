@@ -29,16 +29,25 @@ const countryToIata: Record<string, string> = {
 export default function FlightWidget({ country }: { country?: string }) {
     const widgetRef = useRef<HTMLDivElement>(null);
     const [origin, setOrigin] = useState<string>('ANY');
-
-    /** 1. Определяем точку отправления через whereami */
+    // Определяем город пользователя по IP (для origin)
     useEffect(() => {
         if (Platform.OS !== 'web') return;
 
-        fetch('https://www.travelpayouts.com/whereami?locale=ru')
+        // Очищаем старое содержимое виджета
+        widgetRef.current.innerHTML = '';
+
+        fetch('https://ipapi.co/json/')
             .then(res => res.json())
-            .then(data => setOrigin(data?.iata?.toUpperCase() || 'ANY'))
-            .catch(() => setOrigin('ANY'));
+            .then(data => {
+                if (data && data.city) {
+                    setOrigin(data.city);
+                }
+            })
+            .catch(() => {
+                setOrigin('ANY');
+            });
     }, []);
+
 
     /** 2. Подключаем (или пере-подключаем) виджет, когда меняется страна или origin */
     useEffect(() => {
