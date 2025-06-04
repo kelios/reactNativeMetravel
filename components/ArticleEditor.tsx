@@ -1,11 +1,12 @@
-// ArticleEditor.tsx
 import React, {
-    useRef,
-    useState,
+    useCallback,
     useEffect,
     useMemo,
-    useCallback,
+    useRef,
+    useState,
     Suspense,
+    forwardRef,
+    type Ref,
 } from 'react';
 import {
     View,
@@ -22,30 +23,46 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { uploadImage } from '@/src/api/travels';
 
-/* ─────────── Helpers ─────────── */
+// Helpers ————————————————————————————————————————————————————————————
 const isWeb = Platform.OS === 'web';
-const debounce = <T extends unknown[]>(fn: (...args: T) => void, ms = 300) => {
-    let timer: NodeJS.Timeout;
-    return (...args: T) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), ms);
-    };
-};
+const win = isWeb && typeof window !== 'undefined' ? window : undefined;
 
-/* ─────────── Quill lazy-load (web only) ─────────── */
-let QuillEditor: any = null;
-if (isWeb && typeof window !== 'undefined') {
-    QuillEditor = React.lazy(() => import('react-quill'));
+/**
+ * Stable debounce hook that preserves the last callback reference
+ * yet never changes the debounced fn identity, so it is safe to use
+ * in dependency arrays.
+ */
+function useDebounce<T extends unknown[]>(fn: (...args: T) => void, ms = 300) {
+    const timeout = useRef<NodeJS.Timeout>();
+    const fnRef = useRef(fn);
+    fnRef.current = fn; // always latest
+    return useCallback(
+        (...args: T) => {
+            if (timeout.current) clearTimeout(timeout.current);
+            timeout.current = setTimeout(() => fnRef.current(...args), ms);
+        },
+        [ms],
+    );
+}
+
+/**
+ * Lazy-load Quill only on web to avoid native bundle bloat and SSR issues.
+ * NB: casting to any to prevent breaking TS when Quill types are absent on native.
+ */
+const QuillEditor = isWeb && win
+    ? (React.lazy(() => import('react-quill')) as any)
+    : undefined;
+
+if (isWeb && win) {
     const href = 'https://cdn.jsdelivr.net/npm/react-quill@2/dist/quill.snow.css';
-    if (!document.querySelector(`link[href="${href}"]`)) {
-        const link = document.createElement('link');
+    if (!win.document.querySelector(`link[href="${href}"]`)) {
+        const link = win.document.createElement('link');
         link.rel = 'stylesheet';
         link.href = href;
-        document.head.appendChild(link);
+        win.document.head.appendChild(link);
     }
 }
 
-/* ─────────── Quill toolbar config ─────────── */
 const quillModules = {
     toolbar: [
         ['bold', 'italic', 'underline', 'strike'],
@@ -54,102 +71,113 @@ const quillModules = {
         ['link', 'image'],
         ['clean'],
     ],
-    history: { delay: 2_000, maxStack: 100, userOnly: true },
+    history: { delay: 2000, maxStack: 100, userOnly: true },
     clipboard: { matchVisual: false },
 };
 
-/* ─────────── Props ─────────── */
 export interface ArticleEditorProps {
     label?: string;
+    placeholder?: string;
     content: string;
     onChange: (html: string) => void;
     onAutosave?: (html: string) => Promise<void>;
     autosaveDelay?: number;
     idTravel?: string;
+    /**
+     * Forward ref gets actual Quill instance on web or undefined on native.
+     */
+    editorRef?: Ref<any>;
 }
 
-/* ─────────── Main (web) component ─────────── */
+// ——————————————————————————————— WEB VERSION —————————————————————————
 const WebEditor: React.FC<ArticleEditorProps> = ({
                                                      label = 'Описание',
+                                                     placeholder = 'Введите описание…',
                                                      content,
                                                      onChange,
                                                      onAutosave,
-                                                     autosaveDelay = 5_000,
+                                                     autosaveDelay = 5000,
                                                      idTravel,
+                                                     editorRef,
                                                  }) => {
-    /* ---------- state ---------- */
+    // state
     const [html, setHtml] = useState(content);
     const [fullscreen, setFullscreen] = useState(false);
     const [showHtml, setShowHtml] = useState(false);
-    const [dims, setDims] = useState(Dimensions.get('window'));
 
-    /* ---------- refs ---------- */
+    // refs
     const quillRef = useRef<any>(null);
-    const savedRange = useRef<{ index: number; length: number } | null>(null);
+    const lastRange = useRef<{ index: number; length: number } | null>(null);
+    const tmpStoredRange = useRef<{ index: number; length: number } | null>(null);
 
-    /* ---------- derived ---------- */
-    const debouncedParentChange = useMemo(
-        () => debounce(onChange, 250),
-        [onChange],
-    );
-
-    /* ---------- sync external content ---------- */
+    // expose forwardRef
     useEffect(() => {
-        if (content !== html) setHtml(content);
-    }, [content]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (!editorRef) return;
+        if (typeof editorRef === 'function') editorRef(quillRef.current);
+        else (editorRef as any).current = quillRef.current;
+    });
 
-    /* ---------- dimensions listener ---------- */
+    // debounce upstream change
+    const debouncedParentChange = useDebounce(onChange, 250);
+
+    // keep external changes in sync
     useEffect(() => {
-        const sub = Dimensions.addEventListener('change', () =>
-            setDims(Dimensions.get('window')),
-        );
-        return () => sub.remove();
-    }, []);
+        if (content !== html) {
+            setHtml(content);
+        }
+    }, [content]);
 
-    /* ---------- CSS vars & sticky-toolbar ---------- */
+    // add sticky-toolbar colour-scheme styles once
     useEffect(() => {
-        if (!isWeb) return;
-
-        const styleEl = document.createElement('style');
-        styleEl.innerHTML = `
-      :root { --bg:#fff; --fg:#333; --bar:#f5f5f5; }
-      @media (prefers-color-scheme:dark){
-        :root{ --bg:#1e1e1e; --fg:#e0e0e0; --bar:#2a2a2a; }
-      }
-      .ql-editor {background:var(--bg);color:var(--fg);}
-      .ql-toolbar{background:var(--bar);position:sticky;top:0;z-index:10;}
+        if (!win) return;
+        const style = win.document.createElement('style');
+        style.innerHTML = `
+      :root{--bg:#fff;--fg:#333;--bar:#f5f5f5}
+      @media(prefers-color-scheme:dark){:root{--bg:#1e1e1e;--fg:#e0e0e0;--bar:#2a2a2a}}
+      .ql-editor{background:var(--bg);color:var(--fg)}
+      .ql-toolbar{background:var(--bar);position:sticky;top:0;z-index:10}
     `;
-        document.head.appendChild(styleEl);
-        return () => document.head.removeChild(styleEl);
+        win.document.head.appendChild(style);
+        return () => {
+            win.document.head.removeChild(style);
+        };
     }, []);
 
-    /* ---------- change handler ---------- */
-    const fireChange = useCallback(
-        (
-            val: string,
-            restoreSelection = false,
-            range?: { index: number; length: number } | null,
-        ) => {
-            setHtml(val);
-            debouncedParentChange(val);
-
-            if (restoreSelection && range && quillRef.current) {
-                requestAnimationFrame(() => {
-                    quillRef.current.getEditor().setSelection(range, 'silent');
-                });
-            }
-        },
-        [debouncedParentChange],
-    );
-
-    /* ---------- autosave ---------- */
+    // AUTOSAVE — save after user has paused typing
     useEffect(() => {
         if (!onAutosave) return;
         const t = setTimeout(() => onAutosave(html), autosaveDelay);
         return () => clearTimeout(t);
     }, [html, onAutosave, autosaveDelay]);
 
-    /* ---------- upload helper ---------- */
+    // MAIN CHANGE HANDLER — do NOT blindly restore selection, that caused caret glitches
+    const fireChange = useCallback(
+        (val: string) => {
+            setHtml(val);
+            debouncedParentChange(val);
+        },
+        [debouncedParentChange],
+    );
+
+    /** Insert uploaded image at caret */
+    const insertImage = useCallback(
+        (url: string) => {
+            if (!quillRef.current) return;
+            const editor = quillRef.current.getEditor();
+            const range = editor.getSelection() || { index: editor.getLength(), length: 0 };
+            editor.insertEmbed(range.index, 'image', url);
+            editor.setSelection(range.index + 1, 0, 'silent');
+            // programmatic change — we DO restore selection after re-render
+            lastRange.current = { index: range.index + 1, length: 0 };
+            setTimeout(() => {
+                if (lastRange.current) editor.setSelection(lastRange.current, 'silent');
+            });
+            fireChange(editor.root.innerHTML);
+        },
+        [fireChange],
+    );
+
+    /** Handle physical file → upload → insert */
     const uploadAndInsert = useCallback(
         async (file: File) => {
             try {
@@ -157,26 +185,18 @@ const WebEditor: React.FC<ArticleEditorProps> = ({
                 form.append('file', file);
                 form.append('collection', 'description');
                 if (idTravel) form.append('id', idTravel);
-
                 const res = await uploadImage(form);
-                if (!res?.url) throw new Error('No url');
-
-                if (quillRef.current) {
-                    const editor = quillRef.current.getEditor();
-                    const r = editor.getSelection() || { index: 0, length: 0 };
-                    editor.insertEmbed(r.index, 'image', res.url);
-                    editor.setSelection(r.index + 1, 0, 'silent');
-                    fireChange(editor.root.innerHTML, true, r);
-                }
+                if (!res?.url) throw new Error('no url');
+                insertImage(res.url);
             } catch (err) {
                 console.error(err);
                 Alert.alert('Ошибка', 'Не удалось загрузить изображение');
             }
         },
-        [fireChange, idTravel],
+        [idTravel, insertImage],
     );
 
-    /* ---------- drag / paste listeners ---------- */
+    // Paste / Drop listeners
     useEffect(() => {
         if (!quillRef.current) return;
         const root = quillRef.current.getEditor().root as HTMLElement;
@@ -187,10 +207,9 @@ const WebEditor: React.FC<ArticleEditorProps> = ({
             uploadAndInsert(e.dataTransfer.files[0]);
         };
         const onPaste = (e: ClipboardEvent) => {
-            const f = Array.from(e.clipboardData?.files ?? [])[0];
-            if (f) uploadAndInsert(f);
+            const file = Array.from(e.clipboardData?.files ?? [])[0];
+            if (file) uploadAndInsert(file);
         };
-
         root.addEventListener('drop', onDrop);
         root.addEventListener('paste', onPaste);
         return () => {
@@ -199,47 +218,45 @@ const WebEditor: React.FC<ArticleEditorProps> = ({
         };
     }, [uploadAndInsert]);
 
-    /* ---------- toolbar ---------- */
-    const Btn: React.FC<{
-        icon: keyof typeof MaterialIcons.glyphMap;
-        onPress: () => void;
-    }> = ({ icon, onPress }) => (
+    // Toolbar button component
+    const IconButton: React.FC<{ name: keyof typeof MaterialIcons.glyphMap; onPress: () => void }> = ({ name, onPress }) => (
         <TouchableOpacity onPress={onPress} style={styles.btn}>
-            <MaterialIcons name={icon} size={20} color="#555" />
+            <MaterialIcons name={name} size={20} color="#555" />
         </TouchableOpacity>
     );
 
+    // Toolbar view
     const Toolbar = () => (
         <View style={styles.bar}>
             <Text style={styles.label}>{label}</Text>
             <View style={styles.row}>
-                <Btn
-                    icon="undo"
-                    onPress={() => quillRef.current?.getEditor().history.undo()}
-                />
-                <Btn
-                    icon="redo"
-                    onPress={() => quillRef.current?.getEditor().history.redo()}
-                />
-                <Btn icon="code" onPress={() => setShowHtml((v) => !v)} />
-                <Btn
-                    icon={fullscreen ? 'fullscreen-exit' : 'fullscreen'}
+                <IconButton name="undo" onPress={() => quillRef.current?.getEditor().history.undo()} />
+                <IconButton name="redo" onPress={() => quillRef.current?.getEditor().history.redo()} />
+                <IconButton
+                    name="code"
                     onPress={() => {
-                        savedRange.current = quillRef.current
-                            ?.getEditor()
-                            .getSelection();
-                        setFullscreen((v) => !v);
+                        // store caret before switching to HTML mode
+                        tmpStoredRange.current = quillRef.current?.getEditor().getSelection();
+                        setShowHtml(v => !v);
                     }}
                 />
-                <Btn
-                    icon="image"
+                <IconButton
+                    name={fullscreen ? 'fullscreen-exit' : 'fullscreen'}
                     onPress={() => {
-                        const input = document.createElement('input');
+                        tmpStoredRange.current = quillRef.current?.getEditor().getSelection();
+                        setFullscreen(v => !v);
+                    }}
+                />
+                <IconButton
+                    name="image"
+                    onPress={() => {
+                        if (!win) return;
+                        const input = win.document.createElement('input');
                         input.type = 'file';
                         input.accept = 'image/*';
                         input.onchange = () => {
-                            const f = input.files?.[0];
-                            if (f) uploadAndInsert(f);
+                            const file = input.files?.[0];
+                            if (file) uploadAndInsert(file);
                         };
                         input.click();
                     }}
@@ -248,117 +265,115 @@ const WebEditor: React.FC<ArticleEditorProps> = ({
         </View>
     );
 
-    /* ---------- restore cursor after exiting fullscreen ---------- */
+    // restore selection after exiting fullscreen / html mode
     useEffect(() => {
-        if (!fullscreen && savedRange.current && quillRef.current) {
-            quillRef.current
-                .getEditor()
-                .setSelection(savedRange.current, 'silent');
+        if (!fullscreen && !showHtml && tmpStoredRange.current && quillRef.current) {
+            quillRef.current.getEditor().setSelection(tmpStoredRange.current, 'silent');
         }
-    }, [fullscreen]);
+    }, [fullscreen, showHtml]);
 
-    /* ---------- loader ---------- */
+    // Loader for lazy Quill
     const Loader = () => (
         <View style={styles.loadBox}>
             <Text style={styles.loadTxt}>Загрузка…</Text>
         </View>
     );
 
-    /* ---------- body ---------- */
-    const editorBody = showHtml ? (
+    if (!QuillEditor) return <Loader />;
+
+    const editorArea = showHtml ? (
         <TextInput
             style={styles.html}
             multiline
             value={html}
-            onChangeText={(t) => fireChange(t)}
+            onChangeText={t => fireChange(t)}
+            placeholder={placeholder}
+            placeholderTextColor="#999"
         />
     ) : (
         <Suspense fallback={<Loader />}>
             <QuillEditor
                 ref={quillRef}
                 theme="snow"
-                defaultValue={html} // uncontrolled!
-                onChange={(val: string, _d: any, _s: any, ed: any) => {
-                    const r = ed.getSelection();
-                    fireChange(val, true, r);
+                value={html}
+                onChange={(val: string, _delta: any, _src: any, editor: any) => {
+                    fireChange(val);
+                    lastRange.current = editor.getSelection();
                 }}
                 modules={quillModules}
+                placeholder={placeholder}
                 style={styles.editor}
             />
         </Suspense>
     );
 
-    if (!QuillEditor) return <Loader />;
-
-    /* ---------- render ---------- */
-    const container = (
+    const body = (
         <>
             <Toolbar />
-            {editorBody}
+            {editorArea}
         </>
     );
 
     return fullscreen ? (
         <Modal visible animationType="slide">
-            <SafeAreaView style={styles.fullWrap}>{container}</SafeAreaView>
+            <SafeAreaView style={styles.fullWrap}>{body}</SafeAreaView>
         </Modal>
     ) : (
-        <View style={styles.wrap}>{container}</View>
+        <View style={styles.wrap}>{body}</View>
     );
 };
 
-/* ─────────── Native fallback ─────────── */
+// —————————————————————————— NATIVE VERSION ——————————————————————————
 const NativeEditor: React.FC<ArticleEditorProps> = ({
                                                         label = 'Описание',
+                                                        placeholder = 'Введите описание…',
                                                         content,
                                                         onChange,
                                                         onAutosave,
-                                                        autosaveDelay = 5_000,
+                                                        autosaveDelay = 5000,
                                                     }) => {
     const [text, setText] = useState(content);
+    const debouncedParentChange = useDebounce(onChange, 250);
 
-    /* sync external */
     useEffect(() => {
         if (content !== text) setText(content);
     }, [content]);
 
-    /* parent change */
-    const debouncedParentChange = useMemo(
-        () => debounce(onChange, 250),
-        [onChange],
-    );
-    const onEdit = (t: string) => {
-        setText(t);
-        debouncedParentChange(t);
-    };
-
-    /* autosave */
     useEffect(() => {
         if (!onAutosave) return;
         const t = setTimeout(() => onAutosave(text), autosaveDelay);
         return () => clearTimeout(t);
     }, [text, onAutosave, autosaveDelay]);
 
+    const onEdit = (t: string) => {
+        setText(t);
+        debouncedParentChange(t);
+    };
+
     return (
         <View style={styles.wrap}>
             <Text style={[styles.label, { padding: 8 }]}>{label}</Text>
             <TextInput
                 multiline
-                style={styles.html}
                 value={text}
                 onChangeText={onEdit}
+                placeholder={placeholder}
+                placeholderTextColor="#999"
+                style={styles.html}
+                textAlignVertical="top"
             />
         </View>
     );
 };
 
-/* ─────────── Exported component ─────────── */
-const ArticleEditor: React.FC<ArticleEditorProps> = (props) =>
-    isWeb ? <WebEditor {...props} /> : <NativeEditor {...props} />;
+// ——————————————————————————————— EXPORT ———————————————————————————
+const ArticleEditor = forwardRef<any, ArticleEditorProps>((props, ref) => {
+    return isWeb ? <WebEditor {...props} editorRef={ref} /> : <NativeEditor {...props} />;
+});
 
 export default React.memo(ArticleEditor);
 
-/* ─────────── Styles ─────────── */
+// ——————————————————————————————— STYLES ———————————————————————————
 const styles = StyleSheet.create({
     wrap: {
         borderWidth: 1,
@@ -385,7 +400,6 @@ const styles = StyleSheet.create({
         minHeight: 200,
         padding: 12,
         fontSize: 14,
-        textAlignVertical: 'top',
         color: 'var(--fg)',
     },
     loadBox: {

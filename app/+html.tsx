@@ -50,6 +50,22 @@ export default function Root({ children }: { children: React.ReactNode }) {
                         `,
                 }}
             />
+            {/*https://app.travelpayouts.com/*/}
+            <script
+                data-noptimize="1"
+                data-cfasync="false"
+                data-wpfc-render="false"
+                dangerouslySetInnerHTML={{
+                    __html: `
+            (function () {
+              var script = document.createElement("script");
+              script.async = 1;
+              script.src = 'https://mntzco.com/NDIzMjc4.js?t=423278';
+              document.head.appendChild(script);
+            })();
+        `
+                }}
+            />
 
             {/* Yandex Metrica */}
             <script
