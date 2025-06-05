@@ -1,94 +1,130 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
-// IATA-коды столиц или крупнейших аэропортов
+/**
+ * FlightWidget — production version (rev‑2)
+ * ------------------------------------------------------------
+ * • Показывает форму Aviasales/Travelpayouts только на Web.
+ * • Определяет IATA города вылета через ipapi (EN‑locale → cityToIata).
+ * • Если IATA не определён → параметр origin НЕ передаётся (виджет покажет «Откуда»).
+ * • Страна назначения → IATA крупнейшего аэропорта (countryToIata). Если нет в мапе —
+ *   используем `destination=ANY`, чтобы виджет всё‑равно отобразился.
+ * • open_target=true  ⇒ ссылки открываются в новой вкладке (сайт не пропадает).
+ * • Полная зачистка контейнера и <script>, чтобы не было дубликатов.
+ * ------------------------------------------------------------
+ */
+
+type Props = { country?: string };
+
+/* ────── 1. Страна → IATA (расширено, добавлен Маврикий) ────── */
 const countryToIata: Record<string, string> = {
-    Польша: 'WAW',
-    Греция: 'ATH',
-    Испания: 'MAD',
-    Франция: 'PAR',
-    Италия: 'ROM',
-    Чехия: 'PRG',
-    Беларусь: 'MSQ',
-    Германия: 'BER',
-    Португалия: 'LIS',
-    Нидерланды: 'AMS',
-    Австрия: 'VIE',
-    Венгрия: 'BUD',
-    Швейцария: 'ZRH',
-    Великобритания: 'LON',
-    Турция: 'IST',
-    Египет: 'CAI',
-    Таиланд: 'BKK',
-    США: 'NYC',
-    Канада: 'YYZ',
-    Мальта: 'MLA',
-    Кипр: 'LCA',
+    Польша: 'WAW',   Германия: 'BER',  Беларусь: 'MSQ',  Украина: 'IEV',
+    Литва: 'VNO',    Латвия: 'RIX',   Эстония: 'TLL',   Чехия: 'PRG',
+    Австрия: 'VIE',  Венгрия: 'BUD',  Словакия: 'BTS',  Словения: 'LJU',
+    Хорватия: 'ZAG', Болгария: 'SOF', Румыния: 'OTP',  Греция: 'ATH',
+    Италия: 'ROM',   Испания: 'MAD',  Франция: 'PAR',  Португалия: 'LIS',
+    Швейцария: 'ZRH',Нидерланды: 'AMS', Бельгия: 'BRU', Дания: 'CPH',
+    Швеция: 'STO',   Финляндия: 'HEL', Норвегия: 'OSL', Великобритания: 'LON',
+    Ирландия: 'DUB', Турция: 'IST',   Египет: 'CAI',   Таиланд: 'BKK',
+    США: 'NYC',      Канада: 'YYZ',   Мальта: 'MLA',   Кипр: 'LCA',
+    Маврикий: 'MRU', Маврикия: 'MRU',
 };
+
+/* ────── 2. Город → IATA (без диакритики, lower‑case) ────── */
+const cityToIata: Record<string, string> = {
+    minsk: 'MSQ', moscow: 'MOW', stpetersburg: 'LED', kyiv: 'IEV', odessa: 'ODS',
+    warsaw: 'WAW', krakow: 'KRK', wroclaw: 'WRO', vilnius: 'VNO', kaunas: 'KUN',
+    riga: 'RIX', tallinn: 'TLL', berlin: 'BER', frankfurt: 'FRA', munich: 'MUC',
+    prague: 'PRG', vienna: 'VIE', budapest: 'BUD', bratislava: 'BTS', ljubljana: 'LJU',
+    zagreb: 'ZAG', sofia: 'SOF', bucharest: 'OTP', athens: 'ATH', thessaloniki: 'SKG',
+    rome: 'ROM', milan: 'MIL', venice: 'VCE', florence: 'FLR', bologna: 'BLQ',
+    madrid: 'MAD', barcelona: 'BCN', valencia: 'VLC', seville: 'SVQ',
+    paris: 'PAR', lyon: 'LYS', marseille: 'MRS', nice: 'NCE',
+    lisbon: 'LIS', porto: 'OPO', amsterdam: 'AMS', brussels: 'BRU',
+    copenhagen: 'CPH', stockholm: 'STO', gothenburg: 'GOT', helsinki: 'HEL', oslo: 'OSL',
+    london: 'LON', manchester: 'MAN', dublin: 'DUB', istanbul: 'IST', bangkok: 'BKK',
+    cairo: 'CAI', newyork: 'NYC', toronto: 'YYZ', chicago: 'CHI', losangeles: 'LAX',
+};const normalize = (s: string) =>
+    s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
 
 export default function FlightWidget({ country }: { country?: string }) {
     const widgetRef = useRef<HTMLDivElement>(null);
-    const [origin, setOrigin] = useState<string>('ANY');
-    // Определяем город пользователя по IP (для origin)
+    const [origin, setOrigin] = useState<string | null>(null);
+    const [city, setCity] = useState<string | null>(null);
+
+    /* ────── 1. IP‑Lookup ────── */
     useEffect(() => {
         if (Platform.OS !== 'web') return;
-
-        // Очищаем старое содержимое виджета
-        widgetRef.current.innerHTML = '';
-
-        fetch('https://ipapi.co/json/')
+        fetch('https://ipapi.co/json/?language=en')
             .then(res => res.json())
             .then(data => {
-                if (data && data.city) {
-                    setOrigin(data.city);
+                const key = normalize(data?.city || '');
+                if (key && cityToIata[key]) {
+                    setOrigin(cityToIata[key]);
+                    setCity(data.city);
                 }
             })
-            .catch(() => {
-                setOrigin('ANY');
-            });
+            .catch(() => {});
     }, []);
 
-
-    /** 2. Подключаем (или пере-подключаем) виджет, когда меняется страна или origin */
+    /* ────── 2. Widget Injection ────── */
     useEffect(() => {
         if (Platform.OS !== 'web' || !country || !widgetRef.current) return;
 
-        // удаляем старый скрипт, если был
-        const old = document.getElementById('tp-widget-script');
-        if (old) old.remove();
+        widgetRef.current.innerHTML = '';
+        document.getElementById('tp-widget-script')?.remove();
 
-        const destination = countryToIata[country] ?? 'ANY';
+        const mainCountry = country.split(/[,/–—]/)[0].trim();
+        const destination = countryToIata[mainCountry] ?? 'ANY';
 
         const script = document.createElement('script');
         script.id = 'tp-widget-script';
         script.async = true;
         script.charset = 'utf-8';
         script.src =
-            `https://tp.media/content?currency=byn` +
-            `&trs=423278&shmarker=637690&combine_promos=101_7873&show_hotels=true` +
+            `https://tp.media/content?currency=byn&trs=423278&shmarker=637690&combine_promos=101_7873&show_hotels=true` +
             `&powered_by=true&locale=ru&searchUrl=www.aviasales.com%2Fsearch` +
+            `&open_target=true&target_blank=1&rel=noreferrer` +
             `&primary_override=%23DD9E32ff&color_button=%2373716Fff&color_icons=%23DD9E32FF` +
             `&dark=%23262626&light=%23FFFFFF&secondary=%23FFFFFF&special=%23C4C4C4` +
             `&color_focused=%23DD9E32FF&border_radius=0&no_labels=true&plain=true` +
             `&promo_id=7879&campaign_id=100` +
-            `&origin=${origin}&destination=${destination}`;
+            `&destination=${destination}` +
+            (origin ? `&origin=${origin}` : '');
 
         widgetRef.current.appendChild(script);
+
+        // 🛡️ Защита: насильно переписываем все ссылки внутри виджета
+        const enforceSafeLinks = () => {
+            const links = widgetRef.current?.querySelectorAll('a') || [];
+            links.forEach(link => {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            });
+        };
+
+        // Пробуем несколько раз, чтобы точно сработало (задержка на загрузку скрипта)
+        const attempts = [500, 1500, 3000];
+        attempts.forEach(timeout => {
+            setTimeout(enforceSafeLinks, timeout);
+        });
+
     }, [country, origin]);
 
     if (Platform.OS !== 'web' || !country) return null;
 
-    /** 3. Отрисовка заголовка и контейнера виджета */
+    const mainCountry = country.split(/[,/–—]/)[0].trim();
+
     return (
-        <View style={{ width: '100%', marginBottom: 32 }}>
-            <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 12 }}>
-                Поиск билетов
+        <View style={{ width: '100%', marginBottom: 32,paddingTop:20,  paddingBottom:10, }}>
+            <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>
+                Поиск авиабилетов
             </Text>
             <Text style={{ marginBottom: 12 }}>
-                Найди недорогие билеты в {country}
-                {origin !== 'ANY' ? ` с вылетом из ${origin}` : ''}.
+                Найди недорогие билеты в {mainCountry}
+                {city ? ` с вылетом из ${city}` : ''}.
             </Text>
-            <View style={{ width: '100%', minHeight: 300 }}>
+            <View style={{ width: '100%', minHeight: 100,}}>
                 <div ref={widgetRef} />
             </View>
         </View>

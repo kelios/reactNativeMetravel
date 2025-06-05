@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, {memo, Suspense, useCallback, useMemo, useState} from 'react';
 import {
     View,
     StyleSheet,
@@ -7,11 +7,18 @@ import {
     ScrollView,
     Image,
     Platform,
-    useWindowDimensions,
+    useWindowDimensions, ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { Text } from 'react-native-paper';
 import type { Travel } from '@/src/types/types';
+import WeatherWidget from "@/components/WeatherWidget";
+
+const Fallback = () => (
+    <View style={styles.fallback}>
+        <ActivityIndicator size="small" color="#6B4F4F" />
+    </View>
+);
 
 /* -------------------------------- helpers -------------------------------- */
 const openUrl = (url: string) =>
@@ -120,6 +127,9 @@ function CompactSideBarTravel({
 
                 {/* all travels */}
                 <Pressable onPress={handleUserTravels}><Text style={styles.allTravels}>Путешествия {travel.userName}</Text></Pressable>
+                <Suspense fallback={<Fallback />}>
+                    <WeatherWidget points={travel.travelAddress} />
+                </Suspense>
             </ScrollView>
 
             {/* close btn mobile */}
@@ -170,4 +180,8 @@ const styles = StyleSheet.create({
     closeBtn: { flexDirection: 'row', alignItems: 'center' },
     closeBtnPressed: { opacity: 0.7 },
     closeTxt: { color: '#fff', fontSize: 16, fontFamily: 'Georgia', marginLeft: 8 },
+    fallback: {
+        paddingVertical: 40,
+        alignItems: 'center',
+    },
 });

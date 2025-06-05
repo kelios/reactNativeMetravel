@@ -26,6 +26,8 @@ import { useInView } from 'react-intersection-observer';
 import { fetchTravel, fetchTravelBySlug } from '@/src/api/travels';
 import type { Travel } from '@/src/types/types';
 import FlightWidget from "@/components/aviosales/FlightWidget";
+import HotelWidget from "@/components/HotelWidget/HotelWidget";
+import TripsterWidget from "@/components/Tripster/TripsterWidget";
 
 const Slider = lazy(() => import('@/components/travel/Slider'));
 const TravelDescription = lazy(() => import('@/components/travel/TravelDescription'));
@@ -294,6 +296,7 @@ export default function TravelDetails() {
                                     </React.Fragment>
                                 ))}
 
+
                                 <View ref={refMap} />
                                 <View ref={anchor.map}>
                                     {inMap && travel.coordsMeTravel?.length > 0 && (
@@ -313,6 +316,7 @@ export default function TravelDetails() {
                                         </Suspense>
                                     )}
                                 </View>
+                                <FlightWidget country={travel.countryName} />
 
                                 <View ref={refNear} />
                                 <View ref={anchor.near}>
@@ -331,8 +335,12 @@ export default function TravelDetails() {
                                         </Suspense>
                                     )}
                                 </View>
-
-                                    <FlightWidget country={travel.countryName} />
+                                    <Suspense fallback={<Fallback />}>
+                                        <TripsterWidget points={travel.travelAddress} />
+                                    </Suspense>
+                                    <Suspense fallback={<Fallback />}>
+                                        <HotelWidget points={travel.travelAddress} />
+                                    </Suspense>
                             </View>
                             </View>
                         </ScrollView>
