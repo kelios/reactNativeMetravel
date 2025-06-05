@@ -30,7 +30,11 @@ function build_env() {
   apply_env $ENV
 
   echo "🛠️ NODE_ENV=production"
-  NODE_ENV=production EXPO_ENV=$ENV EXPO_NO_METRO_LAZY=true \
+  NODE_ENV=production \
+  EXPO_ENV=$ENV \
+  EXPO_NO_METRO_LAZY=true \
+  EXPO_WEB_BUILD_MINIFY=true \
+  EXPO_WEB_BUILD_GENERATE_SOURCE_MAP=false \
     npx expo export --output-dir $DIR -p web -c
 
   echo "📦 Архивирую $DIR → $ARCHIVE"
@@ -41,8 +45,6 @@ function build_env() {
 
   echo "📏 Размер архива:"
   du -sh "$ARCHIVE"
-
-  echo "✅ Готово: $ARCHIVE"
 }
 
 echo "🔁 Старт полной сборки..."
@@ -52,5 +54,8 @@ clean_all
 build_env dev
 #build_env preprod
 build_env prod
+
+echo "📂 Общий размер папки dist:"
+du -sh dist/
 
 echo "🎉 Сборка завершена успешно!"

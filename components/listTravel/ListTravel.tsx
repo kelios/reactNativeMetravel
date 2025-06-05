@@ -1,10 +1,11 @@
+// Начало переработанного компонента ListTravel
 import React, {
     memo,
     useCallback,
     useEffect,
     useMemo,
-    useState,
     useRef,
+    useState,
 } from 'react';
 import {
     ActivityIndicator,
@@ -15,15 +16,15 @@ import {
     View,
     useWindowDimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import FiltersComponent from './FiltersComponent';
+import RenderTravelItem from './RenderTravelItem';
 import PaginationComponent from '../PaginationComponent';
-import RenderTravelItem from '@/components/listTravel/RenderTravelItem';
-import ConfirmDialog from '../ConfirmDialog';
 import SearchAndFilterBar from './SearchAndFilterBar';
+import ConfirmDialog from '../ConfirmDialog';
 
 import {
     deleteTravel,
@@ -33,143 +34,99 @@ import {
 } from '@/src/api/travels';
 
 const INITIAL_FILTER = { showModerationPending: false, year: '' };
-const MOBILE_CARD_HEIGHT = 400;
-const DESKTOP_CARD_HEIGHT = 480;
 
-/* ----------------------------- debounce hook ------------------------------ */
 function useDebounce(value, delay = 400) {
     const [debounced, setDebounced] = useState(value);
     useEffect(() => {
-        const id = setTimeout(() => setDebounced(value), delay);
-        return () => clearTimeout(id);
+        const handler = setTimeout(() => setDebounced(value), delay);
+        return () => clearTimeout(handler);
     }, [value, delay]);
     return debounced;
 }
 
-/* ----------------------------- list component ----------------------------- */
 function ListTravel() {
-    /* --------------------------------- layout -------------------------------- */
-    const { width } = useWindowDimensions();
+    const { width, height } = useWindowDimensions();
     const isMobile = width < 768;
     const isTablet = width >= 768 && width < 1024;
     const numColumns = isMobile ? 1 : isTablet ? 2 : 3;
-    const CARD_HEIGHT = isMobile ? MOBILE_CARD_HEIGHT : DESKTOP_CARD_HEIGHT;
-
-    /* ------------------------------ navigation ids --------------------------- */
     const router = useRouter();
     const route = useRoute();
     const { user_id } = useLocalSearchParams();
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
 
-    /* ---------------------------------- state -------------------------------- */
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search);
     const [filterValue, setFilterValue] = useState(INITIAL_FILTER);
-    const [travels, setTravels] = useState(null); // null ➜ not fetched, [] ➜ no data
+    const [travels, setTravels] = useState(null);
     const [filters, setFilters] = useState({});
-    const [status, setStatus] = useState('idle'); // idle | loading | success | error
+    const [status, setStatus] = useState('idle');
     const [userId, setUserId] = useState(null);
     const [isSuperuser, setIsSuperuser] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(30);
     const [isFiltersVisible, setFiltersVisible] = useState(false);
-
-    // keep track of mounted state to avoid setState after unmount
     const isMounted = useRef(true);
-    useEffect(() => () => {
-        isMounted.current = false;
+
+    useEffect(() => () => { isMounted.current = false }, []);
+
+    useEffect(() => {
+        AsyncStorage.multiGet(['userId', 'isSuperuser']).then((res) => {
+            if (!isMounted.current) return;
+            setUserId(res[0][1]);
+            setIsSuperuser(res[1][1] === 'true');
+        });
     }, []);
 
-    /* --------------------------------- helpers ------------------------------- */
-    const cardStyles = useMemo(() => {
-        const base = { maxHeight: CARD_HEIGHT };
-        if (isMobile) return { ...base, maxWidth: '100%' };
-        if (isTablet) return { ...base, maxWidth: '48%' };
-        return { ...base, maxWidth: '32%' };
-    }, [isMobile, isTablet, CARD_HEIGHT]);
+    useEffect(() => {
+        Promise.all([fetchFilters(), fetchFiltersCountry()]).then(([f, c]) => {
+            if (!isMounted.current) return;
+            setFilters({ ...f, countries: c });
+        });
+    }, []);
 
     const queryParams = useMemo(() => {
         const params = Object.fromEntries(
-            Object.entries(filterValue).filter(([_, v]) => Boolean(v && v.length)),
+            Object.entries(filterValue).filter(([_, v]) => Boolean(v?.length || v))
         );
-
         if (filterValue.showModerationPending) {
             Object.assign(params, { publish: 1, moderation: 0 });
         } else {
             if (isMeTravel) params.user_id = userId;
-            else if (isTravelBy) Object.assign(params, { countries: [3], publish: 1, moderation: 1 });
             else Object.assign(params, { publish: 1, moderation: 1 });
             if (user_id) params.user_id = user_id;
         }
         return params;
-    }, [filterValue, isMeTravel, isTravelBy, userId, user_id]);
+    }, [filterValue, userId, user_id, isMeTravel]);
 
-    /* -------------------------------- fetchers ------------------------------- */
-    const loadUser = useCallback(async () => {
-        try {
-            const [ [ , storedUserId ], [ , superFlag ] ] = await AsyncStorage.multiGet([
-                'userId',
-                'isSuperuser',
-            ]);
-            if (!isMounted.current) return;
-            setUserId(storedUserId);
-            setIsSuperuser(superFlag === 'true');
-        } catch (err) {
-            console.warn('Failed to load user info', err);
-        }
-    }, []);
-
-    const loadFilters = useCallback(async () => {
-        try {
-            const [rawFilters, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
-            if (!isMounted.current) return;
-            setFilters({ ...rawFilters, countries });
-        } catch (err) {
-            console.warn('Failed to load filters', err);
-        }
-    }, []);
-
-    const loadTravels = useCallback(async () => {
+    const loadTravels = useCallback(() => {
         setStatus('loading');
-        try {
-            const data = await fetchTravels(currentPage, itemsPerPage, debouncedSearch, queryParams);
-            if (!isMounted.current) return;
-            setTravels(data);
-            setStatus('success');
-        } catch (err) {
-            console.warn('Failed to fetch travels', err);
-            if (!isMounted.current) return;
-            setStatus('error');
-        }
+        fetchTravels(currentPage, itemsPerPage, debouncedSearch, queryParams)
+            .then((data) => {
+                if (!isMounted.current) return;
+                setTravels(data);
+                setStatus('success');
+            })
+            .catch(() => {
+                if (!isMounted.current) return;
+                setStatus('error');
+            });
     }, [currentPage, itemsPerPage, debouncedSearch, queryParams]);
 
-    /* -------------------------------- effects -------------------------------- */
     useEffect(() => {
-        loadUser();
-        loadFilters();
-    }, [loadUser, loadFilters]);
-
-    // reset to first page when dependencies change
-    useEffect(() => setCurrentPage(0), [itemsPerPage, debouncedSearch, filterValue, userId]);
-
-    // fetch travels when page or query changes
-    useEffect(() => {
-        if (isMeTravel && !userId) return; // wait userId
+        if (isMeTravel && !userId) return;
         loadTravels();
     }, [loadTravels, isMeTravel, userId]);
 
-    /* ------------------------------ actions & ui ----------------------------- */
+    useEffect(() => setCurrentPage(0), [itemsPerPage, debouncedSearch, filterValue]);
+
     const handleDelete = useCallback(async () => {
         if (!deleteId) return;
         await deleteTravel(deleteId);
         setDeleteId(null);
         loadTravels();
     }, [deleteId, loadTravels]);
-
-    const handleEditPress = useCallback((id) => router.push(`/travel/${id}`), [router]);
-    const openDeleteDialog = useCallback((id) => setDeleteId(id), []);
 
     const renderItem = useCallback(
         ({ item, index }) => (
@@ -178,77 +135,26 @@ function ListTravel() {
                 isMobile={isMobile}
                 isSuperuser={isSuperuser}
                 isMetravel={isMeTravel}
-                userId={userId ?? ''}
-                onEditPress={handleEditPress}
-                onDeletePress={openDeleteDialog}
-                cardStyles={cardStyles}
+                userId={userId}
+                onEditPress={(id) => router.push(`/travel/${id}`)}
+                onDeletePress={() => setDeleteId(item.id)}
                 isFirst={index === 0}
             />
         ),
-        [isMobile, isSuperuser, isMeTravel, userId, handleEditPress, openDeleteDialog, cardStyles],
+        [isMobile, isSuperuser, isMeTravel, userId]
     );
 
-    const listKey = useMemo(() => `columns-${numColumns}`, [numColumns]);
-
-    const renderContent = () => {
-        if (status === 'loading' || travels === null) {
-            return (
-                <View style={styles.loaderContainer}>
-                    <ActivityIndicator size="large" color="#ff7f50" />
-                </View>
-            );
-        }
-
-        if (!travels?.data?.length) {
-            return (
-                <View style={styles.noResults}>
-                    <Text style={styles.noResultsText}>Путешествий не найдено</Text>
-                </View>
-            );
-        }
-
-        const items = travels.data;
-
-        if (items.length === 1) {
-            return <View style={styles.singleItem}>{renderItem({ item: items[0] })}</View>;
-        }
-
-        return (
-            <FlatList
-                key={listKey}
-                numColumns={numColumns}
-                data={items}
-                keyExtractor={(item) => String(item.id)}
-                contentContainerStyle={[styles.listContainer, { paddingBottom: isMobile ? 80 : 32 }]}
-                columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
-                initialNumToRender={6}
-                windowSize={15}
-                maxToRenderPerBatch={20}
-                updateCellsBatchingPeriod={25}
-                removeClippedSubviews={true}
-                showsVerticalScrollIndicator={false}
-                renderItem={renderItem}
-                getItemLayout={(data, index) => ({
-                    length: CARD_HEIGHT,
-                    offset: CARD_HEIGHT * index,
-                    index,
-                })}
-            />
-        );
-    };
-
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.mainLayout}>
-                {!isMobile && travels && (
-                    <View style={styles.filtersPanel}>
+        <SafeAreaView style={styles.root}>
+            <View style={[styles.container, { flexDirection: isMobile ? 'column' : 'row' }]}>
+                {!isMobile && (
+                    <View style={styles.sidebar}>
                         <FiltersComponent
                             filters={filters}
                             filterValue={filterValue}
                             onSelectedItemsChange={(field, items) =>
                                 setFilterValue((prev) => ({ ...prev, [field]: items }))
                             }
-                            handleTextFilterChange={(year) => setFilterValue((prev) => ({ ...prev, year }))}
                             handleApplyFilters={setFilterValue}
                             resetFilters={() => setFilterValue(INITIAL_FILTER)}
                             closeMenu={() => {}}
@@ -256,17 +162,29 @@ function ListTravel() {
                         />
                     </View>
                 )}
-
-                <View style={styles.contentArea}>
-                    {travels && (
-                        <SearchAndFilterBar
-                            search={search}
-                            setSearch={setSearch}
-                            onToggleFilters={() => setFiltersVisible((v) => !v)}
+                <View style={styles.main}>
+                    <SearchAndFilterBar
+                        search={search}
+                        setSearch={setSearch}
+                        onToggleFilters={() => setFiltersVisible((v) => !v)}
+                        isMobile={isMobile}
+                    />
+                    {status === 'loading' && <ActivityIndicator size="large" color="#4a7c59" />}
+                    {status === 'error' && <Text style={styles.status}>Ошибка загрузки</Text>}
+                    {travels?.data?.length ? (
+                        <FlatList
+                            key={`list-${numColumns}`}
+                            data={travels.data}
+                            keyExtractor={(item) => String(item.id)}
+                            renderItem={renderItem}
+                            numColumns={numColumns}
+                            contentContainerStyle={styles.listContent}
+                            columnWrapperStyle={numColumns > 1 ? styles.column : null}
+                            showsVerticalScrollIndicator={false}
                         />
-                    )}
-
-                    {renderContent()}
+                    ) : status === 'success' ? (
+                        <Text style={styles.status}>Нет данных</Text>
+                    ) : null}
 
                     {travels?.total > itemsPerPage && (
                         <PaginationComponent
@@ -274,35 +192,31 @@ function ListTravel() {
                             itemsPerPage={itemsPerPage}
                             onPageChange={setCurrentPage}
                             onItemsPerPageChange={setItemsPerPage}
-                            itemsPerPageOptions={[10, 20, 30, 50, 100]}
+                            itemsPerPageOptions={[10, 20, 30, 50]}
                             totalItems={travels.total}
+                            isMobile={isMobile}
                         />
                     )}
                 </View>
             </View>
-
-            {isMobile && isFiltersVisible && travels && (
-                <View style={styles.mobileFiltersPanel}>
-                    <FiltersComponent
-                        filters={filters}
-                        filterValue={filterValue}
-                        onSelectedItemsChange={(field, items) =>
-                            setFilterValue((prev) => ({ ...prev, [field]: items }))
-                        }
-                        handleTextFilterChange={(year) => setFilterValue((prev) => ({ ...prev, year }))}
-                        handleApplyFilters={(v) => {
-                            setFilterValue(v);
-                            setFiltersVisible(false);
-                        }}
-                        resetFilters={() => setFilterValue(INITIAL_FILTER)}
-                        closeMenu={() => setFiltersVisible(false)}
-                        isSuperuser={isSuperuser}
-                    />
-                </View>
+            {isMobile && isFiltersVisible && (
+                <FiltersComponent
+                    filters={filters}
+                    filterValue={filterValue}
+                    onSelectedItemsChange={(field, items) =>
+                        setFilterValue((prev) => ({ ...prev, [field]: items }))
+                    }
+                    handleApplyFilters={(val) => {
+                        setFilterValue(val);
+                        setFiltersVisible(false);
+                    }}
+                    resetFilters={() => setFilterValue(INITIAL_FILTER)}
+                    closeMenu={() => setFiltersVisible(false)}
+                    isSuperuser={isSuperuser}
+                />
             )}
-
             <ConfirmDialog
-                visible={Boolean(deleteId)}
+                visible={!!deleteId}
                 onClose={() => setDeleteId(null)}
                 onConfirm={handleDelete}
                 title="Удаление"
@@ -315,58 +229,11 @@ function ListTravel() {
 export default memo(ListTravel);
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    mainLayout: {
-        flexDirection: 'row',
-        flex: 1,
-    },
-    filtersPanel: {
-        width: 280,
-        borderRightWidth: 1,
-        borderRightColor: '#eee',
-        padding: 16,
-        backgroundColor: '#f9f9f9',
-    },
-    contentArea: {
-        flex: 1,
-        paddingHorizontal: 16,
-        paddingTop: 16,
-    },
-    listContainer: {
-        gap: 16,
-        paddingTop: 8,
-    },
-    columnWrapper: {
-        justifyContent: 'space-between',
-        gap: 16,
-    },
-    singleItem: {
-        width: '100%',
-        maxWidth: 600,
-        alignSelf: 'center',
-    },
-    loaderContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    mobileFiltersPanel: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#fff',
-        zIndex: 1000,
-        padding: 16,
-    },
-    noResults: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    noResultsText: {
-        fontSize: 18,
-        color: '#666',
-    },
+    root: { flex: 1, backgroundColor: '#fff' },
+    container: { flex: 1 },
+    sidebar: { width: 280, borderRightWidth: 1, borderColor: '#eee' },
+    main: { flex: 1, padding: 12 },
+    status: { textAlign: 'center', marginTop: 40, fontSize: 16, color: '#888' },
+    listContent: { gap: 16, paddingBottom: 32 },
+    column: { justifyContent: 'space-between', gap: 16 },
 });
