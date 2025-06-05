@@ -37,12 +37,6 @@ export default function TripsterWidget({ points }: Props) {
 
     return (
         <View style={{ width: '100%', marginBottom: 32 }}>
-            <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>
-                Популярные экскурсии
-            </Text>
-            <Text style={{ marginBottom: 12 }}>
-                Актуальные экскурсии в {validCity} от Tripster.
-            </Text>
             <View style={{ width: '100%', minHeight: 300 }}>
                 <div ref={ref} />
             </View>
