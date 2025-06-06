@@ -1,10 +1,17 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+    memo,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {
-    Platform,
     StyleSheet,
     TouchableOpacity,
     View,
-    useWindowDimensions,
+    LayoutChangeEvent,
+    Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import Carousel from 'react-native-reanimated-carousel';
@@ -21,12 +28,19 @@ interface SliderProps {
     showArrows?: boolean;
     showDots?: boolean;
     hideArrowsOnMobile?: boolean;
-    aspectRatio?: number; // default 16/9
+    aspectRatio?: number;       // по умолчанию 16/9
     autoPlay?: boolean;
-    autoPlayInterval?: number;
+    autoPlayInterval?: number;  // в миллисекундах
     onIndexChanged?: (index: number) => void;
 }
 
+const DEFAULT_ASPECT_RATIO = 16 / 9;
+const NAV_BTN_OFFSET = 10;
+
+/**
+ * Добавляем version-параметр, чтобы URL-кеш обновлялся,
+ * если у картинки поменялся updated_at.
+ */
 const appendVersion = (url: string, updated?: string | number) => {
     if (!url) return '';
     const ts = updated
@@ -37,6 +51,7 @@ const appendVersion = (url: string, updated?: string | number) => {
     return ts ? `${url}?v=${ts}` : url;
 };
 
+// Мемоизированная кнопка-«стрелка»
 const NavButton = memo(
     ({
          direction,
@@ -49,9 +64,16 @@ const NavButton = memo(
     }) => (
         <TouchableOpacity
             onPress={onPress}
-            style={[styles.navBtn, direction === 'left' ? { left: offset } : { right: offset }]}
+            style={[
+                styles.navBtn,
+                direction === 'left' ? { left: offset } : { right: offset },
+            ]}
             accessibilityRole="button"
-            accessibilityLabel={direction === 'left' ? 'Предыдущий слайд' : 'Следующий слайд'}
+            accessibilityLabel={
+                direction === 'left'
+                    ? 'Предыдущий слайд'
+                    : 'Следующий слайд'
+            }
             hitSlop={10}
         >
             <AntDesign
@@ -60,146 +82,213 @@ const NavButton = memo(
                 color="#fff"
             />
         </TouchableOpacity>
-    ),
+    )
 );
 
-const Slide = memo(({ uri, isVisible }: { uri: string; isVisible: boolean }) => {
-    if (!isVisible) return null;
+// Мемоизированный «слайд» (белый фон + картинка сверху).
+// Если isVisible=false, не рендерим вовсе.
+const Slide = memo(
+    ({ uri, isVisible }: { uri: string; isVisible: boolean }) => {
+        if (!isVisible) return null;
 
-    return (
-        <View style={styles.slide}>
-            <Image
-                style={styles.bg}
-                source={{ uri, cachePolicy: 'memory-disk' }}
-                contentFit="cover"
-                blurRadius={20}
-                priority="low"
-            />
-
-            <Image
-                style={styles.img}
-                source={{ uri, cachePolicy: 'memory-disk' }}
-                contentFit="contain"
-                priority="high"
-                transition={150}
-            />
-        </View>
-    );
-});
+        return (
+            <View style={styles.slide}>
+                {/* Когда картинка ещё не загрузилась, подложка будет того же цвета, что и общий фон */}
+                <Image
+                    style={styles.bg}
+                    source={{ uri, cachePolicy: 'memory-disk' }}
+                    contentFit="cover"
+                    blurRadius={20}
+                    priority="low"
+                />
+                <Image
+                    style={styles.img}
+                    source={{ uri, cachePolicy: 'memory-disk' }}
+                    contentFit="contain"
+                    priority="high"
+                    transition={150}
+                />
+            </View>
+        );
+    }
+);
 
 const Slider: React.FC<SliderProps> = ({
-                                           images = [],
+                                           images,
                                            showArrows = true,
                                            showDots = true,
                                            hideArrowsOnMobile = false,
-                                           aspectRatio = 16 / 9,
+                                           aspectRatio = DEFAULT_ASPECT_RATIO,
                                            autoPlay = true,
                                            autoPlayInterval = 8000,
                                            onIndexChanged,
                                        }) => {
-    const { width } = useWindowDimensions();
+    // Если нет картинок, сразу null
+    if (!images || images.length === 0) return null;
 
-    const isMobile = width <= 480;
-    const isTablet = width > 480 && width < 1024;
+    // Стейт: текущая ширина/высота контейнера
+    const [containerWidth, setContainerWidth] = useState<number>(0);
+    const [containerHeight, setContainerHeight] = useState<number>(0);
 
-    const maxWidth = useMemo(() => {
-        if (isMobile) return width - 16;
-        if (width >= 1024) return Math.min(width - 32, 1000);
-        return Math.min(width - 24, 800);
-    }, [width, isMobile]);
+    // Стейт: текущий индекс и набор загруженных (отрендеренных хотя бы раз) индексов
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [loadedIndices, setLoadedIndices] = useState<Set<number>>(
+        () => new Set([0]) // сразу добавляем «0», т.к. начальный слайд точно подгрузится
+    );
 
-    const sliderH = useMemo(() => maxWidth / aspectRatio, [maxWidth, aspectRatio]);
-
+    // Реф на Carousel
     const carouselRef = useRef<Carousel<SliderImage>>(null);
-    const [index, setIndex] = useState(0);
 
+    // Пересобираем «ключ» карусели только когда меняются реально id или updated_at
     const carouselKey = useMemo(
-        () => images.map((i) => `${i.id}_${i.updated_at ?? ''}`).join('-'),
+        () =>
+            images.map((i) => `${i.id}_${i.updated_at ?? ''}`).join('-'),
         [images]
     );
 
+    /**
+     * Когда меняются картинки (carouselKey), сбрасываемся к нулю,
+     * добавляем 0-й индекс в loadedIndices, но не пересоздаём компонент целиком.
+     */
     useEffect(() => {
-        setIndex(0);
-        carouselRef.current?.scrollTo({ animated: false, index: 0 });
-    }, [images]);
+        setCurrentIndex(0);
+        carouselRef.current?.scrollTo({ index: 0, animated: false });
 
-    const shouldRender = useCallback((slideIdx: number) => Math.abs(index - slideIdx) <= 1, [index]);
+        setLoadedIndices((prev) => {
+            const nxt = new Set(prev);
+            nxt.add(0);
+            return nxt;
+        });
+    }, [carouselKey]);
 
+    // На каждый реальный перелёт (прыжок) по карусели — помечаем индекс(+соседей) как «загруженный»
+    const handleIndexChanged = useCallback(
+        (idx: number) => {
+            setCurrentIndex(idx);
+            onIndexChanged?.(idx);
+
+            setLoadedIndices((prev) => {
+                const nxt = new Set(prev);
+                nxt.add(idx);
+                // + соседние индексы, чтобы не ждать, когда они попадут в область видимости
+                if (idx - 1 >= 0) nxt.add(idx - 1);
+                if (idx + 1 < images.length) nxt.add(idx + 1);
+                return nxt;
+            });
+        },
+        [images.length, onIndexChanged]
+    );
+
+    // Рендерим слайд, если он уже был «загружен» или если это текущий/соседний индекс
+    const shouldRender = useCallback(
+        (slideIdx: number) => loadedIndices.has(slideIdx),
+        [loadedIndices]
+    );
+
+    // Рендер одного айтема
     const renderItem = useCallback(
         ({ item, index: slideIdx }: { item: SliderImage; index: number }) => {
+            // Генерируем URL с параметром кеш-бастинга
             const uri = appendVersion(item.url, item.updated_at ?? item.id);
             const visible = shouldRender(slideIdx);
-            return <Slide uri={uri} isVisible={visible} />;
+            return <Slide key={item.id} uri={uri} isVisible={visible} />;
         },
         [shouldRender]
     );
 
-    const handleDotPress = useCallback(
-        (dotIdx: number) => {
-            carouselRef.current?.scrollTo({ index: dotIdx, animated: true });
+    // После монтирования/ресайза замеряем ширину контейнера, чтобы вычислить высоту
+    const onLayoutContainer = useCallback(
+        (e: LayoutChangeEvent) => {
+            const w = e.nativeEvent.layout.width;
+            if (w > 0 && w !== containerWidth) {
+                setContainerWidth(w);
+                setContainerHeight(w / aspectRatio);
+            }
         },
-        []
+        [aspectRatio, containerWidth]
     );
 
-    const handleIndexChanged = useCallback(
-        (idx: number) => {
-            setIndex(idx);
-            onIndexChanged?.(idx);
-        },
-        [onIndexChanged]
-    );
+    // Определяем «мобильный» режим по текущей ширине контейнера
+    const isMobile = useMemo(() => {
+        if (containerWidth === 0) return false;
+        return containerWidth <= 480;
+    }, [containerWidth]);
 
-    if (!images.length) return null;
+    // Мемоизируем прокрутку «влево/вправо»
+    const navPrev = useCallback(() => carouselRef.current?.prev(), []);
+    const navNext = useCallback(() => carouselRef.current?.next(), []);
+
+    // Предзагрузка URL’ов в кеш (в первых рендерах)
+    useEffect(() => {
+        images.forEach((img) => {
+            const uri = appendVersion(img.url, img.updated_at ?? img.id);
+            Image.prefetch(uri);
+        });
+    }, [images]);
 
     return (
         <View
-            style={[
-                styles.container,
-                {
-                    width: maxWidth,
-                    height: sliderH,
-                    alignSelf: 'center',
-                    overflow: 'hidden',
-                    borderRadius: 12,
-                    removeClippedSubviews: true,
-                },
-            ]}
+            style={styles.wrapper}
+            onLayout={onLayoutContainer}
             accessibilityRole="group"
             accessibilityLabel="Слайдер изображений"
+            removeClippedSubviews
         >
-            <Carousel
-                key={carouselKey}
-                ref={carouselRef}
-                data={images}
-                width={maxWidth}
-                height={sliderH}
-                loop
-                autoPlay={autoPlay}
-                autoPlayInterval={autoPlayInterval}
-                onSnapToItem={handleIndexChanged}
-                renderItem={renderItem}
-            />
-
-            {showArrows && !(isMobile && hideArrowsOnMobile) && (
+            {containerWidth > 0 && containerHeight > 0 && (
                 <>
-                    <NavButton direction="left" offset={10} onPress={() => carouselRef.current?.prev()} />
-                    <NavButton direction="right" offset={10} onPress={() => carouselRef.current?.next()} />
-                </>
-            )}
+                    <Carousel
+                        key={carouselKey}
+                        ref={carouselRef}
+                        data={images}
+                        width={containerWidth}
+                        height={containerHeight}
+                        loop
+                        autoPlay={autoPlay}
+                        autoPlayInterval={autoPlayInterval}
+                        onSnapToItem={handleIndexChanged}
+                        renderItem={renderItem}
+                    />
 
-            {showDots && (
-                <View style={styles.dots}>
-                    {images.map((_, i) => (
-                        <TouchableOpacity
-                            key={i}
-                            style={[styles.dotWrapper, i === index && styles.dotActiveWrapper]}
-                            onPress={() => handleDotPress(i)}
-                            hitSlop={12}
-                        >
-                            <View style={[styles.dot, i === index && styles.active]} />
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                    {showArrows && !(isMobile && hideArrowsOnMobile) && (
+                        <>
+                            <NavButton
+                                direction="left"
+                                offset={NAV_BTN_OFFSET}
+                                onPress={navPrev}
+                            />
+                            <NavButton
+                                direction="right"
+                                offset={NAV_BTN_OFFSET}
+                                onPress={navNext}
+                            />
+                        </>
+                    )}
+
+                    {showDots && (
+                        <View style={styles.dots}>
+                            {images.map((_, i) => (
+                                <TouchableOpacity
+                                    key={i}
+                                    style={[
+                                        styles.dotWrapper,
+                                        i === currentIndex && styles.dotActiveWrapper,
+                                    ]}
+                                    onPress={() => {
+                                        carouselRef.current?.scrollTo({ index: i, animated: true });
+                                    }}
+                                    hitSlop={12}
+                                >
+                                    <View
+                                        style={[
+                                            styles.dot,
+                                            i === currentIndex && styles.active,
+                                        ]}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
+                </>
             )}
         </View>
     );
@@ -208,12 +297,12 @@ const Slider: React.FC<SliderProps> = ({
 export default memo(Slider);
 
 const styles = StyleSheet.create({
-    container: {
+    wrapper: {
         width: '100%',
-        backgroundColor: '#000',
+        backgroundColor: '#f9f8f2', // Под цвет приложения, чтобы не было чёрного мигания
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 16,
+        borderRadius: 12,
     },
     slide: {
         flex: 1,
@@ -240,7 +329,7 @@ const styles = StyleSheet.create({
     },
     dots: {
         position: 'absolute',
-        bottom: 18,
+        bottom: 12,
         flexDirection: 'row',
         alignSelf: 'center',
     },
@@ -255,11 +344,11 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
-        backgroundColor: 'rgba(255,255,255,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.2)',
     },
     active: {
         width: 10,
         height: 10,
-        backgroundColor: '#fff',
+        backgroundColor: '#000',
     },
 });

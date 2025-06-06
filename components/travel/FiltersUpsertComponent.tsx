@@ -6,7 +6,8 @@ import {
     ScrollView,
     StyleSheet,
     Dimensions,
-    ActivityIndicator, TouchableOpacity,
+    ActivityIndicator,
+    TouchableOpacity,
 } from 'react-native';
 import { Button } from 'react-native-paper';
 
@@ -23,20 +24,19 @@ interface FiltersComponentProps {
     formData: TravelFormData | null;
     setFormData: (data: TravelFormData) => void;
     travelDataOld?: Travel | null;
-    onClose?: () => void; // Функция закрытия боковой панели
-    isSuperAdmin?: boolean; // Флаг для супер-админа (по умолчанию false)
-    onSave: () => void; // Функция сохранения
+    onClose?: () => void;
+    isSuperAdmin?: boolean;
+    onSave: () => void;
 }
-
 
 const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                                                                      filters,
                                                                      formData,
                                                                      setFormData,
                                                                      travelDataOld,
-                                                                     onClose, // Добавлено onClose
+                                                                     onClose,
                                                                      isSuperAdmin = false,
-                                                                     onSave
+                                                                     onSave,
                                                                  }) => {
     if (!formData || !filters) {
         return (
@@ -70,6 +70,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             number_peoples: '',
             number_days: '',
             budget: '',
+            travel_image_thumb_small_url: '', // ВАЖНО! очищаем картинку
         });
     };
 
@@ -78,8 +79,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             contentContainerStyle={{ flexGrow: 1 }}
             style={[styles.container, isMobile && { minHeight: '100%' }]}
         >
-            {onClose && isMobile && ( // Показываем кнопку "Закрыть" только на мобильных
-
+            {onClose && isMobile && (
                 <TouchableOpacity
                     onPress={() => onClose()}
                     style={styles.closeIcon}
@@ -103,7 +103,7 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                     icon="open-in-new"
                     onPress={() => window.open(`/travels/${formData.slug}`, '_blank')}
                     style={styles.floatingIconButton}
-                    >
+                >
                     Предпросмотр
                 </Button>
             )}
@@ -127,7 +127,11 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                     <ImageUploadComponent
                         collection="travelMainImage"
                         idTravel={formData.id}
-                        oldImage={travelDataOld?.travel_image_thumb_small_url}
+                        oldImage={
+                            formData.travel_image_thumb_small_url?.length
+                                ? formData.travel_image_thumb_small_url
+                                : travelDataOld?.travel_image_thumb_small_url ?? null
+                        }
                     />
                 </View>
             )}
@@ -194,7 +198,9 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                 labelField="name"
                 valueField="id"
             />
+
             {renderInput('Год путешествия', 'year')}
+
             <CheckboxComponent
                 label="Требуется виза"
                 value={formData.visa ?? false}
@@ -231,12 +237,7 @@ const styles = StyleSheet.create({
     container: {
         padding: 16,
         backgroundColor: '#fff',
-        flex: 1 // Исправляем скролл на мобильных
-    },
-    closeButton: {
-        alignSelf: 'flex-end',
-        marginBottom: 12,
-        display: isMobile ? 'flex' : 'none' // Прячем кнопку на десктопе
+        flex: 1,
     },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     imageUploadWrapper: { alignItems: 'center', marginVertical: 12 },
@@ -250,14 +251,14 @@ const styles = StyleSheet.create({
         right: -14,
         backgroundColor: 'rgba(255, 0, 0, 0.8)',
         borderRadius: 12,
-        width: 20, // Уменьшили кнопку
+        width: 20,
         height: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
     closeButtonText: {
         color: '#fff',
-        fontSize: 12, // Уменьшили текст крестика
+        fontSize: 12,
     },
     saveButton: {
         backgroundColor: '#f5a623',
@@ -265,8 +266,8 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     floatingIconButton: {
-        minWidth: 40, // Уменьшаем размер кнопки
-        borderRadius: 20, // Делаем кнопку круглой
+        minWidth: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#fff',

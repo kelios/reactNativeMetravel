@@ -1,9 +1,18 @@
-import React, {useEffect, useState} from 'react';
-import {ActivityIndicator, Dimensions, Image, Platform, StyleSheet, Text, TouchableOpacity, View,} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
-import {useDropzone} from 'react-dropzone';
-import {uploadImage} from "@/src/api/travels";
-import {FontAwesome} from '@expo/vector-icons';
+import { useDropzone } from 'react-dropzone';
+import { uploadImage } from '@/src/api/travels';
+import { FontAwesome } from '@expo/vector-icons';
 
 interface ImageUploadComponentProps {
     collection: string;
@@ -12,16 +21,29 @@ interface ImageUploadComponentProps {
     onUpload?: (imageUrl: string) => void;
 }
 
-const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection, idTravel, oldImage, onUpload }) => {
+const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({
+                                                                       collection,
+                                                                       idTravel,
+                                                                       oldImage,
+                                                                       onUpload,
+                                                                   }) => {
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [uploadMessage, setUploadMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    // 👇 Добавляем флаг — была ли картинка выбрана пользователем вручную:
+    const [isManuallySelected, setIsManuallySelected] = useState(false);
+
     useEffect(() => {
-        if (oldImage && !imageUri) {
+        // Если пользователь не выбрал картинку вручную → можно подгружать oldImage
+        if (oldImage && !isManuallySelected) {
             setImageUri(oldImage);
         }
-    }, [oldImage]);
+        // если oldImage сбросился (например, ''), тоже сбрасываем imageUri
+        if (!oldImage && !isManuallySelected) {
+            setImageUri(null);
+        }
+    }, [oldImage, isManuallySelected]);
 
     const handleUploadImage = async (file: File | { uri: string; name: string; type: string }) => {
         try {
@@ -50,6 +72,7 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                 setImageUri(response.url);
                 setUploadMessage('Фотография успешно загружена');
                 onUpload?.(response.url);
+                setIsManuallySelected(true); // <- Помечаем, что юзер выбрал картинку вручную!
             } else {
                 setUploadMessage('Ошибка при загрузке');
             }
@@ -109,7 +132,9 @@ const ImageUploadComponent: React.FC<ImageUploadComponentProps> = ({ collection,
                         ) : (
                             <>
                                 <FontAwesome name="cloud-upload" size={18} color="#fff" />
-                                <Text style={styles.uploadButtonText}>{imageUri ? 'Заменить фото' : 'Загрузить фото'}</Text>
+                                <Text style={styles.uploadButtonText}>
+                                    {imageUri ? 'Заменить фото' : 'Загрузить фото'}
+                                </Text>
                             </>
                         )}
                     </TouchableOpacity>
@@ -150,7 +175,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         cursor: 'pointer',
         backgroundColor: '#fdf8f5',
-        outline: 'none', // убираем браузерный outline
+        outline: 'none',
         overflow: 'hidden',
     },
     dropzoneActive: {
@@ -170,19 +195,10 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '600',
     },
-    imageContainer: {
-        width: '100%',
-        position: 'relative',
-        marginTop: 8,
-        borderRadius: 12,
-        overflow: 'hidden', // чтобы сообщение не выходило за края
-        borderWidth: 1,
-        borderColor: '#ddd',
-    },
     image: {
         width: '100%',
         aspectRatio: 1,
-        objectFit: 'cover', // обрезка при необходимости
+        objectFit: 'cover',
     },
     placeholderContainer: {
         alignItems: 'center',
@@ -208,6 +224,5 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
 });
-
 
 export default ImageUploadComponent;
