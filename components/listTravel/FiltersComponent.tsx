@@ -1,4 +1,11 @@
-import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
+import React, {
+    useState,
+    useMemo,
+    useCallback,
+    memo,
+    useRef,
+    useEffect,
+} from 'react';
 import {
     StyleSheet,
     View,
@@ -15,6 +22,43 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { debounce } from 'lodash';
 
+const GroupBox = memo(({ label, field, items, valKey, labelKey, filterValue, handleCheckForField, open, toggle }) => {
+    return (
+        <View style={styles.groupBox}>
+            <Pressable
+                style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                onPress={() => toggle(field)}
+            >
+                <Text style={styles.groupLabel}>{label}</Text>
+                <Feather name={open ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
+            </Pressable>
+            {open && (
+                <View style={styles.itemsBox}>
+                    {items.map((it) => {
+                        const id = it[valKey];
+                        const title = it[labelKey];
+                        const checked = (filterValue[field] ?? []).includes(id);
+                        return (
+                            <Pressable
+                                key={id}
+                                style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                                onPress={() => handleCheckForField(id)}
+                            >
+                                <Feather
+                                    name={checked ? 'check-square' : 'square'}
+                                    size={22}
+                                    color="#4a7c59"
+                                />
+                                <Text style={styles.itemText}>{title}</Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
+            )}
+        </View>
+    );
+});
+
 const FiltersComponent = ({
                               filters = {},
                               filterValue = {},
@@ -23,6 +67,9 @@ const FiltersComponent = ({
                               resetFilters,
                               closeMenu,
                               isSuperuser,
+                              isCompact = false,
+                              disableApplyOnMobileClose = false,
+                              initialOpenState = {},
                           }) => {
     const { width } = useWindowDimensions();
     const insets = useSafeAreaInsets();
@@ -30,12 +77,16 @@ const FiltersComponent = ({
     const isMobile = width <= 768;
     const isTravelsByPage = name === 'travelsby';
 
+    const isMobileFullScreenMode = isMobile && !isCompact;
+
     const [year, setYear] = useState(filterValue.year ?? '');
-    const [open, setOpen] = useState({});
+    const [open, setOpen] = useState(initialOpenState);
     const [yearOpen, setYearOpen] = useState(false);
     const [showModerationPending, setShowModerationPending] = useState(filterValue.showModerationPending ?? false);
+    const [allExpanded, setAllExpanded] = useState(false);
 
     const scrollRef = useRef(null);
+    const yearInputRef = useRef(null);
 
     useEffect(() => {
         if (isSuperuser && scrollRef.current) {
@@ -58,11 +109,12 @@ const FiltersComponent = ({
         setOpen((prev) => ({ ...prev, [field]: !prev[field] }));
     }, []);
 
-    const handleCheck = useCallback((field, id) => {
-        const selected = filterValue[field] ?? [];
-        const next = selected.includes(id) ? selected.filter((v) => v !== id) : [...selected, id];
-        onSelectedItemsChange(field, next);
-    }, [filterValue, onSelectedItemsChange]);
+    const handleCheckForField = useCallback((field) =>
+        (id) => {
+            const selected = filterValue[field] ?? [];
+            const next = selected.includes(id) ? selected.filter((v) => v !== id) : [...selected, id];
+            onSelectedItemsChange(field, next);
+        }, [filterValue, onSelectedItemsChange]);
 
     const handleYearChange = useCallback((text) => {
         const cleaned = text.replace(/[^0-9]/g, '').slice(0, 4);
@@ -77,90 +129,113 @@ const FiltersComponent = ({
             year: year || undefined,
             showModerationPending,
         });
-        if (isMobile) closeMenu();
-    }, [filterValue, year, showModerationPending, isMobile]);
+        if (isMobile && !disableApplyOnMobileClose) closeMenu();
+    }, [filterValue, year, showModerationPending, isMobile, disableApplyOnMobileClose]);
 
     const debouncedApply = useMemo(() => debounce(apply, 300), [apply]);
+
+    useEffect(() => {
+        return () => {
+            debouncedApply.cancel();
+        };
+    }, [debouncedApply]);
 
     const handleReset = () => {
         setYear('');
         setShowModerationPending(false);
         resetFilters();
-        if (isMobile) closeMenu();
+        if (isMobile && !disableApplyOnMobileClose) closeMenu();
     };
 
+    const handleToggleAll = () => {
+        const newState = {};
+        groups.forEach(({ field, hidden }) => {
+            if (!hidden) newState[field] = !allExpanded;
+        });
+        setOpen(newState);
+        setAllExpanded(!allExpanded);
+    };
+
+    const stackFooter = isMobile && width <= 500;
+
     return (
-        <View style={styles.root}>
+        <View style={[styles.root, isMobileFullScreenMode && styles.fullScreenMobile]}>
             <ScrollView
                 ref={scrollRef}
                 style={styles.scroll}
                 contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 8 }]}
                 keyboardShouldPersistTaps="handled"
+                removeClippedSubviews={Platform.OS !== 'web'}
             >
                 <View style={styles.content}>
                     {isSuperuser && (
                         <View style={styles.groupBox}>
                             <Text style={styles.groupLabel}>Модерация</Text>
                             <View style={styles.itemsBox}>
-                                <Pressable onPress={() => setShowModerationPending(!showModerationPending)} style={styles.checkboxRow}>
-                                    <Feather name={showModerationPending ? 'check-square' : 'square'} size={20} color="#4a7c59" />
+                                <Pressable
+                                    onPress={() => setShowModerationPending(!showModerationPending)}
+                                    style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                                >
+                                    <Feather name={showModerationPending ? 'check-square' : 'square'} size={22} color="#4a7c59" />
                                     <Text style={styles.itemText}>Показать статьи на модерации</Text>
                                 </Pressable>
                             </View>
                         </View>
                     )}
 
+                    <Pressable style={[styles.toggleAllBtn, Platform.OS === 'web' && { cursor: 'pointer' }]} onPress={handleToggleAll}>
+                        <Text style={styles.toggleAllText}>
+                            {allExpanded ? 'Свернуть все' : 'Развернуть все'}
+                        </Text>
+                    </Pressable>
+
                     {groups.map(({ label, field, items, valKey, labelKey, hidden }) =>
                         hidden ? null : (
-                            <View key={field} style={styles.groupBox}>
-                                <Pressable style={styles.groupHeader} onPress={() => toggle(field)}>
-                                    <Text style={styles.groupLabel}>{label}</Text>
-                                    <Feather name={open[field] ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
-                                </Pressable>
-                                {open[field] && (
-                                    <View style={styles.itemsBox}>
-                                        {items.map((it) => {
-                                            const id = it[valKey];
-                                            const title = it[labelKey];
-                                            const checked = (filterValue[field] ?? []).includes(id);
-                                            return (
-                                                <Pressable
-                                                    key={id}
-                                                    style={styles.checkboxRow}
-                                                    onPress={() => handleCheck(field, id)}
-                                                >
-                                                    <Feather
-                                                        name={checked ? 'check-square' : 'square'}
-                                                        size={20}
-                                                        color="#4a7c59"
-                                                    />
-                                                    <Text style={styles.itemText}>{title}</Text>
-                                                </Pressable>
-                                            );
-                                        })}
-                                    </View>
-                                )}
-                            </View>
+                            <GroupBox
+                                key={field}
+                                label={label}
+                                field={field}
+                                items={items}
+                                valKey={valKey}
+                                labelKey={labelKey}
+                                filterValue={filterValue}
+                                handleCheckForField={handleCheckForField(field)}
+                                open={open[field]}
+                                toggle={toggle}
+                            />
                         )
                     )}
 
                     <View style={styles.groupBox}>
-                        <Pressable style={styles.groupHeader} onPress={() => setYearOpen((v) => !v)}>
+                        <Pressable
+                            style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                            onPress={() => {
+                                setYearOpen((v) => !v);
+                                setTimeout(() => yearInputRef.current?.focus(), 100);
+                            }}
+                        >
                             <Text style={styles.groupLabel}>Год</Text>
                             <Feather name={yearOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
                         </Pressable>
                         {yearOpen && (
                             <View style={styles.yearBox}>
-                                <TextInput
-                                    value={year}
-                                    onChangeText={handleYearChange}
-                                    placeholder="2023"
-                                    keyboardType="numeric"
-                                    maxLength={4}
-                                    style={styles.yearInput}
-                                    returnKeyType="done"
-                                    onSubmitEditing={apply}
-                                />
+                                <View style={styles.yearInputWrapper}>
+                                    <TextInput
+                                        ref={yearInputRef}
+                                        value={year}
+                                        onChangeText={handleYearChange}
+                                        placeholder="2023"
+                                        keyboardType="numeric"
+                                        maxLength={4}
+                                        style={styles.yearInput}
+                                        returnKeyType="done"
+                                        onSubmitEditing={apply}
+                                    />{year.length > 0 && (
+                                    <Pressable onPress={() => setYear('')} style={styles.clearIcon}>
+                                        <Feather name="x" size={16} color="#999" />
+                                    </Pressable>
+                                )}
+                                </View>
                             </View>
                         )}
                     </View>
@@ -170,9 +245,16 @@ const FiltersComponent = ({
             <View style={[styles.footer, {
                 paddingBottom: Math.max(insets.bottom, 24),
                 flexDirection: 'row',
+                flexWrap: 'wrap',
                 justifyContent: 'space-between',
-                gap: 10,
+                gap: 8,
             }]}>
+                {isMobile && (
+                    <Pressable style={[styles.btn, styles.close]} onPress={closeMenu}>
+                        <Text style={styles.btnTxt}>Закрыть</Text>
+                    </Pressable>
+                )}
+
                 <Pressable style={[styles.btn, styles.reset]} onPress={handleReset}>
                     <Text style={[styles.btnTxt, styles.resetTxt]}>Сбросить</Text>
                 </Pressable>
@@ -188,25 +270,72 @@ export default memo(FiltersComponent);
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#fff' },
+    fullScreenMobile: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 999,
+        backgroundColor: '#fff',
+    },
     scroll: { flex: 1 },
     scrollContent: { paddingHorizontal: 8, paddingBottom: 16 },
     content: { paddingHorizontal: 8 },
     groupBox: { marginBottom: 10, backgroundColor: '#f9f9f9', borderRadius: 10 },
-    groupHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10 },
-    groupLabel: { fontSize: 14, fontWeight: '600', color: '#333' },
-    itemsBox: { paddingHorizontal: 10, paddingBottom: 8 },
-    checkboxRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 8 },
-    itemText: { fontSize: 13, color: '#333' },
-    yearBox: { paddingHorizontal: 10, paddingBottom: 8 },
+    groupHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+    },
+    groupLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333',
+    },
+    itemsBox: { paddingHorizontal: 12, paddingBottom: 8 },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        gap: 10,
+    },
+    itemText: {
+        fontSize: 14,
+        color: '#333',
+    },
+    yearBox: { paddingHorizontal: 12, paddingBottom: 8 },
+    yearInputWrapper: {
+        position: 'relative',
+    },
     yearInput: {
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 6,
         paddingHorizontal: 10,
-        paddingVertical: 6,
-        fontSize: 14,
+        paddingVertical: 8,
+        fontSize: 15,
         color: '#333',
+    },
+    clearIcon: {
+        position: 'absolute',
+        right: 8,
+        top: '50%',
+        marginTop: -8,
+        padding: 4,
+    },
+    toggleAllBtn: {
+        alignSelf: 'flex-end',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 12,
+    },
+    toggleAllText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#4a7c59',
     },
     footer: {
         paddingHorizontal: 10,
@@ -226,14 +355,15 @@ const styles = StyleSheet.create({
     },
     btn: {
         flex: 1,
-        minWidth: '48%',
-        paddingVertical: 10,
+        minWidth: '30%',
+        paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    close: { backgroundColor: '#999' },
     reset: { backgroundColor: '#e0e0e0' },
     resetTxt: { color: '#333' },
     apply: { backgroundColor: '#4a7c59' },
-    btnTxt: { fontSize: 14, fontWeight: '600', color: '#fff' },
+    btnTxt: { fontSize: 15, fontWeight: '600', color: '#fff' },
 });

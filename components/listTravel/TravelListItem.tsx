@@ -211,4 +211,4 @@ const styles = StyleSheet.create({
         color: '#eee',
         marginLeft: 4,
     },
-});
+})

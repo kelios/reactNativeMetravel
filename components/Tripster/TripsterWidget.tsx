@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, View } from 'react-native';
+import { normalize, transliterate, CITY_ALIASES, TRIPSTER_CITY_NAMES } from "@/utils/CityUtils";
 
 type Props = {
     points: {
@@ -8,12 +9,44 @@ type Props = {
     }[];
 };
 
+function findCityName(term: string): string | null {
+    const cleanTerm = term.replace(/\s*\(.*?\)\s*/g, '').trim();
+    const lowerTerm = cleanTerm.toLowerCase();
+    const normalized = normalize(lowerTerm);
+    const transliterated = transliterate(lowerTerm);
+    const formsToTry = [lowerTerm, normalized, transliterated.toLowerCase()];
+
+    for (const form of formsToTry) {
+        if (TRIPSTER_CITY_NAMES[form]) {
+            return TRIPSTER_CITY_NAMES[form]; // <--- ВАЖНО: возвращаем название города для Tripster
+        }
+    }
+
+    for (const [city, aliases] of Object.entries(CITY_ALIASES)) {
+        if ([city, ...aliases].some(alias => formsToTry.includes(alias.toLowerCase()))) {
+            const name = TRIPSTER_CITY_NAMES[city];
+            if (name) {
+                return name;
+            }
+        }
+    }
+
+    return null;
+}
+
 export default function TripsterWidget({ points }: Props) {
     const ref = useRef<HTMLDivElement>(null);
 
     const firstAddress = points?.[0]?.address || '';
-    const firstCity = firstAddress.split(',')[0]?.trim();
-    const validCity = firstCity && /^[a-zA-Zа-яА-Я\s\-]+$/.test(firstCity) ? firstCity : null;
+    const parts = firstAddress.split(',').map(p => p.trim());
+    let validCity: string | null = null;
+    for (const part of parts) {
+        const city = findCityName(part);
+        if (city) {
+            validCity = city;
+            break;
+        }
+    }
 
     useEffect(() => {
         if (Platform.OS !== 'web' || !validCity || !ref.current) return;
@@ -24,7 +57,8 @@ export default function TripsterWidget({ points }: Props) {
         const script = document.createElement('script');
         script.id = 'tripster-widget-script';
         script.async = true;
-        script.src = `https://experience.tripster.ru/partner/widget.js?` +
+        script.src =
+            `https://experience.tripster.ru/partner/widget.js?` +
             `city=${encodeURIComponent(validCity)}` +
             `&view=experience&template=horizontal&mobile=list&order=top` +
             `&width=100%25&num=3&version=2&partner=metravel&features=logo` +

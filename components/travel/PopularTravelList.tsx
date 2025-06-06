@@ -4,6 +4,7 @@ import React, {
     useCallback,
     memo,
     useMemo,
+    useRef,
 } from 'react';
 import {
     View,
@@ -12,6 +13,8 @@ import {
     ActivityIndicator,
     useWindowDimensions,
     Text,
+    Animated,
+    Platform,
 } from 'react-native';
 import { TravelsMap, Travel } from '@/src/types/types';
 import { fetchTravelsPopular } from '@/src/api/travels';
@@ -21,15 +24,28 @@ import { Title } from 'react-native-paper';
 type PopularTravelListProps = {
     onLayout?: (event: any) => void;
     scrollToAnchor?: () => void;
+    title?: string | null;
+    maxColumns?: number;
 };
 
+// Оптимизированный memo-рендер TravelTmlRound
+const MemoTravelTmlRound = memo(TravelTmlRound);
+
+const ITEM_HEIGHT = 250; // пример — подставь свою высоту TravelTmlRound
+const SEPARATOR_HEIGHT = 20;
+
 const PopularTravelList: React.FC<PopularTravelListProps> = memo(
-    ({ onLayout, scrollToAnchor }) => {
+    ({ onLayout, scrollToAnchor, title = 'Популярные маршруты', maxColumns = 3 }) => {
         const [travelsPopular, setTravelsPopular] = useState<TravelsMap>({});
         const [isLoading, setIsLoading] = useState(true);
         const { width } = useWindowDimensions();
-        const isMobile = width <= 768;
-        const numColumns = isMobile ? 1 : 3;
+        const fadeAnim = useRef(new Animated.Value(0)).current;
+
+        const numColumns = useMemo(() => {
+            if (width <= 600) return 1;
+            if (width <= 1024) return Math.min(maxColumns, 2);
+            return Math.min(maxColumns, 3);
+        }, [width, maxColumns]);
 
         const fetchPopularTravels = useCallback(async () => {
             try {
@@ -52,7 +68,7 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
         );
 
         const renderItem = useCallback(
-            ({ item }: { item: Travel }) => <TravelTmlRound travel={item} />,
+            ({ item }: { item: Travel }) => <MemoTravelTmlRound travel={item} />,
             []
         );
 
@@ -66,6 +82,23 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
                 scrollToAnchor();
             }
         }, [scrollToAnchor]);
+
+        // Анимация появления
+        useEffect(() => {
+            if (!isLoading && popularList.length > 0) {
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 400,
+                    useNativeDriver: true,
+                }).start();
+            }
+        }, [isLoading, popularList.length, fadeAnim]);
+
+        const getItemLayout = useCallback((_: any, index: number) => ({
+            length: ITEM_HEIGHT + SEPARATOR_HEIGHT,
+            offset: (ITEM_HEIGHT + SEPARATOR_HEIGHT) * index,
+            index,
+        }), []);
 
         if (isLoading) {
             return (
@@ -88,27 +121,42 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
 
         return (
             <View style={styles.section} onLayout={onLayout}>
-                <Title style={styles.title}>Популярные маршруты</Title>
-                <FlatList
-                    key={numColumns}
-                    data={popularList}
-                    renderItem={renderItem}
-                    keyExtractor={keyExtractor}
-                    numColumns={numColumns}
-                    contentContainerStyle={styles.flatListContent}
-                    columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
-                    ItemSeparatorComponent={() => <View style={styles.separator} />}
-                    showsVerticalScrollIndicator={false}
-                    initialNumToRender={10}
-                    maxToRenderPerBatch={10}
-                    windowSize={5}
-                    removeClippedSubviews
-                    onContentSizeChange={handleContentChange}
-                />
+                {title !== null && (
+                    <Title style={styles.title}>{title}</Title>
+                )}
+                <Animated.View style={{ opacity: fadeAnim }}>
+                    <FlatList
+                        key={numColumns} // force re-layout при изменении numColumns
+                        data={popularList}
+                        renderItem={renderItem}
+                        keyExtractor={keyExtractor}
+                        numColumns={numColumns}
+                        contentContainerStyle={styles.flatListContent}
+                        columnWrapperStyle={
+                            numColumns > 1
+                                ? {
+                                    justifyContent:
+                                        popularList.length % numColumns === 1
+                                            ? 'center'
+                                            : 'space-between',
+                                }
+                                : undefined
+                        }
+                        ItemSeparatorComponent={() => <View style={styles.separator} />}
+                        showsVerticalScrollIndicator={false}
+                        initialNumToRender={10}
+                        maxToRenderPerBatch={10}
+                        windowSize={5}
+                        removeClippedSubviews={Platform.OS !== 'web'}
+                        getItemLayout={getItemLayout}
+                        onContentSizeChange={handleContentChange}
+                    />
+                </Animated.View>
             </View>
         );
     }
 );
+
 const styles = StyleSheet.create({
     section: {
         marginTop: 24,
@@ -148,9 +196,6 @@ const styles = StyleSheet.create({
     },
     separator: {
         height: 20,
-    },
-    columnWrapper: {
-        justifyContent: 'space-between',
     },
 });
 
