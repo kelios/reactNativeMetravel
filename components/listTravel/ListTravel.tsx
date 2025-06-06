@@ -1,4 +1,4 @@
-// Начало переработанного компонента ListTravel
+// ListTravel.js
 import React, {
     memo,
     useCallback,
@@ -35,6 +35,8 @@ import {
 
 const INITIAL_FILTER = { showModerationPending: false, year: '' };
 
+const BELARUS_ID = 3;
+
 function useDebounce(value, delay = 400) {
     const [debounced, setDebounced] = useState(value);
     useEffect(() => {
@@ -45,13 +47,15 @@ function useDebounce(value, delay = 400) {
 }
 
 function ListTravel() {
-    const { width, height } = useWindowDimensions();
+    const { width } = useWindowDimensions();
     const isMobile = width < 768;
     const isTablet = width >= 768 && width < 1024;
     const numColumns = isMobile ? 1 : isTablet ? 2 : 3;
+
     const router = useRouter();
     const route = useRoute();
     const { user_id } = useLocalSearchParams();
+
     const isMeTravel = route.name === 'metravel';
     const isTravelBy = route.name === 'travelsby';
 
@@ -67,10 +71,15 @@ function ListTravel() {
     const [currentPage, setCurrentPage] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(30);
     const [isFiltersVisible, setFiltersVisible] = useState(false);
+
     const isMounted = useRef(true);
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
+    }, []);
 
-    useEffect(() => () => { isMounted.current = false }, []);
-
+    // Получаем userId и isSuperuser из AsyncStorage
     useEffect(() => {
         AsyncStorage.multiGet(['userId', 'isSuperuser']).then((res) => {
             if (!isMounted.current) return;
@@ -79,6 +88,7 @@ function ListTravel() {
         });
     }, []);
 
+    // Загружаем справочники (фильтры и список стран)
     useEffect(() => {
         Promise.all([fetchFilters(), fetchFiltersCountry()]).then(([f, c]) => {
             if (!isMounted.current) return;
@@ -86,19 +96,34 @@ function ListTravel() {
         });
     }, []);
 
+    // Собираем параметры запроса, включая фильтр "по Беларуси" для travelsby
     const queryParams = useMemo(() => {
         const params = Object.fromEntries(
             Object.entries(filterValue).filter(([_, v]) => Boolean(v?.length || v))
         );
+
         if (filterValue.showModerationPending) {
-            Object.assign(params, { publish: 1, moderation: 0 });
+            params.publish = 1;
+            params.moderation = 0;
         } else {
-            if (isMeTravel) params.user_id = userId;
-            else Object.assign(params, { publish: 1, moderation: 1 });
-            if (user_id) params.user_id = user_id;
+            params.publish = 1;
+            params.moderation = 1;
+
+            if (isMeTravel) {
+                params.user_id = userId;
+            }
+            if (user_id) {
+                params.user_id = user_id;
+            }
         }
+
+        // Если мы на странице /travelsby → жёстко фильтруем по Беларуси
+        if (isTravelBy) {
+            params.countries = [BELARUS_ID];
+        }
+
         return params;
-    }, [filterValue, userId, user_id, isMeTravel]);
+    }, [filterValue, isMeTravel, isTravelBy, userId, user_id]);
 
     const loadTravels = useCallback(() => {
         setStatus('loading');
@@ -114,13 +139,18 @@ function ListTravel() {
             });
     }, [currentPage, itemsPerPage, debouncedSearch, queryParams]);
 
+    // Загружаем данные при старте и при изменении зависимостей
     useEffect(() => {
         if (isMeTravel && !userId) return;
         loadTravels();
     }, [loadTravels, isMeTravel, userId]);
 
-    useEffect(() => setCurrentPage(0), [itemsPerPage, debouncedSearch, filterValue]);
+    // Сброс страницы при смене поиска/фильтров/кол-ва элементов
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [itemsPerPage, debouncedSearch, filterValue]);
 
+    // Удаление путешествия
     const handleDelete = useCallback(async () => {
         if (!deleteId) return;
         await deleteTravel(deleteId);
@@ -162,6 +192,7 @@ function ListTravel() {
                         />
                     </View>
                 )}
+
                 <View style={styles.main}>
                     <SearchAndFilterBar
                         search={search}
@@ -169,8 +200,14 @@ function ListTravel() {
                         onToggleFilters={() => setFiltersVisible((v) => !v)}
                         isMobile={isMobile}
                     />
-                    {status === 'loading' && <ActivityIndicator size="large" color="#4a7c59" />}
-                    {status === 'error' && <Text style={styles.status}>Ошибка загрузки</Text>}
+
+                    {status === 'loading' && (
+                        <ActivityIndicator size="large" color="#4a7c59" />
+                    )}
+                    {status === 'error' && (
+                        <Text style={styles.status}>Ошибка загрузки</Text>
+                    )}
+
                     {travels?.data?.length ? (
                         <FlatList
                             key={`list-${numColumns}`}
@@ -199,6 +236,7 @@ function ListTravel() {
                     )}
                 </View>
             </View>
+
             {isMobile && isFiltersVisible && (
                 <FiltersComponent
                     filters={filters}
@@ -215,6 +253,7 @@ function ListTravel() {
                     isSuperuser={isSuperuser}
                 />
             )}
+
             <ConfirmDialog
                 visible={!!deleteId}
                 onClose={() => setDeleteId(null)}
