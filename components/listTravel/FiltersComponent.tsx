@@ -22,7 +22,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { debounce } from 'lodash';
 
+const GroupBoxItem = memo(({ id, title, checked, onPress }) => (
+    <Pressable
+        style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
+        onPress={onPress}
+    >
+        <Feather
+            name={checked ? 'check-square' : 'square'}
+            size={22}
+            color="#4a7c59"
+        />
+        <Text style={styles.itemText}>{title}</Text>
+    </Pressable>
+));
+
 const GroupBox = memo(({ label, field, items, valKey, labelKey, filterValue, handleCheckForField, open, toggle }) => {
+    const selectedItems = filterValue[field] ?? [];
+
     return (
         <View style={styles.groupBox}>
             <Pressable
@@ -36,21 +52,14 @@ const GroupBox = memo(({ label, field, items, valKey, labelKey, filterValue, han
                 <View style={styles.itemsBox}>
                     {items.map((it) => {
                         const id = it[valKey];
-                        const title = it[labelKey];
-                        const checked = (filterValue[field] ?? []).includes(id);
                         return (
-                            <Pressable
+                            <GroupBoxItem
                                 key={id}
-                                style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                                id={id}
+                                title={it[labelKey]}
+                                checked={selectedItems.includes(id)}
                                 onPress={() => handleCheckForField(id)}
-                            >
-                                <Feather
-                                    name={checked ? 'check-square' : 'square'}
-                                    size={22}
-                                    color="#4a7c59"
-                                />
-                                <Text style={styles.itemText}>{title}</Text>
-                            </Pressable>
+                            />
                         );
                     })}
                 </View>
@@ -74,25 +83,19 @@ const FiltersComponent = ({
     const { width } = useWindowDimensions();
     const insets = useSafeAreaInsets();
     const { name } = useRoute();
-    const isMobile = width <= 768;
-    const isTravelsByPage = name === 'travelsby';
 
-    const isMobileFullScreenMode = isMobile && !isCompact;
+    const isMobile = useMemo(() => width <= 768, [width]);
+    const isMobileFullScreenMode = useMemo(() => isMobile && !isCompact, [isMobile, isCompact]);
+    const isTravelsByPage = useMemo(() => name === 'travelsby', [name]);
+    const stackFooter = useMemo(() => isMobile && width <= 500, [isMobile, width]);
 
     const [year, setYear] = useState(filterValue.year ?? '');
     const [open, setOpen] = useState(initialOpenState);
     const [yearOpen, setYearOpen] = useState(false);
-    const [showModerationPending, setShowModerationPending] = useState(filterValue.showModerationPending ?? false);
     const [allExpanded, setAllExpanded] = useState(false);
 
     const scrollRef = useRef(null);
     const yearInputRef = useRef(null);
-
-    useEffect(() => {
-        if (isSuperuser && scrollRef.current) {
-            scrollRef.current.scrollTo({ y: 0, animated: true });
-        }
-    }, [isSuperuser]);
 
     const groups = useMemo(() => [
         { label: 'Страны', field: 'countries', items: filters.countries ?? [], valKey: 'country_id', labelKey: 'title_ru', hidden: isTravelsByPage },
@@ -106,57 +109,148 @@ const FiltersComponent = ({
     ], [filters, isTravelsByPage]);
 
     const toggle = useCallback((field) => {
-        setOpen((prev) => ({ ...prev, [field]: !prev[field] }));
+        setOpen(prev => ({ ...prev, [field]: !prev[field] }));
     }, []);
 
-    const handleCheckForField = useCallback((field) =>
-        (id) => {
-            const selected = filterValue[field] ?? [];
-            const next = selected.includes(id) ? selected.filter((v) => v !== id) : [...selected, id];
-            onSelectedItemsChange(field, next);
-        }, [filterValue, onSelectedItemsChange]);
+    const handleCheckForField = useCallback((field) => (id) => {
+        const selected = filterValue[field] ?? [];
+        const next = selected.includes(id)
+            ? selected.filter(v => v !== id)
+            : [...selected, id];
+        onSelectedItemsChange(field, next);
+    }, [filterValue, onSelectedItemsChange]);
+
+    const apply = useCallback(() => {
+        Keyboard.dismiss();
+
+        const cleanedFilterValue = Object.fromEntries(
+            Object.entries(filterValue).map(([key, value]) => {
+                if (Array.isArray(value) && value.length === 0) {
+                    return [key, undefined];
+                }
+                return [key, value];
+            })
+        );
+
+        handleApplyFilters({
+            ...cleanedFilterValue,
+            year: year || undefined,
+        });
+
+        if (isMobile && !disableApplyOnMobileClose) closeMenu();
+    }, [filterValue, year, isMobile, disableApplyOnMobileClose, handleApplyFilters, closeMenu]);
+
+    const debouncedApply = useMemo(() => debounce(apply, 300), [apply]);
 
     const handleYearChange = useCallback((text) => {
         const cleaned = text.replace(/[^0-9]/g, '').slice(0, 4);
         setYear(cleaned);
         if (cleaned.length === 4) debouncedApply();
-    }, []);
-
-    const apply = useCallback(() => {
-        Keyboard.dismiss();
-        handleApplyFilters({
-            ...filterValue,
-            year: year || undefined,
-            showModerationPending,
-        });
-        if (isMobile && !disableApplyOnMobileClose) closeMenu();
-    }, [filterValue, year, showModerationPending, isMobile, disableApplyOnMobileClose]);
-
-    const debouncedApply = useMemo(() => debounce(apply, 300), [apply]);
-
-    useEffect(() => {
-        return () => {
-            debouncedApply.cancel();
-        };
     }, [debouncedApply]);
 
-    const handleReset = () => {
+    const handleReset = useCallback(() => {
         setYear('');
-        setShowModerationPending(false);
         resetFilters();
         if (isMobile && !disableApplyOnMobileClose) closeMenu();
-    };
+    }, [isMobile, disableApplyOnMobileClose, resetFilters, closeMenu]);
 
-    const handleToggleAll = () => {
+    const handleToggleAll = useCallback(() => {
         const newState = {};
         groups.forEach(({ field, hidden }) => {
             if (!hidden) newState[field] = !allExpanded;
         });
         setOpen(newState);
         setAllExpanded(!allExpanded);
-    };
+    }, [groups, allExpanded]);
 
-    const stackFooter = isMobile && width <= 500;
+    useEffect(() => {
+        return () => debouncedApply.cancel();
+    }, [debouncedApply]);
+
+    const renderModerationCheckbox = useMemo(() => (
+        isSuperuser && (
+            <View style={styles.groupBox}>
+                <Text style={styles.groupLabel}>Модерация</Text>
+                <View style={styles.itemsBox}>
+                    <Pressable
+                        onPress={() => onSelectedItemsChange('showModerationPending', !filterValue.showModerationPending)}
+                        style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                    >
+                        <Feather name={filterValue.showModerationPending ? 'check-square' : 'square'} size={22} color="#4a7c59" />
+                        <Text style={styles.itemText}>Показать статьи на модерации</Text>
+                    </Pressable>
+                </View>
+            </View>
+        )
+    ), [isSuperuser, filterValue, onSelectedItemsChange]);
+
+    const renderFooter = useMemo(() => (
+        <View style={[styles.footer, {
+            paddingBottom: Math.max(insets.bottom, 24),
+            flexDirection: 'row',  // всегда row
+            flexWrap: 'wrap',      // если вдруг не влезет — wrap
+            justifyContent: 'space-between',
+            gap: 8,
+        }]}>
+            {isMobile && (
+                <Pressable
+                    style={[styles.btn, { flex: 1 }, styles.close]} // flex:1 для равных кнопок
+                    onPress={closeMenu}
+                >
+                    <Text style={styles.btnTxt}>Закрыть</Text>
+                </Pressable>
+            )}
+            <Pressable
+                style={[styles.btn, { flex: 1 }, styles.reset]} // flex:1
+                onPress={handleReset}
+            >
+                <Text style={[styles.btnTxt, styles.resetTxt]}>Сбросить</Text>
+            </Pressable>
+            <Pressable
+                style={[styles.btn, { flex: 1 }, styles.apply]} // flex:1
+                onPress={apply}
+            >
+                <Text style={styles.btnTxt}>Применить</Text>
+            </Pressable>
+        </View>
+    ), [isMobile, insets.bottom, closeMenu, handleReset, apply]);
+
+    const renderYearInput = useMemo(() => (
+        <View style={styles.groupBox}>
+            <Pressable
+                style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                onPress={() => {
+                    setYearOpen(v => !v);
+                    setTimeout(() => yearInputRef.current?.focus(), 100);
+                }}
+            >
+                <Text style={styles.groupLabel}>Год</Text>
+                <Feather name={yearOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
+            </Pressable>
+            {yearOpen && (
+                <View style={styles.yearBox}>
+                    <View style={styles.yearInputWrapper}>
+                        <TextInput
+                            ref={yearInputRef}
+                            value={year}
+                            onChangeText={handleYearChange}
+                            placeholder="2023"
+                            keyboardType="numeric"
+                            maxLength={4}
+                            style={styles.yearInput}
+                            returnKeyType="done"
+                            onSubmitEditing={apply}
+                        />
+                        {year.length > 0 && (
+                            <Pressable onPress={() => setYear('')} style={styles.clearIcon}>
+                                <Feather name="x" size={16} color="#999" />
+                            </Pressable>
+                        )}
+                    </View>
+                </View>
+            )}
+        </View>
+    ), [yearOpen, year, handleYearChange, apply]);
 
     return (
         <View style={[styles.root, isMobileFullScreenMode && styles.fullScreenMobile]}>
@@ -168,22 +262,12 @@ const FiltersComponent = ({
                 removeClippedSubviews={Platform.OS !== 'web'}
             >
                 <View style={styles.content}>
-                    {isSuperuser && (
-                        <View style={styles.groupBox}>
-                            <Text style={styles.groupLabel}>Модерация</Text>
-                            <View style={styles.itemsBox}>
-                                <Pressable
-                                    onPress={() => setShowModerationPending(!showModerationPending)}
-                                    style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
-                                >
-                                    <Feather name={showModerationPending ? 'check-square' : 'square'} size={22} color="#4a7c59" />
-                                    <Text style={styles.itemText}>Показать статьи на модерации</Text>
-                                </Pressable>
-                            </View>
-                        </View>
-                    )}
+                    {renderModerationCheckbox}
 
-                    <Pressable style={[styles.toggleAllBtn, Platform.OS === 'web' && { cursor: 'pointer' }]} onPress={handleToggleAll}>
+                    <Pressable
+                        style={[styles.toggleAllBtn, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                        onPress={handleToggleAll}
+                    >
                         <Text style={styles.toggleAllText}>
                             {allExpanded ? 'Свернуть все' : 'Развернуть все'}
                         </Text>
@@ -206,67 +290,17 @@ const FiltersComponent = ({
                         )
                     )}
 
-                    <View style={styles.groupBox}>
-                        <Pressable
-                            style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
-                            onPress={() => {
-                                setYearOpen((v) => !v);
-                                setTimeout(() => yearInputRef.current?.focus(), 100);
-                            }}
-                        >
-                            <Text style={styles.groupLabel}>Год</Text>
-                            <Feather name={yearOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
-                        </Pressable>
-                        {yearOpen && (
-                            <View style={styles.yearBox}>
-                                <View style={styles.yearInputWrapper}>
-                                    <TextInput
-                                        ref={yearInputRef}
-                                        value={year}
-                                        onChangeText={handleYearChange}
-                                        placeholder="2023"
-                                        keyboardType="numeric"
-                                        maxLength={4}
-                                        style={styles.yearInput}
-                                        returnKeyType="done"
-                                        onSubmitEditing={apply}
-                                    />{year.length > 0 && (
-                                    <Pressable onPress={() => setYear('')} style={styles.clearIcon}>
-                                        <Feather name="x" size={16} color="#999" />
-                                    </Pressable>
-                                )}
-                                </View>
-                            </View>
-                        )}
-                    </View>
+                    {renderYearInput}
                 </View>
             </ScrollView>
 
-            <View style={[styles.footer, {
-                paddingBottom: Math.max(insets.bottom, 24),
-                flexDirection: 'row',
-                flexWrap: 'wrap',
-                justifyContent: 'space-between',
-                gap: 8,
-            }]}>
-                {isMobile && (
-                    <Pressable style={[styles.btn, styles.close]} onPress={closeMenu}>
-                        <Text style={styles.btnTxt}>Закрыть</Text>
-                    </Pressable>
-                )}
-
-                <Pressable style={[styles.btn, styles.reset]} onPress={handleReset}>
-                    <Text style={[styles.btnTxt, styles.resetTxt]}>Сбросить</Text>
-                </Pressable>
-                <Pressable style={[styles.btn, styles.apply]} onPress={apply}>
-                    <Text style={styles.btnTxt}>Применить</Text>
-                </Pressable>
-            </View>
+            {renderFooter}
         </View>
     );
 };
 
 export default memo(FiltersComponent);
+
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#fff' },

@@ -4,11 +4,18 @@ import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-const IconButton = memo(({ icon, onPress }) => (
-    <Pressable onPress={onPress} style={styles.iconButton} hitSlop={8}>
-        <Feather name={icon} size={18} color="#fff" />
-    </Pressable>
-));
+const IconButton = memo(({ icon, onPress }) => {
+    const handlePress = useCallback((e) => {
+        e.stopPropagation();
+        onPress();
+    }, [onPress]);
+
+    return (
+        <Pressable onPress={handlePress} style={styles.iconButton} hitSlop={8}>
+            <Feather name={icon} size={18} color="#fff" />
+        </Pressable>
+    );
+});
 
 const Meta = memo(({ icon, text }) => (
     <View style={styles.metaItem}>
@@ -27,8 +34,6 @@ const TravelListItem = ({
                             isSingle = false,
                         }) => {
     const { width } = useWindowDimensions();
-    const isMobile = width < 768;
-    const isTablet = width >= 768 && width < 1024;
 
     const {
         id,
@@ -41,12 +46,15 @@ const TravelListItem = ({
         updated_at,
     } = travel;
 
-    const CARD_HEIGHT = useMemo(() => {
-        return isMobile ? 320 : isTablet ? 380 : 460;
-    }, [isMobile, isTablet]);
-
+    // Мемоизация вычисляемых значений
+    const isMobile = width < 768;
+    const CARD_HEIGHT = isMobile ? 320 : width < 1024 ? 380 : 460;
     const canEdit = isMetravel || isSuperuser;
-    const countries = useMemo(() => countryName.split(',').map(c => c.trim()).filter(Boolean), [countryName]);
+
+    const countries = useMemo(() =>
+            countryName.split(',').map(c => c.trim()).filter(Boolean),
+        [countryName]
+    );
 
     const imageUrl = useMemo(() => {
         if (!travel_image_thumb_url) return null;
@@ -55,8 +63,42 @@ const TravelListItem = ({
     }, [travel_image_thumb_url, updated_at, id]);
 
     const handlePress = useCallback(() => router.push(`/travels/${slug}`), [slug]);
-    const handleEdit = useCallback((e) => { e.stopPropagation(); onEditPress(id); }, [id, onEditPress]);
-    const handleDelete = useCallback((e) => { e.stopPropagation(); onDeletePress(id); }, [id, onDeletePress]);
+    const handleEdit = useCallback(() => onEditPress(id), [id, onEditPress]);
+    const handleDelete = useCallback(() => onDeletePress(id), [id, onDeletePress]);
+
+    const renderImage = useMemo(() => {
+        if (!imageUrl) return null;
+
+        return Platform.OS === 'web' ? (
+            <img
+                src={imageUrl}
+                alt={name}
+                style={styles.htmlImage}
+                loading={isFirst ? 'eager' : 'lazy'}
+                decoding="async"
+            />
+        ) : (
+            <Image
+                style={styles.image}
+                source={{ uri: imageUrl }}
+                contentFit="cover"
+                transition={200}
+                priority={isFirst ? 'high' : 'normal'}
+            />
+        );
+    }, [imageUrl, name, isFirst]);
+
+    const renderCountries = useMemo(() => {
+        if (!countries.length) return null;
+
+        return (
+            <View style={styles.countryContainer}>
+                {countries.map((c) => (
+                    <Text key={c} style={styles.countryText}>{c}</Text>
+                ))}
+            </View>
+        );
+    }, [countries]);
 
     return (
         <Pressable
@@ -70,11 +112,7 @@ const TravelListItem = ({
             accessibilityLabel={`Travel to ${name}`}
         >
             <View style={[styles.card, { height: CARD_HEIGHT }]}>
-                {imageUrl && (Platform.OS === 'web' ? (
-                    <img src={imageUrl} alt={name} style={styles.htmlImage} loading={isFirst ? 'eager' : 'lazy'} />
-                ) : (
-                    <Image style={styles.image} source={{ uri: imageUrl }} contentFit="cover" transition={200} priority={isFirst ? 'high' : 'normal'} />
-                ))}
+                {renderImage}
 
                 <View style={styles.overlay} pointerEvents="box-none">
                     {canEdit && (
@@ -85,14 +123,7 @@ const TravelListItem = ({
                     )}
 
                     <View style={styles.textBox} pointerEvents="box-none">
-                        {!!countries.length && (
-                            <View style={styles.countryContainer}>
-                                {countries.map((c) => (
-                                    <Text key={c} style={styles.countryText}>{c}</Text>
-                                ))}
-                            </View>
-                        )}
-
+                        {renderCountries}
                         <Text style={styles.title} numberOfLines={2}>{name}</Text>
                         <View style={styles.metaRow}>
                             {!!userName && <Meta icon="user" text={userName} />}
@@ -105,22 +136,18 @@ const TravelListItem = ({
     );
 };
 
-export default memo(TravelListItem, (prev, next) => {
-    const a = prev.travel;
-    const b = next.travel;
-    return (
-        a.id === b.id &&
-        a.updated_at === b.updated_at &&
-        a.name === b.name &&
-        a.countryName === b.countryName &&
-        a.userName === b.userName &&
-        a.countUnicIpView === b.countUnicIpView &&
-        prev.isSuperuser === next.isSuperuser &&
-        prev.isMetravel === next.isMetravel &&
-        prev.isFirst === next.isFirst &&
-        prev.isSingle === next.isSingle
-    );
-});
+export default memo(TravelListItem, (prev, next) => (
+    prev.travel.id === next.travel.id &&
+    prev.travel.updated_at === next.travel.updated_at &&
+    prev.travel.name === next.travel.name &&
+    prev.travel.countryName === next.travel.countryName &&
+    prev.travel.userName === next.travel.userName &&
+    prev.travel.countUnicIpView === next.travel.countUnicIpView &&
+    prev.isSuperuser === next.isSuperuser &&
+    prev.isMetravel === next.isMetravel &&
+    prev.isFirst === next.isFirst &&
+    prev.isSingle === next.isSingle
+));
 
 const styles = StyleSheet.create({
     container: {
@@ -211,4 +238,4 @@ const styles = StyleSheet.create({
         color: '#eee',
         marginLeft: 4,
     },
-})
+});

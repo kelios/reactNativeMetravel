@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useMemo } from 'react';
 import '@expo/metro-runtime';
 import {
     ActivityIndicator,
@@ -6,8 +6,8 @@ import {
     StyleSheet,
     View,
 } from 'react-native';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack } from 'expo-router';
+import * as Font from 'expo-font'; // ✅ более совместимый импорт
+import { SplashScreen, Stack, usePathname } from 'expo-router'; // ✅ usePathname — для оптимизации Footer
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
@@ -62,6 +62,7 @@ const queryClient = new QueryClient({
             staleTime: 5 * 60 * 1000, // 5 min cache
             refetchOnWindowFocus: false,
             retry: 1,
+            keepPreviousData: true, // ✅ плавные переходы
         },
     },
 });
@@ -69,11 +70,13 @@ const queryClient = new QueryClient({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-    const [loaded, error] = useFonts(
+    const [loaded, error] = Font.useFonts( // ✅ совместимый способ
         Platform.OS === 'web'
             ? {}
             : { ...FontAwesome.font },
     );
+
+    const [appReady, setAppReady] = useState(false);
 
     /* throw font‑error */
     useEffect(() => {
@@ -82,15 +85,27 @@ export default function RootLayout() {
 
     /* hide splash when fonts ready */
     useEffect(() => {
-        if (loaded) SplashScreen.hideAsync();
+        if (loaded) {
+            setAppReady(true);
+            SplashScreen.hideAsync();
+        }
     }, [loaded]);
 
-    if (!loaded) return null;
+    if (!appReady) return null;
 
     return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
+    const pathname = usePathname(); // ✅ узнаём текущий путь
+
+    // Опционально не рендерим Footer на некоторых страницах (например, login или onboarding)
+    const showFooter = useMemo(() => {
+        // можно тут перечислить страницы без Footer:
+        const noFooterPages = ['/login', '/onboarding'];
+        return !noFooterPages.includes(pathname);
+    }, [pathname]);
+
     return (
         <PaperProvider theme={theme}>
             <AuthProvider>
@@ -105,12 +120,13 @@ function RootLayoutNav() {
                                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                                 </Stack>
                             </View>
-                            {/* lazy footer with fallback */}
-                            <Suspense
-                                fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
-                            >
-                                <Footer />
-                            </Suspense>
+                            {showFooter && (
+                                <Suspense
+                                    fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
+                                >
+                                    <Footer />
+                                </Suspense>
+                            )}
                         </View>
                     </FiltersProvider>
                 </QueryClientProvider>
