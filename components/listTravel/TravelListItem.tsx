@@ -4,18 +4,15 @@ import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-const IconButton = memo(({ icon, onPress }) => {
-    const handlePress = useCallback((e) => {
-        e.stopPropagation();
-        onPress();
-    }, [onPress]);
-
-    return (
-        <Pressable onPress={handlePress} style={styles.iconButton} hitSlop={8}>
-            <Feather name={icon} size={18} color="#fff" />
-        </Pressable>
-    );
-});
+const IconButton = memo(({ icon, onPress, style }) => (
+    <Pressable
+        onPress={(e) => { e.stopPropagation(); onPress(); }}
+        style={[styles.iconButton, style]}
+        hitSlop={8}
+    >
+        <Feather name={icon} size={18} color="#fff" />
+    </Pressable>
+));
 
 const Meta = memo(({ icon, text }) => (
     <View style={styles.metaItem}>
@@ -28,12 +25,12 @@ const TravelListItem = ({
                             travel,
                             isSuperuser,
                             isMetravel,
-                            onEditPress,
                             onDeletePress,
                             isFirst,
                             isSingle = false,
                         }) => {
     const { width } = useWindowDimensions();
+    const isSmallScreen = width < 400;
 
     const {
         id,
@@ -46,9 +43,6 @@ const TravelListItem = ({
         updated_at,
     } = travel;
 
-    // Мемоизация вычисляемых значений
-    const isMobile = width < 768;
-    const CARD_HEIGHT = isMobile ? 320 : width < 1024 ? 380 : 460;
     const canEdit = isMetravel || isSuperuser;
 
     const countries = useMemo(() =>
@@ -63,7 +57,12 @@ const TravelListItem = ({
     }, [travel_image_thumb_url, updated_at, id]);
 
     const handlePress = useCallback(() => router.push(`/travels/${slug}`), [slug]);
-    const handleEdit = useCallback(() => onEditPress(id), [id, onEditPress]);
+
+    // Измененный обработчик для редактирования
+    const handleEdit = useCallback(() => {
+        router.push(`/travel/${id}`);
+    }, [id]);
+
     const handleDelete = useCallback(() => onDeletePress(id), [id, onDeletePress]);
 
     const renderImage = useMemo(() => {
@@ -76,13 +75,18 @@ const TravelListItem = ({
                 style={styles.htmlImage}
                 loading={isFirst ? 'eager' : 'lazy'}
                 decoding="async"
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                srcSet={`
+                    ${imageUrl}&w=200 200w,
+                    ${imageUrl}&w=400 400w,
+                    ${imageUrl}&w=800 800w
+                `}
             />
         ) : (
             <Image
                 style={styles.image}
                 source={{ uri: imageUrl }}
                 contentFit="cover"
-                transition={200}
                 priority={isFirst ? 'high' : 'normal'}
             />
         );
@@ -101,62 +105,54 @@ const TravelListItem = ({
     }, [countries]);
 
     return (
-        <Pressable
-            onPress={handlePress}
-            style={({ pressed }) => [
-                styles.container,
-                pressed && styles.pressed,
-                isSingle && styles.single,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={`Travel to ${name}`}
-        >
-            <View style={[styles.card, { height: CARD_HEIGHT }]}>
+        <View style={styles.container}>
+            <View style={[styles.card, isSingle && styles.single]}>
+                <Pressable
+                    onPress={handlePress}
+                    style={StyleSheet.absoluteFill}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Travel to ${name}`}
+                />
+
                 {renderImage}
 
                 <View style={styles.overlay} pointerEvents="box-none">
-                    {canEdit && (
-                        <View style={styles.actions} pointerEvents="box-none">
-                            <IconButton icon="edit" onPress={handleEdit} />
-                            <IconButton icon="trash-2" onPress={handleDelete} />
-                        </View>
-                    )}
-
-                    <View style={styles.textBox} pointerEvents="box-none">
-                        {renderCountries}
-                        <Text style={styles.title} numberOfLines={2}>{name}</Text>
-                        <View style={styles.metaRow}>
-                            {!!userName && <Meta icon="user" text={userName} />}
-                            <Meta icon="eye" text={countUnicIpView} />
-                        </View>
+                    {renderCountries}
+                    <Text style={styles.title} numberOfLines={2}>{name}</Text>
+                    <View style={styles.metaRow}>
+                        {!!userName && <Meta icon="user" text={userName} />}
+                        <Meta icon="eye" text={countUnicIpView} />
                     </View>
                 </View>
+
+                {canEdit && (
+                    <View style={styles.actionsWrapper} pointerEvents="auto">
+                        <View style={styles.actions}>
+                            <IconButton
+                                icon="edit"
+                                onPress={handleEdit}
+                                style={isSmallScreen && styles.smallIconButton}
+                            />
+                            <IconButton
+                                icon="trash-2"
+                                onPress={handleDelete}
+                                style={isSmallScreen && styles.smallIconButton}
+                            />
+                        </View>
+                    </View>
+                )}
             </View>
-        </Pressable>
+        </View>
     );
 };
 
-export default memo(TravelListItem, (prev, next) => (
-    prev.travel.id === next.travel.id &&
-    prev.travel.updated_at === next.travel.updated_at &&
-    prev.travel.name === next.travel.name &&
-    prev.travel.countryName === next.travel.countryName &&
-    prev.travel.userName === next.travel.userName &&
-    prev.travel.countUnicIpView === next.travel.countUnicIpView &&
-    prev.isSuperuser === next.isSuperuser &&
-    prev.isMetravel === next.isMetravel &&
-    prev.isFirst === next.isFirst &&
-    prev.isSingle === next.isSingle
-));
+export default memo(TravelListItem);
 
 const styles = StyleSheet.create({
     container: {
         padding: 8,
         width: '100%',
-    },
-    pressed: {
-        opacity: 0.95,
-        transform: [{ scale: 0.98 }],
+        position: 'relative',
     },
     single: {
         alignSelf: 'center',
@@ -170,6 +166,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
         position: 'relative',
         width: '100%',
+        aspectRatio: 1,
         alignSelf: 'center',
     },
     image: {
@@ -181,31 +178,23 @@ const styles = StyleSheet.create({
         height: '100%',
         objectFit: 'cover',
         objectPosition: 'center',
-        borderRadius: 16,
     },
     overlay: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'flex-end',
-        padding: 16,
-    },
-    textBox: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         backgroundColor: 'rgba(0,0,0,0.4)',
-        borderRadius: 12,
         padding: 12,
+        willChange: 'transform, opacity',
+        contain: 'layout paint',
     },
-    actions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 8,
+    title: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#fff',
+        lineHeight: 22,
         marginBottom: 8,
-    },
-    iconButton: {
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 18,
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     countryContainer: {
         flexDirection: 'row',
@@ -217,13 +206,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#fff',
         fontWeight: '500',
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#fff',
-        lineHeight: 24,
-        marginBottom: 8,
     },
     metaRow: {
         flexDirection: 'row',
@@ -237,5 +219,29 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#eee',
         marginLeft: 4,
+    },
+    actionsWrapper: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        zIndex: 10,
+        pointerEvents: 'auto',
+    },
+    actions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
+    },
+    iconButton: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 18,
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    smallIconButton: {
+        width: 30,
+        height: 30,
     },
 });

@@ -10,7 +10,7 @@ const RenderTravelItem = ({
                               onEditPress,
                               onDeletePress,
                               isFirst,
-                              isSingle = false, // ✅ новый проп
+                              isSingle = false,
                           }) => {
     const { width } = useWindowDimensions();
 
@@ -59,7 +59,7 @@ const RenderTravelItem = ({
         onEditPress,
         onDeletePress,
         isFirst,
-        isSingle, // ✅ передаём в TravelListItem
+        isSingle,
     }), [item, userId, isSuperuser, isMetravel, isMobile, onEditPress, onDeletePress, isFirst, isSingle]);
 
     return (
@@ -78,7 +78,7 @@ const areEqual = (prev, next) => {
         prev.onEditPress === next.onEditPress &&
         prev.onDeletePress === next.onDeletePress &&
         prev.isFirst === next.isFirst &&
-        prev.isSingle === next.isSingle // ✅ мемоизируем по новому пропу
+        prev.isSingle === next.isSingle
     );
 };
 

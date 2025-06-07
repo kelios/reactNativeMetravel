@@ -112,7 +112,7 @@ const ListTravel = () => {
         const params = {
             ...Object.fromEntries(
                 Object.entries(filterValue).filter(([key, v]) => {
-                    if (key === 'showModerationPending') return false; // <-- убрать из params!
+                    if (key === 'showModerationPending') return false;
                     if (Array.isArray(v)) {
                         return v.length > 0;
                     }
@@ -121,7 +121,6 @@ const ListTravel = () => {
             )
         };
 
-        // добавить служебные поля вручную:
         if (filterValue.showModerationPending) {
             params.moderation = 0;
         } else {
@@ -241,7 +240,6 @@ const ListTravel = () => {
                             />
 
                             {status === 'loading' && (
-                                // "скелетон" вместо просто индикатора
                                 <View style={styles.skeletonList}>
                                     {Array.from({ length: 6 }).map((_, i) => (
                                         <View key={i} style={styles.skeletonItem} />
@@ -260,12 +258,23 @@ const ListTravel = () => {
                                     keyExtractor={item => String(item.id)}
                                     renderItem={renderItem}
                                     numColumns={numColumns}
-                                    contentContainerStyle={styles.listContent}
-                                    columnWrapperStyle={numColumns > 1 ? styles.column : null}
+                                    contentContainerStyle={[
+                                        styles.listContent,
+                                        {
+                                            paddingHorizontal: isMobile ? 8 : 12,
+                                            paddingTop: 16,
+                                            paddingBottom: 32,
+                                        },
+                                    ]}
+                                    columnWrapperStyle={
+                                        numColumns > 1
+                                            ? { justifyContent: 'flex-start', flexWrap: 'wrap', gap: 16 }
+                                            : null
+                                    }
                                     showsVerticalScrollIndicator={false}
-                                    initialNumToRender={10}
-                                    maxToRenderPerBatch={10}
-                                    windowSize={11}
+                                    initialNumToRender={6} // оптимально для LCP
+                                    maxToRenderPerBatch={6} // оптимально для LCP
+                                    windowSize={9} // оптимально для LCP / TBT
                                     removeClippedSubviews={true}
                                 />
                             ) : status === 'success' ? (
@@ -319,10 +328,7 @@ const styles = StyleSheet.create({
     sidebar: { width: 280, borderRightWidth: 1, borderColor: '#eee' },
     main: { flex: 1, padding: 12 },
     status: { textAlign: 'center', marginTop: 40, fontSize: 16, color: '#888' },
-    listContent: { gap: 16, paddingBottom: 32 },
-    column: { justifyContent: 'space-between', gap: 16 },
-
-    // скелетон
+    listContent: { gap: 16 },
     skeletonList: {
         flexDirection: 'row',
         flexWrap: 'wrap',
