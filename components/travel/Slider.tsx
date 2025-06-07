@@ -30,9 +30,9 @@ interface SliderProps {
     showArrows?: boolean;
     showDots?: boolean;
     hideArrowsOnMobile?: boolean;
-    aspectRatio?: number;       // по умолчанию 16/9
+    aspectRatio?: number;
     autoPlay?: boolean;
-    autoPlayInterval?: number;  // в миллисекундах
+    autoPlayInterval?: number;
     onIndexChanged?: (index: number) => void;
 }
 
@@ -130,6 +130,8 @@ const Slider: React.FC<SliderProps> = ({
         () => new Set([0])
     );
 
+    const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
+
     const carouselRef = useRef<Carousel<SliderImage>>(null);
 
     const carouselKey = useMemo(
@@ -157,12 +159,19 @@ const Slider: React.FC<SliderProps> = ({
     useEffect(() => {
         if (isMobile) {
             const safeHeight = windowHeight - insets.top - insets.bottom;
-            const desiredHeight = safeHeight * 0.75; // например, 85% высоты экрана
+            const desiredHeight = safeHeight * 0.75;
             setContainerHeight(desiredHeight);
         } else if (containerWidth > 0) {
             setContainerHeight(containerWidth / aspectRatio);
         }
     }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
+
+    // Хак — обновляем containerWidth при resize окна
+    useEffect(() => {
+        if (windowWidth > 0) {
+            setContainerWidth(windowWidth);
+        }
+    }, [windowWidth]);
 
     const handleIndexChanged = useCallback(
         (idx: number) => {
@@ -216,11 +225,10 @@ const Slider: React.FC<SliderProps> = ({
 
     return (
         <View
-            style={styles.wrapper}
+            style={[styles.wrapper, { touchAction: 'pan-y' }]} // главное сюда
             onLayout={onLayoutContainer}
             accessibilityRole="group"
             accessibilityLabel="Слайдер изображений"
-            removeClippedSubviews
         >
             {containerWidth > 0 && containerHeight > 0 && (
                 <>
@@ -231,10 +239,17 @@ const Slider: React.FC<SliderProps> = ({
                         width={containerWidth}
                         height={containerHeight}
                         loop
-                        autoPlay={autoPlay}
+                        autoPlay={!isAutoPlayPaused && autoPlay}
                         autoPlayInterval={autoPlayInterval}
                         onSnapToItem={handleIndexChanged}
                         renderItem={renderItem}
+                        panGestureHandlerProps={{
+                            activeOffsetX: [-10, 10],
+                            activeOffsetY: [-999, 999],
+                        }}
+                        onTouchStart={() => setIsAutoPlayPaused(true)}
+                        onTouchEnd={() => setIsAutoPlayPaused(false)}
+                        onTouchCancel={() => setIsAutoPlayPaused(false)}
                     />
 
                     {showArrows && !(isMobile && hideArrowsOnMobile) && (
@@ -291,6 +306,7 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 12,
+        touchAction: 'pan-y', // на всякий случай и тут
     },
     slide: {
         flex: 1,
