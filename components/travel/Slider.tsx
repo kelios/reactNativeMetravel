@@ -12,10 +12,12 @@ import {
     View,
     LayoutChangeEvent,
     Platform,
+    useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import Carousel from 'react-native-reanimated-carousel';
 import { AntDesign } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface SliderImage {
     url: string;
@@ -37,10 +39,6 @@ interface SliderProps {
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 const NAV_BTN_OFFSET = 10;
 
-/**
- * Добавляем version-параметр, чтобы URL-кеш обновлялся,
- * если у картинки поменялся updated_at.
- */
 const appendVersion = (url: string, updated?: string | number) => {
     if (!url) return '';
     const ts = updated
@@ -51,7 +49,6 @@ const appendVersion = (url: string, updated?: string | number) => {
     return ts ? `${url}?v=${ts}` : url;
 };
 
-// Мемоизированная кнопка-«стрелка»
 const NavButton = memo(
     ({
          direction,
@@ -85,15 +82,12 @@ const NavButton = memo(
     )
 );
 
-// Мемоизированный «слайд» (белый фон + картинка сверху).
-// Если isVisible=false, не рендерим вовсе.
 const Slide = memo(
     ({ uri, isVisible }: { uri: string; isVisible: boolean }) => {
         if (!isVisible) return null;
 
         return (
             <View style={styles.slide}>
-                {/* Когда картинка ещё не загрузилась, подложка будет того же цвета, что и общий фон */}
                 <Image
                     style={styles.bg}
                     source={{ uri, cachePolicy: 'memory-disk' }}
@@ -123,33 +117,32 @@ const Slider: React.FC<SliderProps> = ({
                                            autoPlayInterval = 8000,
                                            onIndexChanged,
                                        }) => {
-    // Если нет картинок, сразу null
     if (!images || images.length === 0) return null;
 
-    // Стейт: текущая ширина/высота контейнера
+    const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+
     const [containerWidth, setContainerWidth] = useState<number>(0);
     const [containerHeight, setContainerHeight] = useState<number>(0);
 
-    // Стейт: текущий индекс и набор загруженных (отрендеренных хотя бы раз) индексов
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loadedIndices, setLoadedIndices] = useState<Set<number>>(
-        () => new Set([0]) // сразу добавляем «0», т.к. начальный слайд точно подгрузится
+        () => new Set([0])
     );
 
-    // Реф на Carousel
     const carouselRef = useRef<Carousel<SliderImage>>(null);
 
-    // Пересобираем «ключ» карусели только когда меняются реально id или updated_at
     const carouselKey = useMemo(
         () =>
             images.map((i) => `${i.id}_${i.updated_at ?? ''}`).join('-'),
         [images]
     );
 
-    /**
-     * Когда меняются картинки (carouselKey), сбрасываемся к нулю,
-     * добавляем 0-й индекс в loadedIndices, но не пересоздаём компонент целиком.
-     */
+    const isMobile = useMemo(() => {
+        if (containerWidth === 0) return false;
+        return containerWidth <= 768;
+    }, [containerWidth]);
+
     useEffect(() => {
         setCurrentIndex(0);
         carouselRef.current?.scrollTo({ index: 0, animated: false });
@@ -161,7 +154,16 @@ const Slider: React.FC<SliderProps> = ({
         });
     }, [carouselKey]);
 
-    // На каждый реальный перелёт (прыжок) по карусели — помечаем индекс(+соседей) как «загруженный»
+    useEffect(() => {
+        if (isMobile) {
+            const safeHeight = windowHeight - insets.top - insets.bottom;
+            const desiredHeight = safeHeight * 0.75; // например, 85% высоты экрана
+            setContainerHeight(desiredHeight);
+        } else if (containerWidth > 0) {
+            setContainerHeight(containerWidth / aspectRatio);
+        }
+    }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
+
     const handleIndexChanged = useCallback(
         (idx: number) => {
             setCurrentIndex(idx);
@@ -170,7 +172,6 @@ const Slider: React.FC<SliderProps> = ({
             setLoadedIndices((prev) => {
                 const nxt = new Set(prev);
                 nxt.add(idx);
-                // + соседние индексы, чтобы не ждать, когда они попадут в область видимости
                 if (idx - 1 >= 0) nxt.add(idx - 1);
                 if (idx + 1 < images.length) nxt.add(idx + 1);
                 return nxt;
@@ -179,16 +180,13 @@ const Slider: React.FC<SliderProps> = ({
         [images.length, onIndexChanged]
     );
 
-    // Рендерим слайд, если он уже был «загружен» или если это текущий/соседний индекс
     const shouldRender = useCallback(
         (slideIdx: number) => loadedIndices.has(slideIdx),
         [loadedIndices]
     );
 
-    // Рендер одного айтема
     const renderItem = useCallback(
         ({ item, index: slideIdx }: { item: SliderImage; index: number }) => {
-            // Генерируем URL с параметром кеш-бастинга
             const uri = appendVersion(item.url, item.updated_at ?? item.id);
             const visible = shouldRender(slideIdx);
             return <Slide key={item.id} uri={uri} isVisible={visible} />;
@@ -196,29 +194,19 @@ const Slider: React.FC<SliderProps> = ({
         [shouldRender]
     );
 
-    // После монтирования/ресайза замеряем ширину контейнера, чтобы вычислить высоту
     const onLayoutContainer = useCallback(
         (e: LayoutChangeEvent) => {
             const w = e.nativeEvent.layout.width;
             if (w > 0 && w !== containerWidth) {
                 setContainerWidth(w);
-                setContainerHeight(w / aspectRatio);
             }
         },
-        [aspectRatio, containerWidth]
+        [containerWidth]
     );
 
-    // Определяем «мобильный» режим по текущей ширине контейнера
-    const isMobile = useMemo(() => {
-        if (containerWidth === 0) return false;
-        return containerWidth <= 480;
-    }, [containerWidth]);
-
-    // Мемоизируем прокрутку «влево/вправо»
     const navPrev = useCallback(() => carouselRef.current?.prev(), []);
     const navNext = useCallback(() => carouselRef.current?.next(), []);
 
-    // Предзагрузка URL’ов в кеш (в первых рендерах)
     useEffect(() => {
         images.forEach((img) => {
             const uri = appendVersion(img.url, img.updated_at ?? img.id);
@@ -299,7 +287,7 @@ export default memo(Slider);
 const styles = StyleSheet.create({
     wrapper: {
         width: '100%',
-        backgroundColor: '#f9f8f2', // Под цвет приложения, чтобы не было чёрного мигания
+        backgroundColor: '#f9f8f2',
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 12,

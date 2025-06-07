@@ -4686,9 +4686,9 @@ flow-enums-runtime@^0.0.6:
   integrity sha512-3PYnM29RFXwvAN6Pc/scUfkI7RwhQ/xqyLUyPNlXUp9S40zI8nup9tUSrTLSVnWGBN38FNiGWbwZOB6uR4OGdw==
 
 flow-parser@0.*:
-  version "0.272.2"
-  resolved "https://registry.yarnpkg.com/flow-parser/-/flow-parser-0.272.2.tgz#a0487a96122935958a02ac4dd2e0ed9bd05ed565"
-  integrity sha512-AMMHyzXP4T6ran6yIqaPniH8BDSdJf3T8PJVfnTnPAdILA1tt8nCSxiJAWRk2ZKiuos3OsrO2NWe8XNIcPw+Qw==
+  version "0.273.0"
+  resolved "https://registry.yarnpkg.com/flow-parser/-/flow-parser-0.273.0.tgz#18f33ee12c4c21e1dd5fa8df997b0e712735f20e"
+  integrity sha512-KHe9AJfT0Zn0TpQ2daDFBpwaE0zqjWWiWLOANxzo/U6Xar5fRpU3Lucnk8iMVNitxo9inz2OmSnger70qHmsLw==
 
 fontfaceobserver@^2.1.0:
   version "2.3.0"
