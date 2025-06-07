@@ -42,26 +42,8 @@ const NAV_BTN_OFFSET = 10;
 const MOBILE_BREAKPOINT = 768;
 const SWIPE_THRESHOLD = 50;
 
-const appendVersion = (url: string, updated?: string | number) => {
-    if (!url) return '';
-    const ts = updated
-        ? typeof updated === 'string'
-            ? Date.parse(updated)
-            : updated
-        : '';
-    return ts ? `${url}?v=${ts}` : url;
-};
-
 const NavButton = memo(
-    ({
-         direction,
-         onPress,
-         offset,
-     }: {
-        direction: 'left' | 'right';
-        onPress: () => void;
-        offset: number;
-    }) => (
+    ({ direction, onPress, offset }: { direction: 'left' | 'right'; onPress: () => void; offset: number; }) => (
         <TouchableOpacity
             onPress={onPress}
             style={[
@@ -69,9 +51,7 @@ const NavButton = memo(
                 direction === 'left' ? { left: offset } : { right: offset },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={
-                direction === 'left' ? 'Previous slide' : 'Next slide'
-            }
+            accessibilityLabel={direction === 'left' ? 'Previous slide' : 'Next slide'}
             hitSlop={10}
         >
             <AntDesign
@@ -86,7 +66,6 @@ const NavButton = memo(
 const Slide = memo(
     ({ uri, isVisible }: { uri: string; isVisible: boolean }) => {
         if (!isVisible) return null;
-
         return (
             <View style={styles.slide}>
                 <Image
@@ -118,22 +97,16 @@ const Slider: React.FC<SliderProps> = ({
                                            autoPlayInterval = 8000,
                                            onIndexChanged,
                                        }) => {
-    if (!images || images.length === 0) return null;
-
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     const insets = useSafeAreaInsets();
 
-    const [containerWidth, setContainerWidth] = useState<number>(0);
+    const [containerWidth, setContainerWidth] = useState<number>(windowWidth);
     const [containerHeight, setContainerHeight] = useState<number>(0);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [loadedIndices, setLoadedIndices] = useState<Set<number>>(
-        new Set([0])
-    );
+    const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set([0]));
     const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
 
     const carouselRef = useRef<Carousel<SliderImage>>(null);
-    const startY = useRef(0);
-    const startX = useRef(0);
     const isScrolling = useRef(false);
 
     const carouselKey = useMemo(
@@ -141,9 +114,14 @@ const Slider: React.FC<SliderProps> = ({
         [images]
     );
 
-    const isMobile = useMemo(() => {
-        return containerWidth <= MOBILE_BREAKPOINT;
-    }, [containerWidth]);
+    const isMobile = containerWidth <= MOBILE_BREAKPOINT;
+
+    const uriMap = useMemo(() => {
+        return images.map(img => {
+            const ts = img.updated_at ? Date.parse(img.updated_at) : img.id;
+            return `${img.url}${ts ? `?v=${ts}` : ''}`;
+        });
+    }, [images]);
 
     useEffect(() => {
         setCurrentIndex(0);
@@ -152,77 +130,42 @@ const Slider: React.FC<SliderProps> = ({
     }, [carouselKey]);
 
     useEffect(() => {
-        if (isMobile) {
-            const safeHeight = windowHeight - insets.top - insets.bottom;
-            const desiredHeight = safeHeight * 0.75;
-            setContainerHeight(desiredHeight);
-        } else if (containerWidth > 0) {
-            setContainerHeight(containerWidth / aspectRatio);
-        }
+        const safeHeight = isMobile
+            ? (windowHeight - insets.top - insets.bottom) * 0.75
+            : containerWidth / aspectRatio;
+        setContainerHeight(safeHeight);
     }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
 
     useEffect(() => {
-        if (windowWidth > 0) {
-            setContainerWidth(windowWidth);
-        }
-    }, [windowWidth]);
+        uriMap.forEach(uri => {
+            Image.prefetch(uri).catch(() => {});
+        });
+    }, [uriMap]);
 
-    const handleIndexChanged = useCallback(
-        (idx: number) => {
-            setCurrentIndex(idx);
-            onIndexChanged?.(idx);
+    const handleIndexChanged = useCallback((idx: number) => {
+        setCurrentIndex(idx);
+        onIndexChanged?.(idx);
 
-            setLoadedIndices((prev) => {
-                const nxt = new Set(prev);
-                nxt.add(idx);
-                if (idx - 1 >= 0) nxt.add(idx - 1);
-                if (idx + 1 < images.length) nxt.add(idx + 1);
-                return nxt;
-            });
-        },
-        [images.length, onIndexChanged]
-    );
+        setLoadedIndices(prev => {
+            const nxt = new Set(prev);
+            nxt.add(idx);
+            if (idx - 1 >= 0) nxt.add(idx - 1);
+            if (idx + 1 < images.length) nxt.add(idx + 1);
+            return nxt;
+        });
+    }, [images.length, onIndexChanged]);
 
-    const shouldRender = useCallback(
-        (slideIdx: number) => loadedIndices.has(slideIdx),
-        [loadedIndices]
-    );
-
-    const renderItem = useCallback(
-        ({ item, index: slideIdx }: { item: SliderImage; index: number }) => {
-            const uri = appendVersion(item.url, item.updated_at ?? item.id);
-            const visible = shouldRender(slideIdx);
-            return <Slide key={item.id} uri={uri} isVisible={visible} />;
-        },
-        [shouldRender]
-    );
-
-    const onLayoutContainer = useCallback(
-        (e: LayoutChangeEvent) => {
-            const w = e.nativeEvent.layout.width;
-            if (w > 0 && w !== containerWidth) {
-                setContainerWidth(w);
-            }
-        },
-        [containerWidth]
-    );
+    const renderItem = useCallback(({ item, index }: { item: SliderImage; index: number }) => {
+        return <Slide key={item.id} uri={uriMap[index]} isVisible={loadedIndices.has(index)} />;
+    }, [uriMap, loadedIndices]);
 
     const navPrev = useCallback(() => carouselRef.current?.prev(), []);
     const navNext = useCallback(() => carouselRef.current?.next(), []);
 
-    useEffect(() => {
-        images.forEach((img) => {
-            const uri = appendVersion(img.url, img.updated_at ?? img.id);
-            Image.prefetch(uri).catch(() => {});
-        });
-    }, [images]);
-
-    // Решение для веб-версии на мобильных устройствах
     const panResponder = useMemo(() => PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (_, gestureState) => {
             const { dx, dy } = gestureState;
-            // Если движение преимущественно вертикальное - разрешаем скролл
             if (Math.abs(dy) > Math.abs(dx)) {
                 isScrolling.current = true;
                 return false;
@@ -230,20 +173,11 @@ const Slider: React.FC<SliderProps> = ({
             isScrolling.current = false;
             return true;
         },
-        onPanResponderGrant: (e, gestureState) => {
-            startY.current = gestureState.y0;
-            startX.current = gestureState.x0;
-        },
         onPanResponderMove: (_, gestureState) => {
             if (isScrolling.current) return;
-
             const { dx } = gestureState;
             if (Math.abs(dx) > SWIPE_THRESHOLD) {
-                if (dx > 0) {
-                    navPrev();
-                } else {
-                    navNext();
-                }
+                dx > 0 ? navPrev() : navNext();
                 isScrolling.current = true;
             }
         },
@@ -255,7 +189,7 @@ const Slider: React.FC<SliderProps> = ({
     return (
         <View
             style={styles.wrapper}
-            onLayout={onLayoutContainer}
+            onLayout={(e: LayoutChangeEvent) => setContainerWidth(e.nativeEvent.layout.width)}
             accessibilityRole="group"
             accessibilityLabel="Image slider"
             {...(Platform.OS === 'web' && isMobile ? panResponder.panHandlers : {})}
@@ -274,13 +208,8 @@ const Slider: React.FC<SliderProps> = ({
                         onSnapToItem={handleIndexChanged}
                         renderItem={renderItem}
                         panGestureHandlerProps={Platform.select({
-                            default: {
-                                activeOffsetX: [-10, 10],
-                                activeOffsetY: [-999, 999],
-                            },
-                            web: isMobile ? undefined : {
-                                activeOffsetX: [-10, 10],
-                            }
+                            default: { activeOffsetX: [-10, 10], activeOffsetY: [-999, 999] },
+                            web: isMobile ? undefined : { activeOffsetX: [-10, 10] }
                         })}
                         onTouchStart={() => setIsAutoPlayPaused(true)}
                         onTouchEnd={() => setIsAutoPlayPaused(false)}
@@ -290,16 +219,8 @@ const Slider: React.FC<SliderProps> = ({
 
                     {showArrows && !(isMobile && hideArrowsOnMobile) && (
                         <>
-                            <NavButton
-                                direction="left"
-                                offset={NAV_BTN_OFFSET}
-                                onPress={navPrev}
-                            />
-                            <NavButton
-                                direction="right"
-                                offset={NAV_BTN_OFFSET}
-                                onPress={navNext}
-                            />
+                            <NavButton direction="left" offset={NAV_BTN_OFFSET} onPress={navPrev} />
+                            <NavButton direction="right" offset={NAV_BTN_OFFSET} onPress={navNext} />
                         </>
                     )}
 
@@ -308,21 +229,14 @@ const Slider: React.FC<SliderProps> = ({
                             {images.map((_, i) => (
                                 <TouchableOpacity
                                     key={i}
-                                    style={[
-                                        styles.dotWrapper,
-                                        i === currentIndex && styles.dotActiveWrapper,
-                                    ]}
-                                    onPress={() => {
-                                        carouselRef.current?.scrollTo({ index: i, animated: true });
-                                    }}
+                                    style={styles.dotWrapper}
+                                    onPress={() => carouselRef.current?.scrollTo({ index: i, animated: true })}
                                     hitSlop={12}
                                 >
-                                    <View
-                                        style={[
-                                            styles.dot,
-                                            i === currentIndex && styles.active,
-                                        ]}
-                                    />
+                                    <View style={[
+                                        styles.dot,
+                                        i === currentIndex && styles.active,
+                                    ]} />
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -346,8 +260,6 @@ const styles = StyleSheet.create({
             web: {
                 touchAction: 'pan-y',
                 userSelect: 'none',
-                '-webkit-user-drag': 'none',
-                '-webkit-overflow-scrolling': 'touch',
             },
         }),
     },
@@ -382,9 +294,6 @@ const styles = StyleSheet.create({
     },
     dotWrapper: {
         marginHorizontal: 6,
-        padding: 6,
-    },
-    dotActiveWrapper: {
         padding: 6,
     },
     dot: {
