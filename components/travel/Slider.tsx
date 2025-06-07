@@ -13,6 +13,7 @@ import {
     LayoutChangeEvent,
     Platform,
     useWindowDimensions,
+    PanResponder,
 } from 'react-native';
 import { Image } from 'expo-image';
 import Carousel from 'react-native-reanimated-carousel';
@@ -38,6 +39,8 @@ interface SliderProps {
 
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 const NAV_BTN_OFFSET = 10;
+const MOBILE_BREAKPOINT = 768;
+const SWIPE_THRESHOLD = 50;
 
 const appendVersion = (url: string, updated?: string | number) => {
     if (!url) return '';
@@ -67,9 +70,7 @@ const NavButton = memo(
             ]}
             accessibilityRole="button"
             accessibilityLabel={
-                direction === 'left'
-                    ? 'Предыдущий слайд'
-                    : 'Следующий слайд'
+                direction === 'left' ? 'Previous slide' : 'Next slide'
             }
             hitSlop={10}
         >
@@ -90,14 +91,14 @@ const Slide = memo(
             <View style={styles.slide}>
                 <Image
                     style={styles.bg}
-                    source={{ uri, cachePolicy: 'memory-disk' }}
+                    source={{ uri }}
                     contentFit="cover"
                     blurRadius={20}
                     priority="low"
                 />
                 <Image
                     style={styles.img}
-                    source={{ uri, cachePolicy: 'memory-disk' }}
+                    source={{ uri }}
                     contentFit="contain"
                     priority="high"
                     transition={150}
@@ -124,36 +125,30 @@ const Slider: React.FC<SliderProps> = ({
 
     const [containerWidth, setContainerWidth] = useState<number>(0);
     const [containerHeight, setContainerHeight] = useState<number>(0);
-
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loadedIndices, setLoadedIndices] = useState<Set<number>>(
-        () => new Set([0])
+        new Set([0])
     );
-
     const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
 
     const carouselRef = useRef<Carousel<SliderImage>>(null);
+    const startY = useRef(0);
+    const startX = useRef(0);
+    const isScrolling = useRef(false);
 
     const carouselKey = useMemo(
-        () =>
-            images.map((i) => `${i.id}_${i.updated_at ?? ''}`).join('-'),
+        () => images.map((i) => `${i.id}_${i.updated_at ?? ''}`).join('-'),
         [images]
     );
 
     const isMobile = useMemo(() => {
-        if (containerWidth === 0) return false;
-        return containerWidth <= 768;
+        return containerWidth <= MOBILE_BREAKPOINT;
     }, [containerWidth]);
 
     useEffect(() => {
         setCurrentIndex(0);
         carouselRef.current?.scrollTo({ index: 0, animated: false });
-
-        setLoadedIndices((prev) => {
-            const nxt = new Set(prev);
-            nxt.add(0);
-            return nxt;
-        });
+        setLoadedIndices(new Set([0]));
     }, [carouselKey]);
 
     useEffect(() => {
@@ -166,7 +161,6 @@ const Slider: React.FC<SliderProps> = ({
         }
     }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
 
-    // Хак — обновляем containerWidth при resize окна
     useEffect(() => {
         if (windowWidth > 0) {
             setContainerWidth(windowWidth);
@@ -219,16 +213,52 @@ const Slider: React.FC<SliderProps> = ({
     useEffect(() => {
         images.forEach((img) => {
             const uri = appendVersion(img.url, img.updated_at ?? img.id);
-            Image.prefetch(uri);
+            Image.prefetch(uri).catch(() => {});
         });
     }, [images]);
 
+    // Решение для веб-версии на мобильных устройствах
+    const panResponder = useMemo(() => PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+            const { dx, dy } = gestureState;
+            // Если движение преимущественно вертикальное - разрешаем скролл
+            if (Math.abs(dy) > Math.abs(dx)) {
+                isScrolling.current = true;
+                return false;
+            }
+            isScrolling.current = false;
+            return true;
+        },
+        onPanResponderGrant: (e, gestureState) => {
+            startY.current = gestureState.y0;
+            startX.current = gestureState.x0;
+        },
+        onPanResponderMove: (_, gestureState) => {
+            if (isScrolling.current) return;
+
+            const { dx } = gestureState;
+            if (Math.abs(dx) > SWIPE_THRESHOLD) {
+                if (dx > 0) {
+                    navPrev();
+                } else {
+                    navNext();
+                }
+                isScrolling.current = true;
+            }
+        },
+        onPanResponderRelease: () => {
+            isScrolling.current = false;
+        },
+    }), [navPrev, navNext]);
+
     return (
         <View
-            style={[styles.wrapper, { touchAction: 'pan-y' }]} // главное сюда
+            style={styles.wrapper}
             onLayout={onLayoutContainer}
             accessibilityRole="group"
-            accessibilityLabel="Слайдер изображений"
+            accessibilityLabel="Image slider"
+            {...(Platform.OS === 'web' && isMobile ? panResponder.panHandlers : {})}
         >
             {containerWidth > 0 && containerHeight > 0 && (
                 <>
@@ -243,13 +273,19 @@ const Slider: React.FC<SliderProps> = ({
                         autoPlayInterval={autoPlayInterval}
                         onSnapToItem={handleIndexChanged}
                         renderItem={renderItem}
-                        panGestureHandlerProps={{
-                            activeOffsetX: [-10, 10],
-                            activeOffsetY: [-999, 999],
-                        }}
+                        panGestureHandlerProps={Platform.select({
+                            default: {
+                                activeOffsetX: [-10, 10],
+                                activeOffsetY: [-999, 999],
+                            },
+                            web: isMobile ? undefined : {
+                                activeOffsetX: [-10, 10],
+                            }
+                        })}
                         onTouchStart={() => setIsAutoPlayPaused(true)}
                         onTouchEnd={() => setIsAutoPlayPaused(false)}
                         onTouchCancel={() => setIsAutoPlayPaused(false)}
+                        enabled={Platform.OS !== 'web' || !isMobile}
                     />
 
                     {showArrows && !(isMobile && hideArrowsOnMobile) && (
@@ -306,7 +342,14 @@ const styles = StyleSheet.create({
         position: 'relative',
         overflow: 'hidden',
         borderRadius: 12,
-        touchAction: 'pan-y', // на всякий случай и тут
+        ...Platform.select({
+            web: {
+                touchAction: 'pan-y',
+                userSelect: 'none',
+                '-webkit-user-drag': 'none',
+                '-webkit-overflow-scrolling': 'touch',
+            },
+        }),
     },
     slide: {
         flex: 1,
