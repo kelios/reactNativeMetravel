@@ -121,19 +121,26 @@ const ListTravel = () => {
             )
         };
 
-        if (filterValue.showModerationPending) {
-            params.moderation = 0;
-        } else {
-            params.publish = 1;
-            params.moderation = 1;
+        // Для metravel — показываем все (не задаём publish / moderation)
+        if (!isMeTravel) {
+            if (filterValue.showModerationPending) {
+                params.moderation = 0;
+            } else {
+                params.publish = 1;
+                params.moderation = 1;
+            }
         }
 
-        if (!filterValue.showModerationPending) {
-            if (isMeTravel) params.user_id = userId;
-            if (user_id) params.user_id = user_id;
+        // user_id логика:
+        if (isMeTravel) {
+            params.user_id = userId; // Только свои статьи
+        } else if (user_id) {
+            params.user_id = user_id;
         }
 
-        if (isTravelBy) params.countries = [BELARUS_ID];
+        if (isTravelBy) {
+            params.countries = [BELARUS_ID];
+        }
 
         return params;
     }, [filterValue, isMeTravel, isTravelBy, userId, user_id]);
