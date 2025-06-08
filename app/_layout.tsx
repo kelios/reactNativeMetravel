@@ -6,8 +6,8 @@ import {
     StyleSheet,
     View,
 } from 'react-native';
-import * as Font from 'expo-font'; // ✅ более совместимый импорт
-import { SplashScreen, Stack, usePathname } from 'expo-router'; // ✅ usePathname — для оптимизации Footer
+import * as Font from 'expo-font';
+import { SplashScreen, Stack, usePathname } from 'expo-router';
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
@@ -20,6 +20,7 @@ import {
     QueryClientProvider,
 } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import Head from 'expo-router/head'; // ✅ правильный импорт Head для expo-router 3.x+
 
 /* ---------------- lazy footer ---------------- */
 const Footer = lazy(() => import('@/components/Footer'));
@@ -59,10 +60,10 @@ const theme = {
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 5 * 60 * 1000, // 5 min cache
+            staleTime: 5 * 60 * 1000,
             refetchOnWindowFocus: false,
             retry: 1,
-            keepPreviousData: true, // ✅ плавные переходы
+            keepPreviousData: true,
         },
     },
 });
@@ -70,7 +71,7 @@ const queryClient = new QueryClient({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-    const [loaded, error] = Font.useFonts( // ✅ совместимый способ
+    const [loaded, error] = Font.useFonts(
         Platform.OS === 'web'
             ? {}
             : { ...FontAwesome.font },
@@ -78,12 +79,10 @@ export default function RootLayout() {
 
     const [appReady, setAppReady] = useState(false);
 
-    /* throw font‑error */
     useEffect(() => {
         if (error) throw error;
     }, [error]);
 
-    /* hide splash when fonts ready */
     useEffect(() => {
         if (loaded) {
             setAppReady(true);
@@ -97,13 +96,22 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-    const pathname = usePathname(); // ✅ узнаём текущий путь
+    const pathname = usePathname();
 
-    // Опционально не рендерим Footer на некоторых страницах (например, login или onboarding)
     const showFooter = useMemo(() => {
-        // можно тут перечислить страницы без Footer:
         const noFooterPages = ['/login', '/onboarding'];
         return !noFooterPages.includes(pathname);
+    }, [pathname]);
+
+    // Можем динамически ставить title по pathname (необязательно, но полезно)
+    const dynamicTitle = useMemo(() => {
+        if (pathname.startsWith('/travels/')) {
+            return 'Путешествие | Metravel';
+        }
+        if (pathname === '/metravel') {
+            return 'Мои путешествия | Metravel';
+        }
+        return 'Путешествия | Metravel';
     }, [pathname]);
 
     return (
@@ -115,11 +123,19 @@ function RootLayoutNav() {
                     )}
                     <FiltersProvider>
                         <View style={styles.wrapper}>
+                            {/* ✅ Head добавлен сюда — теперь title + meta на всех страницах */}
+                            <Head>
+                                <title>{dynamicTitle}</title>
+                                <meta name="description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
+                                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                            </Head>
+
                             <View style={styles.content}>
                                 <Stack>
                                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                                 </Stack>
                             </View>
+
                             {showFooter && (
                                 <Suspense
                                     fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
