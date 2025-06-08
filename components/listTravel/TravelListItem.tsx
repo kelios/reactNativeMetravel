@@ -1,25 +1,25 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View, Platform, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import Head from 'expo-router/head';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const IconButton = memo(({ icon, onPress, style, accessibilityLabel }) => {
-    return (
-        <Pressable
-            onPress={(e) => {
-                e.stopPropagation();
-                onPress();
-            }}
-            style={[styles.iconButton, style]}
-            hitSlop={8}
-            accessibilityLabel={accessibilityLabel}
-        >
-            <Feather name={icon} size={18} color="#fff" />
-        </Pressable>
-    );
-});
+const IconButton = memo(({ icon, onPress, style, accessibilityLabel }) => (
+    <Pressable
+        onPress={(e) => {
+            e.stopPropagation();
+            onPress();
+        }}
+        style={[styles.iconButton, style]}
+        hitSlop={8}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="button"
+    >
+        <Feather name={icon} size={18} color="#fff" />
+    </Pressable>
+));
 
 const TravelListItem = ({
                             travel,
@@ -45,8 +45,8 @@ const TravelListItem = ({
 
     const canEdit = isMetravel || isSuperuser;
 
-    const countries = useMemo(() =>
-            countryName.split(',').map(c => c.trim()).filter(Boolean),
+    const countries = useMemo(
+        () => countryName.split(',').map(c => c.trim()).filter(Boolean),
         [countryName]
     );
 
@@ -70,76 +70,111 @@ const TravelListItem = ({
         onDeletePress(id);
     }, [id, onDeletePress]);
 
+    // Установим title страницы при первом рендере (для SEO)
+    useEffect(() => {
+        if (Platform.OS === 'web') {
+            document.title = `${name} | Metravel`;
+        }
+    }, [name]);
+
     return (
-        <View style={styles.container}>
-            <Pressable
-                onPress={handlePress}
-                style={[styles.card, isSingle && styles.single]}
-            >
-                {imageUrl ? (
-                    <Image
-                        style={styles.image}
-                        source={{ uri: imageUrl }}
-                        contentFit="cover"
-                        priority={isFirst ? 'high' : 'normal'}
-                    />
-                ) : (
-                    <View style={styles.imagePlaceholder}>
-                        <Feather name="image" size={40} color="#666" />
-                    </View>
-                )}
+        <>
+            {/* На Web для SEO — добавляем Head */}
+            {Platform.OS === 'web' && (
+                <Head>
+                    <title>{`${name} | Metravel`}</title>
+                </Head>
+            )}
 
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.8)']}
-                    style={styles.gradientOverlay}
-                    locations={[0.6, 1]}
-                />
-
-                <View style={styles.overlay}>
-                    {countries.length > 0 && (
-                        <View style={styles.countryContainer}>
-                            {countries.map((c) => (
-                                <View key={c} style={styles.countryTag}>
-                                    <Text style={styles.countryText}>{c}</Text>
-                                </View>
-                            ))}
+            <View style={styles.container}>
+                <Pressable
+                    onPress={handlePress}
+                    style={[styles.card, isSingle && styles.single]}
+                    accessibilityLabel={`Открыть путешествие ${name}`}
+                    accessibilityRole="button"
+                >
+                    {imageUrl ? (
+                        Platform.OS === 'web' ? (
+                            // на web используем <img> с alt
+                            <img
+                                src={imageUrl}
+                                alt={name}
+                                style={styles.image}
+                                loading={isFirst ? 'eager' : 'lazy'}
+                            />
+                        ) : (
+                            <Image
+                                style={styles.image}
+                                source={{ uri: imageUrl }}
+                                contentFit="cover"
+                                priority={isFirst ? 'high' : 'normal'}
+                                accessibilityLabel={name}
+                            />
+                        )
+                    ) : (
+                        <View style={styles.imagePlaceholder}>
+                            <Feather name="image" size={40} color="#666" />
                         </View>
                     )}
 
-                    <Text style={styles.title} numberOfLines={2}>{name}</Text>
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.8)']}
+                        style={styles.gradientOverlay}
+                        locations={[0.6, 1]}
+                    />
 
-                    <View style={styles.metaRow}>
-                        {!!userName && (
-                            <View style={styles.metaItem}>
-                                <Feather name="user" size={14} color="#eee" />
-                                <Text style={styles.metaText} numberOfLines={1}>{userName}</Text>
+                    <View style={styles.overlay}>
+                        {countries.length > 0 && (
+                            <View style={styles.countryContainer}>
+                                {countries.map((c) => (
+                                    <View key={c} style={styles.countryTag}>
+                                        <Text style={styles.countryText}>{c}</Text>
+                                    </View>
+                                ))}
                             </View>
                         )}
-                        <View style={styles.metaItem}>
-                            <Feather name="eye" size={14} color="#eee" />
-                            <Text style={styles.metaText} numberOfLines={1}>{countUnicIpView}</Text>
+
+                        <Text style={styles.title} numberOfLines={2}>
+                            {name}
+                        </Text>
+
+                        <View style={styles.metaRow}>
+                            {!!userName && (
+                                <View style={styles.metaItem}>
+                                    <Feather name="user" size={14} color="#eee" />
+                                    <Text style={styles.metaText} numberOfLines={1}>
+                                        {userName}
+                                    </Text>
+                                </View>
+                            )}
+                            <View style={styles.metaItem}>
+                                <Feather name="eye" size={14} color="#eee" />
+                                <Text style={styles.metaText} numberOfLines={1}>
+                                    {countUnicIpView}
+                                </Text>
+                            </View>
                         </View>
                     </View>
-                </View>
 
-                {canEdit && (
-                    <View style={styles.actions}>
-                        <IconButton
-                            icon="edit"
-                            onPress={handleEdit}
-                            style={isSmallScreen && styles.smallIconButton}
-                            accessibilityLabel="Edit travel"
-                        />
-                        <IconButton
-                            icon="trash-2"
-                            onPress={handleDelete}
-                            style={isSmallScreen && styles.smallIconButton}
-                            accessibilityLabel="Delete travel"
-                        />
-                    </View>
-                )}
-            </Pressable>
-        </View>
+                    {canEdit && (
+                        <View style={styles.actions}>
+                            <IconButton
+                                icon="edit"
+                                onPress={handleEdit}
+                                style={isSmallScreen && styles.smallIconButton}
+                                accessibilityLabel={`Редактировать путешествие ${name}`}
+                            />
+                            <IconButton
+                                icon="trash-2"
+                                onPress={handleDelete}
+                                style={isSmallScreen && styles.smallIconButton}
+                                accessibilityLabel={`Удалить путешествие ${name}`}
+                            />
+                        </View>
+                    )}
+                </Pressable>
+            </View>
+        </>
     );
 };
 
@@ -162,6 +197,7 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
+        objectFit: 'cover', // для <img> web
     },
     imagePlaceholder: {
         width: '100%',
