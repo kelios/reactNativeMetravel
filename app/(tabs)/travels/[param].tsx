@@ -184,13 +184,20 @@ export default function TravelDetails() {
         </View>
     );
 
-    const descTxt = travel.description?.replace(/<[^>]+>/g, '').slice(0, 160) || '';
-
+    // ------------------------------
+    // 2. SEO-данные для Head (Helmet)
+    // ------------------------------
+    const pageTitle       = `${travel.name} — metravel.by`;     // ← 🔧 единственная строка
+    const pageDescription = (
+        travel.description?.replace(/<[^>]+>/g, '').slice(0, 160) ||
+        'Найди место для путешествия и поделись своим опытом.'
+    );
     return (
         <>
             <Head>
-                <title>{travel.name} — metravel.by</title>
-                <meta name="description" content={descTxt} />
+                {/* 🔧 Теперь внутри <title> ровно один строковый child */}
+                <title>{pageTitle}</title>
+                <meta name="description" content={pageDescription} />
                 <link rel="canonical" href={`https://metravel.by/travels/${slug}`} />
             </Head>
 

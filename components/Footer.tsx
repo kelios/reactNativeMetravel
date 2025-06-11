@@ -1,180 +1,128 @@
-import React from 'react';
+// src/components/Footer.tsx
+import React, { useMemo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    TouchableOpacity,
     useWindowDimensions,
+    Pressable,
     Image,
     Linking,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
 import { Link, Href } from 'expo-router';
+import Icon from 'react-native-vector-icons/FontAwesome';          // FA 4 (home, globe…)
+import Icon5 from 'react-native-vector-icons/FontAwesome5';        // FA 5 (tiktok)
 
-type LinkItem = {
-    name: string;
-    label: string;
-    route: Href;
-};
+type NavItem = { name: string; label: string; route: Href };
 
 const Footer: React.FC = () => {
-    const windowWidth = useWindowDimensions().width;
-    const isMobile = windowWidth <= 500;
-    const styles = getStyles(windowWidth);
+    /* ---------- breakpoint ---------- */
+    const { width } = useWindowDimensions();
+    const isMobile = width <= 500;
 
-    const links: LinkItem[] = [
-        { name: 'home', label: 'Путешествия', route: '/' },
-        { name: 'globe', label: 'Беларусь', route: '/travelsby' },
-        { name: 'map', label: 'Карта', route: '/map' },
-        { name: 'instagram', label: 'Instagram', route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
-        { name: 'envelope', label: 'Обратная связь', route: '/contact' },
-        { name: 'info-circle', label: 'О сайте', route: '/about' },
+    /* ---------- navigation ---------- */
+    const nav: NavItem[] = [
+        { name: 'home',        label: 'Путешествия',  route: '/' },
+        { name: 'globe',       label: 'Беларусь',     route: '/travelsby' },
+        { name: 'map',         label: 'Карта',        route: '/map' },
+        { name: 'instagram',   label: 'Insta BY',    route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
+        { name: 'envelope',    label: 'Обратная связь', route: '/contact' },
+        { name: 'info-circle', label: 'О сайте',      route: '/about' },
     ];
 
+    /* ---------- memoised styles ---------- */
+    const s = useMemo(() => createStyles(width), [width]);
+
+    /* ---------- helpers ---------- */
+    const open = (url: string) => Linking.openURL(url).catch(() => {});
+
+    /* ---------- MOBILE  ---------- */
     if (isMobile) {
         return (
-            <View style={styles.footerContainer}>
-                <View style={styles.linkRow}>
-                    {links.slice(0, 3).map((link, index) => (
-                        <Link key={index} href={link.route} style={styles.iconOnly}>
-                            <Icon name={link.name} size={20} color="#ff9f5a" />
+            <View style={s.root}>
+                <View style={s.row}>
+                    {nav.slice(0, 3).map(item => (
+                        <Link key={item.name} href={item.route} accessibilityLabel={item.label}>
+                            <Icon name={item.name} size={20} color="#ff9f5a" style={s.pad} />
                         </Link>
                     ))}
-                    <TouchableOpacity onPress={() => Linking.openURL('https://www.tiktok.com/@metravel.by')}>
-                        <Image
-                            source={require('../assets/icons/tik-tok.png')}
-                            style={styles.socialIcon}
-                        />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => Linking.openURL('https://www.instagram.com/metravelby/')}>
-                        <Icon name="instagram" size={20} color="#ff9f5a" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => Linking.openURL('https://www.youtube.com/@metravelby')}>
-                        <Icon name="youtube" size={20} color="#ff9f5a" />
-                    </TouchableOpacity>
+
+                    <Pressable onPress={() => open('https://www.tiktok.com/@metravel.by')} hitSlop={8} accessibilityLabel="TikTok">
+                        <Icon5 name="tiktok" size={20} color="#ff9f5a" style={s.pad} />
+                    </Pressable>
+
+                    <Pressable onPress={() => open('https://www.instagram.com/metravelby/')} hitSlop={8} accessibilityLabel="Instagram">
+                        <Icon name="instagram" size={20} color="#ff9f5a" style={s.pad} />
+                    </Pressable>
+
+                    <Pressable onPress={() => open('https://www.youtube.com/@metravelby')} hitSlop={8} accessibilityLabel="YouTube">
+                        <Icon name="youtube" size={20} color="#ff9f5a" style={s.pad} />
+                    </Pressable>
                 </View>
             </View>
         );
     }
 
+    /* ---------- DESKTOP / TABLET ---------- */
     return (
-        <View style={styles.footerContainer}>
-            <View style={styles.linkContainer}>
-                {links.map((link, index) => (
-                    <Link key={index} href={link.route} style={styles.link}>
-                        <Icon name={link.name} size={20} color="#ff9f5a" />
-                        <Text style={styles.linkText}>{link.label}</Text>
+        <View style={s.root}>
+            <View style={s.links}>
+                {nav.map(item => (
+                    <Link key={item.name} href={item.route} style={s.link} accessibilityLabel={item.label}>
+                        <Icon name={item.name} size={20} color="#ff9f5a" />
+                        <Text style={s.linkTxt}>{item.label}</Text>
                     </Link>
                 ))}
             </View>
 
-            <View style={styles.footerBottomContainer}>
-                <View style={styles.socialContainer}>
-                    <TouchableOpacity onPress={() => Linking.openURL('https://www.tiktok.com/@metravel.by')} style={styles.socialLink}>
-                        <View style={styles.iconBackground}>
-                            <Image
-                                source={require('../assets/icons/tik-tok.png')}
-                                style={styles.tiktokIcon}
-                            />
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => Linking.openURL('https://www.instagram.com/metravelby/')} style={styles.socialLink}>
-                        <Icon name="instagram" size={20} color="#ff9f5a" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => Linking.openURL('https://www.youtube.com/@metravelby')} style={styles.socialLink}>
-                        <Icon name="youtube" size={20} color="#ff9f5a" />
-                    </TouchableOpacity>
+            <View style={s.bottom}>
+                <View style={s.social}>
+                    <Pressable onPress={() => open('https://www.tiktok.com/@metravel.by')} hitSlop={8} accessibilityLabel="TikTok">
+                        <Icon5 name="tiktok" size={20} color="#ff9f5a" style={s.pad} />
+                    </Pressable>
+                    <Pressable onPress={() => open('https://www.instagram.com/metravelby/')} hitSlop={8} accessibilityLabel="Instagram">
+                        <Icon name="instagram" size={20} color="#ff9f5a" style={s.pad} />
+                    </Pressable>
+                    <Pressable onPress={() => open('https://www.youtube.com/@metravelby')} hitSlop={8} accessibilityLabel="YouTube">
+                        <Icon name="youtube" size={20} color="#ff9f5a" style={s.pad} />
+                    </Pressable>
                 </View>
 
-                <View style={styles.footerTextContainer}>
-                    <Image
-                        source={require('../assets/icons/logo_yellow_60x60.png')}
-                        style={styles.footerLogo}
-                    />
-                    <Text style={styles.footerText}>© MeTravel 2020</Text>
+                <View style={s.brand}>
+                    <Image source={require('../assets/icons/logo_yellow_60x60.png')} style={s.logo} />
+                    <Text style={s.copy}>© MeTravel 2020</Text>
                 </View>
             </View>
         </View>
     );
 };
 
-const getStyles = (width: number) => StyleSheet.create({
-    footerContainer: {
-        width: '100%',
-        backgroundColor: '#333',
-        paddingVertical: width > 500 ? 15 : 8,
-        paddingHorizontal: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#444',
-    },
-    linkContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        marginBottom: 10,
-    },
-    link: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-        maxWidth: '48%',
-    },
-    linkText: {
-        color: '#ff9f5a',
-        fontSize: width > 500 ? 14 : 12,
-        marginLeft: 8,
-    },
-    footerBottomContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    socialContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    socialLink: {
-        marginHorizontal: 10,
-    },
-    footerTextContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    footerText: {
-        color: '#bbb',
-        fontSize: width > 500 ? 12 : 10,
-        marginLeft: 8,
-    },
-    iconBackground: {
-        backgroundColor: '#ff9f5a',
-        padding: 5,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    tiktokIcon: {
-        width: 15,
-        height: 15,
-    },
-    footerLogo: {
-        width: 30,
-        height: 30,
-        marginRight: 8,
-    },
-    linkRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-    },
-    iconOnly: {
-        padding: 6,
-    },
-    socialIcon: {
-        width: 18,
-        height: 18,
-        tintColor: '#ff9f5a',
-        marginHorizontal: 6,
-    },
-});
+/* ---------- styles ---------- */
+const createStyles = (w: number) =>
+    StyleSheet.create({
+        root: {
+            width: '100%',
+            backgroundColor: '#333',
+            paddingVertical: w > 500 ? 15 : 8,
+            paddingHorizontal: 20,
+            borderTopWidth: 1,
+            borderTopColor: '#444',
+        },
+        /* mobile row */
+        row: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+        pad: { padding: 6 },
+
+        /* links (desktop) */
+        links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10 },
+        link:  { flexDirection: 'row', alignItems: 'center', marginBottom: 10, maxWidth: '48%' },
+        linkTxt: { color: '#ff9f5a', fontSize: w > 500 ? 14 : 12, marginLeft: 8 },
+
+        /* bottom line */
+        bottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+        social: { flexDirection: 'row', alignItems: 'center' },
+        brand:  { flexDirection: 'row', alignItems: 'center' },
+        logo:   { width: 30, height: 30, marginRight: 8 },
+        copy:   { color: '#bbb', fontSize: w > 500 ? 12 : 10 },
+    });
 
 export default Footer;

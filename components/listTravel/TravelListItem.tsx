@@ -1,25 +1,29 @@
-import React, { memo, useCallback, useEffect, useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View, Platform, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { Image as ExpoImage } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const IconButton = memo(({ icon, onPress, style, accessibilityLabel }) => (
-    <Pressable
-        onPress={(e) => {
-            e.stopPropagation();
-            onPress();
-        }}
-        style={[styles.iconButton, style]}
-        hitSlop={8}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
-    >
-        <Feather name={icon} size={18} color="#fff" />
-    </Pressable>
-));
+/* ---------------- icon button ---------------- */
+const IconButton = memo(
+    ({ icon, onPress, style, accessibilityLabel }: { icon: any; onPress: () => void; style?: any; accessibilityLabel: string }) => (
+        <Pressable
+            onPress={e => {
+                e.stopPropagation();
+                onPress();
+            }}
+            style={[styles.iconButton, style]}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+        >
+            <Feather name={icon} size={18} color="#fff" />
+        </Pressable>
+    ),
+);
 
+/* ---------------- main component ------------- */
 const TravelListItem = ({
                             travel,
                             isSuperuser,
@@ -27,7 +31,14 @@ const TravelListItem = ({
                             onDeletePress,
                             isFirst,
                             isSingle = false,
-                        }) => {
+                        }: {
+    travel: any;
+    isSuperuser: boolean;
+    isMetravel: boolean;
+    onDeletePress: (id: number) => void;
+    isFirst: boolean;
+    isSingle?: boolean;
+}) => {
     const { width } = useWindowDimensions();
     const isSmallScreen = width < 400;
 
@@ -35,6 +46,8 @@ const TravelListItem = ({
         id,
         slug,
         travel_image_thumb_url,
+        travel_image_thumb_width,
+        travel_image_thumb_height,
         name,
         countryName = '',
         userName,
@@ -44,9 +57,10 @@ const TravelListItem = ({
 
     const canEdit = isMetravel || isSuperuser;
 
+    /* --------- data helpers --------- */
     const countries = useMemo(
         () => countryName.split(',').map(c => c.trim()).filter(Boolean),
-        [countryName]
+        [countryName],
     );
 
     const imageUrl = useMemo(() => {
@@ -55,52 +69,45 @@ const TravelListItem = ({
         return `${travel_image_thumb_url}?v=${version}`;
     }, [travel_image_thumb_url, updated_at, id]);
 
-    const handlePress = useCallback(() => {
-        router.push(`/travels/${slug}`);
-    }, [slug]);
+    /* ---------- handlers ---------- */
+    const handlePress = useCallback(() => router.push(`/travels/${slug}`), [slug]);
+    const handleEdit = useCallback(() => router.push(`/travel/${id}`), [id]);
+    const handleDelete = useCallback(() => onDeletePress(id), [id, onDeletePress]);
 
-    const handleEdit = useCallback((e) => {
-        e?.stopPropagation();
-        router.push(`/travel/${id}`);
-    }, [id]);
-
-    const handleDelete = useCallback((e) => {
-        e?.stopPropagation();
-        onDeletePress(id);
-    }, [id, onDeletePress]);
-
-    // устанавливаем title на Web
-    useEffect(() => {
-        if (Platform.OS === 'web') {
-            document.title = `${name} | Metravel`;
-        }
-    }, [name]);
-
+    /* ---------- render ---------- */
     return (
         <View style={styles.container}>
             <Pressable
                 onPress={handlePress}
                 style={[styles.card, isSingle && styles.single]}
-                accessibilityLabel={`Открыть путешествие ${name}`}
                 accessibilityRole="button"
+                accessibilityLabel={`Открыть путешествие ${name}`}
             >
+                {/* ---------- image ---------- */}
                 {imageUrl ? (
                     Platform.OS === 'web' ? (
                         <img
                             src={imageUrl}
                             alt={name}
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                            }}
+                            width={travel_image_thumb_width || 400}
+                            height={travel_image_thumb_height || 400}
+                            srcSet={`
+                ${imageUrl}&w=320 320w,
+                ${imageUrl}&w=640 640w,
+                ${imageUrl}&w=960 960w`}
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                             loading={isFirst ? 'eager' : 'lazy'}
+                            fetchpriority={isFirst ? 'high' : 'auto'}
+                            decoding="async"
                         />
                     ) : (
-                        <Image
-                            style={styles.image}
+                        <ExpoImage
                             source={{ uri: imageUrl }}
+                            style={styles.image}
                             contentFit="cover"
+                            placeholder={require('@/assets/placeholder.png')}
+                            transition={300}
                             priority={isFirst ? 'high' : 'normal'}
                             accessibilityLabel={name}
                         />
@@ -111,16 +118,17 @@ const TravelListItem = ({
                     </View>
                 )}
 
+                {/* ---------- overlays ---------- */}
                 <LinearGradient
                     colors={['transparent', 'rgba(0,0,0,0.8)']}
-                    style={styles.gradientOverlay}
                     locations={[0.6, 1]}
+                    style={styles.gradientOverlay}
                 />
 
                 <View style={styles.overlay}>
-                    {countries.length > 0 && (
+                    {!!countries.length && (
                         <View style={styles.countryContainer}>
-                            {countries.map((c) => (
+                            {countries.map(c => (
                                 <View key={c} style={styles.countryTag}>
                                     <Text style={styles.countryText}>{c}</Text>
                                 </View>
@@ -128,7 +136,7 @@ const TravelListItem = ({
                         </View>
                     )}
 
-                    <Text style={styles.title} numberOfLines={2}>
+                    <Text numberOfLines={2} style={styles.title}>
                         {name}
                     </Text>
 
@@ -136,20 +144,21 @@ const TravelListItem = ({
                         {!!userName && (
                             <View style={styles.metaItem}>
                                 <Feather name="user" size={14} color="#eee" />
-                                <Text style={styles.metaText} numberOfLines={1}>
+                                <Text numberOfLines={1} style={styles.metaText}>
                                     {userName}
                                 </Text>
                             </View>
                         )}
                         <View style={styles.metaItem}>
                             <Feather name="eye" size={14} color="#eee" />
-                            <Text style={styles.metaText} numberOfLines={1}>
+                            <Text numberOfLines={1} style={styles.metaText}>
                                 {countUnicIpView}
                             </Text>
                         </View>
                     </View>
                 </View>
 
+                {/* ---------- edit / delete ---------- */}
                 {canEdit && (
                     <View style={styles.actions}>
                         <IconButton
@@ -171,26 +180,21 @@ const TravelListItem = ({
     );
 };
 
+export default memo(TravelListItem);
+
+/* ---------------- styles ---------------- */
 const styles = StyleSheet.create({
-    container: {
-        padding: 8,
-        width: '100%',
-    },
-    single: {
-        maxWidth: 600,
-    },
+    container: { padding: 8, width: '100%' },
+    single: { maxWidth: 600 },
     card: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        backgroundColor: '#000',
         position: 'relative',
         width: '100%',
         aspectRatio: 1,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#000',
     },
-    image: {
-        width: '100%',
-        height: '100%',
-    },
+    image: { width: '100%', height: '100%' },
     imagePlaceholder: {
         width: '100%',
         height: '100%',
@@ -205,40 +209,17 @@ const styles = StyleSheet.create({
         right: 0,
         height: '60%',
     },
-    overlay: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 16,
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 8,
-    },
-    countryContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-        marginBottom: 8,
-    },
+    overlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16 },
+    title: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 8 },
+    countryContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
     countryTag: {
         backgroundColor: 'rgba(255,255,255,0.15)',
         borderRadius: 12,
         paddingHorizontal: 10,
         paddingVertical: 4,
     },
-    countryText: {
-        fontSize: 12,
-        color: '#fff',
-        fontWeight: '500',
-    },
-    metaRow: {
-        flexDirection: 'row',
-        gap: 12,
-    },
+    countryText: { fontSize: 12, color: '#fff', fontWeight: '500' },
+    metaRow: { flexDirection: 'row', gap: 12 },
     metaItem: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -247,18 +228,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
     },
-    metaText: {
-        fontSize: 13,
-        color: '#eee',
-        marginLeft: 6,
-    },
-    actions: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        flexDirection: 'row',
-        gap: 8,
-    },
+    metaText: { fontSize: 13, color: '#eee', marginLeft: 6 },
+    actions: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', gap: 8 },
     iconButton: {
         backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 18,
@@ -267,10 +238,5 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    smallIconButton: {
-        width: 30,
-        height: 30,
-    },
+    smallIconButton: { width: 30, height: 30 },
 });
-
-export default memo(TravelListItem);

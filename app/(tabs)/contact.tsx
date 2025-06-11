@@ -1,53 +1,70 @@
-import React, {useState} from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Button,
   ImageBackground,
   KeyboardAvoidingView,
-  NativeSyntheticEvent,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TextInputSubmitEditingEventData,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import {sendFeedback} from '@/src/api/travels';
+import { sendFeedback } from '@/src/api/travels';
 
 export default function FeedbackForm() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  /* ------------------- state ------------------- */
+  const [name, setName]       = useState('');
+  const [email, setEmail]     = useState('');
   const [message, setMessage] = useState('');
-  const [responseMessage, setResponseMessage] = useState('');
-  const [isError, setIsError] = useState(false);
+  const [response, setResp]   = useState<{ text: string; error: boolean }>({ text: '', error: false });
+  const [sending, setSending] = useState(false);
 
+  /* ------------------- refs для фокуса --------- */
+  const emailRef   = useRef<TextInput>(null);
+  const messageRef = useRef<TextInput>(null);
+
+  /* ------------------- helpers ----------------- */
+  const isEmailValid = (val: string) =>
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+
+  const clearForm = () => {
+    setName('');
+    setEmail('');
+    setMessage('');
+  };
+
+  /* ------------------- submit ------------------ */
   const handleSubmit = async () => {
-    if (!name || !email || !message) {
-      setResponseMessage('Заполните все поля.');
-      setIsError(true);
-      return;
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      return setResp({ text: 'Заполните все поля.', error: true });
+    }
+    if (!isEmailValid(email)) {
+      return setResp({ text: 'Введите корректный e-mail.', error: true });
     }
 
     try {
-      const result = await sendFeedback(name, email, message);
-      setResponseMessage(result);
-      setIsError(false);
-      setName('');
-      setEmail('');
-      setMessage('');
-    } catch (error: any) {
-      setResponseMessage(error.message || 'Не удалось отправить сообщение.');
-      setIsError(true);
+      setSending(true);
+      const res = await sendFeedback(name.trim(), email.trim(), message.trim());
+      setResp({ text: res, error: false });
+      clearForm();
+    } catch (e: any) {
+      setResp({ text: e?.message || 'Не удалось отправить сообщение.', error: true });
+    } finally {
+      setSending(false);
     }
   };
 
-  const handleKeyPress = (e: any) => {
-    if (e.nativeEvent.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault?.();
+  /* ------------------- key handler ------------ */
+  const handleWebKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSubmit();
     }
   };
 
+  /* ------------------- ui ---------------------- */
   return (
       <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -56,20 +73,21 @@ export default function FeedbackForm() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <ImageBackground
               source={require('@/assets/images/media/slider/about.jpg')}
-              style={styles.backgroundImage}
+              style={styles.bg}
+              resizeMode="cover"
           >
-            <View style={styles.container}>
+            <View style={styles.center}>
               <View style={styles.form}>
-                {responseMessage ? (
+                {response.text !== '' && (
                     <Text
                         style={[
-                          styles.responseText,
-                          isError ? styles.errorText : styles.successText,
+                          styles.response,
+                          response.error ? styles.err : styles.ok,
                         ]}
                     >
-                      {responseMessage}
+                      {response.text}
                     </Text>
-                ) : null}
+                )}
 
                 <TextInput
                     style={styles.input}
@@ -77,32 +95,41 @@ export default function FeedbackForm() {
                     value={name}
                     onChangeText={setName}
                     returnKeyType="next"
-                    onSubmitEditing={() => {}} // можно фокусить email, если хочешь
+                    onSubmitEditing={() => emailRef.current?.focus()}
                 />
+
                 <TextInput
+                    ref={emailRef}
                     style={styles.input}
                     placeholder="Email"
                     value={email}
                     onChangeText={setEmail}
+                    autoCapitalize="none"
                     keyboardType="email-address"
                     returnKeyType="next"
-                    onSubmitEditing={() => {}} // можно фокусить message
+                    onSubmitEditing={() => messageRef.current?.focus()}
                 />
+
                 <TextInput
-                    style={[styles.input, styles.messageInput]}
+                    ref={messageRef}
+                    style={[styles.input, styles.message]}
                     placeholder="Сообщение"
                     value={message}
                     onChangeText={setMessage}
                     multiline
                     blurOnSubmit={false}
-                    onKeyPress={Platform.OS === 'web' ? handleKeyPress : undefined}
+                    onKeyDown={Platform.OS === 'web' ? handleWebKey : undefined}
                     onSubmitEditing={
-                      Platform.OS !== 'web'
-                          ? (e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => handleSubmit()
-                          : undefined
+                      Platform.OS !== 'web' ? () => handleSubmit() : undefined
                     }
                 />
-                <Button color="#6AAAAA" title="Отправить" onPress={handleSubmit} />
+
+                <Button
+                    color="#6AAAAA"
+                    title={sending ? 'Отправка…' : 'Отправить'}
+                    onPress={handleSubmit}
+                    disabled={sending}
+                />
               </View>
             </View>
           </ImageBackground>
@@ -111,22 +138,19 @@ export default function FeedbackForm() {
   );
 }
 
+/* ------------------- styles ------------------ */
 const styles = StyleSheet.create({
-  backgroundImage: {
+  bg: {
     flex: 1,
     width: '100%',
     justifyContent: 'center',
     padding: 20,
   },
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   form: {
     width: '100%',
     maxWidth: 500,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: 10,
     padding: 20,
   },
@@ -136,19 +160,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
+    backgroundColor: '#fff',
   },
-  messageInput: {
-    height: 100,
-  },
-  responseText: {
-    textAlign: 'center',
-    marginBottom: 15,
-    fontSize: 16,
-  },
-  errorText: {
-    color: 'red',
-  },
-  successText: {
-    color: '#2e7d32',
-  },
+  message: { height: 100, textAlignVertical: 'top' },
+  response: { textAlign: 'center', marginBottom: 15, fontSize: 16 },
+  err: { color: '#d32f2f' },
+  ok: { color: '#2e7d32' },
 });

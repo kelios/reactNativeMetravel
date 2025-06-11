@@ -1,187 +1,226 @@
-import React, {useState} from 'react';
-import {Dimensions, ImageBackground, StyleSheet, Text, TextInput, View} from 'react-native';
-import {Formik, FormikHelpers} from 'formik';
+import React, { useState } from 'react';
+import {
+    Dimensions,
+    ImageBackground,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { Card } from 'react-native-paper';
+import { Button, Icon } from 'react-native-elements';
+import { Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import {registration} from '@/src/api/travels';
-import {FormValues} from '@/src/types/types';
-import {Card} from 'react-native-paper';
-import {Button} from 'react-native-elements';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { registration } from '@/src/api/travels';
+import type { FormValues } from '@/src/types/types';
 
-const { height } = Dimensions.get('window'); // Получаем высоту экрана
+const { height } = Dimensions.get('window');
 
-// Валидационная схема с использованием Yup
+/* ---------- Yup-схема ---------- */
 const RegisterSchema = Yup.object().shape({
     username: Yup.string()
-        .min(2, 'Поле слишком короткое, минимум 2 символа')
-        .max(30, 'Поле слишком длинное, максимум 30 символов')
-        .required('Поле обязательно для заполнения'),
-    email: Yup.string().email('Неправильно заполнено поле - email').required('Поле обязательно для заполнения'),
+        .trim()
+        .matches(/^[\w\-]{2,30}$/, 'Допустимы буквы, цифры, -, _ (2-30 симв.)')
+        .required('Поле обязательно'),
+    email: Yup.string()
+        .email('Некорректный email')
+        .required('Поле обязательно'),
     password: Yup.string()
-        .min(8, 'Поле пароль должно содержать минимум 8 символов')
-        .required('Поле обязательно для заполнения'),
+        .min(8, 'Минимум 8 символов')
+        .required('Поле обязательно'),
     confirmPassword: Yup.string()
-        .oneOf([Yup.ref('password'), null], 'Пароли не совпадают')
-        .required('Поле подвердить пароль обязательно для заполнения'),
+        .oneOf([Yup.ref('password')], 'Пароли не совпадают')
+        .required('Подтверждение обязательно'),
 });
 
-const RegisterForm = () => {
-    const [generalMessage, setGeneralMessage] = useState<string | null>(null);
+export default function RegisterForm() {
+    const [showPass, setShowPass] = useState(false);
+    const [generalMsg, setMsg] = useState<{ text: string; error: boolean }>({ text: '', error: false });
 
-    const handleFormSubmit = async (values: FormValues, { setSubmitting }: FormikHelpers<FormValues>) => {
-        setGeneralMessage(null);
+    const onSubmit = async (
+        values: FormValues,
+        { setSubmitting, resetForm }: FormikHelpers<FormValues>,
+    ) => {
+        setMsg({ text: '', error: false });
         try {
-            const serverMessage = await registration(values);
-            setGeneralMessage(serverMessage);
-        } catch (error: any) {
-            console.error('Error during registration:', error);
-            setGeneralMessage(error.message);
+            const res = await registration(values);
+            setMsg({ text: res, error: /ошиб|fail|invalid/i.test(res) });
+            if (!/ошиб|fail|invalid/i.test(res)) resetForm();
+        } catch (e: any) {
+            setMsg({ text: e?.message || 'Не удалось зарегистрироваться.', error: true });
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <ImageBackground
-            source={require('@/assets/images/media/slider/about.jpg' )}
-            style={styles.backgroundImage}
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <Formik<FormValues>
-                initialValues={{ username: '', email: '', password: '', confirmPassword: '' }}
-                validationSchema={RegisterSchema}
-                onSubmit={handleFormSubmit}
-            >
-                {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
-                    <View style={styles.formContainer}>
-                        <Card style={styles.card}>
-                            <Card.Content>
-                                {generalMessage && (
-                                    <Text style={styles.generalMessageText}>{generalMessage}</Text>
-                                )}
-                                <View style={styles.inputContainer}>
-                                    <Icon name="account" size={20} color="#888" style={styles.icon} />
-                                    <TextInput
-                                        style={styles.input}
-                                        onChangeText={handleChange('username')}
-                                        onBlur={handleBlur('username')}
-                                        value={values.username}
-                                        placeholder="Имя пользователя"
-                                        placeholderTextColor="#888"
-                                    />
-                                </View>
-                                {touched.username && errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                <ImageBackground
+                    source={require('@/assets/images/media/slider/about.jpg')}
+                    style={styles.bg}
+                    resizeMode="cover"
+                    blurRadius={3}
+                >
+                    <Formik<FormValues>
+                        initialValues={{ username: '', email: '', password: '', confirmPassword: '' }}
+                        validationSchema={RegisterSchema}
+                        onSubmit={onSubmit}
+                    >
+                        {({
+                              handleChange,
+                              handleBlur,
+                              handleSubmit,
+                              values,
+                              errors,
+                              touched,
+                              isSubmitting,
+                          }) => (
+                            <View style={styles.center}>
+                                <Card style={styles.card}>
+                                    <Card.Content>
+                                        {generalMsg.text !== '' && (
+                                            <Text
+                                                style={[
+                                                    styles.msg,
+                                                    generalMsg.error ? styles.err : styles.ok,
+                                                ]}
+                                            >
+                                                {generalMsg.text}
+                                            </Text>
+                                        )}
 
-                                <View style={styles.inputContainer}>
-                                    <Icon name="email" size={20} color="#888" style={styles.icon} />
-                                    <TextInput
-                                        style={styles.input}
-                                        onChangeText={handleChange('email')}
-                                        onBlur={handleBlur('email')}
-                                        value={values.email}
-                                        placeholder="Email"
-                                        placeholderTextColor="#888"
-                                        keyboardType="email-address"
-                                    />
-                                </View>
-                                {touched.email && errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                                        {/* ---------- username ---------- */}
+                                        <View style={styles.inputWrap}>
+                                            <Icon name="account" type="material-community" size={20} color="#888" />
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Имя пользователя"
+                                                placeholderTextColor="#888"
+                                                value={values.username}
+                                                onChangeText={handleChange('username')}
+                                                onBlur={handleBlur('username')}
+                                                autoCapitalize="none"
+                                                returnKeyType="next"
+                                            />
+                                        </View>
+                                        {touched.username && errors.username && (
+                                            <Text style={styles.err}>{errors.username}</Text>
+                                        )}
 
-                                <View style={styles.inputContainer}>
-                                    <Icon name="lock" size={20} color="#888" style={styles.icon} />
-                                    <TextInput
-                                        style={styles.input}
-                                        onChangeText={handleChange('password')}
-                                        onBlur={handleBlur('password')}
-                                        value={values.password}
-                                        placeholder="Пароль"
-                                        placeholderTextColor="#888"
-                                        secureTextEntry
-                                    />
-                                </View>
-                                {touched.password && errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                                        {/* ---------- email ---------- */}
+                                        <View style={styles.inputWrap}>
+                                            <Icon name="email" type="material-community" size={20} color="#888" />
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Email"
+                                                placeholderTextColor="#888"
+                                                value={values.email}
+                                                onChangeText={handleChange('email')}
+                                                onBlur={handleBlur('email')}
+                                                keyboardType="email-address"
+                                                autoCapitalize="none"
+                                                returnKeyType="next"
+                                            />
+                                        </View>
+                                        {touched.email && errors.email && (
+                                            <Text style={styles.err}>{errors.email}</Text>
+                                        )}
 
-                                <View style={styles.inputContainer}>
-                                    <Icon name="lock-check" size={20} color="#888" style={styles.icon} />
-                                    <TextInput
-                                        style={styles.input}
-                                        onChangeText={handleChange('confirmPassword')}
-                                        onBlur={handleBlur('confirmPassword')}
-                                        value={values.confirmPassword}
-                                        placeholder="Повторите пароль"
-                                        placeholderTextColor="#888"
-                                        secureTextEntry
-                                    />
-                                </View>
-                                {touched.confirmPassword && errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+                                        {/* ---------- password ---------- */}
+                                        <View style={styles.inputWrap}>
+                                            <Icon name="lock" type="material-community" size={20} color="#888" />
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Пароль"
+                                                placeholderTextColor="#888"
+                                                value={values.password}
+                                                onChangeText={handleChange('password')}
+                                                onBlur={handleBlur('password')}
+                                                secureTextEntry={!showPass}
+                                                returnKeyType="next"
+                                            />
+                                            <TouchableOpacity onPress={() => setShowPass(v => !v)}>
+                                                <Icon
+                                                    name={showPass ? 'eye-off' : 'eye'}
+                                                    type="material-community"
+                                                    size={20}
+                                                    color="#888"
+                                                />
+                                            </TouchableOpacity>
+                                        </View>
+                                        {touched.password && errors.password && (
+                                            <Text style={styles.err}>{errors.password}</Text>
+                                        )}
 
-                                <Button
-                                    onPress={handleSubmit}
-                                    buttonStyle={styles.applyButton}
-                                    title={isSubmitting ? "Отправка..." : "Зарегистрироваться"}
-                                    disabled={isSubmitting}
-                                />
-                            </Card.Content>
-                        </Card>
-                    </View>
-                )}
-            </Formik>
-        </ImageBackground>
+                                        {/* ---------- confirm ---------- */}
+                                        <View style={styles.inputWrap}>
+                                            <Icon name="lock-check" type="material-community" size={20} color="#888" />
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="Повторите пароль"
+                                                placeholderTextColor="#888"
+                                                value={values.confirmPassword}
+                                                onChangeText={handleChange('confirmPassword')}
+                                                onBlur={handleBlur('confirmPassword')}
+                                                secureTextEntry={!showPass}
+                                                returnKeyType="done"
+                                                onSubmitEditing={() => handleSubmit()}
+                                            />
+                                        </View>
+                                        {touched.confirmPassword && errors.confirmPassword && (
+                                            <Text style={styles.err}>{errors.confirmPassword}</Text>
+                                        )}
+
+                                        {/* ---------- button ---------- */}
+                                        <Button
+                                            title={isSubmitting ? 'Отправка…' : 'Зарегистрироваться'}
+                                            buttonStyle={styles.btn}
+                                            onPress={handleSubmit as any}
+                                            disabled={isSubmitting}
+                                            loading={isSubmitting}
+                                        />
+                                    </Card.Content>
+                                </Card>
+                            </View>
+                        )}
+                    </Formik>
+                </ImageBackground>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
-};
+}
 
+/* ---------- styles ---------- */
 const styles = StyleSheet.create({
-    backgroundImage: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-    },
-    formContainer: {
-        width: '80%',
-    },
+    bg: { flex: 1, justifyContent: 'center', alignItems: 'center', height },
+    center: { width: '85%', maxWidth: 420 },
     card: {
         padding: 20,
         borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Полупрозрачный фон для лучшей читаемости
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3, // Тени для Android
+        backgroundColor: 'rgba(255,255,255,0.92)',
+        elevation: 4,
     },
-    errorText: {
-        color: 'red',
-        marginBottom: 10,
-    },
-    generalMessageText: {
-        color: '#e60000', // Цвет ошибки
-        marginBottom: 20,
-        textAlign: 'center',
-        fontWeight: 'bold',
-    },
-    inputContainer: {
+    inputWrap: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 15,
         borderWidth: 1,
         borderColor: '#ddd',
-        borderRadius: 5,
+        borderRadius: 6,
         backgroundColor: '#fff',
         paddingHorizontal: 10,
+        marginBottom: 12,
     },
-    icon: {
-        marginRight: 10,
-    },
-    input: {
-        flex: 1,
-        paddingVertical: 10,
-        fontSize: 16,
-    },
-    applyButton: {
-        backgroundColor: '#6aaaaa',
-        width: '100%',
-        marginTop: 10,
-    },
+    input: { flex: 1, paddingVertical: 10, fontSize: 16 },
+    err: { color: '#d32f2f', marginBottom: 6, textAlign: 'left' },
+    ok: { color: '#2e7d32', marginBottom: 20, textAlign: 'center', fontWeight: 'bold' },
+    msg: { marginBottom: 20, textAlign: 'center', fontSize: 16 },
+    btn: { backgroundColor: '#6aaaaa', borderRadius: 6, marginTop: 8 },
 });
-
-export default RegisterForm;
