@@ -52,7 +52,7 @@ function ListTravel() {
     const columns = isMobile ? 1 : isTablet ? 2 : 3;
     const listKey = useMemo(() => `grid-${columns}-${width}`, [columns, width]);
 
-    const route = useRouter();
+    const route = useRoute();
     const router = useRouter();
     const { user_id } = useLocalSearchParams();
     const isMeTravel = route.name === 'metravel';
