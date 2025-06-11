@@ -1,85 +1,44 @@
 import React, { memo, useMemo } from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions, StyleSheet } from 'react-native';
 import TravelListItem from './TravelListItem';
 
-const RenderTravelItem = ({
+function RenderTravelItem({
                               item,
                               isSuperuser,
                               isMetravel,
-                              userId,
-                              onEditPress,
                               onDeletePress,
+                              onEditPress,
                               isFirst,
                               isSingle = false,
-                          }) => {
-    const { width } = useWindowDimensions();
+                          }: any) {
+    /* ⬇︎ если FlatList прислал placeholder — ничего не рендерим */
+    if (!item) return null;
 
+    const { width } = useWindowDimensions();
     const isMobile = width < 768;
     const isTablet = width >= 768 && width < 1024;
 
-    const containerStyle = useMemo(() => {
-        const baseStyle = {
-            borderRadius: 12,
-            overflow: 'hidden',
-            marginBottom: 16,
-        };
-
-        if (isSingle) {
-            return {
-                ...baseStyle,
-                width: '100%',
-                maxWidth: 600,
-                alignSelf: 'center',
-                paddingHorizontal: 16,
-            };
-        }
-
-        if (isMobile) {
-            return {
-                ...baseStyle,
-                width: '100%',
-            };
-        }
-
-        const cardWidth = isTablet ? '48%' : '31%';
-        return {
-            ...baseStyle,
-            flex: 1,
-            flexBasis: cardWidth,
-            maxWidth: cardWidth,
-        };
+    const container = useMemo(() => {
+        const base: any = { borderRadius: 12, overflow: 'hidden', marginBottom: 16 };
+        if (isSingle)  return { ...base, width: '100%', maxWidth: 600, alignSelf: 'center', paddingHorizontal: 16 };
+        if (isMobile)  return { ...base, width: '100%' };
+        const w = isTablet ? '48%' : '31%';
+        return { ...base, flex: 1, flexBasis: w, maxWidth: w };
     }, [isMobile, isTablet, isSingle]);
 
-    const travelListItemProps = useMemo(() => ({
-        travel: item,
-        currentUserId: userId,
-        isSuperuser,
-        isMetravel,
-        isMobile,
-        onEditPress,
-        onDeletePress,
-        isFirst,
-        isSingle,
-    }), [item, userId, isSuperuser, isMetravel, isMobile, onEditPress, onDeletePress, isFirst, isSingle]);
-
     return (
-        <View style={containerStyle}>
-            <TravelListItem {...travelListItemProps} />
+        <View style={container}>
+            <TravelListItem
+                travel={item}
+                isSuperuser={isSuperuser}
+                isMetravel={isMetravel}
+                onDeletePress={onDeletePress}
+                onEditPress={onEditPress}
+                isFirst={isFirst}
+                isSingle={isSingle}
+            />
         </View>
     );
-};
+}
 
-const areEqual = (prev, next) => {
-    return (
-        prev.item.id === next.item.id &&
-        prev.isSuperuser === next.isSuperuser &&
-        prev.isMetravel === next.isMetravel &&
-        prev.userId === next.userId &&
-        prev.onEditPress === next.onEditPress &&
-        prev.onDeletePress === next.onDeletePress &&
-        prev.isFirst === next.isFirst &&
-        prev.isSingle === next.isSingle
-    );
-};
-
-export default memo(RenderTravelItem, areEqual);
+export default memo(RenderTravelItem);
