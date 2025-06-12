@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Platform, View } from 'react-native';
 import { normalize, transliterate, CITY_ALIASES, TRIPSTER_CITY_NAMES } from "@/utils/CityUtils";
+import { useInView } from 'react-intersection-observer'; // 🚀 добавляем useInView
 
 type Props = {
     points: {
@@ -18,7 +19,7 @@ function findCityName(term: string): string | null {
 
     for (const form of formsToTry) {
         if (TRIPSTER_CITY_NAMES[form]) {
-            return TRIPSTER_CITY_NAMES[form]; // <--- ВАЖНО: возвращаем название города для Tripster
+            return TRIPSTER_CITY_NAMES[form];
         }
     }
 
@@ -48,8 +49,14 @@ export default function TripsterWidget({ points }: Props) {
         }
     }
 
+    // 🚀 добавляем useInView
+    const [refInView, inView] = useInView({
+        triggerOnce: true,
+        rootMargin: '200px',
+    });
+
     useEffect(() => {
-        if (Platform.OS !== 'web' || !validCity || !ref.current) return;
+        if (Platform.OS !== 'web' || !validCity || !ref.current || !inView) return;
 
         ref.current.innerHTML = '';
         document.getElementById('tripster-widget-script')?.remove();
@@ -65,14 +72,15 @@ export default function TripsterWidget({ points }: Props) {
             `&script_id=tripster-widget-script`;
 
         ref.current.appendChild(script);
-    }, [validCity]);
+    }, [validCity, inView]); // 🚀 добавляем inView сюда
 
     if (Platform.OS !== 'web' || !validCity) return null;
 
     return (
-        <View style={{ width: '100%', marginBottom: 32 }}>
+        <View ref={refInView} style={{ width: '100%', marginBottom: 32 }}>
             <View style={{ width: '100%', minHeight: 300 }}>
-                <div ref={ref} />
+                {/* 🚀 вставляем div ТОЛЬКО если inView === true */}
+                {inView && <div ref={ref} />}
             </View>
         </View>
     );

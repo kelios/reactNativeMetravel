@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, View, Text } from 'react-native';
 import { normalize, transliterate, CITY_ALIASES, MANUAL_IDS } from "@/utils/CityUtils";
+import { useInView } from 'react-intersection-observer'; // 🚀 добавляем useInView
 
 type Point = { id: string; address: string; coord: string };
 type Props = { points: Point[] };
@@ -64,6 +65,12 @@ export default function HotelWidget({ points }: Props) {
     const ref = useRef<HTMLDivElement>(null);
     const [locationId, setLocationId] = useState<string | null>(null);
 
+    // 🚀 добавляем inView observer
+    const [refInView, inView] = useInView({
+        triggerOnce: true,
+        rootMargin: '200px',
+    });
+
     useEffect(() => {
         if (Platform.OS !== 'web' || !points?.length) return;
 
@@ -94,13 +101,12 @@ export default function HotelWidget({ points }: Props) {
     }, [points]);
 
     useEffect(() => {
-        if (Platform.OS !== 'web' || !ref.current || !locationId) return;
+        // 🚀 вставляем скрипт ТОЛЬКО если inView === true
+        if (Platform.OS !== 'web' || !ref.current || !locationId || !inView) return;
 
-        // Удаляем старый скрипт
         ref.current.innerHTML = '';
         document.getElementById('hl-widget')?.remove();
 
-        // Создаём новый скрипт
         const script = document.createElement('script');
         script.async = true;
         script.charset = 'utf-8';
@@ -125,17 +131,18 @@ export default function HotelWidget({ points }: Props) {
 
         script.src = `https://tpwgt.com/content?${params.toString()}`;
         ref.current.appendChild(script);
-    }, [locationId]);
+    }, [locationId, inView]); // 🚀 добавляем inView сюда
 
     if (Platform.OS !== 'web' || !locationId) return null;
 
     return (
-        <View style={{ width: '100%', marginBottom: 32 }}>
+        <View ref={refInView} style={{ width: '100%', marginBottom: 32 }}>
             <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>
                 Отели рядом
             </Text>
             <View style={{ width: '100%', minHeight: 600 }}>
-                <div ref={ref} />
+                {/* 🚀 рендерим div ТОЛЬКО когда inView === true */}
+                {inView && <div ref={ref} />}
             </View>
         </View>
     );

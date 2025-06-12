@@ -23,6 +23,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 3,
         elevation: 2,
+        minHeight: 56,
     },
     inner: {
         width: '100%',

@@ -21,8 +21,13 @@ const Fallback = () => (
 );
 
 /* -------------------------------- helpers -------------------------------- */
-const openUrl = (url: string) =>
-    Platform.OS === 'web' ? (window.location.href = url) : Linking.openURL(url);
+const openUrl = (url: string) => {
+    if (Platform.OS === 'web') {
+        window.open(url, '_blank', 'noopener');
+    } else {
+        Linking.openURL(url);
+    }
+};
 
 /* -------------------------------- types ---------------------------------- */
 type SideBarProps = {
@@ -90,7 +95,12 @@ function CompactSideBarTravel({
                     <View style={styles.cardRow}>
                         <View style={styles.avatarWrap}>
                             {travel.travel_image_thumb_small_url ? (
-                                <Image source={{ uri: travel.travel_image_thumb_small_url }} style={styles.avatar} />
+                                <Image
+                                    source={{ uri: travel.travel_image_thumb_small_url }}
+                                    style={styles.avatar}
+                                    defaultSource={require('@/assets/placeholder.png')}
+                                    {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})}
+                                />
                             ) : (
                                 <MaterialIcons name="image" size={60} color="#ccc" />
                             )}

@@ -1,36 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
+import { useInView } from 'react-intersection-observer'; // 🚀 добавляем useInView
 
-/**
- * FlightWidget — production version (rev‑2)
- * ------------------------------------------------------------
- * • Показывает форму Aviasales/Travelpayouts только на Web.
- * • Определяет IATA города вылета через ipapi (EN‑locale → cityToIata).
- * • Если IATA не определён → параметр origin НЕ передаётся (виджет покажет «Откуда»).
- * • Страна назначения → IATA крупнейшего аэропорта (countryToIata). Если нет в мапе —
- *   используем `destination=ANY`, чтобы виджет всё‑равно отобразился.
- * • open_target=true  ⇒ ссылки открываются в новой вкладке (сайт не пропадает).
- * • Полная зачистка контейнера и <script>, чтобы не было дубликатов.
- * ------------------------------------------------------------
- */
-
-type Props = { country?: string };
-
-/* ────── 1. Страна → IATA (расширено, добавлен Маврикий) ────── */
 const countryToIata: Record<string, string> = {
-    Польша: 'WAW',   Германия: 'BER',  Беларусь: 'MSQ',  Украина: 'IEV',
-    Литва: 'VNO',    Латвия: 'RIX',   Эстония: 'TLL',   Чехия: 'PRG',
-    Австрия: 'VIE',  Венгрия: 'BUD',  Словакия: 'BTS',  Словения: 'LJU',
-    Хорватия: 'ZAG', Болгария: 'SOF', Румыния: 'OTP',  Греция: 'ATH',
-    Италия: 'ROM',   Испания: 'MAD',  Франция: 'PAR',  Португалия: 'LIS',
-    Швейцария: 'ZRH',Нидерланды: 'AMS', Бельгия: 'BRU', Дания: 'CPH',
-    Швеция: 'STO',   Финляндия: 'HEL', Норвегия: 'OSL', Великобритания: 'LON',
-    Ирландия: 'DUB', Турция: 'IST',   Египет: 'CAI',   Таиланд: 'BKK',
-    США: 'NYC',      Канада: 'YYZ',   Мальта: 'MLA',   Кипр: 'LCA',
+    Польша: 'WAW', Германия: 'BER', Беларусь: 'MSQ', Украина: 'IEV',
+    Литва: 'VNO', Латвия: 'RIX', Эстония: 'TLL', Чехия: 'PRG',
+    Австрия: 'VIE', Венгрия: 'BUD', Словакия: 'BTS', Словения: 'LJU',
+    Хорватия: 'ZAG', Болгария: 'SOF', Румыния: 'OTP', Греция: 'ATH',
+    Италия: 'ROM', Испания: 'MAD', Франция: 'PAR', Португалия: 'LIS',
+    Швейцария: 'ZRH', Нидерланды: 'AMS', Бельгия: 'BRU', Дания: 'CPH',
+    Швеция: 'STO', Финляндия: 'HEL', Норвегия: 'OSL', Великобритания: 'LON',
+    Ирландия: 'DUB', Турция: 'IST', Египет: 'CAI', Таиланд: 'BKK',
+    США: 'NYC', Канада: 'YYZ', Мальта: 'MLA', Кипр: 'LCA',
     Маврикий: 'MRU', Маврикия: 'MRU',
 };
 
-/* ────── 2. Город → IATA (без диакритики, lower‑case) ────── */
 const cityToIata: Record<string, string> = {
     minsk: 'MSQ', moscow: 'MOW', stpetersburg: 'LED', kyiv: 'IEV', odessa: 'ODS',
     warsaw: 'WAW', krakow: 'KRK', wroclaw: 'WRO', vilnius: 'VNO', kaunas: 'KUN',
@@ -44,13 +28,20 @@ const cityToIata: Record<string, string> = {
     copenhagen: 'CPH', stockholm: 'STO', gothenburg: 'GOT', helsinki: 'HEL', oslo: 'OSL',
     london: 'LON', manchester: 'MAN', dublin: 'DUB', istanbul: 'IST', bangkok: 'BKK',
     cairo: 'CAI', newyork: 'NYC', toronto: 'YYZ', chicago: 'CHI', losangeles: 'LAX',
-};const normalize = (s: string) =>
+};
+
+const normalize = (s: string) =>
     s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
 
 export default function FlightWidget({ country }: { country?: string }) {
     const widgetRef = useRef<HTMLDivElement>(null);
     const [origin, setOrigin] = useState<string | null>(null);
     const [city, setCity] = useState<string | null>(null);
+
+    const [refInView, inView] = useInView({
+        triggerOnce: true,
+        rootMargin: '200px',
+    });
 
     /* ────── 1. IP‑Lookup ────── */
     useEffect(() => {
@@ -69,7 +60,7 @@ export default function FlightWidget({ country }: { country?: string }) {
 
     /* ────── 2. Widget Injection ────── */
     useEffect(() => {
-        if (Platform.OS !== 'web' || !country || !widgetRef.current) return;
+        if (Platform.OS !== 'web' || !country || !widgetRef.current || !inView) return;
 
         widgetRef.current.innerHTML = '';
         document.getElementById('tp-widget-script')?.remove();
@@ -94,7 +85,6 @@ export default function FlightWidget({ country }: { country?: string }) {
 
         widgetRef.current.appendChild(script);
 
-        // 🛡️ Защита: насильно переписываем все ссылки внутри виджета
         const enforceSafeLinks = () => {
             const links = widgetRef.current?.querySelectorAll('a') || [];
             links.forEach(link => {
@@ -103,20 +93,18 @@ export default function FlightWidget({ country }: { country?: string }) {
             });
         };
 
-        // Пробуем несколько раз, чтобы точно сработало (задержка на загрузку скрипта)
         const attempts = [500, 1500, 3000];
         attempts.forEach(timeout => {
             setTimeout(enforceSafeLinks, timeout);
         });
-
-    }, [country, origin]);
+    }, [country, origin, inView]); // 🚀 добавляем inView сюда
 
     if (Platform.OS !== 'web' || !country) return null;
 
     const mainCountry = country.split(/[,/–—]/)[0].trim();
 
     return (
-        <View style={{ width: '100%', marginBottom: 32,paddingTop:20,  paddingBottom:10, }}>
+        <View ref={refInView} style={{ width: '100%', marginBottom: 32, paddingTop: 20, paddingBottom: 10 }}>
             <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>
                 Поиск авиабилетов
             </Text>
@@ -124,8 +112,8 @@ export default function FlightWidget({ country }: { country?: string }) {
                 Найди недорогие билеты в {mainCountry}
                 {city ? ` с вылетом из ${city}` : ''}.
             </Text>
-            <View style={{ width: '100%', minHeight: 100,}}>
-                <div ref={widgetRef} />
+            <View style={{ width: '100%', minHeight: 100 }}>
+                {inView && <div ref={widgetRef} />} {/* 🚀 рендерим div только если inView === true */}
             </View>
         </View>
     );

@@ -45,6 +45,7 @@ export default function PaginationComponent({
                 size={20}
                 onPress={() => handlePageChange(currentPage)}
                 disabled={currentPage === 0}
+                style={{ minWidth: 40 }}
             />
 
             <TextInput
@@ -63,6 +64,7 @@ export default function PaginationComponent({
                 size={20}
                 onPress={() => handlePageChange(currentPage + 2)}
                 disabled={currentPage + 1 >= totalPages}
+                style={{ minWidth: 40 }}
             />
 
             <View style={styles.itemsPerPageWrapper}>

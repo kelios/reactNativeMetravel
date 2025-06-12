@@ -30,6 +30,7 @@ const NativeImage = memo(({ source }: { source: string }) => (
         style={styles.img}
         contentFit="cover"
         priority="low"
+        cachePolicy="disk"
     />
 ));
 

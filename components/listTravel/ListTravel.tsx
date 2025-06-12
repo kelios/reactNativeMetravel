@@ -201,11 +201,11 @@ function ListTravel() {
                             renderItem={renderItem}
                             numColumns={columns}
                             columnWrapperStyle={columns > 1 ? styles.columnWrapper : undefined}
-                            contentContainerStyle={styles.list}
+                            contentContainerStyle={[styles.list, { minHeight: '100vh' }]}
                             showsVerticalScrollIndicator={false}
                             removeClippedSubviews
-                            initialNumToRender={3}
-                            maxToRenderPerBatch={5}
+                            initialNumToRender={6}
+                            maxToRenderPerBatch={6}
                             windowSize={5}
                             getItemLayout={getItemLayout}
                         />

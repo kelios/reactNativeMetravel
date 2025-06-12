@@ -144,8 +144,8 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
                         }
                         ItemSeparatorComponent={() => <View style={styles.separator} />}
                         showsVerticalScrollIndicator={false}
-                        initialNumToRender={10}
-                        maxToRenderPerBatch={10}
+                        initialNumToRender={6}
+                        maxToRenderPerBatch={6}
                         windowSize={5}
                         removeClippedSubviews={Platform.OS !== 'web'}
                         getItemLayout={getItemLayout}

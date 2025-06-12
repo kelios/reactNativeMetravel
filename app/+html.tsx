@@ -58,7 +58,10 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 href="https://metravel.by/hero.webp"
                 fetchpriority="high"
             />
-
+            <link
+                href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+                rel="stylesheet"
+            />
             <ScrollViewStyleReset />
             <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
             <link rel="icon" href="/favicon.ico" />

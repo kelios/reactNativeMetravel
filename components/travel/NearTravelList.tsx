@@ -62,6 +62,7 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
     const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
     const { width } = useWindowDimensions();
     const isMobile = width < 768;
+    const [visibleCount, setVisibleCount] = useState(6);
 
     const fetchNearbyTravels = useCallback(async () => {
         try {
@@ -81,6 +82,13 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
     useEffect(() => {
         fetchNearbyTravels();
     }, [fetchNearbyTravels]);
+
+    useEffect(() => {
+        // автоматом увеличивать на scroll или сразу
+        if (!isMobile) {
+            setVisibleCount(12); // на desktop чуть больше
+        }
+    }, [isMobile]);
 
     const mapPoints = useMemo(() => {
         return travelsNear.flatMap((item) => {
@@ -139,11 +147,11 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
                     <View style={styles.listColumn}>
                         <ScrollView contentContainerStyle={styles.scrollContent}>
                             <MasonryList
-                                data={travelsNear}
+                                data={travelsNear.slice(0, visibleCount)}
                                 keyExtractor={(item) => item.id.toString()}
-                                numColumns={2}
+                                numColumns={isMobile ? 1 : 2}
                                 renderItem={({ item }) => <TravelTmlRound travel={item} />}
-                                showsVerticalScrollIndicator={false}
+                                contentContainerStyle={styles.scrollContent}
                             />
                         </ScrollView>
                     </View>
@@ -160,9 +168,9 @@ const NearTravelList = memo(({ travel, onLayout, onTravelsLoaded }) => {
 
             {isMobile && viewMode === 'list' && (
                 <MasonryList
-                    data={travelsNear}
+                    data={travelsNear.slice(0, visibleCount)}
                     keyExtractor={(item) => item.id.toString()}
-                    numColumns={1}
+                    numColumns={isMobile ? 1 : 2}
                     renderItem={({ item }) => <TravelTmlRound travel={item} />}
                     contentContainerStyle={styles.scrollContent}
                 />
@@ -213,7 +221,7 @@ const styles = StyleSheet.create({
     listColumn: {
         flex: 1.4,
         height: 500,
-        overflow: 'scroll',
+     //   overflow: 'scroll',
         paddingRight: 12,
     },
     scrollContent: {

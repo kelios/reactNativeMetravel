@@ -158,6 +158,10 @@ export default function TravelDetails() {
     const [pointsVisible, setPointsVisible] = useState(Platform.OS !== 'web' ? true : false);
     const [nearVisible, setNearVisible] = useState(Platform.OS !== 'web' ? true : false);
     const [popularVisible, setPopularVisible] = useState(Platform.OS !== 'web' ? true : false);
+    const [refVideo, inVideo] = useInView({ rootMargin: '200px', triggerOnce: true });
+    const [refTripster, inTripster] = useInView({ rootMargin: '200px', triggerOnce: true });
+    const [refFlight, inFlight] = useInView({ rootMargin: '200px', triggerOnce: true });
+    const [refHotel, inHotel] = useInView({ rootMargin: '200px', triggerOnce: true });
 
     const [refMap, inMap] = useInView({ rootMargin: '200px', triggerOnce: true });
     const [refPts, inPoints] = useInView({ rootMargin: '200px', triggerOnce: true });
@@ -195,10 +199,11 @@ export default function TravelDetails() {
     return (
         <>
             <Head>
-                {/* 🔧 Теперь внутри <title> ровно один строковый child */}
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
-                <link rel="canonical" href={`https://metravel.by/travels/${slug}`} />
+                {slug && (
+                    <link rel="canonical" href={`https://metravel.by/travels/${slug}`} />
+                )}
             </Head>
 
             <View style={styles.wrapper}>
@@ -239,7 +244,7 @@ export default function TravelDetails() {
 
                         <ScrollView
                             ref={scrollRef}
-                            contentContainerStyle={styles.scrollContent}
+                            contentContainerStyle={[styles.scrollContent, { minHeight: '100vh' }]}
                             keyboardShouldPersistTaps="handled"
                             style={[
                                 styles.scrollView,
@@ -260,6 +265,7 @@ export default function TravelDetails() {
                                                         images={travel.gallery}
                                                         showArrows={!isMobile}
                                                         showDots={isMobile}
+                                                        imageProps={{ loading: 'lazy' }}
                                                     />
                                                 </View>
                                             </Suspense>
@@ -277,6 +283,7 @@ export default function TravelDetails() {
                                                             width="100%"
                                                             height="100%"
                                                             style={{ border: 'none' }}
+                                                            loading="lazy"
                                                             allowFullScreen
                                                         />
                                                     </div>
@@ -329,8 +336,13 @@ export default function TravelDetails() {
                                         )}
                                     </View>
 
+                                    <View ref={refFlight} style={styles.mapObserver} />
                                     <View style={styles.sectionContainer}>
-                                        <FlightWidget country={travel.countryName} />
+                                        {inFlight && (
+                                            <Suspense fallback={<Fallback />}>
+                                                <FlightWidget country={travel.countryName} />
+                                            </Suspense>
+                                        )}
                                     </View>
 
                                     <View ref={refNear} style={styles.mapObserver} />
@@ -351,16 +363,22 @@ export default function TravelDetails() {
                                         )}
                                     </View>
 
+                                    <View ref={refTripster} style={styles.mapObserver} />
                                     <View style={styles.sectionContainer}>
-                                        <Suspense fallback={<Fallback />}>
-                                            <TripsterWidget points={travel.travelAddress} />
-                                        </Suspense>
+                                        {inTripster && (
+                                            <Suspense fallback={<Fallback />}>
+                                                <TripsterWidget points={travel.travelAddress} />
+                                            </Suspense>
+                                        )}
                                     </View>
 
+                                    <View ref={refHotel} style={styles.mapObserver} />
                                     <View style={styles.sectionContainer}>
-                                        <Suspense fallback={<Fallback />}>
-                                            <HotelWidget points={travel.travelAddress} />
-                                        </Suspense>
+                                        {inHotel && (
+                                            <Suspense fallback={<Fallback />}>
+                                                <HotelWidget points={travel.travelAddress} />
+                                            </Suspense>
+                                        )}
                                     </View>
                                 </View>
                             </View>

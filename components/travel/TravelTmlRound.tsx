@@ -4,7 +4,7 @@ import {
   Pressable,
   StyleSheet,
   useWindowDimensions,
-  Image,
+  Image, Platform,
 } from 'react-native'
 import { Card, Paragraph, Text } from 'react-native-paper'
 import { Travel } from '@/src/types/types'
@@ -46,8 +46,9 @@ const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
                         ? { uri: travel_image_thumb_small_url }
                         : require('@/assets/placeholder.png')
                   }
-                  style={styles.image}
+                  style={[styles.image, { width: imageSize, height: imageSize }]}
                   resizeMode="cover"
+                  {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})}
               />
             </View>
             <Text

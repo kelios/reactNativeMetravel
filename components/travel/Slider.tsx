@@ -72,6 +72,7 @@ const Slide = memo(
                     style={styles.bg}
                     source={{ uri }}
                     contentFit="cover"
+                    cachePolicy="disk"
                     blurRadius={20}
                     priority="low"
                 />
@@ -79,6 +80,7 @@ const Slide = memo(
                     style={styles.img}
                     source={{ uri }}
                     contentFit="contain"
+                    cachePolicy="disk"
                     priority="high"
                     transition={150}
                 />
@@ -135,12 +137,6 @@ const Slider: React.FC<SliderProps> = ({
             : containerWidth / aspectRatio;
         setContainerHeight(safeHeight);
     }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
-
-    useEffect(() => {
-        uriMap.forEach(uri => {
-            Image.prefetch(uri).catch(() => {});
-        });
-    }, [uriMap]);
 
     const handleIndexChanged = useCallback((idx: number) => {
         setCurrentIndex(idx);

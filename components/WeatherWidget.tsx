@@ -67,7 +67,7 @@ export default function WeatherWidget({ points, countryName }: Props) {
             <Text style={styles.title}>Погода в {locationLabel}</Text>
             {forecast.map((day) => (
                 <View key={day.date} style={styles.box}>
-                    <Image source={{ uri: day.icon }} style={styles.icon} />
+                    <Image source={{ uri: day.icon }} style={styles.icon} {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})} />
                     <View style={{ flex: 1 }}>
                         <Text style={styles.date}>{formatDate(day.date)}</Text>
                         <Text style={styles.temp}>
@@ -96,7 +96,11 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 32,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 2,
     },
     title: {
         fontSize: 20,
