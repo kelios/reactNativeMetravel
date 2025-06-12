@@ -123,15 +123,35 @@ function RootLayoutNav() {
                     )}
                     <FiltersProvider>
                         <View style={styles.wrapper}>
-                            {/* ✅ Head добавлен сюда — теперь title + meta на всех страницах */}
                             <Head>
                                 <title>{dynamicTitle}</title>
                                 <meta name="description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
                                 <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+                                {/* OG meta */}
+                                <meta property="og:type" content="website" />
+                                <meta property="og:title" content={dynamicTitle} />
+                                <meta property="og:description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
+                                <meta property="og:url" content={`https://metravel.by${pathname}`} />
+                                <meta property="og:image" content="https://metravel.by/og-preview.jpg" />
+
+                                {/* Twitter Card */}
+                                <meta name="twitter:card" content="summary_large_image" />
+                                <meta name="twitter:title" content={dynamicTitle} />
+                                <meta name="twitter:description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
+                                <meta name="twitter:image" content="https://metravel.by/og-preview.jpg" />
+
+                                {/* Fonts */}
                                 <link
                                     href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
                                     rel="stylesheet"
                                 />
+
+                                {/* Favicon */}
+                                <link rel="icon" href="/favicon.ico" />
+                                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+                                <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+                                <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
                             </Head>
 
                             <View style={styles.content}>

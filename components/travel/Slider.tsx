@@ -35,6 +35,7 @@ interface SliderProps {
     autoPlay?: boolean;
     autoPlayInterval?: number;
     onIndexChanged?: (index: number) => void;
+    imageProps?: any; // <--- добавлено для поддержки imageProps
 }
 
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -43,7 +44,7 @@ const MOBILE_BREAKPOINT = 768;
 const SWIPE_THRESHOLD = 50;
 
 const NavButton = memo(
-    ({ direction, onPress, offset }: { direction: 'left' | 'right'; onPress: () => void; offset: number; }) => (
+    ({ direction, onPress, offset }: { direction: 'left' | 'right'; onPress: () => void; offset: number }) => (
         <TouchableOpacity
             onPress={onPress}
             style={[
@@ -64,26 +65,33 @@ const NavButton = memo(
 );
 
 const Slide = memo(
-    ({ uri, isVisible }: { uri: string; isVisible: boolean }) => {
-        if (!isVisible) return null;
+    ({ uri, isVisible, imageProps }: { uri: string; isVisible: boolean; imageProps?: any }) => {
         return (
-            <View style={styles.slide}>
-                <Image
-                    style={styles.bg}
-                    source={{ uri }}
-                    contentFit="cover"
-                    cachePolicy="disk"
-                    blurRadius={20}
-                    priority="low"
-                />
-                <Image
-                    style={styles.img}
-                    source={{ uri }}
-                    contentFit="contain"
-                    cachePolicy="disk"
-                    priority="high"
-                    transition={150}
-                />
+            <View style={styles.slide} collapsable={false}>
+                {isVisible && (
+                    <>
+                        <Image
+                            style={styles.bg}
+                            source={{ uri }}
+                            contentFit="cover"
+                            cachePolicy="disk"
+                            blurRadius={20}
+                            priority="low"
+                            recyclingKey={`bg-${uri}`}
+                            {...imageProps} // передаём imageProps
+                        />
+                        <Image
+                            style={styles.img}
+                            source={{ uri }}
+                            contentFit="contain"
+                            cachePolicy="disk"
+                            priority="high"
+                            transition={150}
+                            recyclingKey={`img-${uri}`}
+                            {...imageProps} // передаём imageProps
+                        />
+                    </>
+                )}
             </View>
         );
     }
@@ -98,6 +106,7 @@ const Slider: React.FC<SliderProps> = ({
                                            autoPlay = true,
                                            autoPlayInterval = 8000,
                                            onIndexChanged,
+                                           imageProps, // добавлено сюда
                                        }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     const insets = useSafeAreaInsets();
@@ -133,7 +142,7 @@ const Slider: React.FC<SliderProps> = ({
 
     useEffect(() => {
         const safeHeight = isMobile
-            ? (windowHeight - insets.top - insets.bottom) * 0.75
+            ? (windowHeight - insets.top - insets.bottom) * 0.75 // <--- на мобилке 75%
             : containerWidth / aspectRatio;
         setContainerHeight(safeHeight);
     }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
@@ -152,8 +161,8 @@ const Slider: React.FC<SliderProps> = ({
     }, [images.length, onIndexChanged]);
 
     const renderItem = useCallback(({ item, index }: { item: SliderImage; index: number }) => {
-        return <Slide key={item.id} uri={uriMap[index]} isVisible={loadedIndices.has(index)} />;
-    }, [uriMap, loadedIndices]);
+        return <Slide key={`slide-${item.id}`} uri={uriMap[index]} isVisible={loadedIndices.has(index)} imageProps={imageProps} />;
+    }, [uriMap, loadedIndices, imageProps]);
 
     const navPrev = useCallback(() => carouselRef.current?.prev(), []);
     const navNext = useCallback(() => carouselRef.current?.next(), []);
@@ -184,7 +193,12 @@ const Slider: React.FC<SliderProps> = ({
 
     return (
         <View
-            style={styles.wrapper}
+            style={[
+                styles.wrapper,
+                {
+                    height: containerHeight,
+                },
+            ]}
             onLayout={(e: LayoutChangeEvent) => setContainerWidth(e.nativeEvent.layout.width)}
             accessibilityRole="group"
             accessibilityLabel="Image slider"
@@ -224,7 +238,7 @@ const Slider: React.FC<SliderProps> = ({
                         <View style={styles.dots}>
                             {images.map((_, i) => (
                                 <TouchableOpacity
-                                    key={i}
+                                    key={`dot-${i}`}
                                     style={styles.dotWrapper}
                                     onPress={() => carouselRef.current?.scrollTo({ index: i, animated: true })}
                                     hitSlop={12}
