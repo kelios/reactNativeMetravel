@@ -10,54 +10,51 @@ import {
     Linking,
 } from 'react-native';
 import { Link, Href } from 'expo-router';
-import Icon from 'react-native-vector-icons/FontAwesome';          // FA 4 (home, globe…)
-import Icon5 from 'react-native-vector-icons/FontAwesome5';        // FA 5 (tiktok)
+import Icon from 'react-native-vector-icons/FontAwesome';     // FA 4 (home, globe…)
+import Icon5 from 'react-native-vector-icons/FontAwesome5';   // FA 5 (tiktok)
 
-type NavItem = { name: string; label: string; route: Href };
+type NavItem = { icon: string; label: string; route: Href };
 
 const Footer: React.FC = () => {
-    /* ---------- breakpoint ---------- */
     const { width } = useWindowDimensions();
     const isMobile = width <= 500;
-
-    /* ---------- navigation ---------- */
-    const nav: NavItem[] = [
-        { name: 'home',        label: 'Путешествия',  route: '/' },
-        { name: 'globe',       label: 'Беларусь',     route: '/travelsby' },
-        { name: 'map',         label: 'Карта',        route: '/map' },
-        { name: 'instagram',   label: 'Insta BY',    route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
-        { name: 'envelope',    label: 'Обратная связь', route: '/contact' },
-        { name: 'info-circle', label: 'О сайте',      route: '/about' },
-    ];
-
-    /* ---------- memoised styles ---------- */
     const s = useMemo(() => createStyles(width), [width]);
 
-    /* ---------- helpers ---------- */
     const open = (url: string) => Linking.openURL(url).catch(() => {});
 
-    /* ---------- MOBILE  ---------- */
+    const nav: NavItem[] = [
+        { icon: 'home',       label: 'Путешествия',    route: '/' },
+        { icon: 'globe',      label: 'Беларусь',       route: '/travelsby' },
+        { icon: 'map',        label: 'Карта',          route: '/map' },
+        { icon: 'list',       label: 'Пишут о BY',    route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
+        { icon: 'envelope',   label: 'Обратная связь', route: '/contact' },
+        { icon: 'info-circle',label: 'О сайте',        route: '/about' },
+    ];
+
+    const social = [
+        { icon: <Icon5 name="tiktok" size={20} color="#ff9f5a" />, url: 'https://www.tiktok.com/@metravel.by', label: 'TikTok' },
+        { icon: <Icon name="instagram" size={20} color="#ff9f5a" />, url: 'https://www.instagram.com/metravelby/', label: 'Instagram' },
+        { icon: <Icon name="youtube" size={20} color="#ff9f5a" />, url: 'https://www.youtube.com/@metravelby', label: 'YouTube' },
+    ];
+
+    /* ---------- MOBILE ---------- */
     if (isMobile) {
         return (
             <View style={s.root}>
                 <View style={s.row}>
-                    {nav.slice(0, 3).map(item => (
-                        <Link key={item.name} href={item.route} accessibilityLabel={item.label}>
-                            <Icon name={item.name} size={20} color="#ff9f5a" style={s.pad} />
+                    {nav.map(item => (
+                        <Link key={item.label} href={item.route} accessibilityLabel={item.label}>
+                            <Icon name={item.icon} size={20} color="#ff9f5a" style={s.pad} />
                         </Link>
                     ))}
+                </View>
 
-                    <Pressable onPress={() => open('https://www.tiktok.com/@metravel.by')} hitSlop={8} accessibilityLabel="TikTok">
-                        <Icon5 name="tiktok" size={20} color="#ff9f5a" style={s.pad} />
-                    </Pressable>
-
-                    <Pressable onPress={() => open('https://www.instagram.com/metravelby/')} hitSlop={8} accessibilityLabel="Instagram">
-                        <Icon name="instagram" size={20} color="#ff9f5a" style={s.pad} />
-                    </Pressable>
-
-                    <Pressable onPress={() => open('https://www.youtube.com/@metravelby')} hitSlop={8} accessibilityLabel="YouTube">
-                        <Icon name="youtube" size={20} color="#ff9f5a" style={s.pad} />
-                    </Pressable>
+                <View style={s.row}>
+                    {social.map(item => (
+                        <Pressable key={item.label} onPress={() => open(item.url)} hitSlop={8} accessibilityLabel={item.label}>
+                            {item.icon}
+                        </Pressable>
+                    ))}
                 </View>
             </View>
         );
@@ -68,8 +65,8 @@ const Footer: React.FC = () => {
         <View style={s.root}>
             <View style={s.links}>
                 {nav.map(item => (
-                    <Link key={item.name} href={item.route} style={s.link} accessibilityLabel={item.label}>
-                        <Icon name={item.name} size={20} color="#ff9f5a" />
+                    <Link key={item.label} href={item.route} style={s.link} accessibilityLabel={item.label}>
+                        <Icon name={item.icon} size={20} color="#ff9f5a" />
                         <Text style={s.linkTxt}>{item.label}</Text>
                     </Link>
                 ))}
@@ -77,15 +74,11 @@ const Footer: React.FC = () => {
 
             <View style={s.bottom}>
                 <View style={s.social}>
-                    <Pressable onPress={() => open('https://www.tiktok.com/@metravel.by')} hitSlop={8} accessibilityLabel="TikTok">
-                        <Icon5 name="tiktok" size={20} color="#ff9f5a" style={s.pad} />
-                    </Pressable>
-                    <Pressable onPress={() => open('https://www.instagram.com/metravelby/')} hitSlop={8} accessibilityLabel="Instagram">
-                        <Icon name="instagram" size={20} color="#ff9f5a" style={s.pad} />
-                    </Pressable>
-                    <Pressable onPress={() => open('https://www.youtube.com/@metravelby')} hitSlop={8} accessibilityLabel="YouTube">
-                        <Icon name="youtube" size={20} color="#ff9f5a" style={s.pad} />
-                    </Pressable>
+                    {social.map(item => (
+                        <Pressable key={item.label} onPress={() => open(item.url)} hitSlop={8} accessibilityLabel={item.label} style={s.pad}>
+                            {item.icon}
+                        </Pressable>
+                    ))}
                 </View>
 
                 <View style={s.brand}>
@@ -108,21 +101,57 @@ const createStyles = (w: number) =>
             borderTopWidth: 1,
             borderTopColor: '#444',
         },
-        /* mobile row */
-        row: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+        row: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            marginVertical: 4,
+            borderTopWidth: 1,
+            borderTopColor: '#444',
+            paddingTop: 6,
+        },
         pad: { padding: 6 },
 
-        /* links (desktop) */
-        links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10 },
-        link:  { flexDirection: 'row', alignItems: 'center', marginBottom: 10, maxWidth: '48%' },
-        linkTxt: { color: '#ff9f5a', fontSize: w > 500 ? 14 : 12, marginLeft: 8 },
+        links: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+        },
+        link: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 10,
+            maxWidth: '48%',
+        },
+        linkTxt: {
+            color: '#ff9f5a',
+            fontSize: w > 500 ? 14 : 12,
+            marginLeft: 8,
+        },
 
-        /* bottom line */
-        bottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-        social: { flexDirection: 'row', alignItems: 'center' },
-        brand:  { flexDirection: 'row', alignItems: 'center' },
-        logo:   { width: 30, height: 30, marginRight: 8 },
-        copy:   { color: '#bbb', fontSize: w > 500 ? 12 : 10 },
+        bottom: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        social: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        brand: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        logo: {
+            width: 30,
+            height: 30,
+            marginRight: 8,
+        },
+        copy: {
+            color: '#bbb',
+            fontSize: w > 500 ? 12 : 10,
+        },
     });
 
 export default Footer;

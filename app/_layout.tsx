@@ -103,15 +103,39 @@ function RootLayoutNav() {
         return !noFooterPages.includes(pathname);
     }, [pathname]);
 
-    // Можем динамически ставить title по pathname (необязательно, но полезно)
     const dynamicTitle = useMemo(() => {
+        if (!pathname || pathname === '/') {
+            return 'Маршруты, идеи и вдохновение для путешествий | Metravel';
+        }
         if (pathname.startsWith('/travels/')) {
-            return 'Путешествие | Metravel';
+            return 'Путешествия | Metravel';
+        }
+
+        if (pathname.startsWith('/travelsby/')) {
+            return 'Путешествия по Беларуси | Metravel';
         }
         if (pathname === '/metravel') {
             return 'Мои путешествия | Metravel';
         }
+        if (pathname === '/about') {
+            return 'О проекте Metravel | Кто мы и зачем это всё';
+        }
+        if (pathname === '/contact') {
+            return 'Связаться с нами | Metravel';
+        }
+
+        if (pathname === '/about') {
+            return 'Мои путешествия | Metravel';
+        }
+
         return 'Путешествия | Metravel';
+    }, [pathname]);
+
+    const dynamicDescription = useMemo(() => {
+        if (!pathname || pathname === '/') {
+            return 'Авторские маршруты, советы и впечатления от путешественников по всему миру. Присоединяйся к сообществу Metravel и вдохновляйся на новые открытия!';
+        }
+        return 'Путешествия, маршруты и статьи от сообщества Metravel.';
     }, [pathname]);
 
     return (
@@ -125,13 +149,13 @@ function RootLayoutNav() {
                         <View style={styles.wrapper}>
                             <Head>
                                 <title>{dynamicTitle}</title>
-                                <meta name="description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
+                                <meta name="description" content={dynamicDescription} />
                                 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
                                 {/* OG meta */}
                                 <meta property="og:type" content="website" />
                                 <meta property="og:title" content={dynamicTitle} />
-                                <meta property="og:description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
+                                <meta property="og:description" content={dynamicDescription} />
                                 <meta property="og:url" content={`https://metravel.by${pathname}`} />
                                 <meta property="og:image" content="https://metravel.by/og-preview.jpg" />
 

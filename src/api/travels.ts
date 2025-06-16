@@ -54,6 +54,7 @@ const GET_FILTERS = `${URLAPI}/api/getFiltersTravel`;
 const GET_FILTERS_COUNTRY = `${URLAPI}/api/countriesforsearch`;
 const SEND_FEEDBACK = `${URLAPI}/api/feedback/`;
 const GET_ARTICLES = `${URLAPI}/api/articles`;
+const GET_ALL_COUNTRY = `${URLAPI}/api/countries/`;
 
 // Заглушка travelDef для "пустого" результата
 const travelDef: Travel = {
@@ -362,6 +363,19 @@ export const fetchFiltersCountry = async () => {
         let resData = [];
             const res = await fetch(`${GET_FILTERS_COUNTRY}`);
             resData = await res.json();
+
+        return resData;
+    } catch (e) {
+        console.log('Error fetching filters:', e);
+        return [];
+    }
+};
+
+export const fetchAllCountries = async () => {
+    try {
+        let resData = [];
+        const res = await fetch(`${GET_ALL_COUNTRY}`);
+        resData = await res.json();
 
         return resData;
     } catch (e) {

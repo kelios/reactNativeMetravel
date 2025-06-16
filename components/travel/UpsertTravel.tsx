@@ -11,6 +11,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
+    fetchAllCountries,
     fetchFilters,
     fetchFiltersCountry,
     fetchTravel,
@@ -69,7 +70,7 @@ export default function UpsertTravel() {
 
                 const [filtersData, countryData] = await Promise.all([
                     fetchFilters(),
-                    fetchFiltersCountry()
+                    fetchAllCountries()
                 ]);
 
                 if (isMounted) {
