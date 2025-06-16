@@ -86,13 +86,20 @@ const Slide = memo(({ uri, isVisible, imageProps, isPriorityImage, dimensions }:
         {isVisible && (
             <>
                 <ExpoImage
-                    style={styles.bg}
                     source={{ uri }}
                     contentFit="cover"
                     cachePolicy="disk"
-                    blurRadius={20}
                     priority={isPriorityImage ? "high" : "low"}
                     recyclingKey={`bg-${uri}`}
+                    {...Platform.select({
+                        web: {
+                            style: [styles.bg, { filter: 'blur(6px)', willChange: 'filter' }],
+                        },
+                        default: {
+                            style: styles.bg,
+                            blurRadius: 20,
+                        },
+                    })}
                     {...imageProps}
                 />
                 <ExpoImage

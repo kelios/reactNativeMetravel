@@ -110,21 +110,6 @@ function RootLayoutNav() {
                                 {/* Only global/technical tags */}
                                 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-                                {/* Fonts */}
-                                <link rel="preconnect" href="https://fonts.googleapis.com" />
-                                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-                                <link
-                                    rel="preload"
-                                    as="style"
-                                    href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
-                                />
-                                <link
-                                    href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
-                                    rel="stylesheet"
-                                    media="print"
-                                    onLoad="this.media='all'"
-                                />
-
                                 {/* Favicon */}
                                 <link rel="icon" href="/favicon.ico" />
                                 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />

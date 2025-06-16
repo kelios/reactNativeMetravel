@@ -34,7 +34,7 @@ import type { Travel } from '@/src/types/types';
 import FlightWidget from '@/components/aviosales/FlightWidget';
 import HotelWidget from '@/components/HotelWidget/HotelWidget';
 import TripsterWidget from '@/components/Tripster/TripsterWidget';
-
+import Slider from '@/components/travel/Slider';
 // ------------------
 // helpers & lazyImport
 // ------------------
@@ -43,7 +43,7 @@ function lazyImport<T>(factory: () => Promise<{ default: T }>) {
 }
 
 // lazy components – загружаем ТОЛЬКО при необходимости
-const Slider = lazyImport(() => import('@/components/travel/Slider'));
+//const Slider = lazyImport(() => import('@/components/travel/Slider'));
 const TravelDescription = lazyImport(() => import('@/components/travel/TravelDescription'));
 const PointList = lazyImport(() => import('@/components/travel/PointList'));
 const NearTravelList = lazyImport(() => import('@/components/travel/NearTravelList'));
@@ -321,12 +321,13 @@ export default function TravelDetails() {
                                             <Suspense fallback={<Fallback />}>
                                                 <View style={styles.sectionContainer}>
                                                     <View style={styles.sliderContainer}>
-                                                        <Slider
-                                                            images={travel.gallery}
-                                                            showArrows={!isMobile}
-                                                            showDots={isMobile}
-                                                            imageProps={{ loading: 'lazy' }}
-                                                        />
+                                                        <View style={{ width: '100%', aspectRatio: 16 / 9 }}>
+                                                            <Slider
+                                                                images={travel.gallery}
+                                                                showArrows={!isMobile}
+                                                                showDots={isMobile}
+                                                            />
+                                                        </View>
                                                     </View>
                                                 </View>
                                             </Suspense>
