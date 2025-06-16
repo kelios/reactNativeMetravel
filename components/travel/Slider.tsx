@@ -21,130 +21,108 @@ import Carousel from "react-native-reanimated-carousel";
 import { AntDesign } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-/* ------------------------------------------------------------------
- * Types
- * ----------------------------------------------------------------*/
-export interface SliderImage {
+interface SliderImage {
     url: string;
     id: number | string;
     updated_at?: string;
+    width?: number;
+    height?: number;
 }
 
-export interface SliderProps {
+interface SliderProps {
     images: SliderImage[];
-    /** show navigation arrows (desktop‑first UX) */
     showArrows?: boolean;
-    /** show slide indicator dots */
     showDots?: boolean;
-    /** hide arrows when width < MOBILE_BREAKPOINT */
     hideArrowsOnMobile?: boolean;
-    /** 16 / 9 by default */
     aspectRatio?: number;
-    /** enable autoplay */
     autoPlay?: boolean;
-    /** autoplay interval in ms */
     autoPlayInterval?: number;
-    /** callback on index change */
     onIndexChanged?: (index: number) => void;
-    /** additional props passed directly to <ExpoImage> */
     imageProps?: Partial<React.ComponentProps<typeof ExpoImage>>;
-    /** how many adjacent slides to preload (default: 2) */
     preloadCount?: number;
 }
 
-/* ------------------------------------------------------------------
- * Constants
- * ----------------------------------------------------------------*/
 const DEFAULT_ASPECT_RATIO = 16 / 9;
 const NAV_BTN_OFFSET = 10;
 const MOBILE_BREAKPOINT = 768;
 const SWIPE_THRESHOLD = 50;
 
-/* ------------------------------------------------------------------
- * Helpers
- * ----------------------------------------------------------------*/
 const buildUri = (img: SliderImage) => {
     const ts = img.updated_at ? Date.parse(img.updated_at) : img.id;
     return `${img.url}${ts ? `?v=${ts}` : ""}`;
 };
 
-/* ------------------------------------------------------------------
- * Lightweight memoised components
- * ----------------------------------------------------------------*/
-const NavButton = memo(
-    ({
-         direction,
-         onPress,
-         offset,
-     }: {
-        direction: "left" | "right";
-        onPress: () => void;
-        offset: number;
-    }) => (
-        <TouchableOpacity
-            onPress={onPress}
-            style={[
-                styles.navBtn,
-                direction === "left" ? { left: offset } : { right: offset },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-                direction === "left" ? "Previous slide" : "Next slide"
-            }
-            hitSlop={10}
-        >
-            <AntDesign
-                name={direction === "left" ? "left" : "right"}
-                size={20}
-                color="#fff"
-            />
-        </TouchableOpacity>
-    )
-);
+const NavButton = memo(({ direction, onPress, offset }: {
+    direction: "left" | "right";
+    onPress: () => void;
+    offset: number;
+}) => (
+    <TouchableOpacity
+        onPress={onPress}
+        style={[
+            styles.navBtn,
+            direction === "left" ? { left: offset } : { right: offset },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={direction === "left" ? "Previous slide" : "Next slide"}
+        hitSlop={10}
+    >
+        <AntDesign
+            name={direction === "left" ? "left" : "right"}
+            size={20}
+            color="#fff"
+        />
+    </TouchableOpacity>
+));
 
-const Slide = memo(
-    ({
-         uri,
-         isVisible,
-         imageProps,
-     }: {
-        uri: string;
-        isVisible: boolean;
-        imageProps?: Partial<React.ComponentProps<typeof ExpoImage>>;
-    }) => (
-        <View style={styles.slide} collapsable={false}>
-            {isVisible && (
-                <>
-                    <ExpoImage
-                        style={styles.bg}
-                        source={{ uri }}
-                        contentFit="cover"
-                        cachePolicy="disk"
-                        blurRadius={20}
-                        priority="low"
-                        recyclingKey={`bg-${uri}`}
-                        {...imageProps}
-                    />
-                    <ExpoImage
-                        style={styles.img}
-                        source={{ uri }}
-                        contentFit="contain"
-                        cachePolicy="disk"
-                        priority="high"
-                        transition={150}
-                        recyclingKey={`img-${uri}`}
-                        {...imageProps}
-                    />
-                </>
-            )}
-        </View>
-    ),
-    (p, n) => p.uri === n.uri && p.isVisible === n.isVisible
-);
+const Slide = memo(({ uri, isVisible, imageProps, isPriorityImage, dimensions }: {
+    uri: string;
+    isVisible: boolean;
+    imageProps?: Partial<React.ComponentProps<typeof ExpoImage>>;
+    isPriorityImage?: boolean;
+    dimensions?: { width?: number; height?: number };
+}) => (
+    <View style={styles.slide} collapsable={false}>
+        {isVisible && (
+            <>
+                <ExpoImage
+                    style={styles.bg}
+                    source={{ uri }}
+                    contentFit="cover"
+                    cachePolicy="disk"
+                    blurRadius={20}
+                    priority={isPriorityImage ? "high" : "low"}
+                    recyclingKey={`bg-${uri}`}
+                    {...imageProps}
+                />
+                <ExpoImage
+                    style={styles.img}
+                    source={{ uri }}
+                    contentFit="contain"
+                    cachePolicy="disk"
+                    priority={isPriorityImage ? "high" : "high"}
+                    transition={150}
+                    recyclingKey={`img-${uri}`}
+                    contentPosition="center"
+                    accessibilityIgnoresInvertColors
+                    fetchPriority={isPriorityImage ? "high" : undefined}
+                    {...(dimensions?.width && dimensions?.height
+                        ? {
+                            style: [
+                                styles.img,
+                                {
+                                    aspectRatio: dimensions.width / dimensions.height,
+                                },
+                            ],
+                        }
+                        : {})}
+                    {...imageProps}
+                />
+            </>
+        )}
+    </View>
+), (p, n) => p.uri === n.uri && p.isVisible === n.isVisible && p.isPriorityImage === n.isPriorityImage);
 
-/* ------------------------------------------------------------------
- * Main component (forwardRef so parent can control the carousel)
- * ----------------------------------------------------------------*/
 const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
     (
         {
@@ -161,7 +139,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
         },
         externalRef
     ) => {
-        /* ------------------------------ basics ------------------------------*/
         const { width: windowWidth, height: windowHeight } = useWindowDimensions();
         const insets = useSafeAreaInsets();
 
@@ -169,18 +146,15 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
         const [containerHeight, setContainerHeight] = useState<number>(0);
         const [currentIndex, setCurrentIndex] = useState(0);
         const [loadedIndices, setLoadedIndices] = useState<Set<number>>(
-            () => new Set([...Array(preloadCount + 1).keys()])
+            () => new Set([...Array(Math.min(preloadCount + 1, images.length)).keys()])
         );
         const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false);
 
-        /* ----------------------------- refs --------------------------------*/
         const carouselRef = useRef<Carousel<SliderImage>>(null);
-        // allow parent ref access
-        React.useImperativeHandle(externalRef, () => carouselRef.current as any, []);
-
         const isScrolling = useRef(false);
 
-        /* --------------------------- memo data -----------------------------*/
+        React.useImperativeHandle(externalRef, () => carouselRef.current as any, []);
+
         const carouselKey = useMemo(
             () => images.map((i) => `${i.id}_${i.updated_at ?? ""}`).join("-"),
             [images]
@@ -190,14 +164,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
 
         const uriMap = useMemo(() => images.map(buildUri), [images]);
 
-        /* ----------------------- preload / prefetch ------------------------*/
-        useEffect(() => {
-            uriMap.slice(0, preloadCount + 1).forEach((uri) => {
-                ExpoImage.prefetch?.(uri).catch(() => undefined);
-            });
-        }, [uriMap, preloadCount]);
-
-        /* --------------------- re-calc dimensions -------------------------*/
         useEffect(() => {
             const safeHeight = isMobile
                 ? (windowHeight - insets.top - insets.bottom) * 0.75
@@ -205,20 +171,17 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
             setContainerHeight(safeHeight);
         }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
 
-        /* ---------------------- reset on images change --------------------*/
         useEffect(() => {
             setCurrentIndex(0);
             carouselRef.current?.scrollTo?.({ index: 0, animated: false });
-            setLoadedIndices(new Set([...Array(preloadCount + 1).keys()]));
-        }, [carouselKey, preloadCount]);
+            setLoadedIndices(new Set([...Array(Math.min(preloadCount + 1, images.length)).keys()]));
+        }, [carouselKey, preloadCount, images.length]);
 
-        /* ----------------------- handlers --------------------------------*/
         const handleIndexChanged = useCallback(
             (idx: number) => {
                 setCurrentIndex(idx);
                 onIndexChanged?.(idx);
 
-                // mark current, prev & next as loaded
                 setLoadedIndices((prev) => {
                     const nxt = new Set(prev);
                     for (let i = -preloadCount; i <= preloadCount; i++) {
@@ -238,6 +201,8 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
                     uri={uriMap[index]}
                     isVisible={loadedIndices.has(index)}
                     imageProps={imageProps}
+                    isPriorityImage={index === 0}
+                    dimensions={{ width: item.width, height: item.height }}
                 />
             ),
             [uriMap, loadedIndices, imageProps]
@@ -246,7 +211,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
         const navPrev = useCallback(() => carouselRef.current?.prev?.(), []);
         const navNext = useCallback(() => carouselRef.current?.next?.(), []);
 
-        /* --------------------- pan responder (web mobile) ------------------*/
         const panResponder = useMemo(
             () =>
                 PanResponder.create({
@@ -275,7 +239,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
             [navPrev, navNext]
         );
 
-        /* ----------------------------- render ------------------------------*/
         return (
             <View
                 style={[styles.wrapper, { height: containerHeight }]}
@@ -352,9 +315,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
 
 export default memo(Slider);
 
-/* ------------------------------------------------------------------
- * Styles – keep outside component to avoid re‑creation
- * ----------------------------------------------------------------*/
 const styles = StyleSheet.create({
     wrapper: {
         width: "100%",

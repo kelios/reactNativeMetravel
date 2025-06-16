@@ -252,7 +252,7 @@ export default function TravelDetails() {
 
     return (
         <>
-            <Head>
+            <Head key={slug}>
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
                 {slug && <link rel="canonical" href={`https://metravel.by/travels/${slug}`} />}

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, {useRef, useState} from 'react';
 import {
     Dimensions,
     ImageBackground,
@@ -11,30 +11,31 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Card } from 'react-native-paper';
-import { Button } from 'react-native-elements';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '@/context/AuthContext';
+import {Card} from 'react-native-paper';
+import {Button} from 'react-native-elements';
+import {useNavigation} from '@react-navigation/native';
+import {useAuth} from '@/context/AuthContext';
+import Head from 'expo-router/head';
 
-const { height } = Dimensions.get('window');
+const {height} = Dimensions.get('window');
 
 export default function Login() {
     /* ---------- state ---------- */
-    const [email, setEmail]         = useState('');
-    const [password, setPassword]   = useState('');
-    const [msg, setMsg]             = useState<{ text: string; error: boolean }>({ text: '', error: false });
-    const [loading, setLoading]     = useState(false);           // 🔧 блокируем кнопку
-    const passwordRef               = useRef<TextInput>(null);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [msg, setMsg] = useState<{ text: string; error: boolean }>({text: '', error: false});
+    const [loading, setLoading] = useState(false);           // 🔧 блокируем кнопку
+    const passwordRef = useRef<TextInput>(null);
 
     /* ---------- helpers ---------- */
     const navigation = useNavigation();
-    const { login, sendPassword } = useAuth();
+    const {login, sendPassword} = useAuth();
 
     const isEmailValid = (val: string) =>
         /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim());
 
     const showMsg = (text: string, error = false) =>
-        setMsg({ text, error });
+        setMsg({text, error});
 
     /* ---------- actions ---------- */
     const handleResetPassword = async () => {
@@ -61,7 +62,7 @@ export default function Login() {
             showMsg('');
             const ok = await login(email.trim(), password);
             if (ok) {
-                navigation.reset({ index: 0, routes: [{ name: 'index' }] });
+                navigation.reset({index: 0, routes: [{name: 'index'}]});
             } else {
                 showMsg('Неверный email или пароль.', true);
             }
@@ -74,83 +75,100 @@ export default function Login() {
 
     /* ---------- render ---------- */
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <ScrollView
-                contentContainerStyle={styles.scrollViewContent}
-                keyboardShouldPersistTaps="handled"
+        <>
+            <Head>
+                <title key="title">Вход | Metravel</title>
+                <meta key="description" name="description"
+                      content="Войдите в свой аккаунт на Metravel, чтобы управлять путешествиями, создавать маршруты и сохранять избранное."/>
+                <meta key="og:title" property="og:title" content="Вход | Metravel"/>
+                <meta key="og:description" property="og:description"
+                      content="Войдите в свой аккаунт на Metravel и откройте доступ к функциям платформы."/>
+                <meta key="og:url" property="og:url" content="https://metravel.by/login"/>
+                <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg"/>
+                <meta key="twitter:card" name="twitter:card" content="summary_large_image"/>
+                <meta key="twitter:title" name="twitter:title" content="Вход | Metravel"/>
+                <meta key="twitter:description" name="twitter:description"
+                      content="Войдите в аккаунт на Metravel и управляйте своими маршрутами."/>
+                <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg"/>
+            </Head>
+            <KeyboardAvoidingView
+                style={styles.container}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <ImageBackground
-                    source={require('@/assets/images/media/slider/about.jpg')}
-                    style={styles.bg}
-                    blurRadius={3}
+                <ScrollView
+                    contentContainerStyle={styles.scrollViewContent}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <View style={styles.inner}>
-                        <Card style={styles.card}>
-                            <Card.Content>
-                                {msg.text !== '' && (
-                                    <Text
-                                        style={[
-                                            styles.message,
-                                            msg.error ? styles.err : styles.ok,
-                                        ]}
-                                    >
-                                        {msg.text}
-                                    </Text>
-                                )}
+                    <ImageBackground
+                        source={require('@/assets/images/media/slider/about.jpg')}
+                        style={styles.bg}
+                        blurRadius={3}
+                    >
+                        <View style={styles.inner}>
+                            <Card style={styles.card}>
+                                <Card.Content>
+                                    {msg.text !== '' && (
+                                        <Text
+                                            style={[
+                                                styles.message,
+                                                msg.error ? styles.err : styles.ok,
+                                            ]}
+                                        >
+                                            {msg.text}
+                                        </Text>
+                                    )}
 
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Email"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    placeholderTextColor="#888"
-                                    returnKeyType="next"
-                                    blurOnSubmit={false}
-                                    onSubmitEditing={() => passwordRef.current?.focus()}
-                                />
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Email"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        placeholderTextColor="#888"
+                                        returnKeyType="next"
+                                        blurOnSubmit={false}
+                                        onSubmitEditing={() => passwordRef.current?.focus()}
+                                    />
 
-                                <TextInput
-                                    ref={passwordRef}
-                                    style={styles.input}
-                                    placeholder="Пароль"
-                                    value={password}
-                                    onChangeText={setPassword}
-                                    secureTextEntry                       // 🔧 безопасный ввод
-                                    placeholderTextColor="#888"
-                                    returnKeyType="done"
-                                    onSubmitEditing={handleLogin}
-                                />
+                                    <TextInput
+                                        ref={passwordRef}
+                                        style={styles.input}
+                                        placeholder="Пароль"
+                                        value={password}
+                                        onChangeText={setPassword}
+                                        secureTextEntry                       // 🔧 безопасный ввод
+                                        placeholderTextColor="#888"
+                                        returnKeyType="done"
+                                        onSubmitEditing={handleLogin}
+                                    />
 
-                                <Button
-                                    title={loading ? 'Подождите…' : 'Войти'}
-                                    buttonStyle={styles.btn}
-                                    onPress={handleLogin}
-                                    disabled={loading}                    // 🔧 блокируем спам
-                                />
+                                    <Button
+                                        title={loading ? 'Подождите…' : 'Войти'}
+                                        buttonStyle={styles.btn}
+                                        onPress={handleLogin}
+                                        disabled={loading}                    // 🔧 блокируем спам
+                                    />
 
-                                <TouchableOpacity onPress={handleResetPassword} disabled={loading}>
-                                    <Text style={styles.forgot}>Забыли пароль?</Text>
-                                </TouchableOpacity>
-                            </Card.Content>
-                        </Card>
-                    </View>
-                </ImageBackground>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                                    <TouchableOpacity onPress={handleResetPassword} disabled={loading}>
+                                        <Text style={styles.forgot}>Забыли пароль?</Text>
+                                    </TouchableOpacity>
+                                </Card.Content>
+                            </Card>
+                        </View>
+                    </ImageBackground>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </>
     );
 }
 
 /* ---------- styles ---------- */
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    scrollViewContent: { flexGrow: 1 },
-    bg: { flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height },
-    inner: { width: '80%', maxWidth: 400 },
+    container: {flex: 1},
+    scrollViewContent: {flexGrow: 1},
+    bg: {flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', height},
+    inner: {width: '80%', maxWidth: 400},
     card: {
         backgroundColor: 'rgba(255,255,255,0.95)',
         borderRadius: 12,
@@ -166,7 +184,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         backgroundColor: '#fff',
     },
-    btn: { backgroundColor: '#6aaaaa', paddingVertical: 12, borderRadius: 8 },
+    btn: {backgroundColor: '#6aaaaa', paddingVertical: 12, borderRadius: 8},
     forgot: {
         color: '#0066ff',
         textDecorationLine: 'underline',
@@ -174,7 +192,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 16,
     },
-    message: { marginBottom: 15, textAlign: 'center', fontSize: 16 },
-    err: { color: 'red' },
-    ok: { color: '#2e7d32' },
+    message: {marginBottom: 15, textAlign: 'center', fontSize: 16},
+    err: {color: 'red'},
+    ok: {color: '#2e7d32'},
 });

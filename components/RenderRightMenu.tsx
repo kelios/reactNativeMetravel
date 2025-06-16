@@ -6,17 +6,14 @@ import {
     TouchableOpacity,
     Image,
     useWindowDimensions,
-    Platform,
-    useColorScheme,
 } from 'react-native';
 import { Menu, Divider } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
 import { useFilters } from '@/providers/FiltersProvider';
 import { useAuth } from '@/context/AuthContext';
+import { router } from 'expo-router';
 
 function RenderRightMenu() {
-    const navigation = useNavigation();
     const { isAuthenticated, username, logout, user } = useAuth();
     const { updateFilters } = useFilters();
 
@@ -24,15 +21,14 @@ function RenderRightMenu() {
 
     const { width } = useWindowDimensions();
     const isMobile = width <= 768;
-    const colorScheme = useColorScheme();
 
     const openMenu = () => setVisible(true);
     const closeMenu = () => setVisible(false);
 
-    const handleNavigate = (screen: string, extraAction?: () => void) => {
+    const handleNavigate = (path: string, extraAction?: () => void) => {
         requestAnimationFrame(() => {
             if (extraAction) extraAction();
-            navigation.navigate(screen);
+            router.push(path);
             closeMenu();
         });
     };
@@ -40,7 +36,7 @@ function RenderRightMenu() {
     const handleLogout = async () => {
         await logout();
         closeMenu();
-        navigation.navigate('index');
+        router.push('/');
     };
 
     return (
@@ -48,7 +44,7 @@ function RenderRightMenu() {
             <TouchableOpacity
                 onPress={() => {
                     if (visible) closeMenu();
-                    navigation.navigate('index');
+                    router.push('/');
                 }}
                 style={styles.logoContainer}
             >
@@ -85,14 +81,14 @@ function RenderRightMenu() {
                 >
                     {!isAuthenticated ? (
                         <>
-                            <Menu.Item onPress={() => handleNavigate('login')} title="Войти" leadingIcon="login" />
-                            <Menu.Item onPress={() => handleNavigate('registration')} title="Зарегистрироваться" leadingIcon="account-plus" />
+                            <Menu.Item onPress={() => handleNavigate('/login')} title="Войти" leadingIcon="login" />
+                            <Menu.Item onPress={() => handleNavigate('/registration')} title="Зарегистрироваться" leadingIcon="account-plus" />
                         </>
                     ) : (
                         <>
                             <Menu.Item
                                 onPress={() =>
-                                    handleNavigate('metravel', () =>
+                                    handleNavigate('/metravel', () =>
                                         updateFilters({ user_id: user?.id })
                                     )
                                 }
@@ -101,7 +97,7 @@ function RenderRightMenu() {
                             />
                             <Divider />
                             <Menu.Item
-                                onPress={() => handleNavigate('travel/new')}
+                                onPress={() => handleNavigate('/travel/new')}
                                 title="Добавить путешествие"
                                 leadingIcon={({ size }) => <Icon name="map-plus" size={size} color="#6aaaaa" />}
                             />
@@ -138,17 +134,15 @@ const styles = StyleSheet.create({
         width: 26,
         height: 26,
     },
-    logoText: {
-        fontSize: 20,
-        fontWeight: '600',
-        marginLeft: 8,
-        flexDirection: 'row',
-    },
     logoTextMe: {
         color: '#f28c28',
     },
     logoTextTravel: {
         color: '#6aaaaa',
+    },
+    logoTextRow: {
+        flexDirection: 'row',
+        marginLeft: 8,
     },
     rightContainer: {
         flexDirection: 'row',
@@ -169,10 +163,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#333',
         marginLeft: 6,
-    },
-    logoTextRow: {
-        flexDirection: 'row',
-        marginLeft: 8,
     },
     menuButton: {
         backgroundColor: '#f0f0f0',

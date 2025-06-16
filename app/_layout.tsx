@@ -1,62 +1,63 @@
-import React, { lazy, Suspense, useEffect, useState, useMemo } from 'react';
-import '@expo/metro-runtime';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import "@expo/metro-runtime";
 import {
     ActivityIndicator,
     Platform,
     StyleSheet,
     View,
-} from 'react-native';
-import * as Font from 'expo-font';
-import { SplashScreen, Stack, usePathname } from 'expo-router';
+} from "react-native";
+import { useFonts } from "expo-font";
+import { SplashScreen, Stack } from "expo-router";
 import {
     MD3LightTheme as DefaultTheme,
     PaperProvider,
-} from 'react-native-paper';
-import { FiltersProvider } from '@/providers/FiltersProvider';
-import { AuthProvider } from '@/context/AuthContext';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+} from "react-native-paper";
+import { FiltersProvider } from "@/providers/FiltersProvider";
+import { AuthProvider } from "@/context/AuthContext";
 import {
     QueryClient,
     QueryClientProvider,
-} from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import Head from 'expo-router/head'; // ✅ правильный импорт Head для expo-router 3.x+
+} from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import Head from "expo-router/head";
 
-/* ---------------- lazy footer ---------------- */
-const Footer = lazy(() => import('@/components/Footer'));
+// ---------------- dynamic imports ----------------
+const Footer = lazy(() => import("@/components/Footer"));
 
-/* reanimated / gestures only native */
-if (Platform.OS !== 'web') {
-    require('react-native-reanimated');
-    require('react-native-gesture-handler');
-}
+// Only load FontAwesome.ttf on native
+const fontMap =
+    Platform.OS === "web"
+        ? {}
+        : {
+            FontAwesome: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf"),
+        } as const;
 
-/* ---------------- theme ---------------- */
+// ---------------- theme ----------------
 const theme = {
     ...DefaultTheme,
     colors: {
         ...DefaultTheme.colors,
-        primary: 'orange',
-        secondary: 'yellow',
-        background: '#f8f8f8',
-        surface: '#ffffff',
-        error: '#d32f2f',
-        onPrimary: '#fff',
-        onSecondary: '#fff',
-        onBackground: '#000',
-        onSurface: '#000',
-        onError: '#fff',
+        primary: "orange",
+        secondary: "yellow",
+        background: "#f8f8f8",
+        surface: "#ffffff",
+        error: "#d32f2f",
+        onPrimary: "#fff",
+        onSecondary: "#fff",
+        onBackground: "#000",
+        onSurface: "#000",
+        onError: "#fff",
     },
     fonts: {
         ...DefaultTheme.fonts,
         bodyLarge: {
             ...DefaultTheme.fonts.bodyLarge,
-            fontFamily: 'Playfair Display, serif',
+            fontFamily: '"Playfair Display", serif',
         },
     },
-};
+} as const;
 
-/* ---------------- query client ---------------- */
+// ---------------- query client ----------------
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -71,12 +72,7 @@ const queryClient = new QueryClient({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-    const [loaded, error] = Font.useFonts(
-        Platform.OS === 'web'
-            ? {}
-            : { ...FontAwesome.font },
-    );
-
+    const [loaded, error] = useFonts(fontMap);
     const [appReady, setAppReady] = useState(false);
 
     useEffect(() => {
@@ -91,84 +87,42 @@ export default function RootLayout() {
     }, [loaded]);
 
     if (!appReady) return null;
-
     return <RootLayoutNav />;
 }
 
 function RootLayoutNav() {
-    const pathname = usePathname();
-
     const showFooter = useMemo(() => {
-        const noFooterPages = ['/login', '/onboarding'];
-        return !noFooterPages.includes(pathname);
-    }, [pathname]);
-
-    const dynamicTitle = useMemo(() => {
-        if (!pathname || pathname === '/') {
-            return 'Маршруты, идеи и вдохновение для путешествий | Metravel';
-        }
-        if (pathname.startsWith('/travels/')) {
-            return 'Путешествия | Metravel';
-        }
-
-        if (pathname.startsWith('/travelsby/')) {
-            return 'Путешествия по Беларуси | Metravel';
-        }
-        if (pathname === '/metravel') {
-            return 'Мои путешествия | Metravel';
-        }
-        if (pathname === '/about') {
-            return 'О проекте Metravel | Кто мы и зачем это всё';
-        }
-        if (pathname === '/contact') {
-            return 'Связаться с нами | Metravel';
-        }
-
-        if (pathname === '/about') {
-            return 'Мои путешествия | Metravel';
-        }
-
-        return 'Путешествия | Metravel';
-    }, [pathname]);
-
-    const dynamicDescription = useMemo(() => {
-        if (!pathname || pathname === '/') {
-            return 'Авторские маршруты, советы и впечатления от путешественников по всему миру. Присоединяйся к сообществу Metravel и вдохновляйся на новые открытия!';
-        }
-        return 'Путешествия, маршруты и статьи от сообщества Metravel.';
-    }, [pathname]);
+        if (typeof window === "undefined") return true;
+        const pathname = window.location.pathname;
+        return !["/login", "/onboarding"].includes(pathname);
+    }, []);
 
     return (
         <PaperProvider theme={theme}>
             <AuthProvider>
                 <QueryClientProvider client={queryClient}>
-                    {__DEV__ && Platform.OS !== 'web' && (
+                    {__DEV__ && Platform.OS !== "web" && (
                         <ReactQueryDevtools initialIsOpen={false} />
                     )}
                     <FiltersProvider>
                         <View style={styles.wrapper}>
                             <Head>
-                                <title>{dynamicTitle}</title>
-                                <meta name="description" content={dynamicDescription} />
+                                {/* Only global/technical tags */}
                                 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-                                {/* OG meta */}
-                                <meta property="og:type" content="website" />
-                                <meta property="og:title" content={dynamicTitle} />
-                                <meta property="og:description" content={dynamicDescription} />
-                                <meta property="og:url" content={`https://metravel.by${pathname}`} />
-                                <meta property="og:image" content="https://metravel.by/og-preview.jpg" />
-
-                                {/* Twitter Card */}
-                                <meta name="twitter:card" content="summary_large_image" />
-                                <meta name="twitter:title" content={dynamicTitle} />
-                                <meta name="twitter:description" content="Путешествия, маршруты и статьи от сообщества Metravel." />
-                                <meta name="twitter:image" content="https://metravel.by/og-preview.jpg" />
-
                                 {/* Fonts */}
+                                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                                <link
+                                    rel="preload"
+                                    as="style"
+                                    href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
+                                />
                                 <link
                                     href="https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap"
                                     rel="stylesheet"
+                                    media="print"
+                                    onLoad="this.media='all'"
                                 />
 
                                 {/* Favicon */}
@@ -185,9 +139,7 @@ function RootLayoutNav() {
                             </View>
 
                             {showFooter && (
-                                <Suspense
-                                    fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
-                                >
+                                <Suspense fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}>
                                     <Footer />
                                 </Suspense>
                             )}
@@ -200,7 +152,7 @@ function RootLayoutNav() {
 }
 
 const styles = StyleSheet.create({
-    wrapper: { flex: 1, justifyContent: 'space-between' },
+    wrapper: { flex: 1, justifyContent: "space-between" },
     content: { flex: 1 },
     loading: { padding: 8 },
 });

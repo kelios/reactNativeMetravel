@@ -9,25 +9,22 @@ import {
   Text,
   TextInput,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { sendFeedback } from '@/src/api/travels';
+import Head from 'expo-router/head';
 
 export default function FeedbackForm() {
-  /* ------------------- state ------------------- */
   const [name, setName]       = useState('');
   const [email, setEmail]     = useState('');
   const [message, setMessage] = useState('');
   const [response, setResp]   = useState<{ text: string; error: boolean }>({ text: '', error: false });
   const [sending, setSending] = useState(false);
 
-  /* ------------------- refs для фокуса --------- */
   const emailRef   = useRef<TextInput>(null);
   const messageRef = useRef<TextInput>(null);
 
-  /* ------------------- helpers ----------------- */
   const isEmailValid = (val: string) =>
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+      /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(val.trim());
 
   const clearForm = () => {
     setName('');
@@ -35,7 +32,6 @@ export default function FeedbackForm() {
     setMessage('');
   };
 
-  /* ------------------- submit ------------------ */
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !message.trim()) {
       return setResp({ text: 'Заполните все поля.', error: true });
@@ -56,7 +52,6 @@ export default function FeedbackForm() {
     }
   };
 
-  /* ------------------- key handler ------------ */
   const handleWebKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -64,81 +59,94 @@ export default function FeedbackForm() {
     }
   };
 
-  /* ------------------- ui ---------------------- */
   return (
-      <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <ImageBackground
-              source={require('@/assets/images/media/slider/about.jpg')}
-              style={styles.bg}
-              resizeMode="cover"
-          >
-            <View style={styles.center}>
-              <View style={styles.form}>
-                {response.text !== '' && (
-                    <Text
-                        style={[
-                          styles.response,
-                          response.error ? styles.err : styles.ok,
-                        ]}
-                    >
-                      {response.text}
-                    </Text>
-                )}
+      <>
+        <Head>
+          <title key="title">Связаться с нами | Metravel</title>
+          <meta key="description" name="description" content="Форма обратной связи с командой Metravel. Напишите нам — мы открыты к предложениям, идеям и вопросам!" />
+          <meta key="og:title" property="og:title" content="Связаться с нами | Metravel" />
+          <meta key="og:description" property="og:description" content="Форма обратной связи с командой Metravel." />
+          <meta key="og:url" property="og:url" content="https://metravel.by/contact" />
+          <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg" />
+          <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+          <meta key="twitter:title" name="twitter:title" content="Связаться с нами | Metravel" />
+          <meta key="twitter:description" name="twitter:description" content="Форма обратной связи с командой Metravel." />
+          <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg" />
+        </Head>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Имя"
-                    value={name}
-                    onChangeText={setName}
-                    returnKeyType="next"
-                    onSubmitEditing={() => emailRef.current?.focus()}
-                />
+        <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <ImageBackground
+                source={require('@/assets/images/media/slider/about.jpg')}
+                style={styles.bg}
+                resizeMode="cover"
+            >
+              <View style={styles.center}>
+                <View style={styles.form}>
+                  {response.text !== '' && (
+                      <Text
+                          style={[
+                            styles.response,
+                            response.error ? styles.err : styles.ok,
+                          ]}
+                      >
+                        {response.text}
+                      </Text>
+                  )}
 
-                <TextInput
-                    ref={emailRef}
-                    style={styles.input}
-                    placeholder="Email"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    returnKeyType="next"
-                    onSubmitEditing={() => messageRef.current?.focus()}
-                />
+                  <TextInput
+                      style={styles.input}
+                      placeholder="Имя"
+                      value={name}
+                      onChangeText={setName}
+                      returnKeyType="next"
+                      onSubmitEditing={() => emailRef.current?.focus()}
+                  />
 
-                <TextInput
-                    ref={messageRef}
-                    style={[styles.input, styles.message]}
-                    placeholder="Сообщение"
-                    value={message}
-                    onChangeText={setMessage}
-                    multiline
-                    blurOnSubmit={false}
-                    onKeyDown={Platform.OS === 'web' ? handleWebKey : undefined}
-                    onSubmitEditing={
-                      Platform.OS !== 'web' ? () => handleSubmit() : undefined
-                    }
-                />
+                  <TextInput
+                      ref={emailRef}
+                      style={styles.input}
+                      placeholder="Email"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      returnKeyType="next"
+                      onSubmitEditing={() => messageRef.current?.focus()}
+                  />
 
-                <Button
-                    color="#6AAAAA"
-                    title={sending ? 'Отправка…' : 'Отправить'}
-                    onPress={handleSubmit}
-                    disabled={sending}
-                />
+                  <TextInput
+                      ref={messageRef}
+                      style={[styles.input, styles.message]}
+                      placeholder="Сообщение"
+                      value={message}
+                      onChangeText={setMessage}
+                      multiline
+                      blurOnSubmit={false}
+                      onKeyDown={Platform.OS === 'web' ? handleWebKey : undefined}
+                      onSubmitEditing={
+                        Platform.OS !== 'web' ? () => handleSubmit() : undefined
+                      }
+                  />
+
+                  <Button
+                      color="#6AAAAA"
+                      title={sending ? 'Отправка…' : 'Отправить'}
+                      onPress={handleSubmit}
+                      disabled={sending}
+                  />
+                </View>
               </View>
-            </View>
-          </ImageBackground>
-        </ScrollView>
-      </KeyboardAvoidingView>
+            </ImageBackground>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </>
   );
 }
 
-/* ------------------- styles ------------------ */
 const styles = StyleSheet.create({
   bg: {
     flex: 1,

@@ -8,10 +8,10 @@ import {
   Dimensions,
   ImageBackground,
   Linking,
-  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Title, Paragraph } from 'react-native-paper';
+import Head from 'expo-router/head';
 
 const { width } = Dimensions.get('window');
 
@@ -34,45 +34,64 @@ export default function AboutScreen() {
   };
 
   return (
-      <View style={styles.container}>
-        <StatusBar style="dark" />
+      <>
+        <Head>
+          <title key="title">О проекте Metravel | Кто мы и зачем это всё</title>
+          <meta
+              key="description"
+              name="description"
+              content="Проект MeTravel — сообщество путешественников. Делитесь маршрутами, пишите статьи, вдохновляйтесь идеями!"
+          />
+          <meta key="og:title" property="og:title" content="О проекте Metravel | Кто мы и зачем это всё" />
+          <meta key="og:description" property="og:description" content="Проект MeTravel — сообщество путешественников." />
+          <meta key="og:url" property="og:url" content="https://metravel.by/about" />
+          <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg" />
+          <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+          <meta key="twitter:title" name="twitter:title" content="О проекте Metravel | Кто мы и зачем это всё" />
+          <meta key="twitter:description" name="twitter:description" content="Проект MeTravel — сообщество путешественников." />
+          <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg" />
+        </Head>
 
-        <ImageBackground
-            source={require('@/assets/images/media/slider/about.jpg')}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-        >
-          <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
+        <View style={styles.container}>
+          <StatusBar style="dark" />
+
+          <ImageBackground
+              source={require('@/assets/images/media/slider/about.jpg')}
+              style={styles.backgroundImage}
+              resizeMode="cover"
           >
-            <View style={styles.content}>
-              <Title style={styles.title}>METRAVEL</Title>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.content}>
+                <Title style={styles.title}>METRAVEL</Title>
 
-              <Paragraph style={styles.paragraph}>
-                MeTravel.by – это некоммерческий проект для путешественников.
-              </Paragraph>
-              <Paragraph style={styles.paragraph}>
-                Чтобы поделиться своими путешествиями:
-              </Paragraph>
-              <Paragraph style={styles.paragraph}>1) Регистрируемся</Paragraph>
-              <Paragraph style={styles.paragraph}>2) Создаём новое путешествие</Paragraph>
-              <Paragraph style={styles.paragraph}>3) Ставим статус «Опубликовать»</Paragraph>
-              <Paragraph style={styles.paragraph}>4) Ждём модерации (до 24 часов)</Paragraph>
-              <Paragraph style={styles.paragraph}>
-                5) Хотите в Instagram? Напишите в директ @metravelby
-              </Paragraph>
-              <Paragraph style={styles.paragraph}>
-                Проект запущен в июне 2020. Использование материалов — только с разрешения автора. Идеи, отзывы и предложения присылайте на:
-              </Paragraph>
+                <Paragraph style={styles.paragraph}>
+                  MeTravel.by – это некоммерческий проект для путешественников.
+                </Paragraph>
+                <Paragraph style={styles.paragraph}>
+                  Чтобы поделиться своими путешествиями:
+                </Paragraph>
+                <Paragraph style={styles.paragraph}>1) Регистрируемся</Paragraph>
+                <Paragraph style={styles.paragraph}>2) Создаём новое путешествие</Paragraph>
+                <Paragraph style={styles.paragraph}>3) Ставим статус «Опубликовать»</Paragraph>
+                <Paragraph style={styles.paragraph}>4) Ждём модерации (до 24 часов)</Paragraph>
+                <Paragraph style={styles.paragraph}>
+                  5) Хотите в Instagram? Напишите в директ @metravelby
+                </Paragraph>
+                <Paragraph style={styles.paragraph}>
+                  Проект запущен в июне 2020. Использование материалов — только с разрешения автора. Идеи, отзывы и предложения присылайте на:
+                </Paragraph>
 
-              <TouchableOpacity onPress={sendMail}>
-                <Text style={styles.link}>metraveldev@gmail.com</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </ImageBackground>
-      </View>
+                <TouchableOpacity onPress={sendMail}>
+                  <Text style={styles.link}>metraveldev@gmail.com</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </ImageBackground>
+        </View>
+      </>
   );
 }
 

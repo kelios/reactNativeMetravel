@@ -17,6 +17,7 @@ import { Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { registration } from '@/src/api/travels';
 import type { FormValues } from '@/src/types/types';
+import Head from 'expo-router/head';
 
 const { height } = Dimensions.get('window');
 
@@ -58,6 +59,19 @@ export default function RegisterForm() {
     };
 
     return (
+        <>
+        <Head>
+            <title key="title">Регистрация | Metravel</title>
+            <meta key="description" name="description" content="Создайте аккаунт на Metravel, чтобы делиться своими путешествиями, маршрутами и впечатлениями." />
+            <meta key="og:title" property="og:title" content="Регистрация | Metravel" />
+            <meta key="og:description" property="og:description" content="Создайте аккаунт на Metravel, чтобы делиться своими путешествиями." />
+            <meta key="og:url" property="og:url" content="https://metravel.by/register" />
+            <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg" />
+            <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+            <meta key="twitter:title" name="twitter:title" content="Регистрация | Metravel" />
+            <meta key="twitter:description" name="twitter:description" content="Создайте аккаунт на Metravel, чтобы делиться своими путешествиями." />
+            <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg" />
+        </Head>
         <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -195,6 +209,7 @@ export default function RegisterForm() {
                 </ImageBackground>
             </ScrollView>
         </KeyboardAvoidingView>
+   </>
     );
 }
 
