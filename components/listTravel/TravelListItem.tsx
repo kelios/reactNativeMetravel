@@ -11,25 +11,27 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const WebImage = memo(({ src, alt }: { src: string; alt: string }) => (
-    <img
-        src={src}
-        alt={alt}
-        width={400}
-        height={400}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        loading="lazy"
-        decoding="async"
-        crossOrigin="anonymous"
-    />
-));
+const WebImage = memo(
+    ({ src, alt, isPriority = false }: { src: string; alt: string; isPriority?: boolean }) => (
+        <img
+            src={src}
+            alt={alt}
+            width={800}
+            height={600}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            decoding="async"
+            fetchpriority={isPriority ? 'high' : undefined}
+            crossOrigin="anonymous"
+        />
+    )
+);
 
 const NativeImage = memo(({ source }: { source: string }) => (
     <ExpoImage
         source={{ uri: source }}
         style={styles.img}
         contentFit="cover"
-        priority="low"
+        transition={300}
         cachePolicy="disk"
     />
 ));
@@ -72,9 +74,7 @@ function TravelListItem({
     const edit = useCallback(() => router.push(`/travel/${id}`), [id]);
     const remove = useCallback(() => onDeletePress(id), [id, onDeletePress]);
 
-    const ImageComponent = useMemo(() =>
-            Platform.OS === 'web' ? WebImage : NativeImage
-        , []);
+    const ImageComponent = Platform.OS === 'web' ? WebImage : NativeImage;
 
     return (
         <View style={styles.wrap}>
@@ -88,6 +88,8 @@ function TravelListItem({
                     <ImageComponent
                         src={imgUrl}
                         alt={name}
+                        source={imgUrl} // для NativeImage совместимости
+                        isPriority={isFirst}
                     />
                 ) : (
                     <View style={styles.imgStub}>
@@ -175,53 +177,57 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     single: { maxWidth: 600, alignSelf: 'center' },
-    img: { width: '100%', height: '100%' },
+    img: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#1a1a1a',
+    },
     imgStub: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#2a2a2a'
+        backgroundColor: '#2a2a2a',
     },
     grad: {
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
-        height: '60%'
+        height: '60%',
     },
     overlay: {
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
-        padding: 16
+        padding: 16,
     },
     tags: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 6,
-        marginBottom: 8
+        marginBottom: 8,
     },
     tag: {
         backgroundColor: 'rgba(255,255,255,0.15)',
         borderRadius: 12,
         paddingHorizontal: 10,
-        paddingVertical: 4
+        paddingVertical: 4,
     },
     tagTxt: {
         fontSize: 12,
         color: '#fff',
-        fontWeight: '500'
+        fontWeight: '500',
     },
     title: {
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',
-        marginBottom: 8
+        marginBottom: 8,
     },
     metaRow: {
         flexDirection: 'row',
-        gap: 12
+        gap: 12,
     },
     metaBox: {
         flexDirection: 'row',
@@ -229,19 +235,19 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.3)',
         borderRadius: 12,
         paddingHorizontal: 8,
-        paddingVertical: 4
+        paddingVertical: 4,
     },
     metaTxt: {
         fontSize: 13,
         color: '#eee',
-        marginLeft: 6
+        marginLeft: 6,
     },
     actions: {
         position: 'absolute',
         top: 12,
         right: 12,
         flexDirection: 'row',
-        gap: 8
+        gap: 8,
     },
     btn: {
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -249,7 +255,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
     },
 });
 

@@ -203,10 +203,10 @@ function ListTravel() {
                             columnWrapperStyle={columns > 1 ? styles.columnWrapper : undefined}
                             contentContainerStyle={[styles.list, { minHeight: '100vh' }]}
                             showsVerticalScrollIndicator={false}
-                            removeClippedSubviews
-                            initialNumToRender={6}
-                            maxToRenderPerBatch={6}
-                            windowSize={5}
+                            removeClippedSubviews={false} // ✅ обязательно
+                            initialNumToRender={8}         // ✅ опционально
+                            maxToRenderPerBatch={8}        // ✅ опционально
+                            windowSize={7}
                             getItemLayout={getItemLayout}
                         />
                     )}

@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from 'react';
 import { View, useWindowDimensions, StyleSheet } from 'react-native';
 
-const TravelListItem = React.lazy(() => import('./TravelListItem'));
+import TravelListItem from './TravelListItem';
 
 function RenderTravelItem({
                               item,
