@@ -47,15 +47,15 @@ const Footer: React.FC = () => {
                             <Icon name={item.icon} size={20} color="#ff9f5a" style={s.pad} />
                         </Link>
                     ))}
-                </View>
 
-                <View style={s.row}>
+
+
                     {social.map(item => (
                         <Pressable key={item.label} onPress={() => open(item.url)} hitSlop={8} accessibilityLabel={item.label}>
                             {item.icon}
                         </Pressable>
                     ))}
-                </View>
+            </View>
             </View>
         );
     }
@@ -106,9 +106,7 @@ const createStyles = (w: number) =>
             justifyContent: 'space-around',
             alignItems: 'center',
             marginVertical: 4,
-            borderTopWidth: 1,
-            borderTopColor: '#444',
-            paddingTop: 6,
+            paddingTop: 2,
         },
         pad: { padding: 6 },
 

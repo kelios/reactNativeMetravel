@@ -321,14 +321,12 @@ export default function TravelDetails() {
                                             <Suspense fallback={<Fallback />}>
                                                 <View style={styles.sectionContainer}>
                                                     <View style={styles.sliderContainer}>
-                                                        <View style={{ width: '100%', aspectRatio: 16 / 9 }}>
                                                             <Slider
                                                                 images={travel.gallery}
                                                                 showArrows={!isMobile}
                                                                 showDots={isMobile}
                                                             />
-                                                        </View>
-                                                    </View>
+                                                     </View>
                                                 </View>
                                             </Suspense>
                                         )}
