@@ -256,6 +256,15 @@ export default function TravelDetails() {
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
                 {slug && <link rel="canonical" href={`https://metravel.by/travels/${slug}`} />}
+
+                {Platform.OS === 'web' && travel?.gallery?.[0]?.url && (
+                    <link
+                        rel="preload"
+                        as="image"
+                        href={`${travel.gallery[0].url}?v=${Date.parse(travel.gallery[0].updated_at ?? travel.gallery[0].id)}`}
+                        fetchpriority="high"
+                    />
+                )}
             </Head>
 
             <View style={styles.wrapper}>

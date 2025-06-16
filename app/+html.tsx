@@ -36,32 +36,11 @@ export default function Root({ children }: { children: React.ReactNode }) {
             />
             <meta name="twitter:image" content="https://metravel.by/og-preview.jpg" />
 
-            {/* ----------  PERFORMANCE   ---------- */}
-            {/* 🔧 шрифт сразу грузим, font-display:swap прописан в css */}
-            <link
-                rel="preload"
-                href="/fonts/roboto-latin.woff2"
-                as="font"
-                type="font/woff2"
-                crossOrigin="anonymous"
-            />
 
             {/* 🔧 preconnect для внешних доменов, чтобы сократить TTFB */}
             <link rel="preconnect" href="https://www.googletagmanager.com" />
             <link rel="preconnect" href="https://app.termly.io" />
             <link rel="preconnect" href="https://mc.yandex.ru" />
-
-            {/* 🔧 LCP-кандидат (hero-картинка) */}
-            <link
-                rel="preload"
-                as="image"
-                href="https://metravel.by/hero.webp"
-                fetchpriority="high"
-            />
-            <link
-                href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
-                rel="stylesheet"
-            />
             <ScrollViewStyleReset />
             <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
             <link rel="icon" href="/favicon.ico" />
