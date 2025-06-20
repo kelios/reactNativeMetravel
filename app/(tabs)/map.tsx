@@ -116,7 +116,7 @@ export default function MapScreen() {
             try {
                 let data = [];
                 if (mode === 'route' && fullRouteCoords.length >= 2) {
-                    data = await fetchTravelsNearRoute(fullRouteCoords, 20);
+                    data = await fetchTravelsNearRoute(fullRouteCoords, 20000);
                     if (isMounted) {
                         setPlacesAlongRoute(data);
                         dataCache.current[key] = data;
