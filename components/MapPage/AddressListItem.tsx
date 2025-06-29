@@ -1,26 +1,29 @@
-import React from 'react';
+// AddressListItem.tsx
+import React, { useMemo, useCallback, useState } from 'react';
 import {
     View,
     StyleSheet,
-    TouchableOpacity,
+    Pressable,
     ImageBackground,
     Linking,
+    useWindowDimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import * as Clipboard from 'expo-clipboard';
+import Toast from 'react-native-toast-message';
 import { TravelCoords } from '@/src/types/types';
 
-type Props = {
-    travel: TravelCoords;
-};
+type Props = { travel: TravelCoords };
 
-const getImageWithVersion = (url?: string, updatedAt?: string) => {
+/* ---------- Вспомогалки ---------- */
+const addVersion = (url?: string, updated?: string) => {
     if (!url) return undefined;
-    if (!updatedAt) return url;
-    const version = new Date(updatedAt).getTime();
-    return `${url}?v=${version}`;
+    if (!updated) return url;
+    return `${url}?v=${new Date(updated).getTime()}`;
 };
 
+/* ---------- Компонент ---------- */
 const AddressListItem: React.FC<Props> = ({ travel }) => {
     const {
         address,
@@ -32,98 +35,157 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
         updated_at,
     } = travel;
 
-    const handleCopyCoords = () => {
-        if (coord) Clipboard.setString(coord);
-    };
+    const [imgLoaded, setImgLoaded] = useState(false);
+    const { width } = useWindowDimensions();
+    const isMobile = width <= 768;
 
-    const handleOpenTelegram = () => {
+    /* ---------- Категории ---------- */
+    const categories = useMemo(
+        () => categoryName?.split(',').map((c) => c.trim()) ?? [],
+        [categoryName]
+    );
+
+    /* ---------- Handlers ---------- */
+    const showToast = useCallback((msg: string) => {
+        Toast.show({ type: 'info', text1: msg, position: 'bottom' });
+    }, []);
+
+    const copyCoords = useCallback(async () => {
         if (!coord) return;
-        const url = `https://t.me/share/url?url=${encodeURIComponent(coord)}&text=${encodeURIComponent(`Координаты: ${coord}`)}`;
-        Linking.openURL(url);
-    };
+        await Clipboard.setStringAsync(coord);
+        showToast('Координаты скопированы');
+    }, [coord, showToast]);
 
-    const handleOpenLink = () => {
-        const url = articleUrl || urlTravel;
-        if (url) Linking.openURL(url);
-    };
+    const openUrlSafe = useCallback(async (url?: string) => {
+        if (!url) return;
+        const ok = await Linking.canOpenURL(url);
+        if (ok) Linking.openURL(url);
+        else showToast('Не удалось открыть ссылку');
+    }, [showToast]);
 
-    const handleOpenMap = () => {
-        if (coord) Linking.openURL(`https://maps.google.com/?q=${coord}`);
-    };
+    const openTelegram = useCallback(() => {
+        if (!coord) return;
+        const url = `https://t.me/share/url?url=${encodeURIComponent(
+            coord
+        )}&text=${encodeURIComponent(`Координаты: ${coord}`)}`;
+        openUrlSafe(url);
+    }, [coord, openUrlSafe]);
 
+    const openMap = useCallback(() => {
+        if (coord) openUrlSafe(`https://maps.google.com/?q=${coord}`);
+    }, [coord, openUrlSafe]);
+
+    /* ---------- JSX ---------- */
     return (
-        <View style={styles.card}>
-            <TouchableOpacity onPress={handleOpenLink} activeOpacity={0.85}>
+        <View style={[styles.card, { height: isMobile ? 200 : 240 }]}>
+            <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => openUrlSafe(articleUrl || urlTravel)}
+                accessibilityRole="button"
+                accessibilityLabel="Открыть маршрут"
+                android_ripple={{ color: '#0002' }}
+                onLongPress={copyCoords}
+            >
                 <ImageBackground
                     source={
                         travelImageThumbUrl
-                            ? { uri: getImageWithVersion(travelImageThumbUrl, updated_at) }
+                            ? { uri: addVersion(travelImageThumbUrl, updated_at) }
                             : require('@/assets/no-data.png')
                     }
                     style={styles.image}
                     imageStyle={{ borderRadius: 12 }}
+                    onLoadEnd={() => setImgLoaded(true)}
                 >
-                    <View style={styles.iconButtons}>
-                        <View style={styles.iconButton}>
-                            <IconButton icon="link" size={18} onPress={handleOpenLink} iconColor="#fff" />
+                    {!imgLoaded && (
+                        <View style={styles.loader}>
+                            <ActivityIndicator size="small" color="#fff" />
                         </View>
-                        <View style={styles.iconButton}>
-                            <IconButton icon="content-copy" size={18} onPress={handleCopyCoords} iconColor="#fff" />
-                        </View>
-                        <View style={styles.iconButton}>
-                            <IconButton icon="send" size={18} onPress={handleOpenTelegram} iconColor="#fff" />
-                        </View>
+                    )}
+
+                    {/* --- Action-buttons --- */}
+                    <View style={styles.iconRow}>
+                        <IconButton
+                            icon="link"
+                            size={18}
+                            onPress={() => openUrlSafe(articleUrl || urlTravel)}
+                            iconColor="#fff"
+                            style={styles.iconBtn}
+                        />
+                        <IconButton
+                            icon="content-copy"
+                            size={18}
+                            onPress={copyCoords}
+                            iconColor="#fff"
+                            style={styles.iconBtn}
+                        />
+                        <IconButton
+                            icon="send"
+                            size={18}
+                            onPress={openTelegram}
+                            iconColor="#fff"
+                            style={styles.iconBtn}
+                        />
                     </View>
 
+                    {/* --- Overlay footer --- */}
                     <View style={styles.overlay}>
-                        {address && <Text style={styles.title} numberOfLines={1}>{address}</Text>}
-
-                        {coord && (
-                            <TouchableOpacity onPress={handleOpenMap}>
-                                <Text style={styles.coord}>{coord}</Text>
-                            </TouchableOpacity>
+                        {address && (
+                            <Text style={styles.title} numberOfLines={1}>
+                                {address}
+                            </Text>
                         )}
 
-                        {categoryName && (
-                            <View style={styles.categoryContainer}>
-                                {categoryName.split(',').map((cat, index) => (
-                                    <View key={index} style={styles.category}>
-                                        <Text style={styles.categoryText}>{cat.trim()}</Text>
+                        {coord && (
+                            <Pressable onPress={openMap}>
+                                <Text style={styles.coord}>{coord}</Text>
+                            </Pressable>
+                        )}
+
+                        {!!categories.length && (
+                            <View style={styles.catWrap}>
+                                {categories.map((cat, i) => (
+                                    <View key={i.toString()} style={styles.catChip}>
+                                        <Text style={styles.catText}>{cat}</Text>
                                     </View>
                                 ))}
                             </View>
                         )}
                     </View>
                 </ImageBackground>
-            </TouchableOpacity>
+            </Pressable>
         </View>
     );
 };
 
+/* ---------- Стили ---------- */
 const styles = StyleSheet.create({
     card: {
         marginVertical: 8,
         marginHorizontal: 4,
         borderRadius: 12,
-        overflow: 'hidden',
         backgroundColor: '#f3f3f3',
-        elevation: 3,
+        elevation: 2,
+        overflow: 'hidden',
     },
-    image: {
-        height: 220,
-        justifyContent: 'flex-end',
+    image: { flex: 1, justifyContent: 'flex-end' },
+    loader: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#0003',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
     },
-    iconButtons: {
+    iconRow: {
         position: 'absolute',
         top: 8,
         right: 8,
         flexDirection: 'row',
         zIndex: 2,
     },
-    iconButton: {
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        borderRadius: 6,
+    iconBtn: {
+        backgroundColor: 'rgba(0,0,0,0.45)',
         marginLeft: 4,
+        borderRadius: 6,
     },
     overlay: {
         padding: 10,
@@ -131,35 +193,21 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 12,
         borderBottomRightRadius: 12,
     },
-    title: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 15,
-        marginBottom: 4,
-    },
+    title: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 4 },
     coord: {
         color: '#cceeff',
         textDecorationLine: 'underline',
         fontSize: 12,
         marginBottom: 6,
     },
-    category: {
+    catWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    catChip: {
         backgroundColor: 'rgba(255,255,255,0.2)',
         borderRadius: 10,
         paddingHorizontal: 8,
-        paddingVertical: 4,
-        alignSelf: 'flex-start',
+        paddingVertical: 3,
     },
-    categoryText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    categoryContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-    },
+    catText: { color: '#fff', fontSize: 12, fontWeight: '500' },
 });
 
-export default AddressListItem;
+export default React.memo(AddressListItem);

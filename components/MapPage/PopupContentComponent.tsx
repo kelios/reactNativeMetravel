@@ -61,7 +61,7 @@ const PopupContentWeb: React.FC<PopupContentWebProps> = memo(({ travel }) => {
                         {coord && (
                             <div className="popup-coord">
                                 <span>Координаты:</span>
-                                <a onClick={(e) => handleAction(e, openMap)}>{coord}</a>
+                                <a onClick={(e) => handleAction(e, openMap)} title="Открыть в Google Maps">{coord}</a>
                             </div>
                         )}
 
@@ -90,7 +90,7 @@ const SendIcon = () => (
     <IconBase><path d="M2.01,21L23,12,2.01,3,2,10l15,2-15,2Z" /></IconBase>
 );
 
-// Стили
+// CSS-in-JS вставка
 const styles = `
 .popup-card {
   width: 260px;
@@ -105,7 +105,6 @@ const styles = `
 .popup-card:hover {
   transform: scale(1.02);
 }
-
 .popup-image {
   position: relative;
   height: 220px;
@@ -115,7 +114,6 @@ const styles = `
   flex-direction: column;
   justify-content: flex-end;
 }
-
 .popup-icons-top {
   position: absolute;
   top: 8px;
@@ -130,38 +128,29 @@ const styles = `
   padding: 6px;
   border-radius: 6px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .popup-icons-top button:hover {
   background: rgba(0, 0, 0, 0.8);
 }
-
 .popup-overlay {
   width: 100%;
   background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.2));
   padding: 5px 5px;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
 }
-
 .popup-text {
   color: #fff;
   font-size: 13px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.9);
 }
-
 .popup-title {
   font-weight: 600;
-  font-size: 15px;  
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0 !important;
 }
-
 .popup-coord {
   font-size: 12px;
   margin-bottom: 6px;
@@ -176,7 +165,6 @@ const styles = `
   cursor: pointer;
   text-shadow: 0 1px 3px rgba(0,0,0,0.9);
 }
-
 .popup-category {
   background: rgba(255,255,255,0.2);
   padding: 4px 10px;
@@ -188,7 +176,6 @@ const styles = `
   text-shadow: 0 0 3px rgba(0,0,0,0.6);
   margin-top: 8px;
 }
-
 .popup-svg {
   width: 20px;
   height: 20px;
@@ -197,9 +184,9 @@ const styles = `
 `;
 
 if (typeof document !== 'undefined') {
-    const style = document.createElement('style');
-    style.innerHTML = styles;
-    document.head.appendChild(style);
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = styles;
+    document.head.appendChild(styleTag);
 }
 
 export default PopupContentWeb;
