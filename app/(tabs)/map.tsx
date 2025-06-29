@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback, useMemo} from 'react';
 import {
     SafeAreaView,
     StyleSheet,
@@ -21,14 +21,28 @@ interface Coordinates {
     longitude: number;
 }
 
+interface FilterValues {
+    categories: string[];
+    radius: string;
+    address: string;
+}
+
+interface Filters {
+    categories: { id: string; name: string }[];
+    radius: { id: string; name: string }[];
+    address: string;
+}
+
+const DEFAULT_COORDINATES = {latitude: 53.9006, longitude: 27.5590};
+
 export default function MapScreen() {
     const {width} = useWindowDimensions();
     const isMobile = width <= 768;
-    const styles = getStyles(isMobile);
+    const styles = useMemo(() => getStyles(isMobile), [isMobile]);
 
     const [mode, setMode] = useState<'radius' | 'route'>('radius');
-    const [filters, setFilters] = useState({categories: [], radius: [], address: ''});
-    const [filterValue, setFilterValue] = useState({categories: [], radius: '', address: ''});
+    const [filters, setFilters] = useState<Filters>({categories: [], radius: [], address: ''});
+    const [filterValue, setFilterValue] = useState<FilterValues>({categories: [], radius: '', address: ''});
     const [rawTravelsData, setRawTravelsData] = useState<any[]>([]);
     const [travelsData, setTravelsData] = useState<any[]>([]);
     const [placesAlongRoute, setPlacesAlongRoute] = useState<any[]>([]);
@@ -49,119 +63,154 @@ export default function MapScreen() {
 
     const dataCache = useRef<Record<string, any[]>>({});
 
+    // Request location permission and set coordinates
     useEffect(() => {
         let isMounted = true;
-        (async () => {
+
+        const getLocation = async () => {
             try {
                 const {status} = await Location.requestForegroundPermissionsAsync();
                 if (status === 'granted') {
                     const loc = await Location.getCurrentPositionAsync({});
-                    if (isMounted) setCoordinates({latitude: loc.coords.latitude, longitude: loc.coords.longitude});
+                    if (isMounted) setCoordinates(loc.coords);
                 } else {
-                    if (isMounted) setCoordinates({latitude: 53.9006, longitude: 27.5590});
+                    if (isMounted) setCoordinates(DEFAULT_COORDINATES);
                 }
             } catch {
-                if (isMounted) setCoordinates({latitude: 53.9006, longitude: 27.5590});
+                if (isMounted) setCoordinates(DEFAULT_COORDINATES);
             }
-        })();
+        };
+
+        getLocation();
         return () => {
             isMounted = false;
         };
     }, []);
 
+    // Fetch filters data
     useEffect(() => {
         let isMounted = true;
-        (async () => {
+
+        const fetchFiltersData = async () => {
             try {
                 const newData = await fetchFiltersMap();
-                if (isMounted) {
-                    setFilters({categories: newData?.categories || [], radius: newData?.radius || [], address: ''});
+                if (isMounted && newData) {
+                    setFilters({
+                        categories: newData.categories || [],
+                        radius: newData.radius || [],
+                        address: ''
+                    });
                 }
             } catch (error) {
-                console.log('Ошибка загрузки фильтров:', error);
+                console.error('Ошибка загрузки фильтров:', error);
             }
-        })();
+        };
+
+        fetchFiltersData();
         return () => {
             isMounted = false;
         };
     }, []);
 
+    // Set default radius when filters are loaded
     useEffect(() => {
-        if (filters.radius.length && !filterValue.radius) {
+        if (filters.radius.length > 0 && !filterValue.radius) {
             setFilterValue(prev => ({...prev, radius: filters.radius[0].id}));
         }
-    }, [filters.radius]);
+    }, [filters.radius, filterValue.radius]);
 
-    const getCacheKey = () => {
+    // Generate cache key based on current mode and parameters
+    const getCacheKey = useCallback(() => {
         if (!coordinates) return '';
         return mode === 'route'
             ? `route:${JSON.stringify(fullRouteCoords)}`
             : `radius:${filterValue.radius}:${coordinates.latitude}:${coordinates.longitude}`;
-    };
+    }, [mode, fullRouteCoords, filterValue.radius, coordinates]);
 
+    // Fetch travels data based on current mode and filters
     useEffect(() => {
-        if (!filterValue.radius || !coordinates) return;
+        if (!coordinates || (mode === 'radius' && !filterValue.radius)) return;
+
         let isMounted = true;
         const key = getCacheKey();
 
-        (async () => {
-            if (dataCache.current[key]) {
-                if (isMounted) {
-                    if (mode === 'route') setPlacesAlongRoute(dataCache.current[key]);
-                    else setRawTravelsData(dataCache.current[key]);
-                }
-                return;
-            }
-
+        const fetchData = async () => {
             try {
+                // Return cached data if available
+                if (dataCache.current[key]) {
+                    if (isMounted) {
+                        mode === 'route'
+                            ? setPlacesAlongRoute(dataCache.current[key])
+                            : setRawTravelsData(dataCache.current[key]);
+                    }
+                    return;
+                }
+
+                // Fetch new data based on mode
                 let data = [];
                 if (mode === 'route' && fullRouteCoords.length >= 2) {
                     data = await fetchTravelsNearRoute(fullRouteCoords, 20000);
-                    if (isMounted) {
-                        setPlacesAlongRoute(data);
-                        dataCache.current[key] = data;
-                        setRawTravelsData([]);
-                    }
                 } else {
                     data = await fetchTravelsForMap(currentPage, itemsPerPage, {
                         radius: filterValue.radius,
                         lat: coordinates.latitude,
                         lng: coordinates.longitude,
                     });
-                    if (isMounted) {
+                }
+
+                if (isMounted) {
+                    if (mode === 'route') {
+                        setPlacesAlongRoute(data);
+                        setRawTravelsData([]);
+                    } else {
                         setRawTravelsData(data);
-                        dataCache.current[key] = data;
                         setPlacesAlongRoute([]);
                     }
+                    dataCache.current[key] = data;
                 }
             } catch (error) {
-                console.log('Ошибка загрузки travels:', error);
+                console.error('Ошибка загрузки travels:', error);
             }
-        })();
+        };
 
+        fetchData();
         return () => {
             isMounted = false;
         };
-    }, [filterValue.radius, currentPage, itemsPerPage, fullRouteCoords, coordinates, mode]);
+    }, [filterValue.radius, currentPage, itemsPerPage, fullRouteCoords, coordinates, mode, getCacheKey]);
 
+    // Filter travels data based on selected categories and address
     useEffect(() => {
         const normalize = (str: string) => str.trim().toLowerCase();
         const selectedCategories = filterValue.categories.map(normalize);
-        const filtered = rawTravelsData.filter(travel => {
+
+        const filtered = (mode === 'route' ? placesAlongRoute : rawTravelsData).filter(travel => {
             const travelCategories = travel.categoryName?.split(',').map(normalize) || [];
-            const categoryMatch = selectedCategories.length === 0 || travelCategories.some(cat => selectedCategories.includes(cat));
-            const addressMatch = !filterValue.address || (travel.address && travel.address.toLowerCase().includes(filterValue.address.toLowerCase()));
+            const categoryMatch = selectedCategories.length === 0 ||
+                travelCategories.some(cat => selectedCategories.includes(cat));
+            const addressMatch = !filterValue.address ||
+                (travel.address && travel.address.toLowerCase().includes(filterValue.address.toLowerCase()));
             return categoryMatch && addressMatch;
         });
+
         setTravelsData(filtered);
-    }, [filterValue.categories, filterValue.address, rawTravelsData]);
+    }, [filterValue.categories, filterValue.address, rawTravelsData, placesAlongRoute, mode]);
 
-    const onFilterChange = (field: string, value: any) => setFilterValue(prev => ({...prev, [field]: value}));
-    const onTextFilterChange = (value: string) => setFilterValue(prev => ({...prev, address: value}));
+    const onFilterChange = useCallback((field: keyof FilterValues, value: any) => {
+        setFilterValue(prev => ({...prev, [field]: value}));
+    }, []);
 
-    const resetFilters = () => {
+    const onTextFilterChange = useCallback((value: string) => {
+        setFilterValue(prev => ({...prev, address: value}));
+    }, []);
+
+    const resetFilters = useCallback(() => {
         dataCache.current = {};
-        setFilterValue({radius: filters.radius[0]?.id || '', categories: [], address: ''});
+        setFilterValue({
+            radius: filters.radius[0]?.id || '',
+            categories: [],
+            address: ''
+        });
         setStartAddress('');
         setEndAddress('');
         setRoutePoints([]);
@@ -169,19 +218,21 @@ export default function MapScreen() {
         setRouteDistance(null);
         setFullRouteCoords([]);
         setTravelsData([]);
-    };
+    }, [filters.radius]);
 
-    const getAddressFromCoords = async (lat: number, lng: number) => {
+    const getAddressFromCoords = useCallback(async (lat: number, lng: number) => {
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+            );
             const data = await response.json();
             return data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         } catch {
             return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
         }
-    };
+    }, []);
 
-    const handleMapClick = async (lng: number, lat: number) => {
+    const handleMapClick = useCallback(async (lng: number, lat: number) => {
         const addr = await getAddressFromCoords(lat, lng);
         if (routePoints.length >= 2) {
             setStartAddress(addr);
@@ -194,22 +245,25 @@ export default function MapScreen() {
             setEndAddress(addr);
             setRoutePoints(prev => [...prev, [lng, lat]]);
         }
-    };
+    }, [routePoints.length, getAddressFromCoords]);
 
-    const buildRouteTo = async (dest: any) => {
+    const buildRouteTo = useCallback(async (dest: any) => {
+        if (!coordinates) return;
+
         const [lat, lng] = dest.coord.split(',').map(Number);
         const destAddr = await getAddressFromCoords(lat, lng);
+
         (window as any).disableFitBounds = false;
         setRoutePoints([
-            [coordinates!.longitude, coordinates!.latitude],
+            [coordinates.longitude, coordinates.latitude],
             [lng, lat],
         ]);
         setStartAddress('Моё местоположение');
         setEndAddress(destAddr);
         setMode('route');
-    };
+    }, [coordinates, getAddressFromCoords]);
 
-    const clearRoute = () => {
+    const clearRoute = useCallback(() => {
         setRoutePoints([]);
         setPlacesAlongRoute([]);
         setMode('radius');
@@ -217,7 +271,7 @@ export default function MapScreen() {
         setEndAddress('');
         setRouteDistance(null);
         setFullRouteCoords([]);
-    };
+    }, []);
 
     if (!coordinates) {
         return (
@@ -300,8 +354,11 @@ export default function MapScreen() {
                                     buildRouteTo={buildRouteTo}
                                 />
                                 {routePoints.length > 1 && (
-                                    <Button title="Очистить маршрут" onPress={clearRoute}
-                                            buttonStyle={styles.iconButton}/>
+                                    <Button
+                                        title="Очистить маршрут"
+                                        onPress={clearRoute}
+                                        buttonStyle={styles.iconButton}
+                                    />
                                 )}
                             </View>
                         )}
