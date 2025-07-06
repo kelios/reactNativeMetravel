@@ -1,5 +1,10 @@
 // AddressListItem.tsx
-import React, { useMemo, useCallback, useState } from 'react';
+import React, {
+    useMemo,
+    useCallback,
+    useState,
+    useRef,
+} from 'react';
 import {
     View,
     StyleSheet,
@@ -14,17 +19,30 @@ import * as Clipboard from 'expo-clipboard';
 import Toast from 'react-native-toast-message';
 import { TravelCoords } from '@/src/types/types';
 
-type Props = { travel: TravelCoords };
+/* ------------------------------------------------------------------ */
+/*                          Типы и helpers                            */
+/* ------------------------------------------------------------------ */
 
-/* ---------- Вспомогалки ---------- */
-const addVersion = (url?: string, updated?: string) => {
-    if (!url) return undefined;
-    if (!updated) return url;
-    return `${url}?v=${new Date(updated).getTime()}`;
+type Props = {
+    travel: TravelCoords;
+    /** если передан, используется вместо вычисления от useWindowDimensions */
+    isMobile?: boolean;
+    /** если передан, будет вызван при обычном клике; иначе откроет url/статью */
+    onPress?: () => void;
 };
 
-/* ---------- Компонент ---------- */
-const AddressListItem: React.FC<Props> = ({ travel }) => {
+const addVersion = (url?: string, updated?: string) =>
+    url && updated ? `${url}?v=${new Date(updated).getTime()}` : url;
+
+/* ------------------------------------------------------------------ */
+/*                         Компонент                                  */
+/* ------------------------------------------------------------------ */
+
+const AddressListItem: React.FC<Props> = ({
+                                              travel,
+                                              isMobile: isMobileProp,
+                                              onPress,
+                                          }) => {
     const {
         address,
         categoryName,
@@ -37,31 +55,35 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
 
     const [imgLoaded, setImgLoaded] = useState(false);
     const { width } = useWindowDimensions();
-    const isMobile = width <= 768;
+    const isMobile = isMobileProp ?? width <= 768;
 
-    /* ---------- Категории ---------- */
+    /* ---------------------------- Категории -------------------------- */
     const categories = useMemo(
         () => categoryName?.split(',').map((c) => c.trim()) ?? [],
         [categoryName]
     );
 
-    /* ---------- Handlers ---------- */
+    /* ----------------------------- Toast ----------------------------- */
     const showToast = useCallback((msg: string) => {
         Toast.show({ type: 'info', text1: msg, position: 'bottom' });
     }, []);
 
+    /* --------------------------- Handlers ---------------------------- */
     const copyCoords = useCallback(async () => {
         if (!coord) return;
         await Clipboard.setStringAsync(coord);
         showToast('Координаты скопированы');
     }, [coord, showToast]);
 
-    const openUrlSafe = useCallback(async (url?: string) => {
-        if (!url) return;
-        const ok = await Linking.canOpenURL(url);
-        if (ok) Linking.openURL(url);
-        else showToast('Не удалось открыть ссылку');
-    }, [showToast]);
+    const openUrlSafe = useCallback(
+        async (url?: string) => {
+            if (!url) return;
+            const ok = await Linking.canOpenURL(url);
+            if (ok) Linking.openURL(url);
+            else showToast('Не удалось открыть ссылку');
+        },
+        [showToast]
+    );
 
     const openTelegram = useCallback(() => {
         if (!coord) return;
@@ -75,12 +97,18 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
         if (coord) openUrlSafe(`https://maps.google.com/?q=${coord}`);
     }, [coord, openUrlSafe]);
 
-    /* ---------- JSX ---------- */
+    /** Единственная точка входа при обычном нажатии */
+    const handlePress = useCallback(() => {
+        if (onPress) onPress();
+        else openUrlSafe(articleUrl || urlTravel);
+    }, [onPress, articleUrl, urlTravel, openUrlSafe]);
+
+    /* ------------------------------ JSX ------------------------------ */
     return (
         <View style={[styles.card, { height: isMobile ? 200 : 240 }]}>
             <Pressable
                 style={StyleSheet.absoluteFill}
-                onPress={() => openUrlSafe(articleUrl || urlTravel)}
+                onPress={handlePress}
                 accessibilityRole="button"
                 accessibilityLabel="Открыть маршрут"
                 android_ripple={{ color: '#0002' }}
@@ -102,7 +130,7 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
                         </View>
                     )}
 
-                    {/* --- Action-buttons --- */}
+                    {/* ---------- Action-buttons ---------- */}
                     <View style={styles.iconRow}>
                         <IconButton
                             icon="link"
@@ -127,7 +155,7 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
                         />
                     </View>
 
-                    {/* --- Overlay footer --- */}
+                    {/* ---------- Overlay footer ---------- */}
                     <View style={styles.overlay}>
                         {address && (
                             <Text style={styles.title} numberOfLines={1}>
@@ -157,7 +185,10 @@ const AddressListItem: React.FC<Props> = ({ travel }) => {
     );
 };
 
-/* ---------- Стили ---------- */
+/* ------------------------------------------------------------------ */
+/*                             Стили                                  */
+/* ------------------------------------------------------------------ */
+
 const styles = StyleSheet.create({
     card: {
         marginVertical: 8,

@@ -217,7 +217,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                                 valueField="value"
                                 placeholder="Выберите категории"
                                 compact
-                                renderSelectedItem={() => null}
+                                renderSelectedItem={() => <View />}
                             />
                             {!!filterValue.categories.length && (
                                 <ScrollView

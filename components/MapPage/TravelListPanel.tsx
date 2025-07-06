@@ -1,4 +1,3 @@
-// TravelListPanel.tsx
 import React, {
     useMemo,
     useCallback,
@@ -14,16 +13,13 @@ import {
     useWindowDimensions,
     Animated,
     Easing,
-    Pressable,
 } from 'react-native';
 import AddressListItem from '@/components/MapPage/AddressListItem';
 import PaginationComponent from '@/components/PaginationComponent';
 
-/* ---------- Типы пропсов ---------- */
 export interface Travel {
     id: number | string;
     categoryName?: string;
-    // ...дополнительные поля, если нужны
 }
 
 interface Props {
@@ -49,7 +45,6 @@ const TravelListPanel: React.FC<Props> = ({
     const isMobile = width <= 768;
     const styles = useMemo(() => getStyles(isMobile), [isMobile]);
 
-    /* ---------- Пагинация ---------- */
     const isLoading = travelsData === null;
     const totalItems = travelsData?.length ?? 0;
 
@@ -64,12 +59,10 @@ const TravelListPanel: React.FC<Props> = ({
 
     const listRef = useRef<FlatList<Travel>>(null);
 
-    /* Автопрокрутка в начало при смене страницы */
     useEffect(() => {
         listRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, [currentPage]);
 
-    /* ---------- Skeleton shimmer ---------- */
     const shimmerValue = useRef(new Animated.Value(0)).current;
     useEffect(() => {
         Animated.loop(
@@ -96,23 +89,17 @@ const TravelListPanel: React.FC<Props> = ({
         );
     }, [styles.skeletonItem, styles.skeletonShimmer, shimmerValue]);
 
-    /* ---------- Рендер строки ---------- */
     const renderItem = useCallback(
         ({ item }: { item: Travel }) => (
-            <Pressable
-                android_ripple={{ color: '#eceff1' }}
-                style={styles.itemWrapper}
-                accessibilityRole="button"
-                accessibilityLabel="Показать детали маршрута"
+            <AddressListItem
+                travel={item}
+                isMobile={isMobile}
                 onPress={() => buildRouteTo(item)}
-            >
-                <AddressListItem travel={item} isMobile={isMobile} />
-            </Pressable>
+            />
         ),
-        [buildRouteTo, isMobile, styles.itemWrapper]
+        [buildRouteTo, isMobile]
     );
 
-    /* ---------- FlatList оптимизация ---------- */
     const keyExtractor = useCallback(
         (item: Travel, idx: number) => item.id?.toString() ?? idx.toString(),
         []
@@ -120,14 +107,13 @@ const TravelListPanel: React.FC<Props> = ({
 
     const getItemLayout = useCallback(
         (_: Travel[] | null | undefined, index: number) => ({
-            length: 80, // высота itemWrapper + separator
+            length: 80,
             offset: 80 * index,
             index,
         }),
         []
     );
 
-    /* ---------- JSX ---------- */
     return (
         <View style={styles.container}>
             <Text style={styles.resultsCount}>Найдено {totalItems} объектов</Text>
@@ -170,7 +156,6 @@ const TravelListPanel: React.FC<Props> = ({
     );
 };
 
-/* ---------- Стили ---------- */
 const getStyles = (isMobile: boolean) =>
     StyleSheet.create({
         container: {
@@ -200,7 +185,6 @@ const getStyles = (isMobile: boolean) =>
             shadowOpacity: 0.05,
             shadowRadius: 3,
         },
-        /* Skeleton */
         skeletonItem: {
             height: 68,
             borderRadius: 12,
@@ -224,5 +208,4 @@ const getStyles = (isMobile: boolean) =>
         },
     });
 
-/* ---------- Экспорт с React.memo ---------- */
 export default memo(TravelListPanel);
