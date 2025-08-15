@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
-import LabelText from './LabelText';
-import { MapPin, SendHorizonal } from 'lucide-react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import PopupContentComponent from "@/components/MapPage/PopupContentComponent";
 
 export type Point = {
@@ -40,11 +38,10 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
                                                                 coordinates = { latitude: 53.8828449, longitude: 27.7273595 },
                                                               }) => {
   const isBrowser = typeof window !== 'undefined' && Platform.OS === 'web';
-  const [isVisible, setIsVisible] = useState(true);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setIsReady(true), 100); // ждем готовности DOM
+    const timeout = setTimeout(() => setIsReady(true), 50);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -53,22 +50,11 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
   }
 
   const leaflet = require('leaflet');
-  const {
-    MapContainer,
-    TileLayer,
-    Marker,
-    Popup,
-    useMap,
-  } = require('react-leaflet');
-
+  const { MapContainer, TileLayer, Marker, Popup, useMap } = require('react-leaflet');
   require('leaflet/dist/leaflet.css');
 
   const travelData = travel.data || [];
-
-  const initialCenter: [number, number] = [
-    coordinates.latitude,
-    coordinates.longitude,
-  ];
+  const initialCenter: [number, number] = [coordinates.latitude, coordinates.longitude];
 
   const meTravelIcon = useMemo(
       () =>
@@ -83,19 +69,14 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
 
   const FitBoundsOnData: React.FC<{ data: Point[] }> = ({ data }) => {
     const map = useMap();
-
     useEffect(() => {
       const coords = data.map((p) => getLatLng(p.coord)).filter(Boolean) as [number, number][];
       if (!coords.length) return;
-
       const bounds = leaflet.latLngBounds(coords);
       if (bounds.isValid()) {
-        requestAnimationFrame(() => {
-          map.fitBounds(bounds, { padding: [50, 50] });
-        });
+        map.fitBounds(bounds, { padding: [50, 50] });
       }
     }, [map, data]);
-
     return null;
   };
 
@@ -110,11 +91,9 @@ const MapClientSideComponent: React.FC<MapClientSideProps> = ({
             >
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <FitBoundsOnData data={travelData} />
-
               {travelData.map((point, index) => {
                 const latLng = getLatLng(point.coord);
                 if (!latLng) return null;
-
                 return (
                     <Marker key={`${point.id}_${index}`} position={latLng} icon={meTravelIcon}>
                       <Popup>
@@ -138,52 +117,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#fff',
-  },
-  popupCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 8,
-    width: 220,
-    maxWidth: 240,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  pointImage: {
-    width: '100%',
-    height: 100,
-    borderRadius: 10,
-    marginBottom: 8,
-    backgroundColor: '#f2f2f2',
-  },
-  fallbackText: {
-    marginBottom: 6,
-    color: '#666',
-    fontStyle: 'italic',
-    fontSize: 13,
-  },
-  textContainer: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  addressCompact: {
-    fontSize: 13,
-    color: '#333',
-    marginBottom: 6,
-    lineHeight: 16,
-    fontWeight: '500',
-  },
-  iconRow: {
-    marginTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 4,
-  },
-  iconBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: '#f6f6f6',
   },
 });

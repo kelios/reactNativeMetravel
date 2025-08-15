@@ -1,10 +1,5 @@
 // AddressListItem.tsx
-import React, {
-    useMemo,
-    useCallback,
-    useState,
-    useRef,
-} from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import {
     View,
     StyleSheet,
@@ -19,24 +14,14 @@ import * as Clipboard from 'expo-clipboard';
 import Toast from 'react-native-toast-message';
 import { TravelCoords } from '@/src/types/types';
 
-/* ------------------------------------------------------------------ */
-/*                          Типы и helpers                            */
-/* ------------------------------------------------------------------ */
-
 type Props = {
     travel: TravelCoords;
-    /** если передан, используется вместо вычисления от useWindowDimensions */
     isMobile?: boolean;
-    /** если передан, будет вызван при обычном клике; иначе откроет url/статью */
     onPress?: () => void;
 };
 
 const addVersion = (url?: string, updated?: string) =>
     url && updated ? `${url}?v=${new Date(updated).getTime()}` : url;
-
-/* ------------------------------------------------------------------ */
-/*                         Компонент                                  */
-/* ------------------------------------------------------------------ */
 
 const AddressListItem: React.FC<Props> = ({
                                               travel,
@@ -57,18 +42,15 @@ const AddressListItem: React.FC<Props> = ({
     const { width } = useWindowDimensions();
     const isMobile = isMobileProp ?? width <= 768;
 
-    /* ---------------------------- Категории -------------------------- */
     const categories = useMemo(
         () => categoryName?.split(',').map((c) => c.trim()) ?? [],
         [categoryName]
     );
 
-    /* ----------------------------- Toast ----------------------------- */
     const showToast = useCallback((msg: string) => {
         Toast.show({ type: 'info', text1: msg, position: 'bottom' });
     }, []);
 
-    /* --------------------------- Handlers ---------------------------- */
     const copyCoords = useCallback(async () => {
         if (!coord) return;
         await Clipboard.setStringAsync(coord);
@@ -97,13 +79,11 @@ const AddressListItem: React.FC<Props> = ({
         if (coord) openUrlSafe(`https://maps.google.com/?q=${coord}`);
     }, [coord, openUrlSafe]);
 
-    /** Единственная точка входа при обычном нажатии */
     const handlePress = useCallback(() => {
         if (onPress) onPress();
         else openUrlSafe(articleUrl || urlTravel);
     }, [onPress, articleUrl, urlTravel, openUrlSafe]);
 
-    /* ------------------------------ JSX ------------------------------ */
     return (
         <View style={[styles.card, { height: isMobile ? 200 : 240 }]}>
             <Pressable
@@ -130,7 +110,6 @@ const AddressListItem: React.FC<Props> = ({
                         </View>
                     )}
 
-                    {/* ---------- Action-buttons ---------- */}
                     <View style={styles.iconRow}>
                         <IconButton
                             icon="link"
@@ -155,7 +134,6 @@ const AddressListItem: React.FC<Props> = ({
                         />
                     </View>
 
-                    {/* ---------- Overlay footer ---------- */}
                     <View style={styles.overlay}>
                         {address && (
                             <Text style={styles.title} numberOfLines={1}>
@@ -184,10 +162,6 @@ const AddressListItem: React.FC<Props> = ({
         </View>
     );
 };
-
-/* ------------------------------------------------------------------ */
-/*                             Стили                                  */
-/* ------------------------------------------------------------------ */
 
 const styles = StyleSheet.create({
     card: {

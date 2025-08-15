@@ -18,7 +18,7 @@ const PopupContentWeb: React.FC<PopupContentWebProps> = memo(({ travel }) => {
 
     const openLink = useCallback(() => {
         const url = articleUrl || urlTravel;
-        if (url) window.open(url, '_blank');
+        if (url) window.open(url, '_blank', 'noopener');
     }, [articleUrl, urlTravel]);
 
     const copyCoord = useCallback(() => {
@@ -26,12 +26,12 @@ const PopupContentWeb: React.FC<PopupContentWebProps> = memo(({ travel }) => {
     }, [coord]);
 
     const openMap = useCallback(() => {
-        window.open(`https://maps.google.com/?q=${coord}`, '_blank');
+        window.open(`https://maps.google.com/?q=${coord}`, '_blank', 'noopener');
     }, [coord]);
 
     const shareTelegram = useCallback(() => {
         const url = `https://t.me/share/url?url=${encodeURIComponent(coord)}&text=${encodeURIComponent(`Координаты: ${coord}`)}`;
-        window.open(url, '_blank');
+        window.open(url, '_blank', 'noopener');
     }, [coord]);
 
     const handleAction = useCallback((e: React.MouseEvent, fn: () => void) => {
@@ -73,7 +73,6 @@ const PopupContentWeb: React.FC<PopupContentWebProps> = memo(({ travel }) => {
     );
 });
 
-// SVG Иконки
 const IconBase: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <svg viewBox="0 0 24 24" className="popup-svg">{children}</svg>
 );
@@ -90,7 +89,6 @@ const SendIcon = () => (
     <IconBase><path d="M2.01,21L23,12,2.01,3,2,10l15,2-15,2Z" /></IconBase>
 );
 
-// CSS-in-JS вставка
 const styles = `
 .popup-card {
   width: 260px;
@@ -183,8 +181,9 @@ const styles = `
 }
 `;
 
-if (typeof document !== 'undefined') {
+if (typeof document !== 'undefined' && !document.getElementById('popup-content-web-style')) {
     const styleTag = document.createElement('style');
+    styleTag.id = 'popup-content-web-style';
     styleTag.innerHTML = styles;
     document.head.appendChild(styleTag);
 }

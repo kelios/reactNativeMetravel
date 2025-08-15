@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
 interface NumberInputComponentProps {
@@ -8,12 +8,11 @@ interface NumberInputComponentProps {
 }
 
 const NumberInputComponent: React.FC<NumberInputComponentProps> = ({ label, value, onChange }) => {
-    const handleChange = (text: string) => {
-        // Проверка на ввод только чисел
+    const handleChange = useCallback((text: string) => {
         if (/^\d*$/.test(text)) {
             onChange(text);
         }
-    };
+    }, [onChange]);
 
     return (
         <View style={styles.container}>
@@ -47,4 +46,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default NumberInputComponent;
+export default React.memo(NumberInputComponent);

@@ -6,14 +6,12 @@ type LabelTextProps = {
     text: string;
 };
 
-const LabelText: React.FC<LabelTextProps> = ({ label, text }) => {
-    return (
-        <View style={styles.labelContainer}>
-            <Text style={styles.label}>{label}</Text>
-            <Text style={styles.text}>{text}</Text>
-        </View>
-    );
-};
+const LabelText: React.FC<LabelTextProps> = ({ label, text }) => (
+    <View style={styles.labelContainer}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.text}>{text}</Text>
+    </View>
+);
 
 const styles = StyleSheet.create({
     labelContainer: {
@@ -38,4 +36,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default LabelText;
+export default React.memo(LabelText);

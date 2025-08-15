@@ -1,10 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap} from 'react-leaflet';
+import React, { useEffect, useRef, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import MarkersListComponent from '../MarkersListComponent';
 
-// Иконка маркера
 const markerIcon = new L.Icon({
     iconUrl: require('@/assets/icons/logo_yellow.ico'),
     iconSize: [27, 30],
@@ -18,7 +17,7 @@ const FitBounds = ({ markers }) => {
 
     useEffect(() => {
         if (!hasFit.current && markers.length > 0) {
-            const bounds = L.latLngBounds(markers.map(marker => [marker.lat, marker.lng]));
+            const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lng]));
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
             hasFit.current = true;
         }
@@ -27,7 +26,6 @@ const FitBounds = ({ markers }) => {
     return null;
 };
 
-// Обработчик кликов по карте
 const MapClickHandler = ({ addMarker }) => {
     useMapEvents({
         click(e) {
@@ -37,7 +35,6 @@ const MapClickHandler = ({ addMarker }) => {
     return null;
 };
 
-// Обратное геокодирование
 const reverseGeocode = async (latlng) => {
     const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&addressdetails=1`
@@ -55,13 +52,12 @@ const WebMapComponent = ({
                          }) => {
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
+
     const isValidCoordinates = ({ lat, lng }) =>
         lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+
     const addMarker = async (latlng) => {
-        if (!isValidCoordinates(latlng)) {
-            console.warn('Недопустимые координаты:', latlng);
-            return;
-        }
+        if (!isValidCoordinates(latlng)) return;
 
         const geocodeData = await reverseGeocode(latlng);
         const address = geocodeData?.display_name || '';
@@ -93,39 +89,33 @@ const WebMapComponent = ({
         setIsExpanded(true);
         setTimeout(() => {
             const element = document.getElementById(`marker-${index}`);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
     };
 
-    const handleMarkerChange = (index: number, field: string, value: string | string[]) => {
-        const updatedMarkers = [...markers];
-        updatedMarkers[index] = { ...updatedMarkers[index], [field]: value };
-        onMarkersChange(updatedMarkers);
+    const handleMarkerChange = (index: number, field: string, value: any) => {
+        const updated = [...markers];
+        updated[index] = { ...updated[index], [field]: value };
+        onMarkersChange(updated);
     };
 
     const handleImageUpload = (index: number, imageUrl: string) => {
-        const updatedMarkers = [...markers];
-        updatedMarkers[index].image = imageUrl;
-        onMarkersChange(updatedMarkers);
+        const updated = [...markers];
+        updated[index].image = imageUrl;
+        onMarkersChange(updated);
     };
 
     const handleMarkerRemove = (index: number) => {
-        const removedMarker = markers[index];
-        const updatedMarkers = markers.filter((_, idx) => idx !== index);
-        onMarkersChange(updatedMarkers);
+        const removed = markers[index];
+        const updated = markers.filter((_, i) => i !== index);
+        onMarkersChange(updated);
 
-        if (removedMarker.country) {
-            const hasMoreWithSameCountry = updatedMarkers.some(marker => marker.country === removedMarker.country);
-            if (!hasMoreWithSameCountry) {
-                onCountryDeselect(removedMarker.country);
-            }
+        if (removed.country) {
+            const stillExists = updated.some(m => m.country === removed.country);
+            if (!stillExists) onCountryDeselect(removed.country);
         }
 
-        if (editingIndex === index) {
-            setEditingIndex(null);
-        }
+        if (editingIndex === index) setEditingIndex(null);
     };
 
     return (
@@ -178,7 +168,6 @@ const WebMapComponent = ({
                 ))}
             </MapContainer>
 
-            {/* Кнопка показать/скрыть со счётчиком */}
             <div style={{ marginTop: 16 }}>
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
@@ -187,7 +176,6 @@ const WebMapComponent = ({
                     {isExpanded ? `Скрыть точки (${markers.length})` : `Показать точки (${markers.length})`}
                 </button>
 
-                {/* Анимированный блок со списком */}
                 <div style={{
                     maxHeight: isExpanded ? '500px' : '0',
                     overflow: 'hidden',

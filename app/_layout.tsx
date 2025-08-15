@@ -1,38 +1,25 @@
 import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import "@expo/metro-runtime";
-import {
-    ActivityIndicator,
-    Platform,
-    StyleSheet,
-    View,
-} from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import {
-    MD3LightTheme as DefaultTheme,
-    PaperProvider,
-} from "react-native-paper";
+import { MD3LightTheme as DefaultTheme, PaperProvider } from "react-native-paper";
 import { FiltersProvider } from "@/providers/FiltersProvider";
 import { AuthProvider } from "@/context/AuthContext";
-import {
-    QueryClient,
-    QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import Head from "expo-router/head";
 
-// ---------------- dynamic imports ----------------
 const Footer = lazy(() => import("@/components/Footer"));
 
-// Only load FontAwesome.ttf on native
 const fontMap =
     Platform.OS === "web"
         ? {}
         : {
-            FontAwesome: require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf"),
+            FontAwesome:
+                require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf"),
         } as const;
 
-// ---------------- theme ----------------
 const theme = {
     ...DefaultTheme,
     colors: {
@@ -50,14 +37,13 @@ const theme = {
     },
     fonts: {
         ...DefaultTheme.fonts,
-        bodyLarge: {
-            ...DefaultTheme.fonts.bodyLarge,
-            fontFamily: '"Playfair Display", serif',
-        },
+        bodyLarge:
+            Platform.OS === "web"
+                ? { ...DefaultTheme.fonts.bodyLarge, fontFamily: 'ui-serif, "Times New Roman", Georgia, serif' }
+                : { ...DefaultTheme.fonts.bodyLarge, fontFamily: '"Playfair Display", serif' },
     },
 } as const;
 
-// ---------------- query client ----------------
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -101,16 +87,11 @@ function RootLayoutNav() {
         <PaperProvider theme={theme}>
             <AuthProvider>
                 <QueryClientProvider client={queryClient}>
-                    {__DEV__ && Platform.OS !== "web" && (
-                        <ReactQueryDevtools initialIsOpen={false} />
-                    )}
+                    {__DEV__ && Platform.OS !== "web" && <ReactQueryDevtools initialIsOpen={false} />}
                     <FiltersProvider>
                         <View style={styles.wrapper}>
                             <Head>
-                                {/* Only global/technical tags */}
                                 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-                                {/* Favicon */}
                                 <link rel="icon" href="/favicon.ico" />
                                 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
                                 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -124,7 +105,9 @@ function RootLayoutNav() {
                             </View>
 
                             {showFooter && (
-                                <Suspense fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}>
+                                <Suspense
+                                    fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
+                                >
                                     <Footer />
                                 </Suspense>
                             )}

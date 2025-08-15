@@ -1,11 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
-import {
-    View,
-    Pressable,
-    Text,
-    StyleSheet,
-    Platform,
-} from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -20,7 +14,8 @@ const WebImage = memo(
             height={600}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             decoding="async"
-            fetchpriority={isPriority ? 'high' : undefined}
+            loading={isPriority ? 'eager' : 'lazy'}
+            fetchpriority={isPriority ? 'high' : 'low'}
             crossOrigin="anonymous"
         />
     )
@@ -88,7 +83,7 @@ function TravelListItem({
                     <ImageComponent
                         src={imgUrl}
                         alt={name}
-                        source={imgUrl} // для NativeImage совместимости
+                        source={imgUrl}
                         isPriority={isFirst}
                     />
                 ) : (

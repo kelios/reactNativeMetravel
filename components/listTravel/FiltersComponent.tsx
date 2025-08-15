@@ -26,6 +26,10 @@ const GroupBoxItem = memo(({ id, title, checked, onPress }) => (
     <Pressable
         style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
         onPress={onPress}
+        aria-pressed={checked}
+        role="checkbox"
+        accessibilityLabel={title}
+        accessibilityState={{ checked }}
     >
         <Feather
             name={checked ? 'check-square' : 'square'}
@@ -44,6 +48,8 @@ const GroupBox = memo(({ label, field, items, valKey, labelKey, filterValue, han
             <Pressable
                 style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
                 onPress={() => toggle(field)}
+                aria-expanded={open}
+                accessibilityLabel={label}
             >
                 <Text style={styles.groupLabel}>{label}</Text>
                 <Feather name={open ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
@@ -175,6 +181,10 @@ const FiltersComponent = ({
                     <Pressable
                         onPress={() => onSelectedItemsChange('showModerationPending', !filterValue.showModerationPending)}
                         style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                        aria-pressed={filterValue.showModerationPending}
+                        role="checkbox"
+                        accessibilityLabel="Показать статьи на модерации"
+                        accessibilityState={{ checked: filterValue.showModerationPending }}
                     >
                         <Feather name={filterValue.showModerationPending ? 'check-square' : 'square'} size={22} color="#4a7c59" />
                         <Text style={styles.itemText}>Показать статьи на модерации</Text>
@@ -187,28 +197,31 @@ const FiltersComponent = ({
     const renderFooter = useMemo(() => (
         <View style={[styles.footer, {
             paddingBottom: Math.max(insets.bottom, 24),
-            flexDirection: 'row',  // всегда row
-            flexWrap: 'wrap',      // если вдруг не влезет — wrap
+            flexDirection: 'row',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
             gap: 8,
         }]}>
             {isMobile && (
                 <Pressable
-                    style={[styles.btn, { flex: 1 }, styles.close]} // flex:1 для равных кнопок
+                    style={[styles.btn, { flex: 1 }, styles.close]}
                     onPress={closeMenu}
+                    accessibilityLabel="Закрыть фильтры"
                 >
                     <Text style={styles.btnTxt}>Закрыть</Text>
                 </Pressable>
             )}
             <Pressable
-                style={[styles.btn, { flex: 1 }, styles.reset]} // flex:1
+                style={[styles.btn, { flex: 1 }, styles.reset]}
                 onPress={handleReset}
+                accessibilityLabel="Сбросить фильтры"
             >
                 <Text style={[styles.btnTxt, styles.resetTxt]}>Сбросить</Text>
             </Pressable>
             <Pressable
-                style={[styles.btn, { flex: 1 }, styles.apply]} // flex:1
+                style={[styles.btn, { flex: 1 }, styles.apply]}
                 onPress={apply}
+                accessibilityLabel="Применить фильтры"
             >
                 <Text style={styles.btnTxt}>Применить</Text>
             </Pressable>
@@ -223,6 +236,8 @@ const FiltersComponent = ({
                     setYearOpen(v => !v);
                     setTimeout(() => yearInputRef.current?.focus(), 100);
                 }}
+                aria-expanded={yearOpen}
+                accessibilityLabel="Фильтр по году"
             >
                 <Text style={styles.groupLabel}>Год</Text>
                 <Feather name={yearOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
@@ -240,9 +255,10 @@ const FiltersComponent = ({
                             style={styles.yearInput}
                             returnKeyType="done"
                             onSubmitEditing={apply}
+                            accessibilityLabel="Введите год"
                         />
                         {year.length > 0 && (
-                            <Pressable onPress={() => setYear('')} style={styles.clearIcon}>
+                            <Pressable onPress={() => setYear('')} style={styles.clearIcon} accessibilityLabel="Очистить год">
                                 <Feather name="x" size={16} color="#999" />
                             </Pressable>
                         )}
@@ -267,6 +283,7 @@ const FiltersComponent = ({
                     <Pressable
                         style={[styles.toggleAllBtn, Platform.OS === 'web' && { cursor: 'pointer' }]}
                         onPress={handleToggleAll}
+                        accessibilityLabel={allExpanded ? 'Свернуть все фильтры' : 'Развернуть все фильтры'}
                     >
                         <Text style={styles.toggleAllText}>
                             {allExpanded ? 'Свернуть все' : 'Развернуть все'}
@@ -300,7 +317,6 @@ const FiltersComponent = ({
 };
 
 export default memo(FiltersComponent);
-
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#fff' },

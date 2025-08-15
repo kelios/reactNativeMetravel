@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, View, Text } from 'react-native';
 import { normalize, transliterate, CITY_ALIASES, MANUAL_IDS } from "@/utils/CityUtils";
-import { useInView } from 'react-intersection-observer'; // 🚀 добавляем useInView
+import { useInView } from 'react-intersection-observer';
 
 type Point = { id: string; address: string; coord: string };
 type Props = { points: Point[] };
@@ -64,8 +64,6 @@ async function findCityId(term: string): Promise<string | null> {
 export default function HotelWidget({ points }: Props) {
     const ref = useRef<HTMLDivElement>(null);
     const [locationId, setLocationId] = useState<string | null>(null);
-
-    // 🚀 добавляем inView observer
     const [refInView, inView] = useInView({
         triggerOnce: true,
         rootMargin: '200px',
@@ -73,45 +71,32 @@ export default function HotelWidget({ points }: Props) {
 
     useEffect(() => {
         if (Platform.OS !== 'web' || !points?.length) return;
-
         setLocationId(null);
         if (ref.current) {
             ref.current.innerHTML = '<p style="text-align:center; color:#aaa; font-size:14px;">Загрузка отелей...</p>';
         }
-
-        const processLocation = async () => {
+        (async () => {
             const parts = points[0].address.split(',')
                 .map(p => p.trim())
                 .filter(p => p && !/\d/.test(p) && !p.match(/(область|region|district|country)/i));
-
-            let foundId: string | null = null;
-
             for (const part of parts) {
                 const id = await findCityId(part);
                 if (id) {
-                    foundId = id;
+                    setLocationId(id);
                     break;
                 }
             }
-
-            setLocationId(foundId);
-        };
-
-        processLocation();
+        })();
     }, [points]);
 
     useEffect(() => {
-        // 🚀 вставляем скрипт ТОЛЬКО если inView === true
         if (Platform.OS !== 'web' || !ref.current || !locationId || !inView) return;
-
         ref.current.innerHTML = '';
         document.getElementById('hl-widget')?.remove();
-
         const script = document.createElement('script');
         script.async = true;
         script.charset = 'utf-8';
         script.id = 'hl-widget';
-
         const params = new URLSearchParams({
             currency: 'usd',
             trs: '423278',
@@ -128,20 +113,16 @@ export default function HotelWidget({ points }: Props) {
             promo_id: '4026',
             campaign_id: '101',
         });
-
         script.src = `https://tpwgt.com/content?${params.toString()}`;
         ref.current.appendChild(script);
-    }, [locationId, inView]); // 🚀 добавляем inView сюда
+    }, [locationId, inView]);
 
     if (Platform.OS !== 'web' || !locationId) return null;
 
     return (
         <View ref={refInView} style={{ width: '100%', marginBottom: 32 }}>
-            <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>
-                Отели рядом
-            </Text>
+            <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>Отели рядом</Text>
             <View style={{ width: '100%', minHeight: 600 }}>
-                {/* 🚀 рендерим div ТОЛЬКО когда inView === true */}
                 {inView && <div ref={ref} />}
             </View>
         </View>

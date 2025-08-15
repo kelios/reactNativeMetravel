@@ -1,11 +1,12 @@
 import React from 'react';
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface TextInputComponentProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
     secureTextEntry?: boolean;
+    placeholder?: string;
 }
 
 const TextInputComponent: React.FC<TextInputComponentProps> = ({
@@ -13,15 +14,16 @@ const TextInputComponent: React.FC<TextInputComponentProps> = ({
                                                                    value,
                                                                    onChange,
                                                                    secureTextEntry = false,
+                                                                   placeholder,
                                                                }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>{label}</Text>
+            {label ? <Text style={styles.label}>{label}</Text> : null}
             <TextInput
                 style={styles.input}
                 value={value}
                 onChangeText={onChange}
-                placeholder={`Введите ${String(label).toLowerCase()}`}
+                placeholder={placeholder || `Введите ${label?.toLowerCase?.() || ''}`}
                 secureTextEntry={secureTextEntry}
             />
         </View>
@@ -29,21 +31,17 @@ const TextInputComponent: React.FC<TextInputComponentProps> = ({
 };
 
 const styles = StyleSheet.create({
-    container: {
-        marginBottom: 20,
-    },
-    label: {
-        marginBottom: 5,
-        fontSize: 16,
-        color: '#333',
-    },
+    container: { marginBottom: 16 },
+    label: { marginBottom: 6, fontSize: 15, color: '#333', fontWeight: '500' },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
-        borderRadius: 5,
-        padding: 10,
-        fontSize: 16,
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        fontSize: 15,
+        backgroundColor: '#fff',
     },
 });
 
-export default TextInputComponent;
+export default React.memo(TextInputComponent);

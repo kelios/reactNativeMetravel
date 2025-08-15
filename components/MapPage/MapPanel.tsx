@@ -16,7 +16,7 @@ interface MapPanelProps {
     onMapClick?: (lng: number, lat: number) => void;
     transportMode?: 'car' | 'bike' | 'foot';
     setRouteDistance: (distance: number) => void;
-    setFullRouteCoords: (coords: [number, number][]) => void; // ✅ добавлено
+    setFullRouteCoords: (coords: [number, number][]) => void;
 }
 
 const MapPanel: React.FC<MapPanelProps> = ({
@@ -29,14 +29,16 @@ const MapPanel: React.FC<MapPanelProps> = ({
                                                onMapClick = () => {},
                                                transportMode = 'car',
                                                setRouteDistance,
-                                               setFullRouteCoords, // ✅ деструктурируем
+                                               setFullRouteCoords,
                                            }) => {
     const [isBrowser] = useState(Platform.OS === 'web');
 
     if (!isBrowser || !MapPageComponent) {
         return (
             <View style={styles.placeholder}>
-                <Text style={styles.placeholderText}>Карта доступна только в браузере</Text>
+                <Text style={styles.placeholderText}>
+                    Карта доступна только в браузере
+                </Text>
             </View>
         );
     }
@@ -53,7 +55,7 @@ const MapPanel: React.FC<MapPanelProps> = ({
                 onMapClick={onMapClick}
                 transportMode={transportMode}
                 setRouteDistance={setRouteDistance}
-                setFullRouteCoords={setFullRouteCoords} // ✅ передаём
+                setFullRouteCoords={setFullRouteCoords}
             />
         </View>
     );

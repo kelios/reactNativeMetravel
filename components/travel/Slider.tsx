@@ -107,7 +107,7 @@ const Slide = memo(({ uri, isVisible, imageProps, isPriorityImage, dimensions }:
                     source={{ uri }}
                     contentFit="contain"
                     cachePolicy="disk"
-                    priority={isPriorityImage ? "high" : "high"}
+                    priority="high"
                     transition={150}
                     recyclingKey={`img-${uri}`}
                     contentPosition="center"
@@ -168,7 +168,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
         );
 
         const isMobile = containerWidth <= MOBILE_BREAKPOINT;
-
         const uriMap = useMemo(() => images.map(buildUri), [images]);
 
         useEffect(() => {
@@ -188,7 +187,6 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
             (idx: number) => {
                 setCurrentIndex(idx);
                 onIndexChanged?.(idx);
-
                 setLoadedIndices((prev) => {
                     const nxt = new Set(prev);
                     for (let i = -preloadCount; i <= preloadCount; i++) {
@@ -245,6 +243,10 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
                 }),
             [navPrev, navNext]
         );
+
+        if (!images.length) {
+            return null;
+        }
 
         return (
             <View

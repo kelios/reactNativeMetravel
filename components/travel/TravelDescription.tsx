@@ -1,11 +1,18 @@
 import React from "react";
-import {Image, ScrollView, StyleSheet, Text, useWindowDimensions, View,} from "react-native";
+import {
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
+} from "react-native";
 import StableContent from "@/components/travel/StableContent";
 
 interface TravelDescriptionProps {
     htmlContent: string;
     title: string;
-    noBox?: boolean; // ✨ Флаг для отключения внутреннего блока
+    noBox?: boolean;
 }
 
 const TravelDescription: React.FC<TravelDescriptionProps> = ({
@@ -16,40 +23,38 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
     const { width, height } = useWindowDimensions();
     const pageHeight = Math.round(height * 0.7);
 
+    const content = (
+        <>
+            <Image
+                source={require("@/assets/travel-stamp.png")}
+                style={styles.stamp}
+            />
+            <StableContent
+                html={htmlContent}
+                contentWidth={Math.min(width, 900) - 60}
+            />
+        </>
+    );
+
     return (
         <View style={styles.wrapper}>
             <Text style={styles.title}>{title}</Text>
-
             {noBox ? (
                 <ScrollView
                     style={styles.scrollArea}
                     scrollEventThrottle={16}
-                    showsVerticalScrollIndicator={true}
+                    showsVerticalScrollIndicator
                 >
-                    <Image
-                        source={require("@/assets/travel-stamp.png")}
-                        style={styles.stamp}
-                    />
-                    <StableContent
-                        html={htmlContent}
-                        contentWidth={Math.min(width, 900) - 60}
-                    />
+                    {content}
                 </ScrollView>
             ) : (
                 <View style={[styles.fixedHeightBlock, { height: pageHeight }]}>
                     <ScrollView
                         style={styles.scrollArea}
                         scrollEventThrottle={16}
-                        showsVerticalScrollIndicator={true}
+                        showsVerticalScrollIndicator
                     >
-                        <Image
-                            source={require("@/assets/travel-stamp.png")}
-                            style={styles.stamp}
-                        />
-                        <StableContent
-                            html={htmlContent}
-                            contentWidth={Math.min(width, 900) - 60}
-                        />
+                        {content}
                     </ScrollView>
                 </View>
             )}
@@ -76,29 +81,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         textAlign: "center",
     },
-    progressContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 16,
-    },
-    progressBackground: {
-        width: 150,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: "#E0E0E0",
-        marginRight: 12,
-        overflow: "hidden",
-    },
-    progressBar: {
-        height: 8,
-        backgroundColor: "#FFA500",
-        borderRadius: 4,
-    },
-    pageText: {
-        fontSize: 14,
-        color: "#666",
-    },
     fixedHeightBlock: {
         borderWidth: 1,
         borderColor: "#DDD",
@@ -111,9 +93,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         elevation: 2,
     },
-    scrollArea: {
-       // padding: 20,
-    },
+    scrollArea: {},
     stamp: {
         position: "absolute",
         top: 20,

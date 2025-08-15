@@ -1,7 +1,7 @@
 import React from 'react';
-import {FlatList, StyleSheet, Text, useWindowDimensions, View,} from 'react-native';
+import { FlatList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import TravelListItem from '@/components/listTravel/TravelListItem';
-import {Travel} from '@/src/types/types';
+import { Travel } from '@/src/types/types';
 
 interface TravelListComponentProps {
     travels: Travel[];
@@ -24,7 +24,7 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
     const isMobile = windowWidth <= 768;
     const numColumns = isMobile ? 1 : 2;
 
-    if (travels.length === 0) {
+    if (!travels.length) {
         return <Text style={styles.noDataText}>Нет доступных путешествий</Text>;
     }
 
@@ -41,42 +41,25 @@ const TravelListComponent: React.FC<TravelListComponentProps> = ({
                         onEditPress={handleEdit}
                         onDeletePress={handleDelete}
                         isMobile={isMobile}
-                        index={index} // ✅ добавили index для контроля lazy-loading
+                        index={index}
                     />
                 </View>
             )}
             keyExtractor={(item) => item.id.toString()}
             numColumns={numColumns}
-            columnWrapperStyle={
-                numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined
-            }
+            columnWrapperStyle={numColumns > 1 ? { justifyContent: 'center', gap: 16 } : undefined}
             style={styles.list}
             contentContainerStyle={styles.contentContainer}
-            extraData={{ isSuperuser, isMetravel, userId }} // ✅ чтобы перерисовалось при изменении
+            extraData={{ isSuperuser, isMetravel, userId }}
         />
     );
 };
 
 const styles = StyleSheet.create({
-    list: {
-        width: '100%',
-    },
-    contentContainer: {
-        paddingHorizontal: 10,
-        paddingBottom: 20,
-    },
-    cardContainer: {
-        flex: 1,
-        margin: 10,
-        width: '100%',
-        maxWidth: '50%',
-    },
-    noDataText: {
-        textAlign: 'center',
-        marginTop: 20,
-        fontSize: 16,
-        color: '#777',
-    },
+    list: { width: '100%' },
+    contentContainer: { paddingHorizontal: 10, paddingBottom: 20 },
+    cardContainer: { flex: 1, margin: 10, width: '100%', maxWidth: '50%' },
+    noDataText: { textAlign: 'center', marginTop: 20, fontSize: 16, color: '#777' },
 });
 
 export default TravelListComponent;

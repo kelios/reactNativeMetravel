@@ -7,7 +7,8 @@ import {
     ScrollView,
     Image,
     Platform,
-    useWindowDimensions, ActivityIndicator,
+    useWindowDimensions,
+    ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { Text } from 'react-native-paper';
@@ -20,7 +21,6 @@ const Fallback = () => (
     </View>
 );
 
-/* -------------------------------- helpers -------------------------------- */
 const openUrl = (url: string) => {
     if (Platform.OS === 'web') {
         window.open(url, '_blank', 'noopener');
@@ -29,7 +29,6 @@ const openUrl = (url: string) => {
     }
 };
 
-/* -------------------------------- types ---------------------------------- */
 type SideBarProps = {
     refs: Record<string, React.RefObject<View>>;
     travel: Travel;
@@ -40,7 +39,6 @@ type SideBarProps = {
     storedUserId?: string | null;
 };
 
-/* ------------------------------- component ------------------------------- */
 function CompactSideBarTravel({
                                   refs,
                                   travel,
@@ -52,8 +50,6 @@ function CompactSideBarTravel({
                               }: SideBarProps) {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768 && width < 1024;
-
-    /* active link highlight */
     const [active, setActive] = useState<string>('');
     const setActiveAndNavigate = useCallback(
         (key: keyof typeof refs) => {
@@ -62,11 +58,7 @@ function CompactSideBarTravel({
         },
         [onNavigate],
     );
-
-    /* edit rights */
     const canEdit = isSuperuser || storedUserId === String(travel.userIds);
-
-    /* links config */
     const links = useMemo(() => [
         travel.gallery?.length ? { k: 'gallery', icon: 'photo-library', label: 'Галерея' } : null,
         travel.youtube_link ? { k: 'video', icon: 'ondemand-video', label: 'Видео' } : null,
@@ -79,8 +71,6 @@ function CompactSideBarTravel({
         { k: 'near', icon: 'location-on', label: 'Рядом (~60км)' },
         { k: 'popular', icon: 'star', label: 'Популярное' },
     ].filter(Boolean), [travel]);
-
-    /* open profile route */
     const handleUserTravels = () => openUrl(`/?user_id=${travel.userIds}`);
     const handleEdit = () => canEdit && openUrl(`/travel/${travel.id}`);
 
@@ -90,7 +80,6 @@ function CompactSideBarTravel({
                 style={[styles.menu, { width: isMobile ? '100%' : isTablet ? 240 : 280 }]}
                 contentContainerStyle={{ paddingBottom: isMobile ? 80 : 40 }}
             >
-                {/* card */}
                 <View style={styles.card}>
                     <View style={styles.cardRow}>
                         <View style={styles.avatarWrap}>
@@ -109,12 +98,13 @@ function CompactSideBarTravel({
                                 <Text style={styles.viewsTxt}>{travel.countUnicIpView}</Text>
                             </View>
                         </View>
-
                         <View style={{ flex: 1 }}>
                             <View style={styles.userRow}>
                                 <Text style={styles.userName} numberOfLines={1}>{`${travel.userName} | ${travel.countryName}`}</Text>
                                 {canEdit && (
-                                    <Pressable onPress={handleEdit} hitSlop={6}><MaterialIcons name="edit" size={18} color="#2F332E" /></Pressable>
+                                    <Pressable onPress={handleEdit} hitSlop={6}>
+                                        <MaterialIcons name="edit" size={18} color="#2F332E" />
+                                    </Pressable>
                                 )}
                             </View>
                             <Text style={styles.userYear}>{`${travel.monthName} ${travel.year}`}</Text>
@@ -122,8 +112,6 @@ function CompactSideBarTravel({
                         </View>
                     </View>
                 </View>
-
-                {/* nav links */}
                 {links.map(({ k, icon, label }) => (
                     <Pressable
                         key={k}
@@ -134,15 +122,13 @@ function CompactSideBarTravel({
                         <Text style={[styles.linkTxt, isTablet && { fontSize: 15 }]}>{label}</Text>
                     </Pressable>
                 ))}
-
-                {/* all travels */}
-                <Pressable onPress={handleUserTravels}><Text style={styles.allTravels}>Путешествия {travel.userName}</Text></Pressable>
+                <Pressable onPress={handleUserTravels}>
+                    <Text style={styles.allTravels}>Путешествия {travel.userName}</Text>
+                </Pressable>
                 <Suspense fallback={<Fallback />}>
                     <WeatherWidget points={travel.travelAddress} />
                 </Suspense>
             </ScrollView>
-
-            {/* close btn mobile */}
             {isMobile && (
                 <View style={styles.closeBar}>
                     <Pressable onPress={closeMenu} style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}>
@@ -157,7 +143,6 @@ function CompactSideBarTravel({
 
 export default memo(CompactSideBarTravel);
 
-/* ---------------------------- styles ---------------------------- */
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#fff' },
     menu: { paddingTop: 16, alignSelf: 'center', paddingHorizontal: 16, maxWidth: 320 },
@@ -190,8 +175,5 @@ const styles = StyleSheet.create({
     closeBtn: { flexDirection: 'row', alignItems: 'center' },
     closeBtnPressed: { opacity: 0.7 },
     closeTxt: { color: '#fff', fontSize: 16, fontFamily: 'Georgia', marginLeft: 8 },
-    fallback: {
-        paddingVertical: 40,
-        alignItems: 'center',
-    },
+    fallback: { paddingVertical: 40, alignItems: 'center' },
 });

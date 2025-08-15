@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from "react";
-import {Platform, StyleSheet, View} from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 
 interface InstagramEmbedProps {
     url: string;
@@ -13,19 +13,15 @@ const InstagramEmbed: React.FC<InstagramEmbedProps> = ({ url }) => {
     useEffect(() => {
         if (Platform.OS === "web") {
             const scriptId = "instagram-embed-script";
-
             if (!document.getElementById(scriptId)) {
                 const script = document.createElement("script");
                 script.src = "https://www.instagram.com/embed.js";
                 script.async = true;
                 script.id = scriptId;
                 document.body.appendChild(script);
-
                 script.onload = () => {
                     scriptLoaded.current = true;
-                    if (window.instgrm) {
-                        window.instgrm.Embeds.process();
-                    }
+                    if (window.instgrm) window.instgrm.Embeds.process();
                     setIsRendered(true);
                 };
             } else if (window.instgrm && !scriptLoaded.current) {
@@ -46,11 +42,9 @@ const InstagramEmbed: React.FC<InstagramEmbedProps> = ({ url }) => {
                     setIsRendered(true);
                 }
             });
-
             if (embedRef.current) {
                 observer.observe(embedRef.current, { childList: true, subtree: true });
             }
-
             return () => observer.disconnect();
         }
     }, [isRendered]);
@@ -77,14 +71,8 @@ const InstagramEmbed: React.FC<InstagramEmbedProps> = ({ url }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        height: 600,
-        width: "100%",
-        overflow: "hidden",
-    },
-    webview: {
-        flex: 1,
-    },
+    container: { height: 600, width: "100%", overflow: "hidden" },
+    webview: { flex: 1 },
 });
 
 export default React.memo(InstagramEmbed);

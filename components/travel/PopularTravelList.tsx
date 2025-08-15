@@ -28,10 +28,9 @@ type PopularTravelListProps = {
     maxColumns?: number;
 };
 
-// Оптимизированный memo-рендер TravelTmlRound
 const MemoTravelTmlRound = memo(TravelTmlRound);
 
-const ITEM_HEIGHT = 250; // пример — подставь свою высоту TravelTmlRound
+const ITEM_HEIGHT = 250;
 const SEPARATOR_HEIGHT = 20;
 
 const PopularTravelList: React.FC<PopularTravelListProps> = memo(
@@ -51,8 +50,6 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
             try {
                 const travelData = await fetchTravelsPopular();
                 setTravelsPopular(travelData);
-            } catch (error) {
-                console.error('Failed to fetch popular travel data:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -62,10 +59,7 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
             fetchPopularTravels();
         }, [fetchPopularTravels]);
 
-        const popularList = useMemo(
-            () => Object.values(travelsPopular),
-            [travelsPopular]
-        );
+        const popularList = Object.values(travelsPopular);
 
         const renderItem = useCallback(
             ({ item }: { item: Travel }) => <MemoTravelTmlRound travel={item} />,
@@ -78,12 +72,9 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
         );
 
         const handleContentChange = useCallback(() => {
-            if (scrollToAnchor) {
-                scrollToAnchor();
-            }
+            if (scrollToAnchor) scrollToAnchor();
         }, [scrollToAnchor]);
 
-        // Анимация появления
         useEffect(() => {
             if (!isLoading && popularList.length > 0) {
                 Animated.timing(fadeAnim, {
@@ -99,6 +90,17 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
             offset: (ITEM_HEIGHT + SEPARATOR_HEIGHT) * index,
             index,
         }), []);
+
+        const columnWrapperStyle = useMemo(() => (
+            numColumns > 1
+                ? {
+                    justifyContent:
+                        popularList.length % numColumns === 1
+                            ? 'center'
+                            : 'space-between',
+                }
+                : undefined
+        ), [numColumns, popularList.length]);
 
         if (isLoading) {
             return (
@@ -126,22 +128,13 @@ const PopularTravelList: React.FC<PopularTravelListProps> = memo(
                 )}
                 <Animated.View style={{ opacity: fadeAnim }}>
                     <FlatList
-                        key={numColumns} // force re-layout при изменении numColumns
+                        key={numColumns}
                         data={popularList}
                         renderItem={renderItem}
                         keyExtractor={keyExtractor}
                         numColumns={numColumns}
                         contentContainerStyle={styles.flatListContent}
-                        columnWrapperStyle={
-                            numColumns > 1
-                                ? {
-                                    justifyContent:
-                                        popularList.length % numColumns === 1
-                                            ? 'center'
-                                            : 'space-between',
-                                }
-                                : undefined
-                        }
+                        columnWrapperStyle={columnWrapperStyle}
                         ItemSeparatorComponent={() => <View style={styles.separator} />}
                         showsVerticalScrollIndicator={false}
                         initialNumToRender={6}

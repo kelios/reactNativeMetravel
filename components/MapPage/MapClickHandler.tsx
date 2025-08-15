@@ -1,8 +1,4 @@
-const MapClickHandler = ({
-                             onSelectPoint,
-                         }: {
-    onSelectPoint: (lng: number, lat: number) => void;
-}) => {
+const MapClickHandler = ({ onSelectPoint }: { onSelectPoint: (lng: number, lat: number) => void }) => {
     const { useMapEvents } = require('react-leaflet');
     useMapEvents({
         click(e) {
@@ -11,3 +7,5 @@ const MapClickHandler = ({
     });
     return null;
 };
+
+export default MapClickHandler;

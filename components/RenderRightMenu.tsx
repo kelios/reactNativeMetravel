@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -16,28 +16,29 @@ import { router } from 'expo-router';
 function RenderRightMenu() {
     const { isAuthenticated, username, logout, user } = useAuth();
     const { updateFilters } = useFilters();
-
     const [visible, setVisible] = useState(false);
-
     const { width } = useWindowDimensions();
     const isMobile = width <= 768;
 
-    const openMenu = () => setVisible(true);
-    const closeMenu = () => setVisible(false);
+    const openMenu = useCallback(() => setVisible(true), []);
+    const closeMenu = useCallback(() => setVisible(false), []);
 
-    const handleNavigate = (path: string, extraAction?: () => void) => {
-        requestAnimationFrame(() => {
-            if (extraAction) extraAction();
-            router.push(path);
-            closeMenu();
-        });
-    };
+    const handleNavigate = useCallback(
+        (path: string, extraAction?: () => void) => {
+            requestAnimationFrame(() => {
+                extraAction?.();
+                router.push(path);
+                closeMenu();
+            });
+        },
+        [closeMenu]
+    );
 
-    const handleLogout = async () => {
+    const handleLogout = useCallback(async () => {
         await logout();
         closeMenu();
         router.push('/');
-    };
+    }, [logout, closeMenu]);
 
     return (
         <View style={styles.container}>
@@ -65,7 +66,9 @@ function RenderRightMenu() {
                 {username && !isMobile && (
                     <View style={styles.userContainer}>
                         <Icon name="account-circle" size={24} color="#333" />
-                        <Text style={styles.username} numberOfLines={1}>{username}</Text>
+                        <Text style={styles.username} numberOfLines={1}>
+                            {username}
+                        </Text>
                     </View>
                 )}
 
@@ -81,8 +84,16 @@ function RenderRightMenu() {
                 >
                     {!isAuthenticated ? (
                         <>
-                            <Menu.Item onPress={() => handleNavigate('/login')} title="Войти" leadingIcon="login" />
-                            <Menu.Item onPress={() => handleNavigate('/registration')} title="Зарегистрироваться" leadingIcon="account-plus" />
+                            <Menu.Item
+                                onPress={() => handleNavigate('/login')}
+                                title="Войти"
+                                leadingIcon="login"
+                            />
+                            <Menu.Item
+                                onPress={() => handleNavigate('/registration')}
+                                title="Зарегистрироваться"
+                                leadingIcon="account-plus"
+                            />
                         </>
                     ) : (
                         <>
@@ -93,19 +104,25 @@ function RenderRightMenu() {
                                     )
                                 }
                                 title="Мои путешествия"
-                                leadingIcon={({ size }) => <Icon name="earth" size={size} color="#6aaaaa" />}
+                                leadingIcon={({ size }) => (
+                                    <Icon name="earth" size={size} color="#6aaaaa" />
+                                )}
                             />
                             <Divider />
                             <Menu.Item
                                 onPress={() => handleNavigate('/travel/new')}
                                 title="Добавить путешествие"
-                                leadingIcon={({ size }) => <Icon name="map-plus" size={size} color="#6aaaaa" />}
+                                leadingIcon={({ size }) => (
+                                    <Icon name="map-plus" size={size} color="#6aaaaa" />
+                                )}
                             />
                             <Divider />
                             <Menu.Item
                                 onPress={handleLogout}
                                 title="Выход"
-                                leadingIcon={({ size }) => <Icon name="logout" size={size} color="#6aaaaa" />}
+                                leadingIcon={({ size }) => (
+                                    <Icon name="logout" size={size} color="#6aaaaa" />
+                                )}
                             />
                         </>
                     )}
@@ -116,39 +133,14 @@ function RenderRightMenu() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    logo: {
-        width: 32,
-        height: 32,
-    },
-    logoMobile: {
-        width: 26,
-        height: 26,
-    },
-    logoTextMe: {
-        color: '#f28c28',
-    },
-    logoTextTravel: {
-        color: '#6aaaaa',
-    },
-    logoTextRow: {
-        flexDirection: 'row',
-        marginLeft: 8,
-    },
-    rightContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
+    container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
+    logoContainer: { flexDirection: 'row', alignItems: 'center' },
+    logo: { width: 32, height: 32 },
+    logoMobile: { width: 26, height: 26 },
+    logoTextMe: { color: '#f28c28' },
+    logoTextTravel: { color: '#6aaaaa' },
+    logoTextRow: { flexDirection: 'row', marginLeft: 8 },
+    rightContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     userContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -159,11 +151,7 @@ const styles = StyleSheet.create({
         maxWidth: 180,
         marginRight: 8,
     },
-    username: {
-        fontSize: 16,
-        color: '#333',
-        marginLeft: 6,
-    },
+    username: { fontSize: 16, color: '#333', marginLeft: 6 },
     menuButton: {
         backgroundColor: '#f0f0f0',
         borderRadius: 24,
@@ -186,4 +174,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default RenderRightMenu;
+export default React.memo(RenderRightMenu);

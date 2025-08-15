@@ -1,10 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-    ScrollView,
-    StyleSheet,
-    View,
-    Dimensions,
-} from 'react-native';
+import { ScrollView, StyleSheet, View, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Snackbar } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -13,7 +8,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     fetchAllCountries,
     fetchFilters,
-    fetchFiltersCountry,
     fetchTravel,
     saveFormData,
 } from '@/src/api/travels';
@@ -22,14 +16,12 @@ import { TravelFormData, MarkerData, Travel } from '@/src/types/types';
 import FiltersUpsertComponent from '@/components/travel/FiltersUpsertComponent';
 import ContentUpsertSection from '@/components/travel/ContentUpsertSection';
 import GallerySection from '@/components/travel/GallerySection';
-
 import { useAutoSaveForm } from '@/hooks/useAutoSaveForm';
 
 export default function UpsertTravel() {
     const router = useRouter();
     const { id } = useLocalSearchParams();
     const isNew = !id;
-
     const windowWidth = Dimensions.get('window').width;
     const isMobile = windowWidth <= 768;
 
@@ -62,34 +54,22 @@ export default function UpsertTravel() {
 
     useEffect(() => {
         let isMounted = true;
-
-        const loadData = async () => {
+        (async () => {
             try {
                 const flag = await AsyncStorage.getItem('isSuperuser');
                 if (isMounted) setIsSuperAdmin(flag === 'true');
-
                 const [filtersData, countryData] = await Promise.all([
                     fetchFilters(),
-                    fetchAllCountries()
+                    fetchAllCountries(),
                 ]);
-
                 if (isMounted) {
-                    setFilters(prev => ({
-                        ...filtersData,
-                        countries: countryData
-                    }));
+                    setFilters({ ...filtersData, countries: countryData });
                 }
             } catch (error) {
                 console.error('Ошибка загрузки фильтров:', error);
             }
-        };
-
-        loadData();
-
-        if (!isNew) {
-            loadTravelData(id as string);
-        }
-
+        })();
+        if (!isNew) loadTravelData(id as string);
         return () => {
             isMounted = false;
         };
@@ -117,26 +97,20 @@ export default function UpsertTravel() {
 
     const handleCountrySelect = (countryId: string) => {
         if (countryId) {
-            setFormData((prevData) => {
-                if (!prevData.countries.includes(countryId)) {
-                    return {
-                        ...prevData,
-                        countries: [...prevData.countries, countryId],
-                    };
-                }
-                return prevData;
-            });
+            setFormData(prevData =>
+                prevData.countries.includes(countryId)
+                    ? prevData
+                    : { ...prevData, countries: [...prevData.countries, countryId] }
+            );
         }
     };
 
-    // Пример: удаление страны
     const handleCountryDeselect = (countryId: string) => {
-        setFormData((prevData) => ({
+        setFormData(prevData => ({
             ...prevData,
-            countries: prevData.countries.filter((id) => id !== countryId),
+            countries: prevData.countries.filter(id => id !== countryId),
         }));
     };
-
 
     const showSnackbar = (message: string) => {
         setSnackbarMessage(message);
@@ -158,7 +132,6 @@ export default function UpsertTravel() {
                     />
                     <GallerySection formData={formData} travelDataOld={travelDataOld} />
                 </ScrollView>
-
                 {isMobile ? (
                     <View style={styles.mobileFiltersWrapper}>
                         {menuVisible && (
@@ -168,7 +141,7 @@ export default function UpsertTravel() {
                                     formData={formData}
                                     setFormData={setFormData}
                                     travelDataOld={travelDataOld}
-                                    onClose={() => setMenuVisible(false)} // Закрываем боковую панель
+                                    onClose={() => setMenuVisible(false)}
                                     isSuperAdmin={isSuperAdmin}
                                     onSave={handleManualSave}
                                 />
@@ -188,9 +161,7 @@ export default function UpsertTravel() {
                         />
                     </View>
                 )}
-
             </View>
-
             {isMobile && (
                 <View style={styles.mobileActionBar}>
                     <Button
@@ -201,7 +172,6 @@ export default function UpsertTravel() {
                     >
                         Сохранить
                     </Button>
-
                     <Button
                         mode="outlined"
                         icon="filter-outline"
@@ -212,7 +182,6 @@ export default function UpsertTravel() {
                     </Button>
                 </View>
             )}
-
             <Snackbar visible={snackbarVisible} onDismiss={() => setSnackbarVisible(false)}>
                 {snackbarMessage}
             </Snackbar>
@@ -238,7 +207,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderColor: '#ddd',
         flexDirection: 'row',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
     },
     saveButtonMobile: {
         backgroundColor: '#f5a623',
@@ -311,8 +280,8 @@ function cleanEmptyFields(obj: any): any {
     return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => {
             if (value === '') return [key, null];
-            if (value === false) return [key, false]; // специально сохраняем false
+            if (value === false) return [key, false];
             return [key, value];
-        })
+        }),
     );
 }

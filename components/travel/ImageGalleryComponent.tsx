@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    ScrollView,
     ActivityIndicator,
     Platform,
     useColorScheme,
@@ -14,13 +13,11 @@ import { useDropzone } from 'react-dropzone';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { uploadImage, deleteImage } from '@/src/api/travels';
 
-// Тип данных изображения
 interface GalleryItem {
     id: string;
     url: string;
 }
 
-// Пропсы для галереи
 interface ImageGalleryComponentProps {
     collection: string;
     idTravel: string;
@@ -44,23 +41,17 @@ const ImageGalleryComponent: React.FC<ImageGalleryComponentProps> = ({
     const theme = useColorScheme();
     const isDarkMode = theme === 'dark';
 
-    // Загрузка начальных изображений
     useEffect(() => {
-        if (initialImages && initialImages.length > 0) {
+        if (initialImages?.length) {
             setImages(initialImages);
             setLoading(initialImages.map(() => false));
         }
         setIsInitialLoading(false);
     }, [initialImages]);
 
-    // Загрузка новых изображений
     const handleUploadImages = useCallback(
         async (files: File[]) => {
-            if (images.length + files.length > maxImages) {
-                console.warn(`Максимум можно загрузить ${maxImages} изображений.`);
-                return;
-            }
-
+            if (images.length + files.length > maxImages) return;
             setIsUploading(true);
             const newLoading = [...loading];
 
@@ -68,22 +59,15 @@ const ImageGalleryComponent: React.FC<ImageGalleryComponentProps> = ({
                 const currentIndex = images.length + index;
                 newLoading[currentIndex] = true;
                 setLoading([...newLoading]);
-
                 try {
                     const formData = new FormData();
                     formData.append('file', file);
                     formData.append('collection', collection);
                     formData.append('id', idTravel);
-
                     const response = await uploadImage(formData);
-
                     if (response?.url) {
                         setImages((prev) => [...prev, { id: response.id, url: response.url }]);
-                    } else {
-                        console.warn('Ошибка загрузки изображения.');
                     }
-                } catch {
-                    console.warn('Ошибка при загрузке изображения.');
                 } finally {
                     newLoading[currentIndex] = false;
                     setLoading([...newLoading]);
@@ -96,7 +80,6 @@ const ImageGalleryComponent: React.FC<ImageGalleryComponentProps> = ({
         [images, loading, collection, idTravel, maxImages]
     );
 
-    // Настройка Drag & Drop (только Web)
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         accept: { 'image/*': [] },
         multiple: true,
@@ -104,24 +87,16 @@ const ImageGalleryComponent: React.FC<ImageGalleryComponentProps> = ({
         onDrop: (acceptedFiles) => handleUploadImages(acceptedFiles),
     });
 
-    // Подготовка к удалению
     const handleDeleteImage = (imageId: string) => {
         setSelectedImageId(imageId);
         setDialogVisible(true);
     };
 
-    // Удаление изображения после подтверждения
     const confirmDeleteImage = async () => {
         if (!selectedImageId) return;
-
-        console.log(`Удаление изображения: ${selectedImageId}`);
         try {
             await deleteImage(selectedImageId);
-
             setImages((prev) => prev.filter((img) => img.id !== selectedImageId));
-
-        } catch (error) {
-            console.error('Ошибка удаления:', error);
         } finally {
             setDialogVisible(false);
             setSelectedImageId(null);
@@ -131,10 +106,9 @@ const ImageGalleryComponent: React.FC<ImageGalleryComponentProps> = ({
     return (
         <View style={[styles.container, isDarkMode && styles.darkContainer]}>
             <View style={styles.headerContainer}>
-                <Text style={styles.galleryTitle}>📷 Галерея</Text>
-
-                <Text style={styles.imageCount}>
-                    Загружено <Text style={styles.highlight}>{images.length}</Text> из {maxImages} изображений
+                <Text style={[styles.galleryTitle, isDarkMode && styles.darkText]}>📷 Галерея</Text>
+                <Text style={[styles.imageCount, isDarkMode && styles.darkText]}>
+                    Загружено <Text style={styles.highlight}>{images.length}</Text> из {maxImages}
                 </Text>
             </View>
 
@@ -209,11 +183,13 @@ const styles = StyleSheet.create({
         padding: 20,
         width: '100%',
     },
+    darkContainer: {
+        backgroundColor: '#222',
+    },
     headerContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        width: '100%',
         marginBottom: 10,
         paddingVertical: 8,
         borderBottomWidth: 1,
@@ -224,14 +200,22 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
     },
+    imageCount: {
+        fontSize: 14,
+        color: '#666',
+    },
+    highlight: {
+        fontWeight: 'bold',
+        color: '#4b7c6f',
+    },
     galleryGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        gap: 12, // Добавили отступ между изображениями
+        gap: 12,
     },
     imageWrapper: {
-        width: '30%', // Теперь 3 изображения в ряд
+        width: '30%',
         aspectRatio: 1,
         borderRadius: 10,
         overflow: 'hidden',
@@ -248,14 +232,14 @@ const styles = StyleSheet.create({
         right: 5,
         backgroundColor: 'rgba(255, 0, 0, 0.8)',
         borderRadius: 12,
-        width: 20, // Уменьшили кнопку
+        width: 20,
         height: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
     deleteButtonText: {
         color: '#fff',
-        fontSize: 12, // Уменьшили текст крестика
+        fontSize: 12,
     },
     dropzone: {
         width: '100%',
@@ -265,12 +249,44 @@ const styles = StyleSheet.create({
         borderColor: '#4b7c6f',
         backgroundColor: '#f0f0f0',
         alignItems: 'center',
-        marginBottom: 20, // Отделили от галереи
+        marginBottom: 20,
     },
-    imageCount: {
+    activeDropzone: {
+        borderColor: '#2b5c53',
+        backgroundColor: '#e0f2f1',
+    },
+    darkDropzone: {
+        backgroundColor: '#333',
+        borderColor: '#888',
+    },
+    dropzoneText: {
         fontSize: 14,
         color: '#666',
-        marginBottom: 15,
+    },
+    darkText: {
+        color: '#ddd',
+    },
+    noImagesText: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: '#888',
+        marginTop: 20,
+    },
+    loader: {
+        marginTop: 20,
+    },
+    uploadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    uploadingText: {
+        color: '#fff',
+        marginTop: 10,
     },
 });
-

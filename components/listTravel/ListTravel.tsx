@@ -1,5 +1,10 @@
+// src/components/listTravel/ListTravel.tsx
 import React, {
-    memo, useCallback, useEffect, useMemo, useState,
+    memo,
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
 } from 'react';
 import {
     ActivityIndicator,
@@ -9,6 +14,7 @@ import {
     Text,
     View,
     useWindowDimensions,
+    Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -30,7 +36,7 @@ import {
 const INITIAL_FILTER = { year: '', showModerationPending: false };
 const BELARUS_ID = 3;
 const PER_PAGE_OPTS = [10, 20, 30, 50];
-const ITEM_HEIGHT = 320; // Фиксированная высота элемента для оптимизации
+const ITEM_HEIGHT = 320;
 
 function useDebounce<T>(val: T, delay = 400) {
     const [debouncedVal, setDebouncedVal] = useState(val);
@@ -78,10 +84,7 @@ function ListTravel() {
     const [options, setOptions] = useState<Record<string, any>>({});
     useEffect(() => {
         (async () => {
-            const [base, countries] = await Promise.all([
-                fetchFilters(),
-                fetchFiltersCountry()
-            ]);
+            const [base, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
             setOptions({ ...base, countries });
         })();
     }, []);
@@ -134,11 +137,14 @@ function ListTravel() {
         setPage(0);
     }, []);
 
-    const getItemLayout = useCallback((data: any, index: number) => ({
-        length: ITEM_HEIGHT,
-        offset: ITEM_HEIGHT * index,
-        index,
-    }), []);
+    const getItemLayout = useCallback(
+        (_: any, index: number) => ({
+            length: ITEM_HEIGHT,
+            offset: ITEM_HEIGHT * index,
+            index,
+        }),
+        [],
+    );
 
     const renderItem = useCallback(
         ({ item, index }: any) => (
@@ -161,7 +167,7 @@ function ListTravel() {
         <SafeAreaView style={styles.root}>
             <View style={[styles.container, { flexDirection: isMobile ? 'column' : 'row' }]}>
                 {!isMobile && (
-                    <View style={styles.sidebar}>
+                    <View style={styles.sidebar} aria-label="Фильтры">
                         <MemoizedFilters
                             filtersLoadedKey={listKey}
                             filters={options}
@@ -184,7 +190,7 @@ function ListTravel() {
                     />
 
                     {status === 'pending' && (
-                        <View style={styles.loader}>
+                        <View style={styles.loader} accessibilityRole="alert" aria-live="polite">
                             <ActivityIndicator size="large" color="#4a7c59" />
                         </View>
                     )}
@@ -201,13 +207,14 @@ function ListTravel() {
                             renderItem={renderItem}
                             numColumns={columns}
                             columnWrapperStyle={columns > 1 ? styles.columnWrapper : undefined}
-                            contentContainerStyle={[styles.list, { minHeight: '100vh' }]}
+                            contentContainerStyle={[styles.list, { minHeight: '100vh' as any }]}
                             showsVerticalScrollIndicator={false}
-                            removeClippedSubviews={false} // ✅ обязательно
-                            initialNumToRender={8}         // ✅ опционально
-                            maxToRenderPerBatch={8}        // ✅ опционально
-                            windowSize={7}
+                            removeClippedSubviews
+                            initialNumToRender={8}
+                            maxToRenderPerBatch={8}
+                            windowSize={9}
                             getItemLayout={getItemLayout}
+                            accessibilityRole="list"
                         />
                     )}
 
@@ -252,9 +259,24 @@ function ListTravel() {
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#fff' },
-    container: { flex: 1 },
-    sidebar: { width: 280, borderRightWidth: 1, borderColor: '#eee' },
-    main: { flex: 1, padding: 12 },
+    container: {
+        flex: 1,
+        ...(Platform.OS === 'web' && { alignItems: 'stretch' }),
+    },
+    sidebar: {
+        width: 280,
+        borderRightWidth: 1,
+        borderColor: '#eee',
+    },
+    main: {
+        flex: 1,
+        padding: 12,
+        ...(Platform.OS === 'web' && {
+            maxWidth: 1440,
+            marginHorizontal: 'auto' as any,
+            width: '100%',
+        }),
+    },
     loader: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
     status: { marginTop: 40, textAlign: 'center', fontSize: 16, color: '#888' },
     list: { gap: 16, paddingBottom: 32 },

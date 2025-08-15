@@ -28,13 +28,8 @@ export default function WeatherWidget({ points, countryName }: Props) {
 
         const rawAddress = points[0]?.address ?? '';
         const addressParts = rawAddress.split(',').map(part => part.trim());
-
-        // Просто берём 0,1,2 элементы + country
         const locationParts = addressParts.slice(0, 3).filter(Boolean);
-        if (countryName) {
-            locationParts.push(countryName);
-        }
-
+        if (countryName) locationParts.push(countryName);
         setLocationLabel(locationParts.join(', '));
 
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
@@ -46,7 +41,6 @@ export default function WeatherWidget({ points, countryName }: Props) {
                 const tempMax = data?.daily?.temperature_2m_max ?? [];
                 const tempMin = data?.daily?.temperature_2m_min ?? [];
                 const codes = data?.daily?.weather_code ?? [];
-
                 const forecastData: DailyForecast[] = dates.slice(0, 3).map((date: string, i: number) => ({
                     date,
                     temperatureMin: tempMin[i],
@@ -54,7 +48,6 @@ export default function WeatherWidget({ points, countryName }: Props) {
                     condition: weatherDescriptions[codes[i]] ?? 'Неизвестно',
                     icon: iconFromCode(codes[i]),
                 }));
-
                 setForecast(forecastData);
             })
             .catch(() => {});
@@ -67,7 +60,11 @@ export default function WeatherWidget({ points, countryName }: Props) {
             <Text style={styles.title}>Погода в {locationLabel}</Text>
             {forecast.map((day) => (
                 <View key={day.date} style={styles.box}>
-                    <Image source={{ uri: day.icon }} style={styles.icon} {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})} />
+                    <Image
+                        source={{ uri: day.icon }}
+                        style={styles.icon}
+                        {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})}
+                    />
                     <View style={{ flex: 1 }}>
                         <Text style={styles.date}>{formatDate(day.date)}</Text>
                         <Text style={styles.temp}>
@@ -80,9 +77,6 @@ export default function WeatherWidget({ points, countryName }: Props) {
         </View>
     );
 }
-
-const capitalize = (s: string) =>
-    s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
 function formatDate(dateStr: string): string {
     const date = new Date(dateStr);

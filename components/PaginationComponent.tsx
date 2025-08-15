@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { Button as PaperButton, Menu, IconButton } from 'react-native-paper';
 
@@ -10,14 +10,14 @@ export default function PaginationComponent({
                                                 onItemsPerPageChange,
                                                 totalItems,
                                             }) {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
     const [menuVisible, setMenuVisible] = useState(false);
     const [pageInput, setPageInput] = useState(currentPage + 1);
     const { width } = useWindowDimensions();
     const isMobile = width < 480;
 
     useEffect(() => {
-        const newTotalPages = Math.ceil(totalItems / itemsPerPage);
+        const newTotalPages = Math.ceil(totalItems / itemsPerPage) || 1;
         if (currentPage >= newTotalPages) {
             const newPage = Math.max(0, newTotalPages - 1);
             setPageInput(newPage + 1);
@@ -25,18 +25,21 @@ export default function PaginationComponent({
         } else {
             setPageInput(currentPage + 1);
         }
-    }, [itemsPerPage, totalItems]);
+    }, [itemsPerPage, totalItems, currentPage, onPageChange]);
 
-    const handlePageChange = (newPageRaw) => {
-        const newPage = Number(newPageRaw);
-        if (isNaN(newPage) || newPage < 1 || newPage > totalPages) {
-            setPageInput(currentPage + 1);
-            return;
-        }
-        const page = Math.min(Math.max(newPage - 1, 0), totalPages - 1);
-        setPageInput(page + 1);
-        onPageChange(page);
-    };
+    const handlePageChange = useCallback(
+        (newPageRaw) => {
+            const newPage = Number(newPageRaw);
+            if (isNaN(newPage) || newPage < 1 || newPage > totalPages) {
+                setPageInput(currentPage + 1);
+                return;
+            }
+            const page = Math.min(Math.max(newPage - 1, 0), totalPages - 1);
+            setPageInput(page + 1);
+            onPageChange(page);
+        },
+        [totalPages, currentPage, onPageChange]
+    );
 
     return (
         <View style={[styles.paginationContainer, isMobile && styles.mobileContainer]}>
@@ -111,7 +114,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     mobileContainer: {
-        position: 'sticky', // Web only
+        position: 'sticky',
         bottom: 0,
         zIndex: 10,
         backgroundColor: '#fefefe',

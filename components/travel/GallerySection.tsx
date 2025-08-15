@@ -37,17 +37,17 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
 
     return (
         <View style={[styles.galleryContainer, isDarkMode && styles.darkBackground]}>
-            {isGalleryEmpty && (
+            {isGalleryEmpty ? (
                 <Text style={[styles.emptyText, isDarkMode && styles.darkText]}>
                     Пока нет изображений в галерее.
                 </Text>
+            ) : (
+                <ImageGalleryComponent
+                    collection="gallery"
+                    idTravel={formData.id}
+                    initialImages={formData.gallery}
+                />
             )}
-
-            <ImageGalleryComponent
-                collection="gallery"
-                idTravel={formData.id}
-                initialImages={formData.gallery}
-            />
         </View>
     );
 };
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-        alignItems: 'center', // Центрируем текст и лоадер
+        alignItems: 'center',
     },
     darkBackground: {
         backgroundColor: '#222',
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
         fontSize: 16,
         color: '#555',
+        textAlign: 'center',
     },
     infoText: {
         fontSize: 16,

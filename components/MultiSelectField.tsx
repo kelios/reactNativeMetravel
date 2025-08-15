@@ -13,11 +13,7 @@ const MultiSelectField = forwardRef(
             if (single) {
                 const selected = selectedItems?.[0] || '';
                 onChange(selected);
-
-                // Закрываем дропдаун СРАЗУ после выбора
-                if (multiSelectRef.current) {
-                    multiSelectRef.current.close();
-                }
+                multiSelectRef.current?.close();
             } else {
                 onChange(selectedItems);
             }
@@ -31,7 +27,7 @@ const MultiSelectField = forwardRef(
                     data={items}
                     value={
                         single
-                            ? value !== undefined && value !== null && value !== ''
+                            ? value
                                 ? [value]
                                 : []
                             : value

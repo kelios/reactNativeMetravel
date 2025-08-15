@@ -13,9 +13,12 @@ interface RoutingMachineProps {
 
 const getORSProfile = (mode: 'car' | 'bike' | 'foot') => {
     switch (mode) {
-        case 'bike': return 'cycling-regular';
-        case 'foot': return 'foot-walking';
-        default: return 'driving-car';
+        case 'bike':
+            return 'cycling-regular';
+        case 'foot':
+            return 'foot-walking';
+        default:
+            return 'driving-car';
     }
 };
 
@@ -31,85 +34,92 @@ const RoutingMachine: React.FC<RoutingMachineProps> = ({
     const map = useMap();
     const routingControl = useRef<any>(null);
 
-    const CustomRouter = useMemo(() => ({
-        route: async (waypoints, callback, context) => {
-            try {
-                setRoutingLoading(true);
+    const CustomRouter = useMemo(
+        () => ({
+            route: async (waypoints, callback, context) => {
+                try {
+                    setRoutingLoading(true);
 
-                const coordinates = waypoints.map((wp: any) => [wp.latLng.lng, wp.latLng.lat]);
-                if (coordinates.length < 2) {
+                    const coordinates = waypoints.map((wp: any) => [wp.latLng.lng, wp.latLng.lat]);
+                    if (coordinates.length < 2) {
+                        if (context && typeof callback === 'function') {
+                            callback.call(context, new Error('Недостаточно точек для маршрута'), []);
+                        }
+                        return;
+                    }
+
+                    const response = await fetch(
+                        `https://api.openrouteservice.org/v2/directions/${getORSProfile(transportMode)}/geojson`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                Authorization: ORS_API_KEY,
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ coordinates }),
+                        }
+                    );
+
+                    if (!response.ok) {
+                        if (context && typeof callback === 'function') {
+                            callback.call(context, new Error('Ошибка маршрута (ORS)'), []);
+                        }
+                        return;
+                    }
+
+                    const data = await response.json();
+                    const geometry = data.features?.[0]?.geometry;
+                    const summary = data.features?.[0]?.properties?.summary;
+
+                    if (!geometry?.coordinates?.length) {
+                        if (context && typeof callback === 'function') {
+                            callback.call(context, new Error('Пустой маршрут'), []);
+                        }
+                        return;
+                    }
+
+                    setFullRouteCoords(geometry.coordinates);
+
+                    const latlngs = geometry.coordinates.map(([lng, lat]) =>
+                        (window as any).L.latLng(lat, lng)
+                    );
+
+                    const route = {
+                        name: 'Маршрут',
+                        coordinates: latlngs,
+                        summary: {
+                            totalDistance: summary?.distance || 0,
+                            totalTime: summary?.duration || 0,
+                        },
+                        instructions: [],
+                        waypoints,
+                        inputWaypoints: waypoints,
+                        properties: { isSimplified: false },
+                    };
+
                     if (context && typeof callback === 'function') {
-                        callback.call(context, new Error('Недостаточно точек для маршрута'), []);
+                        callback.call(context, null, [route]);
                     }
-                    return;
-                }
-
-                const response = await fetch(`https://api.openrouteservice.org/v2/directions/${getORSProfile(transportMode)}/geojson`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: ORS_API_KEY,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ coordinates }),
-                });
-
-                if (!response.ok) {
+                } catch (error) {
                     if (context && typeof callback === 'function') {
-                        callback.call(context, new Error('Ошибка маршрута (ORS)'), []);
+                        try {
+                            callback.call(context, error, []);
+                        } catch (cbError) {
+                            console.warn('Ошибка внутри callback после маршрута:', cbError);
+                        }
                     }
-                    return;
+                } finally {
+                    setRoutingLoading(false);
                 }
-
-                const data = await response.json();
-                const geometry = data.features?.[0]?.geometry;
-                const summary = data.features?.[0]?.properties?.summary;
-
-                if (!geometry?.coordinates?.length) {
-                    if (context && typeof callback === 'function') {
-                        callback.call(context, new Error('Пустой маршрут'), []);
-                    }
-                    return;
-                }
-
-                setFullRouteCoords(geometry.coordinates);
-
-                const latlngs = geometry.coordinates.map(([lng, lat]) => (window as any).L.latLng(lat, lng));
-
-                const route = {
-                    name: 'Маршрут',
-                    coordinates: latlngs,
-                    summary: {
-                        totalDistance: summary?.distance || 0,
-                        totalTime: summary?.duration || 0,
-                    },
-                    instructions: [],
-                    waypoints,
-                    inputWaypoints: waypoints,
-                    properties: { isSimplified: false },
-                };
-
-                if (context && typeof callback === 'function') {
-                    callback.call(context, null, [route]);
-                }
-            } catch (error) {
-                if (context && typeof callback === 'function') {
-                    try {
-                        callback.call(context, error, []);
-                    } catch (cbError) {
-                        console.warn('Ошибка внутри callback после маршрута:', cbError);
-                    }
-                }
-            } finally {
-                setRoutingLoading(false);
-            }
-        }
-    }), [ORS_API_KEY, transportMode]);
+            },
+        }),
+        [ORS_API_KEY, transportMode]
+    );
 
     useEffect(() => {
         const L = (window as any).L;
         if (!map || !L?.Routing?.control || !ORS_API_KEY) return;
 
-        // 🧼 Очистка маршрута
         if (routingControl.current) {
             try {
                 map.removeControl(routingControl.current);
@@ -119,9 +129,8 @@ const RoutingMachine: React.FC<RoutingMachineProps> = ({
             routingControl.current = null;
         }
 
-        // ❌ Нет точек — очищаем ошибку и выходим
         if (routePoints.length < 2) {
-            setErrors(prev => ({ ...prev, routing: false }));
+            setErrors((prev) => ({ ...prev, routing: false }));
             return;
         }
 
@@ -151,8 +160,7 @@ const RoutingMachine: React.FC<RoutingMachineProps> = ({
                     setRouteDistance(route.summary.totalDistance);
                 }
 
-                // ✅ Сброс ошибки при успехе
-                setErrors(prev => ({ ...prev, routing: false }));
+                setErrors((prev) => ({ ...prev, routing: false }));
 
                 if (!(window as any).disableFitBounds && route?.coordinates) {
                     map.fitBounds(L.latLngBounds(route.coordinates).pad(0.2));
@@ -161,14 +169,14 @@ const RoutingMachine: React.FC<RoutingMachineProps> = ({
                 (window as any).disableFitBounds = false;
             });
 
-            routingControl.current.on('routingerror', e => {
-                setErrors(prev => ({ ...prev, routing: e.error || true }));
+            routingControl.current.on('routingerror', (e) => {
+                setErrors((prev) => ({ ...prev, routing: e.error || true }));
             });
 
             routingControl.current.addTo(map);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Ошибка инициализации маршрута:', error);
-            setErrors(prev => ({ ...prev, routing: error.message || true }));
+            setErrors((prev) => ({ ...prev, routing: error.message || true }));
         }
 
         return () => {

@@ -1,10 +1,4 @@
-import React, {
-    useMemo,
-    useCallback,
-    useRef,
-    memo,
-    useEffect,
-} from 'react';
+import React, { useMemo, useCallback, useRef, memo, useEffect } from 'react';
 import {
     FlatList,
     Text,
@@ -174,16 +168,6 @@ const getStyles = (isMobile: boolean) =>
         },
         separator: {
             height: 12,
-        },
-        itemWrapper: {
-            paddingHorizontal: 8,
-            paddingVertical: 6,
-            backgroundColor: '#fff',
-            borderRadius: 12,
-            elevation: 2,
-            shadowColor: '#000',
-            shadowOpacity: 0.05,
-            shadowRadius: 3,
         },
         skeletonItem: {
             height: 68,

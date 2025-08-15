@@ -1,6 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { View, useWindowDimensions, StyleSheet } from 'react-native';
-
+import { View, useWindowDimensions } from 'react-native';
 import TravelListItem from './TravelListItem';
 
 function RenderTravelItem({
@@ -21,44 +20,44 @@ function RenderTravelItem({
     const containerStyle = useMemo(() => {
         const base = {
             borderRadius: 12,
-            overflow: 'hidden',
-            marginBottom: 16
+            overflow: 'hidden' as const,
+            marginBottom: 16,
         };
 
-        if (isSingle) return {
-            ...base,
-            width: '100%',
-            maxWidth: 600,
-            alignSelf: 'center',
-            paddingHorizontal: 16
-        };
+        if (isSingle)
+            return {
+                ...base,
+                width: '100%',
+                maxWidth: 600,
+                alignSelf: 'center' as const,
+                paddingHorizontal: 16,
+            };
 
-        if (isMobile) return {
-            ...base,
-            width: '100%'
-        };
+        if (isMobile)
+            return {
+                ...base,
+                width: '100%',
+            };
 
         return {
             ...base,
             flex: 1,
             flexBasis: isTablet ? '48%' : '31%',
-            maxWidth: isTablet ? '48%' : '31%'
+            maxWidth: isTablet ? '48%' : '31%',
         };
     }, [isMobile, isTablet, isSingle]);
 
     return (
         <View style={containerStyle}>
-            <React.Suspense fallback={<View style={{ height: 300, backgroundColor: '#f5f5f5' }} />}>
-                <TravelListItem
-                    travel={item}
-                    isSuperuser={isSuperuser}
-                    isMetravel={isMetravel}
-                    onDeletePress={onDeletePress}
-                    onEditPress={onEditPress}
-                    isFirst={isFirst}
-                    isSingle={isSingle}
-                />
-            </React.Suspense>
+            <TravelListItem
+                travel={item}
+                isSuperuser={isSuperuser}
+                isMetravel={isMetravel}
+                onDeletePress={onDeletePress}
+                onEditPress={onEditPress}
+                isFirst={isFirst}
+                isSingle={isSingle}
+            />
         </View>
     );
 }

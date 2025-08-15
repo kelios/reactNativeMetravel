@@ -10,8 +10,8 @@ import {
     Linking,
 } from 'react-native';
 import { Link, Href } from 'expo-router';
-import Icon from 'react-native-vector-icons/FontAwesome';     // FA 4 (home, globe…)
-import Icon5 from 'react-native-vector-icons/FontAwesome5';   // FA 5 (tiktok)
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Icon5 from 'react-native-vector-icons/FontAwesome5';
 
 type NavItem = { icon: string; label: string; route: Href };
 
@@ -26,7 +26,7 @@ const Footer: React.FC = () => {
         { icon: 'home',       label: 'Путешествия',    route: '/' },
         { icon: 'globe',      label: 'Беларусь',       route: '/travelsby' },
         { icon: 'map',        label: 'Карта',          route: '/map' },
-        { icon: 'list',       label: 'Пишут о BY',    route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
+        { icon: 'list',       label: 'Пишут о BY',     route: '/travels/akkaunty-v-instagram-o-puteshestviyah-po-belarusi' },
         { icon: 'envelope',   label: 'Обратная связь', route: '/contact' },
         { icon: 'info-circle',label: 'О сайте',        route: '/about' },
     ];
@@ -37,7 +37,6 @@ const Footer: React.FC = () => {
         { icon: <Icon name="youtube" size={20} color="#ff9f5a" />, url: 'https://www.youtube.com/@metravelby', label: 'YouTube' },
     ];
 
-    /* ---------- MOBILE ---------- */
     if (isMobile) {
         return (
             <View style={s.root}>
@@ -47,20 +46,16 @@ const Footer: React.FC = () => {
                             <Icon name={item.icon} size={20} color="#ff9f5a" style={s.pad} />
                         </Link>
                     ))}
-
-
-
                     {social.map(item => (
-                        <Pressable key={item.label} onPress={() => open(item.url)} hitSlop={8} accessibilityLabel={item.label}>
+                        <Pressable key={item.label} onPress={() => open(item.url)} hitSlop={8} accessibilityLabel={item.label} style={s.pad}>
                             {item.icon}
                         </Pressable>
                     ))}
-            </View>
+                </View>
             </View>
         );
     }
 
-    /* ---------- DESKTOP / TABLET ---------- */
     return (
         <View style={s.root}>
             <View style={s.links}>
@@ -71,7 +66,6 @@ const Footer: React.FC = () => {
                     </Link>
                 ))}
             </View>
-
             <View style={s.bottom}>
                 <View style={s.social}>
                     {social.map(item => (
@@ -80,7 +74,6 @@ const Footer: React.FC = () => {
                         </Pressable>
                     ))}
                 </View>
-
                 <View style={s.brand}>
                     <Image source={require('../assets/icons/logo_yellow_60x60.png')} style={s.logo} />
                     <Text style={s.copy}>© MeTravel 2020</Text>
@@ -90,7 +83,6 @@ const Footer: React.FC = () => {
     );
 };
 
-/* ---------- styles ---------- */
 const createStyles = (w: number) =>
     StyleSheet.create({
         root: {
@@ -103,13 +95,13 @@ const createStyles = (w: number) =>
         },
         row: {
             flexDirection: 'row',
-            justifyContent: 'space-around',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
             alignItems: 'center',
             marginVertical: 4,
             paddingTop: 2,
         },
         pad: { padding: 6 },
-
         links: {
             flexDirection: 'row',
             flexWrap: 'wrap',
@@ -127,7 +119,6 @@ const createStyles = (w: number) =>
             fontSize: w > 500 ? 14 : 12,
             marginLeft: 8,
         },
-
         bottom: {
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -136,6 +127,7 @@ const createStyles = (w: number) =>
         social: {
             flexDirection: 'row',
             alignItems: 'center',
+            flexWrap: 'wrap',
         },
         brand: {
             flexDirection: 'row',

@@ -7,12 +7,12 @@ export default function TabLayout() {
     const tabBarHiddenStyle = useMemo(() => ({ display: 'none' }), []);
     const headerComponent = useMemo(() => () => <CustomHeader />, []);
 
-    const hiddenOptions = useMemo(() => ({ title: '', href: undefined }), []);
-    const hiddenHrefOptions = useMemo(() => ({ title: '', href: null }), []);
+    const hiddenOptions = useMemo(() => ({ title: '', href: undefined, lazy: true }), []);
+    const hiddenHrefOptions = useMemo(() => ({ title: '', href: null, lazy: true }), []);
 
     return (
         <Tabs
-            initialRouteName="index" // ✅ оптимизация для initial render
+            initialRouteName="index"
             screenOptions={{
                 tabBarStyle: tabBarHiddenStyle,
                 header: headerComponent,

@@ -6,7 +6,7 @@ export default function CustomHeader() {
     return (
         <View style={styles.wrapper}>
             <View style={styles.inner}>
-                <RenderRightMenu />
+                 <RenderRightMenu />
             </View>
         </View>
     );
@@ -35,7 +35,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         ...(Platform.OS === 'web' && {
-            // принудительно отменяем обёртки expo-router
             marginLeft: 0,
             marginRight: 0,
         }),

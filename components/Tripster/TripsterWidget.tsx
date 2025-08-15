@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Platform, View } from 'react-native';
 import { normalize, transliterate, CITY_ALIASES, TRIPSTER_CITY_NAMES } from "@/utils/CityUtils";
-import { useInView } from 'react-intersection-observer'; // 🚀 добавляем useInView
+import { useInView } from 'react-intersection-observer';
 
 type Props = {
     points: {
@@ -26,9 +26,7 @@ function findCityName(term: string): string | null {
     for (const [city, aliases] of Object.entries(CITY_ALIASES)) {
         if ([city, ...aliases].some(alias => formsToTry.includes(alias.toLowerCase()))) {
             const name = TRIPSTER_CITY_NAMES[city];
-            if (name) {
-                return name;
-            }
+            if (name) return name;
         }
     }
 
@@ -36,7 +34,7 @@ function findCityName(term: string): string | null {
 }
 
 export default function TripsterWidget({ points }: Props) {
-    const ref = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const firstAddress = points?.[0]?.address || '';
     const parts = firstAddress.split(',').map(p => p.trim());
@@ -49,16 +47,15 @@ export default function TripsterWidget({ points }: Props) {
         }
     }
 
-    // 🚀 добавляем useInView
-    const [refInView, inView] = useInView({
+    const [viewRef, inView] = useInView({
         triggerOnce: true,
         rootMargin: '200px',
     });
 
     useEffect(() => {
-        if (Platform.OS !== 'web' || !validCity || !ref.current || !inView) return;
+        if (Platform.OS !== 'web' || !validCity || !containerRef.current || !inView) return;
 
-        ref.current.innerHTML = '';
+        containerRef.current.innerHTML = '';
         document.getElementById('tripster-widget-script')?.remove();
 
         const script = document.createElement('script');
@@ -71,16 +68,15 @@ export default function TripsterWidget({ points }: Props) {
             `&width=100%25&num=3&version=2&partner=metravel&features=logo` +
             `&script_id=tripster-widget-script`;
 
-        ref.current.appendChild(script);
-    }, [validCity, inView]); // 🚀 добавляем inView сюда
+        containerRef.current.appendChild(script);
+    }, [validCity, inView]);
 
     if (Platform.OS !== 'web' || !validCity) return null;
 
     return (
-        <View ref={refInView} style={{ width: '100%', marginBottom: 32 }}>
+        <View ref={viewRef} style={{ width: '100%', marginBottom: 32 }}>
             <View style={{ width: '100%', minHeight: 300 }}>
-                {/* 🚀 вставляем div ТОЛЬКО если inView === true */}
-                {inView && <div ref={ref} />}
+                {inView && <div ref={containerRef} />}
             </View>
         </View>
     );

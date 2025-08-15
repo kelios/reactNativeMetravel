@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dialog, Portal } from 'react-native-paper';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 type ConfirmDialogProps = {
     visible: boolean;
@@ -29,10 +29,14 @@ export default function ConfirmDialog({
                     <Text style={styles.dialogText}>{message}</Text>
                 </Dialog.Content>
                 <Dialog.Actions style={styles.actionContainer}>
-                    <TouchableOpacity onPress={onClose}>
+                    <TouchableOpacity onPress={onClose} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
                         <Text style={styles.cancelButton}>{cancelText.toUpperCase()}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={onConfirm} style={styles.deleteButtonContainer}>
+                    <TouchableOpacity
+                        onPress={onConfirm}
+                        style={styles.deleteButtonContainer}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
                         <Text style={styles.deleteButton}>{confirmText.toUpperCase()}</Text>
                     </TouchableOpacity>
                 </Dialog.Actions>

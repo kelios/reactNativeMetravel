@@ -22,8 +22,6 @@ import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import RadiusSelect from '@/components/MapPage/RadiusSelect';
 
-/* ---------- Константы, вынесенные из компонента ---------- */
-
 const DEBOUNCE_MS = 300;
 
 const SEARCH_MODES = [
@@ -43,8 +41,6 @@ if (
 ) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-
-/* ---------- Типы пропсов ---------- */
 
 interface FiltersPanelProps {
     filters: {
@@ -74,8 +70,6 @@ interface FiltersPanelProps {
     routeDistance: number | null;
 }
 
-/* ---------- Компонент ---------- */
-
 const FiltersPanel: React.FC<FiltersPanelProps> = ({
                                                        filters,
                                                        filterValue,
@@ -93,10 +87,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                                                        endAddress,
                                                        routeDistance,
                                                    }) => {
-    /* ---------- Мемо-стили ---------- */
     const styles = useMemo(() => getStyles(isMobile), [isMobile]);
 
-    /* ---------- Подсчёт категорий ---------- */
     const travelCategoriesCount = useMemo(() => {
         const count: Record<string, number> = {};
         travelsData.forEach((t) =>
@@ -126,7 +118,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         [filters.categories, travelCategoriesCount]
     );
 
-    /* ---------- Дебаунс адресного поля ---------- */
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
     const handleAddressChange = useCallback(
@@ -140,7 +131,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         [onTextFilterChange]
     );
 
-    /* Контроль очистки таймера */
     useEffect(
         () => () => {
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -148,7 +138,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         []
     );
 
-    /* ---------- Смена режимов ---------- */
     const handleSetMode = useCallback(
         (m: 'radius' | 'route') => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -157,10 +146,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         [setMode]
     );
 
-    /* ---------- JSX ---------- */
     return (
         <View style={styles.card}>
-            {/* --- Верхние табы и Reset --- */}
             <View style={styles.tabsWithReset}>
                 <View style={styles.tabsContainer}>
                     {SEARCH_MODES.map(({ key, icon, label }) => (
@@ -202,10 +189,8 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 />
             </View>
 
-            {/* --- Фильтры --- */}
             {mode === 'radius' ? (
                 <View style={styles.filtersRow}>
-                    {/* Категории */}
                     {!!categoriesWithCount.length ? (
                         <View style={styles.filterField}>
                             <MultiSelectField
@@ -248,7 +233,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                         <Text style={styles.emptyState}>Нет категорий для отображения</Text>
                     )}
 
-                    {/* Радиус */}
                     {!!filters.radius.length && (
                         <View style={styles.filterField}>
                             <Text style={styles.label}>Радиус</Text>
@@ -260,7 +244,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                         </View>
                     )}
 
-                    {/* Адрес */}
                     <View style={styles.filterField}>
                         <Text style={styles.label}>Адрес</Text>
                         <TextInput
@@ -273,9 +256,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                     </View>
                 </View>
             ) : (
-                /* --- Режим «Маршрут» --- */
                 <View style={styles.filtersRow}>
-                    {/* Транспорт */}
                     <View style={styles.filterField}>
                         <Text style={styles.label}>Транспорт</Text>
                         <View style={styles.transportTabs}>
@@ -309,7 +290,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                         </View>
                     </View>
 
-                    {/* Инфо по маршруту */}
                     <View style={styles.filterField}>
                         <Text style={styles.label}>Точка старта</Text>
                         <Text
@@ -330,7 +310,9 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                         <Text style={styles.label}>Дистанция</Text>
                         <Text
                             style={
-                                routeDistance != null ? styles.infoText : styles.infoPlaceholder
+                                routeDistance != null
+                                    ? styles.infoText
+                                    : styles.infoPlaceholder
                             }
                         >
                             {routeDistance != null
@@ -341,7 +323,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 </View>
             )}
 
-            {/* --- Кнопка «Закрыть» на мобилке --- */}
             {isMobile && (
                 <View style={styles.actions}>
                     <Button
@@ -356,8 +337,6 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
         </View>
     );
 };
-
-/* ---------- Стили ---------- */
 
 const getStyles = (isMobile: boolean) =>
     StyleSheet.create({

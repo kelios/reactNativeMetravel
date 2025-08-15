@@ -23,10 +23,7 @@ const CustomImageRenderer = ({ tnode, contentWidth }: CustomImageRendererProps) 
 
     if (!sourceUri) return null;
 
-    const isWeb = Platform.OS === "web";
-
-    // 🔹 WEB: <img> с ограничением по высоте окна
-    if (isWeb) {
+    if (Platform.OS === "web") {
         return (
             <div
                 style={{
@@ -44,7 +41,7 @@ const CustomImageRenderer = ({ tnode, contentWidth }: CustomImageRendererProps) 
                     alt={alt}
                     style={{
                         maxWidth: "100%",
-                        maxHeight: "80vh", // 👈 ограничиваем по высоте окна
+                        maxHeight: "80vh",
                         height: "auto",
                         borderRadius: 12,
                         objectFit: "contain",
@@ -55,7 +52,6 @@ const CustomImageRenderer = ({ tnode, contentWidth }: CustomImageRendererProps) 
         );
     }
 
-    // 🔸 MOBILE: react-native Image
     useEffect(() => {
         let isMounted = true;
         Image.getSize(
@@ -66,10 +62,7 @@ const CustomImageRenderer = ({ tnode, contentWidth }: CustomImageRendererProps) 
                     setLoading(false);
                 }
             },
-            (error) => {
-                console.warn("Ошибка загрузки изображения:", error);
-                setLoading(false);
-            }
+            () => setLoading(false)
         );
         return () => {
             isMounted = false;

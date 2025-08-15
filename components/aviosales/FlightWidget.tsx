@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Platform, Text, View } from 'react-native';
-import { useInView } from 'react-intersection-observer'; // 🚀 добавляем useInView
+import { useInView } from 'react-intersection-observer';
 
 const countryToIata: Record<string, string> = {
     Польша: 'WAW', Германия: 'BER', Беларусь: 'MSQ', Украина: 'IEV',
@@ -37,18 +37,23 @@ export default function FlightWidget({ country }: { country?: string }) {
     const widgetRef = useRef<HTMLDivElement>(null);
     const [origin, setOrigin] = useState<string | null>(null);
     const [city, setCity] = useState<string | null>(null);
-
     const [refInView, inView] = useInView({
         triggerOnce: true,
         rootMargin: '200px',
     });
 
-    /* ────── 1. IP‑Lookup ────── */
+    const mainCountry = useMemo(
+        () => country?.split(/[,/–—]/)[0].trim() || '',
+        [country]
+    );
+
     useEffect(() => {
         if (Platform.OS !== 'web') return;
+        let active = true;
         fetch('https://ipapi.co/json/?language=en')
             .then(res => res.json())
             .then(data => {
+                if (!active) return;
                 const key = normalize(data?.city || '');
                 if (key && cityToIata[key]) {
                     setOrigin(cityToIata[key]);
@@ -56,18 +61,16 @@ export default function FlightWidget({ country }: { country?: string }) {
                 }
             })
             .catch(() => {});
+        return () => { active = false; };
     }, []);
 
-    /* ────── 2. Widget Injection ────── */
     useEffect(() => {
-        if (Platform.OS !== 'web' || !country || !widgetRef.current || !inView) return;
+        if (Platform.OS !== 'web' || !mainCountry || !widgetRef.current || !inView) return;
 
         widgetRef.current.innerHTML = '';
         document.getElementById('tp-widget-script')?.remove();
 
-        const mainCountry = country.split(/[,/–—]/)[0].trim();
         const destination = countryToIata[mainCountry] ?? 'ANY';
-
         const script = document.createElement('script');
         script.id = 'tp-widget-script';
         script.async = true;
@@ -97,11 +100,16 @@ export default function FlightWidget({ country }: { country?: string }) {
         attempts.forEach(timeout => {
             setTimeout(enforceSafeLinks, timeout);
         });
-    }, [country, origin, inView]); // 🚀 добавляем inView сюда
 
-    if (Platform.OS !== 'web' || !country) return null;
+        return () => {
+            document.getElementById('tp-widget-script')?.remove();
+            if (widgetRef.current) {
+                widgetRef.current.innerHTML = '';
+            }
+        };
+    }, [mainCountry, origin, inView]);
 
-    const mainCountry = country.split(/[,/–—]/)[0].trim();
+    if (Platform.OS !== 'web' || !mainCountry) return null;
 
     return (
         <View ref={refInView} style={{ width: '100%', marginBottom: 32, paddingTop: 20, paddingBottom: 10 }}>
@@ -113,7 +121,7 @@ export default function FlightWidget({ country }: { country?: string }) {
                 {city ? ` с вылетом из ${city}` : ''}.
             </Text>
             <View style={{ width: '100%', minHeight: 100 }}>
-                {inView && <div ref={widgetRef} />} {/* 🚀 рендерим div только если inView === true */}
+                {inView && <div ref={widgetRef} />}
             </View>
         </View>
     );

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { MarkerData } from "@/src/types/types";
 import ImageUploadComponent from '@/components/imageUpload/ImageUploadComponent';
-import MultiSelectField from '@/components/MultiSelectField'; // Используем нормальный мультиселект
+import MultiSelectField from '@/components/MultiSelectField';
 
 interface MarkersListComponentProps {
     markers: MarkerData[];
@@ -22,6 +22,9 @@ const MarkersListComponent: React.FC<MarkersListComponentProps> = ({
                                                                        editingIndex,
                                                                        setEditingIndex,
                                                                    }) => {
+    const onRemove = useCallback((index: number) => handleMarkerRemove(index), [handleMarkerRemove]);
+    const onEdit = useCallback((index: number) => setEditingIndex(index), [setEditingIndex]);
+
     return (
         <div style={styles.container}>
             <h3 style={styles.header}>Точки на карте</h3>
@@ -47,8 +50,8 @@ const MarkersListComponent: React.FC<MarkersListComponentProps> = ({
                                             <strong>{marker.address || 'Без адреса'}</strong>
                                             <p>{marker.categories.length ? `${marker.categories.length} категорий` : 'Категории не выбраны'}</p>
                                             <div style={styles.buttonRow}>
-                                                <button onClick={() => setEditingIndex(index)} style={styles.editButton}>Редактировать</button>
-                                                <button onClick={() => handleMarkerRemove(index)} style={styles.deleteButton}>Удалить</button>
+                                                <button onClick={() => onEdit(index)} style={styles.editButton}>Редактировать</button>
+                                                <button onClick={() => onRemove(index)} style={styles.deleteButton}>Удалить</button>
                                             </div>
                                         </div>
                                     </div>
@@ -91,7 +94,7 @@ const MarkersListComponent: React.FC<MarkersListComponentProps> = ({
 
                                         <div style={styles.buttonRow}>
                                             <button onClick={() => setEditingIndex(null)} style={styles.closeButton}>Закрыть</button>
-                                            <button onClick={() => handleMarkerRemove(index)} style={styles.deleteButton}>Удалить</button>
+                                            <button onClick={() => onRemove(index)} style={styles.deleteButton}>Удалить</button>
                                         </div>
                                     </div>
                                 )}
@@ -209,4 +212,4 @@ const styles = {
     },
 };
 
-export default MarkersListComponent;
+export default React.memo(MarkersListComponent);
