@@ -34,6 +34,11 @@ const WebView = Platform.select({
     web: () => () => null,
 })();
 
+const BelkrajWidget = Platform.select({
+    web: () => lazyImport(() => import('@/components/belkraj/BelkrajWidget')),
+    native: () => () => null,
+})();
+
 const SList: React.FC<any> = (props) => {
     const Experimental = (React as any).unstable_SuspenseList;
     return Experimental ? <Experimental {...props} /> : <>{props.children}</>;
@@ -93,6 +98,7 @@ export default function TravelDetails() {
         points: React.createRef<View>(),
         near: React.createRef<View>(),
         popular: React.createRef<View>(),
+        excursions: React.createRef<View>(),
     }), []);
 
     const scrollRef = useRef<ScrollView>(null);
@@ -153,6 +159,7 @@ export default function TravelDetails() {
     const [refPts, inPts] = useInView({ rootMargin: '200px', triggerOnce: true });
     const [refNear, inNear] = useInView({ rootMargin: '200px', triggerOnce: true });
     const [refPop, inPop] = useInView({ rootMargin: '200px', triggerOnce: true });
+    const [refBelkraj, inBelkraj] = useInView({ rootMargin: '200px', triggerOnce: true });
 
     useEffect(() => {
         if (Platform.OS === 'web') {
@@ -307,6 +314,20 @@ export default function TravelDetails() {
                                                     </View>
                                                 </Suspense>
                                             ) : null
+                                        )}
+
+                                        <View ref={refBelkraj} style={styles.mapObserver} />
+                                        {inBelkraj && Platform.OS === 'web' && travel.travelAddress?.length > 0 && (
+                                            <Suspense fallback={<Fallback />}>
+                                                <View ref={anchor.excursions} style={styles.sectionContainer}>
+                                                    <BelkrajWidget
+                                                        countryCode={travel.countryCode}
+                                                        points={travel.travelAddress}
+                                                        collapsedHeight={600}   // видимая высота по умолчанию
+                                                        expandedHeight={1000}   // какая нравится при «Показать ещё»
+                                                    />
+                                                </View>
+                                            </Suspense>
                                         )}
 
                                         <View ref={refMap} style={styles.mapObserver} />

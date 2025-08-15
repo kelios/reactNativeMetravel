@@ -37,6 +37,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
             <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="" />
             <link rel="preconnect" href="https://mc.yandex.ru" crossOrigin="" />
             <link rel="preconnect" href="https://app.termly.io" />
+            <link rel="preconnect" href="https://belkraj.by" crossOrigin="" />
             <link rel="icon" href="/favicon.ico" />
 
             {/* Fonts (optional self-hosted) */}
@@ -145,7 +146,7 @@ iframe { border:0; }
 .video-16x9, iframe[src*="youtube"], iframe[src*="player"] { aspect-ratio: 16 / 9; width:100%; }
 
 /* Ad/widgets reserve */
-.ad-slot, .tp-widget { min-height: 280px; }
++.ad-slot, .tp-widget, .belkraj-slot { min-height: 520px; }
 
 /* Optional font (self-hosted) */
 @font-face {

@@ -22,6 +22,8 @@ export type Travel = {
     monthName: string
     number_days: number
     companions: String[]
+
+    countryCode: string
 }
 
 export type TravelCoords = {

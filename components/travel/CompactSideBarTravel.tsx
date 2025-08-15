@@ -66,6 +66,7 @@ function CompactSideBarTravel({
         travel.recommendation ? { k: 'recommendation', icon: 'recommend', label: 'Рекомендации' } : null,
         travel.plus ? { k: 'plus', icon: 'add', label: 'Плюсы' } : null,
         travel.minus ? { k: 'minus', icon: 'remove', label: 'Минусы' } : null,
+        travel.travelAddress ? { k: 'excursions', icon: 'explore', label: 'Экскурсии' } : null,
         { k: 'map', icon: 'map', label: 'Карта' },
         travel.travelAddress ? { k: 'points', icon: 'list', label: 'Координаты' } : null,
         { k: 'near', icon: 'location-on', label: 'Рядом (~60км)' },
