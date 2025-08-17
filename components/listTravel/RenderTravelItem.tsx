@@ -1,3 +1,4 @@
+// src/components/listTravel/RenderTravelItem.tsx
 import React, { memo, useMemo } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import TravelListItem from './TravelListItem';
@@ -10,6 +11,9 @@ function RenderTravelItem({
                               onEditPress,
                               isFirst,
                               isSingle = false,
+                              selectable = false,
+                              isSelected = false,
+                              onToggle,
                           }: any) {
     if (!item) return null;
 
@@ -57,6 +61,9 @@ function RenderTravelItem({
                 onEditPress={onEditPress}
                 isFirst={isFirst}
                 isSingle={isSingle}
+                selectable={selectable}
+                isSelected={isSelected}
+                onToggle={onToggle}
             />
         </View>
     );

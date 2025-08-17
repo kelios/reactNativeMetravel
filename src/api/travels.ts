@@ -644,3 +644,47 @@ export const sendAIMessage = async (inputText: string) => {
         console.error('Ошибка:', error);
     }
 };
+
+export const fetchMyTravels = async (params: {
+    user_id: string | number;
+    yearFrom?: string;
+    yearTo?: string;
+    country?: string;
+    onlyWithGallery?: boolean;
+}) => {
+    try {
+        // Собираем where-условие
+        const whereObject: Record<string, any> = {
+            user_id: params.user_id,
+            publish: 1,
+            moderation: 1,
+        };
+
+        if (params.country) {
+            whereObject.countries = [params.country];
+        }
+        if (params.yearFrom || params.yearTo) {
+            whereObject.year = {
+                ...(params.yearFrom ? { gte: params.yearFrom } : {}),
+                ...(params.yearTo ? { lte: params.yearTo } : {}),
+            };
+        }
+        if (params.onlyWithGallery) {
+            whereObject.hasGallery = true; // ⚠️ зависит от твоего бекенда
+        }
+
+        const query = new URLSearchParams({
+            page: '1',
+            perPage: '9999',
+            where: JSON.stringify(whereObject),
+        }).toString();
+
+        const url = `${GET_TRAVELS}?${query}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(await res.text());
+        return await res.json();
+    } catch (e) {
+        console.log('Error fetching MyTravels:', e);
+        return [];
+    }
+};

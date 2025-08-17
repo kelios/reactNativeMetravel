@@ -118,6 +118,14 @@ function RenderRightMenu() {
                             />
                             <Divider />
                             <Menu.Item
+                                onPress={() => handleNavigate('/export')}
+                                title="Экспорт в PDF"
+                                leadingIcon={({ size }) => (
+                                    <Icon name="file-pdf-box" size={size} color="#b83a3a" />
+                                )}
+                            />
+                            <Divider />
+                            <Menu.Item
                                 onPress={handleLogout}
                                 title="Выход"
                                 leadingIcon={({ size }) => (

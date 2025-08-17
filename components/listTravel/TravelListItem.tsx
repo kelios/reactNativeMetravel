@@ -1,3 +1,4 @@
+// src/components/listTravel/TravelListItem.tsx
 import React, { memo, useCallback, useMemo } from 'react';
 import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -38,6 +39,9 @@ function TravelListItem({
                             onDeletePress,
                             isFirst,
                             isSingle = false,
+                            selectable = false,
+                            isSelected = false,
+                            onToggle,
                         }: any) {
     if (!travel) return null;
 
@@ -74,8 +78,12 @@ function TravelListItem({
     return (
         <View style={styles.wrap}>
             <Pressable
-                onPress={open}
-                style={[styles.card, isSingle && styles.single]}
+                onPress={selectable ? onToggle : open}
+                style={[
+                    styles.card,
+                    isSingle && styles.single,
+                    selectable && isSelected && styles.selected,
+                ]}
                 accessibilityLabel={`Путешествие: ${name}`}
                 accessibilityRole="button"
             >
@@ -109,13 +117,7 @@ function TravelListItem({
                         </View>
                     )}
 
-                    <Text
-                        style={styles.title}
-                        numberOfLines={2}
-                        accessibilityLabel={`Название: ${name}`}
-                    >
-                        {name}
-                    </Text>
+                    <Text style={styles.title} numberOfLines={2}>{name}</Text>
 
                     <View style={styles.metaRow}>
                         {!!userName && (
@@ -130,24 +132,22 @@ function TravelListItem({
                         </View>
                     </View>
                 </View>
+
+                {selectable && (
+                    <View style={styles.checkWrap}>
+                        <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
+                            {isSelected && <Feather name="check" size={14} color="#fff" />}
+                        </View>
+                    </View>
+                )}
             </Pressable>
 
-            {canEdit && (
+            {canEdit && !selectable && (
                 <View style={styles.actions}>
-                    <Pressable
-                        onPress={edit}
-                        hitSlop={8}
-                        style={styles.btn}
-                        accessibilityLabel="Редактировать"
-                    >
+                    <Pressable onPress={edit} hitSlop={8} style={styles.btn}>
                         <Feather name="edit" size={18} color="#fff" />
                     </Pressable>
-                    <Pressable
-                        onPress={remove}
-                        hitSlop={8}
-                        style={styles.btn}
-                        accessibilityLabel="Удалить"
-                    >
+                    <Pressable onPress={remove} hitSlop={8} style={styles.btn}>
                         <Feather name="trash-2" size={18} color="#fff" />
                     </Pressable>
                 </View>
@@ -171,87 +171,24 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 2,
     },
+    selected: { borderWidth: 3, borderColor: '#4a7c59' },
     single: { maxWidth: 600, alignSelf: 'center' },
-    img: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#1a1a1a',
-    },
-    imgStub: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#2a2a2a',
-    },
-    grad: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: '60%',
-    },
-    overlay: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        padding: 16,
-    },
-    tags: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-        marginBottom: 8,
-    },
-    tag: {
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        borderRadius: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-    },
-    tagTxt: {
-        fontSize: 12,
-        color: '#fff',
-        fontWeight: '500',
-    },
-    title: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 8,
-    },
-    metaRow: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    metaBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.3)',
-        borderRadius: 12,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-    },
-    metaTxt: {
-        fontSize: 13,
-        color: '#eee',
-        marginLeft: 6,
-    },
-    actions: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        flexDirection: 'row',
-        gap: 8,
-    },
-    btn: {
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: 18,
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    img: { width: '100%', height: '100%', backgroundColor: '#1a1a1a' },
+    imgStub: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2a2a2a' },
+    grad: { position: 'absolute', left: 0, right: 0, bottom: 0, height: '60%' },
+    overlay: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: 16 },
+    tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
+    tag: { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+    tagTxt: { fontSize: 12, color: '#fff', fontWeight: '500' },
+    title: { fontSize: 16, fontWeight: '600', color: '#fff', marginBottom: 8 },
+    metaRow: { flexDirection: 'row', gap: 12 },
+    metaBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
+    metaTxt: { fontSize: 13, color: '#eee', marginLeft: 6 },
+    actions: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', gap: 8 },
+    btn: { backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 18, width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+    checkWrap: { position: 'absolute', top: 12, left: 12 },
+    checkbox: { width: 22, height: 22, borderRadius: 4, borderWidth: 2, borderColor: '#fff', justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' },
+    checkboxChecked: { backgroundColor: '#4a7c59', borderColor: '#4a7c59' },
 });
 
 export default memo(TravelListItem);
