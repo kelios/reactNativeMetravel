@@ -1,5 +1,4 @@
-// src/components/export/BookPageView.tsx
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 
 type Travel = {
     id: number | string;
@@ -49,153 +48,179 @@ function tidyHtml(html?: string | null) {
     return { __html: cleaned };
 }
 
-export default function BookPageView({ travel }: { travel: Travel }) {
-    const cover = useMemo(() => {
-        const g = travel?.gallery?.[0]?.url;
-        return (
-            g ||
-            travel?.travel_image_url ||
-            travel?.travel_image_thumb_url ||
-            travel?.travel_image_thumb_small_url ||
-            undefined
-        );
-    }, [travel]);
-
-    const country = useMemo(() => {
-        if (travel?.countryName) return travel.countryName;
-        if (Array.isArray(travel?.countries) && travel.countries.length) {
-            return travel.countries.map((c) => c?.name).filter(Boolean).join(", ");
-        }
-        if (travel?.country?.name) return travel.country.name;
-        return "—";
-    }, [travel]);
-
-    const whenText = useMemo(() => {
-        const hasMonthName =
-            typeof travel?.monthName === "string" && travel.monthName.trim().length > 0;
-        if (hasMonthName && travel?.year) return `${travel!.monthName} ${travel!.year}`;
-        const m =
-            travel?.month && travel.month >= 1 && travel.month <= 12
-                ? monthNamesRu[Number(travel.month) - 1]
-                : null;
-        if (m && travel?.year) return `${m} ${travel.year}`;
-        if (travel?.year) return `${travel.year}`;
-        return "—";
-    }, [travel]);
-
-    const galleryTail = useMemo(() => {
-        const arr = Array.isArray(travel?.gallery) ? travel!.gallery.slice(1, 7) : [];
-        return arr.filter((g) => g?.url);
+const BookPageView: React.FC<{ travel: Travel; pageNumber: number }> = ({ travel, pageNumber }) => {
+    const coverImage = useMemo(() => {
+        return travel?.travel_image_url || travel?.gallery?.[0]?.url;
     }, [travel]);
 
     return (
-        <>
-            <style>{`
-        @page { size: A4; margin: 0; }
-        html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        * { box-sizing: border-box; }
-
-        .pdf-page { width: 210mm; height: 297mm; padding: 12mm; page-break-after: always; background: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color: #1f1f1f; }
-        .title { font-weight: 800; font-size: 18pt; margin: 0 0 6mm 0; }
-
-        .hero { margin: 0 0 6mm 0; position: relative; }
-        .hero img { width: 100%; height: 85mm; object-fit: cover; border-radius: 4mm; display: block; }
-        .heroTitle {
-          position: absolute; left: 6mm; bottom: 6mm;
-          background: rgba(0,0,0,.55); color: #fff;
-          padding: 3mm 5mm; border-radius: 3mm; font-weight: 700; font-size: 14pt;
-        }
-
-        .metaRow { display: flex; gap: 6mm; margin: 3mm 0 5mm 0; }
-        .metaCol { flex: 1; display: grid; gap: 2mm; font-size: 10.5pt; }
-        .metaItem b { font-weight: 700; }
-        .miniMap { width: 48mm; }
-        .miniMapStub {
-          height: 30mm; background: #f1f1f1; border-radius: 3mm;
-          display:flex; align-items:center; justify-content:center; color:#999; font-size:10pt;
-        }
-
-        .rich h1, .rich h2, .rich h3 { break-after: avoid; margin: 6mm 0 2mm; }
-        .rich p, .rich ul, .rich ol, .rich figure { break-inside: avoid; margin: 0 0 3mm; }
-        .rich img { max-width: 100%; height: auto; display: block; }
-
-        .twoCols { column-count: 2; column-gap: 8mm; font-size: 10.5pt; line-height: 1.5; }
-
-        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 5mm; }
-        .box { background: #fff; border: 1px solid #ececec; border-radius: 3mm; padding: 4mm; font-size: 10.5pt; }
-        .boxTitle { font-weight: 700; margin-bottom: 2mm; }
-
-        .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin-top: 5mm; }
-        .galItem img { width: 100%; height: 40mm; object-fit: cover; border-radius: 2mm; display: block; }
-
-        .avoid-break { break-inside: avoid; page-break-inside: avoid; }
-      `}</style>
-
-            <section className="pdf-page">
-                {cover && (
-                    <figure className="hero avoid-break">
-                        <img src={cover} alt={travel.name} loading="eager" />
-                        <figcaption className="heroTitle">{travel.name}</figcaption>
-                    </figure>
-                )}
-
-                <div className="metaRow avoid-break">
-                    <div className="metaCol">
-                        <div className="metaItem">
-                            <b>Страна:</b> {country}
-                        </div>
-                        <div className="metaItem">
-                            <b>Когда:</b> {whenText}
-                        </div>
-                        {travel?.number_days ? (
-                            <div className="metaItem">
-                                <b>Дней:</b> {travel.number_days}
-                            </div>
-                        ) : null}
-                    </div>
-                    <div className="miniMap">
-                        <div className="miniMapStub">Маршрут</div>
+        <div style={{
+            width: "210mm",
+            minHeight: "297mm",
+            padding: "15mm",
+            backgroundColor: "#fff",
+            margin: "0 auto",
+            boxSizing: "border-box",
+            position: "relative",
+            breakInside: "avoid",
+            pageBreakInside: "avoid",
+            fontFamily: "'Segoe UI', Roboto, sans-serif"
+        }}>
+            {/* Заголовок и обложка */}
+            {coverImage && (
+                <div style={{
+                    position: "relative",
+                    height: "120mm",
+                    marginBottom: "10mm",
+                    overflow: "hidden"
+                }}>
+                    <img
+                        src={coverImage}
+                        alt={travel.name}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover"
+                        }}
+                    />
+                    <div style={{
+                        position: "absolute",
+                        bottom: "10mm",
+                        left: "10mm",
+                        backgroundColor: "rgba(0,0,0,0.7)",
+                        color: "white",
+                        padding: "5mm",
+                        borderRadius: "2mm",
+                        maxWidth: "80%"
+                    }}>
+                        <h1 style={{
+                            margin: 0,
+                            fontSize: "20pt",
+                            fontWeight: "bold"
+                        }}>
+                            {travel.name}
+                        </h1>
                     </div>
                 </div>
+            )}
 
-                {travel?.description && (
-                    <div className="rich twoCols" dangerouslySetInnerHTML={tidyHtml(travel.description)} />
-                )}
+            {/* Мета-информация */}
+            <div style={{
+                display: "flex",
+                gap: "10mm",
+                marginBottom: "10mm"
+            }}>
+                <div style={{ flex: 1 }}>
+                    <p style={{ margin: "2mm 0" }}>
+                        <strong>Страна:</strong> {travel.countryName || "—"}
+                    </p>
+                    <p style={{ margin: "2mm 0" }}>
+                        <strong>Дата:</strong> {travel.year || "—"}
+                    </p>
+                    {travel.number_days && (
+                        <p style={{ margin: "2mm 0" }}>
+                            <strong>Дней:</strong> {travel.number_days}
+                        </p>
+                    )}
+                </div>
+                <div style={{
+                    width: "60mm",
+                    height: "40mm",
+                    backgroundColor: "#f5f5f5",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: "2mm"
+                }}>
+                    [Карта маршрута]
+                </div>
+            </div>
 
-                {(travel?.plus || travel?.minus) && (
-                    <div className="grid2 avoid-break">
-                        {travel?.plus && (
-                            <div className="box">
-                                <div className="boxTitle">Плюсы</div>
-                                <div className="rich" dangerouslySetInnerHTML={safeHTML(travel.plus)} />
-                            </div>
-                        )}
-                        {travel?.minus && (
-                            <div className="box">
-                                <div className="boxTitle">Минусы</div>
-                                <div className="rich" dangerouslySetInnerHTML={safeHTML(travel.minus)} />
-                            </div>
-                        )}
-                    </div>
-                )}
+            {/* Основной контент */}
+            {travel.description && (
+                <div
+                    style={{
+                        columnCount: 2,
+                        columnGap: "10mm",
+                        marginBottom: "10mm",
+                        lineHeight: 1.5
+                    }}
+                    dangerouslySetInnerHTML={{ __html: travel.description }}
+                />
+            )}
 
-                {travel?.recommendation && (
-                    <div className="box avoid-break" style={{ marginTop: "5mm" }}>
-                        <div className="boxTitle">Рекомендации</div>
-                        <div className="rich" dangerouslySetInnerHTML={safeHTML(travel.recommendation)} />
-                    </div>
-                )}
+            {/* Плюсы/минусы */}
+            {(travel.plus || travel.minus) && (
+                <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "10mm",
+                    marginBottom: "10mm"
+                }}>
+                    {travel.plus && (
+                        <div style={{
+                            backgroundColor: "#f9f9f9",
+                            padding: "5mm",
+                            borderRadius: "2mm"
+                        }}>
+                            <h3 style={{
+                                marginTop: 0,
+                                color: "#2e7d32"
+                            }}>
+                                Плюсы
+                            </h3>
+                            <div dangerouslySetInnerHTML={{ __html: travel.plus }} />
+                        </div>
+                    )}
+                    {travel.minus && (
+                        <div style={{
+                            backgroundColor: "#f9f9f9",
+                            padding: "5mm",
+                            borderRadius: "2mm"
+                        }}>
+                            <h3 style={{
+                                marginTop: 0,
+                                color: "#c62828"
+                            }}>
+                                Минусы
+                            </h3>
+                            <div dangerouslySetInnerHTML={{ __html: travel.minus }} />
+                        </div>
+                    )}
+                </div>
+            )}
 
-                {galleryTail.length > 0 && (
-                    <div className="gallery avoid-break">
-                        {galleryTail.map((g) => (
-                            <figure key={(g.id as any) ?? g.url} className="galItem">
-                                <img src={g.url} loading="lazy" />
-                            </figure>
-                        ))}
-                    </div>
-                )}
-            </section>
-        </>
+            {/* Рекомендации */}
+            {travel.recommendation && (
+                <div style={{
+                    backgroundColor: "#f5f5f5",
+                    padding: "5mm",
+                    borderRadius: "2mm",
+                    marginBottom: "10mm"
+                }}>
+                    <h3 style={{ marginTop: 0 }}>Рекомендации</h3>
+                    <div dangerouslySetInnerHTML={{ __html: travel.recommendation }} />
+                </div>
+            )}
+
+            {/* Подвал страницы */}
+            <div style={{
+                position: "absolute",
+                bottom: "10mm",
+                left: "15mm",
+                right: "15mm",
+                borderTop: "1px solid #eee",
+                paddingTop: "3mm",
+                fontSize: "9pt",
+                color: "#666",
+                display: "flex",
+                justifyContent: "space-between"
+            }}>
+                <span>Мои путешествия</span>
+                <span>{pageNumber}</span>
+            </div>
+        </div>
     );
-}
+};
+
+export default BookPageView;

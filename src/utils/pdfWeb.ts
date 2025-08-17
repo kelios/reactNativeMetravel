@@ -1,14 +1,18 @@
-// src/utils/pdfWeb.ts
-type Html2Pdf = (input: Element | string) => any;
+type Html2Pdf = (element: HTMLElement | string, options?: any) => {
+    set: (options: any) => Html2Pdf;
+    from: (element: HTMLElement | string) => Html2Pdf;
+    to: (target: any) => Html2Pdf;
+    save: () => Promise<void>;
+    outputPdf: (type: 'blob' | 'datauristring') => Promise<Blob | string>;
+};
 
 declare global {
     interface Window {
-        html2pdf?: Html2Pdf & { (): any };
+        html2pdf?: Html2Pdf & { (): Html2Pdf };
     }
 }
 
-const CDN_SRC =
-    "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js";
+const CDN_SRC = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
 
 let loadingPromise: Promise<void> | null = null;
 
@@ -16,205 +20,230 @@ async function ensureBundleLoaded() {
     if (typeof window === "undefined") return;
     if (window.html2pdf) return;
 
-    if (!loadingPromise) {
-        loadingPromise = new Promise<void>((resolve, reject) => {
-            const s = document.createElement("script");
-            s.src = CDN_SRC;
-            s.defer = true;
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error("html2pdf bundle load failed"));
-            document.head.appendChild(s);
-        });
-    }
-    await loadingPromise;
-}
-
-function waitNextFrame() {
-    return new Promise<void>((r) => requestAnimationFrame(() => r()));
-}
-
-async function waitForFonts() {
-    try {
-        // @ts-ignore
-        if (document?.fonts?.ready) await (document as any).fonts.ready;
-    } catch {}
-}
-
-function waitImg(img: HTMLImageElement, timeoutMs: number) {
-    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-
-    return new Promise<void>((resolve) => {
-        let done = false;
-        const finish = () => {
-            if (done) return;
-            done = true;
-            img.removeEventListener("load", finish);
-            img.removeEventListener("error", finish);
-            resolve();
+    loadingPromise = new Promise<void>((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = CDN_SRC;
+        script.onload = () => {
+            if (window.html2pdf) {
+                resolve();
+            } else {
+                reject(new Error("html2pdf not found after loading"));
+            }
         };
-        const timer = window.setTimeout(finish, timeoutMs);
-        img.addEventListener("load", () => {
-            window.clearTimeout(timer);
-            finish();
-        });
-        img.addEventListener("error", () => {
-            window.clearTimeout(timer);
-            finish();
-        });
+        script.onerror = () => reject(new Error("Failed to load html2pdf"));
+        document.head.appendChild(script);
     });
-}
 
-async function waitForImages(root: HTMLElement, perImageTimeout = 2500) {
-    const imgs = Array.from(root.querySelectorAll<HTMLImageElement>("img"));
-    if (!imgs.length) return;
-    await Promise.all(imgs.map((img) => waitImg(img, perImageTimeout)));
-}
-
-function mountCloneForExport(node: HTMLElement) {
-    const host = document.createElement("div");
-    host.style.position = "absolute";
-    host.style.left = "-99999px";
-    host.style.top = "0";
-    host.style.opacity = "0";
-    host.style.pointerEvents = "none";
-    host.style.zIndex = "2147483647";
-    host.style.width = "794px"; // ~210mm @ 96dpi
-    document.body.appendChild(host);
-
-    const clone = node.cloneNode(true) as HTMLElement;
-
-    clone.style.position = "static";
-    clone.style.left = "auto";
-    clone.style.top = "auto";
-    clone.style.right = "auto";
-    clone.style.bottom = "auto";
-    clone.style.zIndex = "auto";
-    clone.style.pointerEvents = "auto";
-    clone.style.opacity = "1";
-    clone.style.transform = "none";
-    clone.style.width = "794px";
-    clone.style.maxWidth = "none";
-    clone.style.background = "#fff";
-
-    host.appendChild(clone);
-
-    const cleanup = () => {
-        try {
-            document.body.removeChild(host);
-        } catch {}
-    };
-
-    return { host, clone, cleanup };
+    await loadingPromise;
 }
 
 export type SaveOptions = {
     filename?: string;
     margin?: number | number[];
-    image?: { type?: "jpeg" | "png" | "webp"; quality?: number };
-    html2canvas?: Partial<{
-        useCORS: boolean;
-        scale: number;
-        backgroundColor: string | null;
-        allowTaint: boolean;
-        foreignObjectRendering: boolean;
-        imageTimeout: number;
-        logging: boolean;
-    }>;
-    jsPDF?: Partial<{
-        unit: "mm" | "pt" | "cm" | "in";
-        format: string | any[];
-        orientation: "p" | "portrait" | "l" | "landscape";
-    }>;
+    image?: { type?: "jpeg" | "png"; quality?: number };
+    pagebreak?: {
+        mode?: string[];
+        before?: string;
+        after?: string;
+        avoid?: string;
+    };
 };
 
-function buildOptions(opts: SaveOptions = {}) {
-    const options: any = {
-        filename: opts.filename ?? "metravel-book.pdf",
-        margin: opts.margin ?? [0, 0, 0, 0],
-        image: { type: "jpeg", quality: 0.96, ...(opts.image || {}) },
-        html2canvas: {
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: "#ffffff",
-            scale: Math.min(2, window.devicePixelRatio || 1.5),
-            foreignObjectRendering: true,
-            imageTimeout: 0,
-            logging: false,
-            ...(opts.html2canvas || {}),
-        },
-        jsPDF: {
-            unit: "mm",
-            format: "a4",
-            orientation: "portrait",
-            ...(opts.jsPDF || {}),
-        },
-        pagebreak: { mode: ["css", "legacy"] },
-    };
-    return options;
+async function prepareForExport(node: HTMLElement): Promise<HTMLElement> {
+    const container = document.createElement("div");
+    container.style.cssText = `
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 794px;
+        height: auto;
+        visibility: visible;
+        opacity: 1;
+        z-index: 2147483647;
+        background: #ffffff;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+    `;
+
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.style.cssText = `
+        width: 100%;
+        height: auto;
+        position: static;
+        visibility: visible;
+        opacity: 1;
+        background: #ffffff;
+        box-sizing: border-box;
+    `;
+
+    const style = document.createElement("style");
+    style.textContent = `
+        @page { size: A4; margin: 0; }
+        * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    `;
+    clone.prepend(style);
+
+    container.appendChild(clone);
+    document.body.appendChild(container);
+
+    return container;
+}
+
+async function cleanupExport(container: HTMLElement) {
+    if (container?.parentNode) {
+        document.body.removeChild(container);
+    }
+}
+
+async function waitForResources(element: HTMLElement) {
+    try {
+        await document.fonts.ready;
+    } catch (e) {
+        console.warn("Font loading warning:", e);
+    }
+
+    const images = Array.from(element.querySelectorAll("img"));
+    await Promise.all(images.map(img => {
+        if (img.complete && img.naturalWidth > 0) {
+            return Promise.resolve();
+        }
+        return new Promise<void>(resolve => {
+            img.onload = img.onerror = () => resolve();
+        });
+    }));
+
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    await new Promise(resolve => setTimeout(resolve, 100));
 }
 
 export async function renderPreviewToBlobURL(
     node: HTMLElement,
     opts: SaveOptions = {}
-) {
+): Promise<string> {
     await ensureBundleLoaded();
-    const html2pdf = window.html2pdf!;
-    const options = buildOptions(opts);
+    if (!window.html2pdf) {
+        throw new Error("html2pdf not available");
+    }
 
-    const { clone, cleanup } = mountCloneForExport(node);
+    const container = await prepareForExport(node);
+    const clone = container.firstChild as HTMLElement;
+
     try {
-        await waitNextFrame();
-        await waitForFonts();
-        await waitForImages(clone, 2500);
-        await waitNextFrame();
-        // @ts-ignore
-        const blob: Blob = await html2pdf().set(options).from(clone).outputPdf("blob");
+        await waitForResources(clone);
+
+        const options = {
+            filename: opts.filename || "document.pdf",
+            margin: opts.margin || 10,
+            image: {
+                type: opts.image?.type || "jpeg",
+                quality: opts.image?.quality || 0.95
+            },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#FFFFFF',
+                logging: false,
+                width: clone.scrollWidth,
+                height: clone.scrollHeight,
+            },
+            jsPDF: {
+                unit: "mm",
+                format: "a4",
+                orientation: "portrait"
+            }
+        };
+
+        const blob = await window.html2pdf()
+            .set(options)
+            .from(clone)
+            .outputPdf("blob");
+
         return URL.createObjectURL(blob);
+    } catch (error) {
+        console.error("PDF generation failed:", error);
+        throw error;
     } finally {
-        cleanup();
+        await cleanupExport(container);
     }
 }
 
 export async function saveContainerAsPDF(
     node: HTMLElement,
-    filename = "metravel-book.pdf",
+    filename: string,
     opts: SaveOptions = {}
 ) {
-    const url = await renderPreviewToBlobURL(node, { ...opts, filename });
-    if (!url) return;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    requestAnimationFrame(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
-}
+    try {
+        const loadingEl = document.createElement("div");
+        loadingEl.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: #4a7c59;
+            color: white;
+            text-align: center;
+            z-index: 9999;
+        `;
+        loadingEl.textContent = "Создание PDF...";
+        document.body.appendChild(loadingEl);
 
-export async function openPDFPreview(
-    node: HTMLElement,
-    opts: SaveOptions = {}
-) {
-    const url = await renderPreviewToBlobURL(node, opts);
-    if (!url) return;
-    const w = window.open();
-    if (!w) return;
-    w.document.write(`
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Превью PDF</title>
-  <style>
-    html,body{height:100%;margin:0;background:#111}
-    iframe{border:0;width:100%;height:100%;display:block;background:#2b2b2b}
-  </style>
-</head>
-<body>
-  <iframe src="${url}"></iframe>
-</body>
-</html>`);
-    w.document.close();
+        const url = await renderPreviewToBlobURL(node, {
+            ...opts,
+            filename
+        });
+
+        if (!url) {
+            throw new Error("Failed to generate PDF");
+        }
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+
+    } catch (error) {
+        console.error("Error saving PDF:", error);
+
+        const errorMsg = document.createElement("div");
+        errorMsg.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: #d32f2f;
+            color: white;
+            text-align: center;
+            z-index: 9999;
+        `;
+        errorMsg.textContent = "Ошибка при создании PDF";
+        document.body.appendChild(errorMsg);
+
+        setTimeout(() => {
+            if (errorMsg.parentNode) {
+                document.body.removeChild(errorMsg);
+            }
+        }, 3000);
+
+        throw error;
+    } finally {
+        const loader = document.querySelector('div[style*="background: #4a7c59"]');
+        if (loader?.parentNode) {
+            document.body.removeChild(loader);
+        }
+    }
 }

@@ -36,6 +36,7 @@ import {
 } from "@/src/api/travels";
 import { renderPreviewToBlobURL, saveContainerAsPDF } from "@/src/utils/pdfWeb";
 import BookLayout from "@/components/export/BookLayout";
+import TravelPdfTemplate from '@/components/export/TravelPdfTemplate';
 
 const INITIAL_FILTER = { year: "", showModerationPending: false };
 const BELARUS_ID = 3;
@@ -178,47 +179,103 @@ function ListTravel() {
     const makePreview = async () => {
         if (!printRef.current || !selected.length) return;
 
-        const w = window.open("about:blank", "_blank", "noopener,noreferrer");
-        if (w && w.document) {
-            w.document.write(
-                `<html><head><title>Готовим превью…</title></head>
-         <body style="font-family:system-ui, sans-serif; padding:24px;">
-           Генерируем PDF, подождите…
-         </body></html>`
-            );
-            w.document.close();
-        }
+        const statusEl = document.createElement('div');
+        statusEl.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 20px;
+    background: #4a7c59;
+    color: white;
+    text-align: center;
+    z-index: 9999;
+  `;
+        statusEl.textContent = 'Генерируем PDF, подождите...';
+        document.body.appendChild(statusEl);
 
         try {
-            await new Promise((r) => requestAnimationFrame(() => r()));
             const url = await renderPreviewToBlobURL(printRef.current, {
                 filename: "metravel.pdf",
             });
+
             if (url) {
-                if (w) w.location.replace(url);
-                else window.open(url, "_blank", "noopener,noreferrer");
-                setPdfUrl((old) => {
-                    if (old) URL.revokeObjectURL(old);
-                    return url;
-                });
-            } else {
-                if (w && w.document) {
-                    w.document.body.innerHTML =
-                        "<div style='padding:24px;color:#a00'>Не удалось создать превью.</div>";
-                }
+                const iframe = document.createElement('iframe');
+                iframe.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        border: none;
+        z-index: 9998;
+      `;
+                iframe.src = url;
+
+                const closeBtn = document.createElement('button');
+                closeBtn.style.cssText = `
+        position: fixed;
+        top: 20px; right: 20px;
+        z-index: 9999;
+        padding: 10px 20px;
+        background: white;
+        color: #4a7c59;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      `;
+                closeBtn.textContent = 'Закрыть';
+                closeBtn.onclick = () => {
+                    document.body.removeChild(iframe);
+                    document.body.removeChild(closeBtn);
+                    document.body.removeChild(statusEl);
+                    URL.revokeObjectURL(url);
+                };
+
+                document.body.appendChild(iframe);
+                document.body.appendChild(closeBtn);
+                document.body.removeChild(statusEl);
             }
         } catch (e) {
             console.error("[PDFExport] preview error:", e);
-            if (w && w.document) {
-                w.document.body.innerHTML =
-                    "<div style='padding:24px;color:#a00'>Ошибка при создании превью.</div>";
-            }
+            statusEl.textContent = 'Ошибка при создании превью';
+            statusEl.style.background = '#a00';
+            setTimeout(() => {
+                if (statusEl.parentNode) {
+                    document.body.removeChild(statusEl);
+                }
+            }, 3000);
         }
     };
 
     const savePdf = async () => {
-        if (!printRef.current) return;
-        await saveContainerAsPDF(printRef.current, "metravel.pdf");
+        if (!printRef.current || !selected.length) {
+            alert('Пожалуйста, выберите хотя бы одно путешествие');
+            return;
+        }
+
+        const loadingEl = document.createElement('div');
+        loadingEl.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 20px;
+    background: #4a7c59;
+    color: white;
+    text-align: center;
+    z-index: 9999;
+  `;
+        loadingEl.textContent = 'Создание PDF...';
+        document.body.appendChild(loadingEl);
+
+        try {
+            await saveContainerAsPDF(printRef.current, "my-travels.pdf", {
+                margin: [10, 10],
+                image: { type: 'jpeg', quality: 0.95 },
+            });
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            alert('Ошибка при создании PDF');
+        } finally {
+            if (loadingEl.parentNode) {
+                document.body.removeChild(loadingEl);
+            }
+        }
     };
 
     useEffect(
@@ -380,14 +437,16 @@ function ListTravel() {
                             position: "fixed",
                             left: 0,
                             top: 0,
-                            width: 794,
+                            width: "794px",
                             background: "#fff",
                             pointerEvents: "none",
                             opacity: 0,
                             zIndex: 0,
                         }}
                     >
-                        <BookLayout travels={selected} />
+                        {selected.map(travel => (
+                            <TravelPdfTemplate key={travel.id} travel={travel} />
+                        ))}
                     </div>
                 </View>
             )}
