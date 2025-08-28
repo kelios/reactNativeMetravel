@@ -4,7 +4,6 @@ import {
     View,
     Text,
     StyleSheet,
-    FlatList,
     Pressable,
     Platform,
     useWindowDimensions,
@@ -51,10 +50,6 @@ export default function QuestsScreen() {
 
     const cityColumns = width >= 1200 ? 5 : width >= 900 ? 4 : 3;
     const questColumns = width >= 1100 ? 3 : width >= 740 ? 2 : 1;
-
-    // ключи для форс-ремонта FlatList при смене numColumns
-    const citiesListKey = useMemo(() => `cities-${cityColumns}`, [cityColumns]);
-    const questsListKey = useMemo(() => `quests-${questColumns}`, [questColumns]);
 
     useEffect(() => {
         (async () => {
@@ -118,6 +113,18 @@ export default function QuestsScreen() {
         return (CITY_QUESTS[selectedCityId] || []).map((q) => ({ ...q }));
     }, [selectedCityId, userLoc]);
 
+    // Функция для разбиения массива на строки с определенным количеством колонок
+    const chunkArray = (array: any[], columns: number) => {
+        const result = [];
+        for (let i = 0; i < array.length; i += columns) {
+            result.push(array.slice(i, i + columns));
+        }
+        return result;
+    };
+
+    const chunkedCities = chunkArray(citiesWithNearby, cityColumns);
+    const chunkedQuests = chunkArray(questsAll, questColumns);
+
     return (
         <>
             <Head>
@@ -129,7 +136,6 @@ export default function QuestsScreen() {
                 />
             </Head>
 
-            {/* ВНЕШНИЙ СКРОЛЛЕР — работает и на web, и на нативе */}
             <ScrollView
                 style={s.page}
                 contentContainerStyle={s.scrollContent}
@@ -157,67 +163,63 @@ export default function QuestsScreen() {
                         </Link>
                     </View>
 
-                    {/* Города (без собственного скролла) */}
-                    <FlatList
-                        key={citiesListKey}
-                        data={citiesWithNearby}
-                        keyExtractor={(it) => it.id}
-                        contentContainerStyle={s.citiesGrid}
-                        numColumns={cityColumns}
-                        scrollEnabled={false}
-                        {...(cityColumns > 1 ? { columnWrapperStyle: { gap: 12 } } : {})}
-                        renderItem={({ item }: any) => {
-                            const active = selectedCityId === item.id;
-                            const questsCount =
-                                item.id === NEARBY_ID ? ALL_QUESTS.length : CITY_QUESTS[item.id]?.length || 0;
+                    {/* Города */}
+                    <View style={s.citiesContainer}>
+                        {chunkedCities.map((row, rowIndex) => (
+                            <View key={`row-${rowIndex}`} style={s.citiesRow}>
+                                {row.map((item) => {
+                                    const active = selectedCityId === item.id;
+                                    const questsCount =
+                                        item.id === NEARBY_ID ? ALL_QUESTS.length : CITY_QUESTS[item.id]?.length || 0;
 
-                            return (
-                                <Pressable
-                                    onPress={() => handleSelectCity(item.id)}
-                                    style={[s.cityCard, active && s.cityCardActive]}
-                                >
-                                    <Text style={s.cityName}>
-                                        {item.id === NEARBY_ID ? '🧭 Рядом' : item.name}
-                                    </Text>
-                                    <Text style={s.cityCountry}>
-                                        {item.id === NEARBY_ID
-                                            ? userLoc
-                                                ? 'по вашей геолокации'
-                                                : 'геолокация отключена'
-                                            : item.country === 'PL'
-                                                ? 'Польша'
-                                                : 'Беларусь'}
-                                    </Text>
-                                    <Text style={s.questsCount}>
-                                        {questsCount} квест{getPluralForm(questsCount)}
-                                    </Text>
-                                </Pressable>
-                            );
-                        }}
-                    />
+                                    return (
+                                        <Pressable
+                                            key={item.id}
+                                            onPress={() => handleSelectCity(item.id)}
+                                            style={[s.cityCard, active && s.cityCardActive]}
+                                        >
+                                            <Text style={s.cityName}>
+                                                {item.id === NEARBY_ID ? '🧭 Рядом' : item.name}
+                                            </Text>
+                                            <Text style={s.cityCountry}>
+                                                {item.id === NEARBY_ID
+                                                    ? userLoc
+                                                        ? 'по вашей геолокации'
+                                                        : 'геолокация отключена'
+                                                    : item.country === 'PL'
+                                                        ? 'Польша'
+                                                        : 'Беларусь'}
+                                            </Text>
+                                            <Text style={s.questsCount}>
+                                                {questsCount} квест{getPluralForm(questsCount)}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
+                        ))}
+                    </View>
 
                     {selectedCityId && <View style={s.divider} />}
 
-                    {/* Секция квестов (тоже отрисовываем без скролла) */}
+                    {/* Квесты */}
                     {selectedCityId && (
-                        <FlatList
-                            key={questsListKey}
-                            data={questsAll}
-                            keyExtractor={(q) => q.id}
-                            contentContainerStyle={s.questsGrid}
-                            numColumns={questColumns}
-                            scrollEnabled={false}
-                            {...(questColumns > 1 ? { columnWrapperStyle: { gap: 20 } } : {})}
-                            renderItem={({ item }) => (
-                                <QuestCardLink
-                                    cityId={
-                                        selectedCityId === NEARBY_ID ? (item.cityId as string) : (selectedCityId as string)
-                                    }
-                                    quest={item}
-                                    nearby={selectedCityId === NEARBY_ID}
-                                />
-                            )}
-                        />
+                        <View style={s.questsContainer}>
+                            {chunkedQuests.map((row, rowIndex) => (
+                                <View key={`quest-row-${rowIndex}`} style={s.questsRow}>
+                                    {row.map((quest) => (
+                                        <QuestCardLink
+                                            key={quest.id}
+                                            cityId={
+                                                selectedCityId === NEARBY_ID ? (quest.cityId as string) : (selectedCityId as string)
+                                            }
+                                            quest={quest}
+                                            nearby={selectedCityId === NEARBY_ID}
+                                        />
+                                    ))}
+                                </View>
+                            ))}
+                        </View>
                     )}
                 </View>
             </ScrollView>
@@ -284,7 +286,6 @@ function getPluralForm(count: number): string {
 
 const s = StyleSheet.create({
     page: { flex: 1, backgroundColor: UI.bg },
-    // важно: flexGrow и нижний отступ, чтобы «прилипший» футер не перекрывал контент
     scrollContent: { flexGrow: 1, paddingBottom: 96 },
 
     wrap: { width: '100%', maxWidth: 1100, alignSelf: 'center', padding: 16 },
@@ -320,9 +321,16 @@ const s = StyleSheet.create({
     },
     mapBtnTxt: { color: '#fff', fontWeight: '800' },
 
-    citiesGrid: { gap: 12 },
+    citiesContainer: { gap: 12 },
+    citiesRow: {
+        flexDirection: 'row',
+        gap: 12,
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start'
+    },
     cityCard: {
         flex: 1,
+        minWidth: 120,
         padding: 16,
         borderRadius: 16,
         borderWidth: 1,
@@ -336,10 +344,17 @@ const s = StyleSheet.create({
 
     divider: { height: 1, backgroundColor: UI.divider, marginVertical: 18 },
 
-    questsGrid: { gap: 20 },
+    questsContainer: { gap: 20 },
+    questsRow: {
+        flexDirection: 'row',
+        gap: 20,
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start'
+    },
 
     questCard: {
         flex: 1,
+        minWidth: 300,
         borderRadius: 20,
         overflow: 'hidden',
         shadowColor: UI.shadow,
