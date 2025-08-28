@@ -1,7 +1,15 @@
 // app/quests/index.tsx
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
-    View, Text, StyleSheet, FlatList, Pressable, Platform, useWindowDimensions, Image
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    Pressable,
+    Platform,
+    useWindowDimensions,
+    Image,
+    ScrollView,
 } from 'react-native';
 import Head from 'expo-router/head';
 import { Link } from 'expo-router';
@@ -10,8 +18,11 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 
 import {
-    CITIES, CITY_QUESTS, City, QuestMeta,
-    ALL_QUESTS
+    CITIES,
+    CITY_QUESTS,
+    City,
+    QuestMeta,
+    ALL_QUESTS,
 } from '@/components/quests/cityQuests';
 import { haversineKm } from '@/utils/geo';
 
@@ -41,6 +52,10 @@ export default function QuestsScreen() {
     const cityColumns = width >= 1200 ? 5 : width >= 900 ? 4 : 3;
     const questColumns = width >= 1100 ? 3 : width >= 740 ? 2 : 1;
 
+    // ключи для форс-ремонта FlatList при смене numColumns
+    const citiesListKey = useMemo(() => `cities-${cityColumns}`, [cityColumns]);
+    const questsListKey = useMemo(() => `quests-${questColumns}`, [questColumns]);
+
     useEffect(() => {
         (async () => {
             try {
@@ -57,7 +72,9 @@ export default function QuestsScreen() {
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') return;
-                const pos = await Location.getCurrentPositionAsync({ accuracy: Location.LocationAccuracy.Balanced });
+                const pos = await Location.getCurrentPositionAsync({
+                    accuracy: Location.LocationAccuracy.Balanced,
+                });
                 setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
             } catch {}
         })();
@@ -65,16 +82,22 @@ export default function QuestsScreen() {
 
     const handleSelectCity = useCallback(async (id: string) => {
         setSelectedCityId(id);
-        try { await AsyncStorage.setItem(STORAGE_SELECTED_CITY, id); } catch {}
+        try {
+            await AsyncStorage.setItem(STORAGE_SELECTED_CITY, id);
+        } catch {}
     }, []);
 
-    const citiesWithNearby: (City | { id: string; name: string; country: 'PL' | 'BY'; isNearby: true })[] = useMemo(
-        () => [{ id: NEARBY_ID, name: 'Рядом', country: 'BY', isNearby: true } as any, ...CITIES],
-        []
-    );
+    const citiesWithNearby: (City | { id: string; name: string; country: 'PL' | 'BY'; isNearby: true })[] =
+        useMemo(
+            () => [{ id: NEARBY_ID, name: 'Рядом', country: 'BY', isNearby: true } as any, ...CITIES],
+            []
+        );
 
     const selectedCity: City | null = useMemo(
-        () => (selectedCityId && selectedCityId !== NEARBY_ID ? CITIES.find(c => c.id === selectedCityId) || null : null),
+        () =>
+            selectedCityId && selectedCityId !== NEARBY_ID
+                ? CITIES.find((c) => c.id === selectedCityId) || null
+                : null,
         [selectedCityId]
     );
 
@@ -84,25 +107,35 @@ export default function QuestsScreen() {
         if (selectedCityId === NEARBY_ID) {
             if (!userLoc) return [];
             return ALL_QUESTS
-                .map(q => ({
+                .map((q) => ({
                     ...q,
                     _distanceKm: haversineKm(userLoc.lat, userLoc.lng, q.lat, q.lng),
                 }))
-                .filter(q => (q._distanceKm ?? Infinity) <= NEARBY_RADIUS_KM)
-                .sort((a, b) => (a._distanceKm! - b._distanceKm!));
+                .filter((q) => (q._distanceKm ?? Infinity) <= NEARBY_RADIUS_KM)
+                .sort((a, b) => a._distanceKm! - b._distanceKm!);
         }
 
-        return (CITY_QUESTS[selectedCityId] || []).map(q => ({ ...q }));
+        return (CITY_QUESTS[selectedCityId] || []).map((q) => ({ ...q }));
     }, [selectedCityId, userLoc]);
 
     return (
         <>
             <Head>
                 <title key="title">Квесты | MeTravel</title>
-                <meta key="description" name="description" content="Исследуйте города и парки с офлайн-квестами — приключения на карте рядом с вами" />
+                <meta
+                    key="description"
+                    name="description"
+                    content="Исследуйте города и парки с офлайн-квестами — приключения на карте рядом с вами"
+                />
             </Head>
 
-            <View style={s.page}>
+            {/* ВНЕШНИЙ СКРОЛЛЕР — работает и на web, и на нативе */}
+            <ScrollView
+                style={s.page}
+                contentContainerStyle={s.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={s.wrap}>
                     {/* Hero */}
                     <View style={s.hero}>
@@ -111,7 +144,9 @@ export default function QuestsScreen() {
                         </View>
                         <View style={{ flex: 1 }}>
                             <Text style={s.title}>Квесты</Text>
-                            <Text style={s.subtitle}>Находи приключения в городах и парках. Смотри на карте — что рядом.</Text>
+                            <Text style={s.subtitle}>
+                                Находи приключения в городах и парках. Смотри на карте — что рядом.
+                            </Text>
                         </View>
 
                         <Link href="/quests/map" asChild>
@@ -122,18 +157,19 @@ export default function QuestsScreen() {
                         </Link>
                     </View>
 
-                    {/* Города */}
+                    {/* Города (без собственного скролла) */}
                     <FlatList
+                        key={citiesListKey}
                         data={citiesWithNearby}
                         keyExtractor={(it) => it.id}
                         contentContainerStyle={s.citiesGrid}
                         numColumns={cityColumns}
-                        columnWrapperStyle={{ gap: 12 }}
+                        scrollEnabled={false}
+                        {...(cityColumns > 1 ? { columnWrapperStyle: { gap: 12 } } : {})}
                         renderItem={({ item }: any) => {
                             const active = selectedCityId === item.id;
-                            const questsCount = item.id === NEARBY_ID
-                                ? ALL_QUESTS.length
-                                : (CITY_QUESTS[item.id]?.length || 0);
+                            const questsCount =
+                                item.id === NEARBY_ID ? ALL_QUESTS.length : CITY_QUESTS[item.id]?.length || 0;
 
                             return (
                                 <Pressable
@@ -145,8 +181,12 @@ export default function QuestsScreen() {
                                     </Text>
                                     <Text style={s.cityCountry}>
                                         {item.id === NEARBY_ID
-                                            ? (userLoc ? 'по вашей геолокации' : 'геолокация отключена')
-                                            : item.country === 'PL' ? 'Польша' : 'Беларусь'}
+                                            ? userLoc
+                                                ? 'по вашей геолокации'
+                                                : 'геолокация отключена'
+                                            : item.country === 'PL'
+                                                ? 'Польша'
+                                                : 'Беларусь'}
                                     </Text>
                                     <Text style={s.questsCount}>
                                         {questsCount} квест{getPluralForm(questsCount)}
@@ -158,17 +198,21 @@ export default function QuestsScreen() {
 
                     {selectedCityId && <View style={s.divider} />}
 
-                    {/* Секция квестов */}
+                    {/* Секция квестов (тоже отрисовываем без скролла) */}
                     {selectedCityId && (
                         <FlatList
+                            key={questsListKey}
                             data={questsAll}
                             keyExtractor={(q) => q.id}
                             contentContainerStyle={s.questsGrid}
                             numColumns={questColumns}
-                            columnWrapperStyle={{ gap: 20 }}
+                            scrollEnabled={false}
+                            {...(questColumns > 1 ? { columnWrapperStyle: { gap: 20 } } : {})}
                             renderItem={({ item }) => (
                                 <QuestCardLink
-                                    cityId={selectedCityId === NEARBY_ID ? (item.cityId as string) : selectedCityId!}
+                                    cityId={
+                                        selectedCityId === NEARBY_ID ? (item.cityId as string) : (selectedCityId as string)
+                                    }
                                     quest={item}
                                     nearby={selectedCityId === NEARBY_ID}
                                 />
@@ -176,7 +220,7 @@ export default function QuestsScreen() {
                         />
                     )}
                 </View>
-            </View>
+            </ScrollView>
         </>
     );
 }
@@ -190,10 +234,9 @@ function QuestCardLink({
     quest: QuestMeta & { _distanceKm?: number };
     nearby?: boolean;
 }) {
-    const durationText =
-        quest.durationMin
-            ? `${Math.round((quest.durationMin ?? 60) / 5) * 5} мин`
-            : '1–2 часа';
+    const durationText = quest.durationMin
+        ? `${Math.round((quest.durationMin ?? 60) / 5) * 5} мин`
+        : '1–2 часа';
 
     return (
         <Link href={`/quests/${cityId}/${quest.id}`} asChild>
@@ -202,7 +245,9 @@ function QuestCardLink({
                     <View style={s.coverWrap}>
                         <Image source={quest.cover} style={s.questCover} resizeMode="cover" />
                         <View style={s.coverOverlay}>
-                            <Text style={s.questTitle} numberOfLines={2}>{quest.title}</Text>
+                            <Text style={s.questTitle} numberOfLines={2}>
+                                {quest.title}
+                            </Text>
                             <View style={s.questMetaRow}>
                                 <View style={s.metaItem}>
                                     <Ionicons name="navigate" size={14} color="#fff" />
@@ -239,21 +284,51 @@ function getPluralForm(count: number): string {
 
 const s = StyleSheet.create({
     page: { flex: 1, backgroundColor: UI.bg },
+    // важно: flexGrow и нижний отступ, чтобы «прилипший» футер не перекрывал контент
+    scrollContent: { flexGrow: 1, paddingBottom: 96 },
+
     wrap: { width: '100%', maxWidth: 1100, alignSelf: 'center', padding: 16 },
 
     hero: {
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        backgroundColor: UI.surface, borderRadius: 16, padding: 16,
-        borderWidth: 1, borderColor: UI.border, marginBottom: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: UI.surface,
+        borderRadius: 16,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: UI.border,
+        marginBottom: 18,
     },
-    heroIconWrap: { width: 40, height: 40, borderRadius: 12, backgroundColor: UI.cardAlt, alignItems: 'center', justifyContent: 'center' },
+    heroIconWrap: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: UI.cardAlt,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     title: { color: UI.text, fontSize: 26, fontWeight: '800' },
     subtitle: { color: UI.textLight, fontSize: 14, marginTop: 2 },
-    mapBtn: { flexDirection: 'row', gap: 6, backgroundColor: UI.primary, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12 },
+    mapBtn: {
+        flexDirection: 'row',
+        gap: 6,
+        backgroundColor: UI.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
     mapBtnTxt: { color: '#fff', fontWeight: '800' },
 
     citiesGrid: { gap: 12 },
-    cityCard: { flex: 1, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: UI.border, backgroundColor: UI.surface },
+    cityCard: {
+        flex: 1,
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: UI.border,
+        backgroundColor: UI.surface,
+    },
     cityCardActive: { borderColor: UI.primary, backgroundColor: UI.cardAlt },
     cityName: { color: UI.text, fontSize: 17, fontWeight: '800' },
     cityCountry: { color: UI.textLight, fontSize: 13, marginBottom: 10 },
@@ -277,14 +352,17 @@ const s = StyleSheet.create({
     coverWrap: {
         width: '100%',
         ...Platform.select({
-            web: { height: 540 }, // большое изображение на web
+            web: { height: 540 },
             default: { aspectRatio: 3 / 4 },
         }),
         position: 'relative',
     },
     questCover: { width: '100%', height: '100%' },
     coverOverlay: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         padding: 16,
         backgroundColor: 'rgba(0,0,0,0.45)',
     },
