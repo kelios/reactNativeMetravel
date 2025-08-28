@@ -3,13 +3,26 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "strict": true,
-    "jsx": "react",
-    "module": "commonjs",
-    "lib": ["ES2015", "dom"],
+
+    // ✅ современный JSX для TS >= 4.1
+    "jsx": "react-jsx",
+
+    // ✅ не переопределяем "module" — оставляем из expo/tsconfig.base (ESNext)
+    // "module": "esnext" // можно явно указать, но лучше не переопределять
+
+    "target": "esnext",
+    "moduleResolution": "node",
+
+    // ✅ алиас @ на корень репо
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["*"]
     },
-    "typeRoots": ["./src/types"]
+
+    // если реально используешь отдельную папку под типы — ок; иначе можно убрать
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+
+    "skipLibCheck": true
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

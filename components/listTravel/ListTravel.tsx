@@ -179,68 +179,90 @@ function ListTravel() {
     const makePreview = async () => {
         if (!printRef.current || !selected.length) return;
 
-        const statusEl = document.createElement('div');
-        statusEl.style.cssText = `
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    padding: 20px;
-    background: #4a7c59;
-    color: white;
-    text-align: center;
-    z-index: 9999;
-  `;
-        statusEl.textContent = 'Генерируем PDF, подождите...';
-        document.body.appendChild(statusEl);
+        let statusEl: HTMLDivElement | null = document.createElement('div');
+        let iframe: HTMLIFrameElement | null = null;
+        let closeBtn: HTMLButtonElement | null = null;
 
         try {
+            statusEl.style.cssText = `
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            padding: 20px;
+            background: #4a7c59;
+            color: white;
+            text-align: center;
+            z-index: 9999;
+        `;
+            statusEl.textContent = 'Генерируем PDF, подождите...';
+            document.body.appendChild(statusEl);
+
             const url = await renderPreviewToBlobURL(printRef.current, {
                 filename: "metravel.pdf",
             });
 
             if (url) {
-                const iframe = document.createElement('iframe');
+                iframe = document.createElement('iframe');
                 iframe.style.cssText = `
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        border: none;
-        z-index: 9998;
-      `;
+                position: fixed;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                border: none;
+                z-index: 9998;
+            `;
                 iframe.src = url;
 
-                const closeBtn = document.createElement('button');
+                closeBtn = document.createElement('button');
                 closeBtn.style.cssText = `
-        position: fixed;
-        top: 20px; right: 20px;
-        z-index: 9999;
-        padding: 10px 20px;
-        background: white;
-        color: #4a7c59;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      `;
+                position: fixed;
+                top: 20px; right: 20px;
+                z-index: 9999;
+                padding: 10px 20px;
+                background: white;
+                color: #4a7c59;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            `;
                 closeBtn.textContent = 'Закрыть';
                 closeBtn.onclick = () => {
-                    document.body.removeChild(iframe);
-                    document.body.removeChild(closeBtn);
-                    document.body.removeChild(statusEl);
+                    if (iframe && document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                    if (closeBtn && document.body.contains(closeBtn)) {
+                        document.body.removeChild(closeBtn);
+                    }
+                    if (statusEl && document.body.contains(statusEl)) {
+                        document.body.removeChild(statusEl);
+                    }
                     URL.revokeObjectURL(url);
                 };
 
                 document.body.appendChild(iframe);
                 document.body.appendChild(closeBtn);
-                document.body.removeChild(statusEl);
+                if (statusEl && document.body.contains(statusEl)) {
+                    document.body.removeChild(statusEl);
+                }
+                statusEl = null;
             }
         } catch (e) {
             console.error("[PDFExport] preview error:", e);
-            statusEl.textContent = 'Ошибка при создании превью';
-            statusEl.style.background = '#a00';
-            setTimeout(() => {
-                if (statusEl.parentNode) {
-                    document.body.removeChild(statusEl);
-                }
-            }, 3000);
+            if (statusEl) {
+                statusEl.textContent = 'Ошибка при создании превью';
+                statusEl.style.background = '#a00';
+                setTimeout(() => {
+                    if (statusEl && statusEl.parentNode) {
+                        document.body.removeChild(statusEl);
+                    }
+                }, 3000);
+            }
+
+            // Очищаем все созданные элементы при ошибке
+            if (iframe && document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+            if (closeBtn && document.body.contains(closeBtn)) {
+                document.body.removeChild(closeBtn);
+            }
         }
     };
 
@@ -250,16 +272,16 @@ function ListTravel() {
             return;
         }
 
-        const loadingEl = document.createElement('div');
+        let loadingEl: HTMLDivElement | null = document.createElement('div');
         loadingEl.style.cssText = `
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    padding: 20px;
-    background: #4a7c59;
-    color: white;
-    text-align: center;
-    z-index: 9999;
-  `;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        padding: 20px;
+        background: #4a7c59;
+        color: white;
+        text-align: center;
+        z-index: 9999;
+    `;
         loadingEl.textContent = 'Создание PDF...';
         document.body.appendChild(loadingEl);
 
@@ -272,9 +294,10 @@ function ListTravel() {
             console.error('PDF generation error:', error);
             alert('Ошибка при создании PDF');
         } finally {
-            if (loadingEl.parentNode) {
+            if (loadingEl && loadingEl.parentNode) {
                 document.body.removeChild(loadingEl);
             }
+            loadingEl = null;
         }
     };
 
@@ -445,7 +468,7 @@ function ListTravel() {
                         }}
                     >
                         {selected.map(travel => (
-                            <TravelPdfTemplate key={travel.id} travel={travel} />
+                            <TravelPdfTemplate key={travel.id} travelId={travel.id} />
                         ))}
                     </div>
                 </View>

@@ -8,9 +8,16 @@ module.exports = function (api) {
         plugins: [
             '@babel/plugin-transform-export-namespace-from',
             'react-native-web',
-            'react-native-reanimated/plugin',
+
+            ['module-resolver', {
+                root: ['./'],
+                alias: { '@': './' },
+                extensions: ['.ts', '.tsx', '.js', '.jsx', '.json']
+            }],
 
             isProduction && ['transform-remove-console', { exclude: ['error', 'warn'] }],
+
+            'react-native-reanimated/plugin',
         ].filter(Boolean),
     };
 };
