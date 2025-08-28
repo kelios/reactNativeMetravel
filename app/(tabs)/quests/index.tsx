@@ -200,7 +200,6 @@ function QuestCardLink({
             <Pressable style={s.questCard}>
                 {quest.cover && (
                     <View style={s.coverWrap}>
-                        {/* @ts-expect-error rn-web ok */}
                         <Image source={quest.cover} style={s.questCover} resizeMode="cover" />
                         <View style={s.coverOverlay}>
                             <Text style={s.questTitle} numberOfLines={2}>{quest.title}</Text>
