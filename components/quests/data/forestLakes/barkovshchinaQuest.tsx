@@ -131,4 +131,4 @@ export const BARKOV_FINALE: QuestFinale = {
 };
 
 export const BARKOV_TITLE = 'Хранитель тайн Барковщины';
-export const BARKOV_STORAGE_KEY = 'quest_barkov_forest_secrets_v2';
+export const BARKOV_STORAGE_KEY = 'quest_barkov_forest_secrets_v3';
