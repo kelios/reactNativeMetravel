@@ -1,114 +1,176 @@
-// components/quests/minsk/minskDragon.ts
+// components/quests/minsk/minskSmok.ts
 import type { QuestStep, QuestFinale } from '@/components/quests/QuestWizard';
-import {QuestCity} from "@/components/quests/QuestWizard";
+import { QuestCity } from "@/components/quests/QuestWizard";
 
 const normalize = (s: string) =>
     s.toLowerCase()
         .replace(/\s+/g, ' ')
         .replace(/[.,;:!?'„”"–—-]/g, '')
-        .replace('ё', 'е')
+        .replace(/ё/g, 'е')
         .trim();
 
 function tryImage<T>(fn: () => T): T | null {
     try { return fn(); } catch { return null as any; }
 }
 
-// --- картинки (assets/quests/minskDragon/1.png … 5.png)
-const IMG2 = tryImage(() => require('@/assets/quests/minskDragon/1.png'));
-const IMG3 = tryImage(() => require('@/assets/quests/minskDragon/2.png'));
-const IMG4 = tryImage(() => require('@/assets/quests/minskDragon/3.png'));
-const IMG5 = tryImage(() => require('@/assets/quests/minskDragon/4.png'));
-const VIDEO = (() => { try { return require('@/assets/quests/minskDragon/minskDragon.mp4'); } catch { return null; } })();
-export const MINSK_DRAGON_CITY: QuestCity = { name: 'Минск', lat: 53.9023, lng: 27.5619, countryCode: 'BY' };
+// (опционально положи свои картинки в assets/quests/minskSmok/*.png)
+const IMG1 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // вход в парк
+const IMG2 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // колесо
+const IMG3 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // планетарий
+const IMG4 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // опера
+const IMG5 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // остров слёз
+const IMG6 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // троицкое
+const IMG7 = tryImage(() => require('@/assets/quests/minskDragon/1.png')); // верхний город / вид на Свислочь
+const VIDEO = null;
 
-// ===== Интро (отдельно) =====
+export const MINSK_DRAGON_CITY: QuestCity = {
+    name: 'Минск',
+    lat: 53.9023,
+    lng: 27.5619,
+    countryCode: 'BY',
+};
+
+// ===== Интро =====
 export const MINSK_DRAGON_INTRO: QuestStep = {
     id: 'intro',
-    title: 'Как пройти квест?',
+    title: 'Легенда о Свислочском Цмоке',
     location: 'Старт',
     story:
-        `Ты идёшь по следам Цмока — древнего хранителя Минска.
-1) Читай легенду и задание для каждой точки.
-2) Открой карту и найди место.
-3) Выполни задание на месте.
-4) Введи ответ — откроется следующий шаг.
-Подсказки направляют, но не выдают ответ.`,
-    task: 'Нажми «Начать квест», чтобы отправиться в путь.',
-    hint: undefined,
+        `Говорят, в глубинах Свислочи живёт Цмок — хранитель города.
+Его дочь Свислочь выбрала человека — Менеска, и так начался Минск.
+Иди по следам Цмока от Парка Горького к Троицкому: 
+на каждой точке — часть истории и точный факт.`,
+    task: 'Нажми «Начать квест», чтобы вступить в путь.',
     answer: () => true,
-    lat: 53.9022, lng: 27.5619,
-    mapsUrl: 'https://maps.google.com/?q=Minsk',
+    lat: 53.9039, lng: 27.5719,
+    mapsUrl: '',
     image: '',
 };
 
-// ===== Реальные шаги (без интро) =====
+// ===== 7 шагов — только проверяемые факты, без «посчитать на месте» =====
 export const MINSK_DRAGON_STEPS: QuestStep[] = [
     {
-        id: '1-park-chelusk',
-        title: 'Сосны Челюскенцев',
-        location: 'Парк Челюскенцев',
-        story: 'Высокие сосны здесь хранят дыхание старого леса. Это символ корней и памяти.',
-        task: 'Сколько сосен изображено на гербе Минска возле входа в парк? (число)',
-        hint: 'Герб установлен у входа с проспекта Независимости.',
-        answer: s => parseInt(s, 10) === 2,
-        lat: 53.92430686676978, lng: 27.61481592257963,
-        mapsUrl: 'https://maps.google.com/?q=Park%20Cheluskintsev%20Minsk',
+        id: '1-park-founded',
+        title: 'Врата Цмока',
+        location: 'Парк Горького, главный вход',
+        story:
+            'Цмок бережёт этот вход, как древний лес. Когда-то тут был первый городской сад.',
+        task:
+            'В каком году был основан будущий Парк Горького как Губернаторский сад? (год)',
+        hint: 'Подсказка: начало XIX века.',
+        answer: s => parseInt(s, 10) === 1805,
+        lat: 53.9039, lng: 27.5719,
+        mapsUrl: 'https://maps.google.com/?q=53.9039,27.5719',
+        image: IMG1,
+        inputType: 'number',
+    },
+    {
+        id: '2-ferris-height',
+        title: 'Круг солнца',
+        location: 'Колесо обозрения, парк Горького',
+        story:
+            'Отсюда Цмок смотрит на город сверху. Высота известна — как эталон для путников.',
+        task: 'Какова официальная высота колеса обозрения? (метры)',
+        hint: 'Подсказка: 5 и 4.',
+        answer: s => parseInt(s, 10) === 54,
+        lat: 53.9034, lng: 27.5744,
+        mapsUrl: 'https://maps.google.com/?q=53.9034,27.5744',
         image: IMG2,
+        inputType: 'number',
     },
     {
-        id: '2-svisloch',
-        title: 'Отражения Свислочи',
-        location: 'Набережная Свислочи',
-        story: 'Река течёт сквозь века, отражая дома и небо. Символ жизни и движения.',
-        task: 'Посмотри на воду. Сколько мостов видно отсюда в обе стороны? (число)',
-        hint: 'Оглянись — они соединяют берега недалеко.',
-        answer: s => { const n = parseInt(s, 10); return n >= 2 && n <= 4; },
-        lat: 53.9064, lng: 27.5710,
-        mapsUrl: 'https://www.google.com/maps/place/53%C2%B054\'23.0%22N+27%C2%B034\'15.6%22E/@53.9057126,27.5673284,13.91z/data=!4m4!3m3!8m2!3d53.9064!4d27.571?entry=ttu&g_ep=EgoyMDI1MDgxOS4wIKXMDSoASAFQAw%3D%3D',
+        id: '3-ferris-installed',
+        title: 'Когда поднялось солнце',
+        location: 'Колесо обозрения, парк Горького',
+        story:
+            'Колесо поставили в начале нового века — и оно стало знаком прогулок по набережной.',
+        task: 'В каком году установили нынешнее колесо обозрения? (год)',
+        hint: 'Подсказка: начало 2000-х.',
+        answer: s => parseInt(s, 10) === 2003,
+        lat: 53.9034, lng: 27.5744,
+        mapsUrl: 'https://maps.google.com/?q=53.9034,27.5744',
+        image: IMG2,
+        inputType: 'number',
+    },
+    {
+        id: '4-planetarium-year',
+        title: 'Звёздный купол',
+        location: 'Минский планетарий',
+        story:
+            'Цмок любит смотреть на звёзды. Под этим куполом они ближе, чем кажется.',
+        task: 'В каком году открылся Минский планетарий? (год)',
+        hint: 'Подсказка: середина 1960-х.',
+        answer: s => parseInt(s, 10) === 1965,
+        lat: 53.9045, lng: 27.5745,
+        mapsUrl: 'https://planetarium.by',
         image: IMG3,
+        inputType: 'number',
     },
     {
-        id: '3-trinity',
+        id: '5-opera-opened',
+        title: 'Голос города',
+        location: 'Большой театр оперы и балета',
+        story:
+            'Музыка — дыхание Цмока. Театр стал домом этого дыхания ещё до появления собственного здания.',
+        task: 'В каком году открылся театр (первая премьера «Кармен»)? (год)',
+        hint: 'Подсказка: первая половина 1930-х.',
+        answer: s => parseInt(s, 10) === 1933,
+        lat: 53.9104, lng: 27.5617,
+        mapsUrl: 'https://bolshoibelarus.by',
+        image: IMG4,
+        inputType: 'number',
+    },
+    {
+        id: '6-island-opened',
+        title: 'Остров мужества и скорби',
+        location: 'Остров слёз',
+        story:
+            'Цмок хранит память о погибших. Здесь — место тишины и имён.',
+        task: 'В каком году официально открыли мемориал «Остров Мужества и Скорби»? (год)',
+        hint: 'Подсказка: в 1990-е.',
+        answer: s => parseInt(s, 10) === 1996,
+        lat: 53.9072, lng: 27.5585,
+        mapsUrl: 'https://maps.google.com/?q=53.9072,27.5585',
+        image: IMG5,
+        inputType: 'number',
+    },
+    {
+        id: '7-trinity-museum',
         title: 'Камни Троицкого',
         location: 'Троицкое предместье',
-        story: 'Старые каменные стены — символ стойкости города. Здесь Минск пережил века.',
-        task: 'Какого цвета крыши у домов вдоль набережной? Введи одно слово.',
-        hint: 'Смотри вверх на черепицу.',
-        answer: s => ['красные','красный','рыжие','рыжая'].includes(normalize(s)),
-        lat: 53.90863880232267, lng: 27.556269762430954,
-        mapsUrl: 'https://maps.google.com/?q=Trinity%20Suburb%20Minsk',
-        image: IMG4,
-    },
-    {
-        id: '4-gorky',
-        title: 'Огонь и Солнце',
-        location: 'Парк Горького',
-        story: 'Колесо обозрения поднимает к солнцу. Это символ надежды и света.',
-        task: 'Сколько кабинок у колеса обозрения? (число)',
-        hint: 'Посчитай по кругу или найди табличку рядом.',
-        answer: s => { const n = parseInt(s, 10); return n >= 30 && n <= 42; },
-        lat: 53.90343184320839, lng: 27.574398874525993,
-        mapsUrl: 'https://maps.app.goo.gl/BzFiWVsKTUztndpt8',
-        image: IMG5,
+        story:
+            'Здесь живёт память слов. Поэт, которого любил Минск, остался в этих домах.',
+        task:
+            'Как называется музей в Троицком предместье, посвящённый Максиму Богдановичу? (полное название)',
+        hint: 'Подсказка: «Литературный музей …».',
+        answer: s => {
+            const a = normalize(s);
+            const ok = [
+                'литературный музей максима богдановича',
+                'лiтаратурны музей максiма багдановiча',
+                'литературный музей м богдановича',
+                'литературный музей м. богдановича',
+                'литературный музей максима богдановича минск',
+            ];
+            return ok.includes(a);
+        },
+        lat: 53.9086, lng: 27.5562,
+        mapsUrl: 'https://maps.google.com/?q=53.9086,27.5562',
+        image: IMG6,
+        inputType: 'text',
     },
 ];
 
 // ===== Финал =====
 export const MINSK_DRAGON_FINALE: QuestFinale = {
     text:
-        `
-        Ты прошёл путь через сердце Минска — слышал шёпот сосен, видел отражения воды, касался старых камней и поднялся к солнцу. Цмок, древний хранитель города, выходит из глубин Свислочи. 
-        
-        «Ты собрал все символы, путник. Теперь ты знаешь: город живёт не только в камнях и улицах, но и в людях. В тебе тоже».
-        
-        Дракон касается крылами воды — и она вспыхивает золотым светом. 
-        
-        «Пока ты хранишь легенду — Минск дышит».`,
+        `Ты собрал семь знаков Цмока: сад и солнце, звёзды и музыку, память и слово.
+        Цмок поднимается из воды Свислочи и шепчет:
+        «Пока ты помнишь — город дышит».`,
     video: VIDEO,
 };
 
-export const MINSK_DRAGON_TITLE = 'По следам Цмока';
-export const MINSK_DRAGON_STORAGE_KEY = 'quest_minsk_dragon_v1';
+export const MINSK_DRAGON_TITLE = 'По следам Свислочского Цмока';
+export const MINSK_DRAGON_STORAGE_KEY = 'quest_minsk_smok_facts_v2';
 
-// Опционально экспортировать утилиты, если нужны где-то ещё:
 export { normalize, tryImage };

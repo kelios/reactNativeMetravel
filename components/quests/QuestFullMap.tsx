@@ -1,6 +1,22 @@
 // components/quests/QuestFullMap.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, StyleSheet, Platform, Pressable, Text } from 'react-native';
+import {
+    View,
+    StyleSheet,
+    Platform,
+    Pressable,
+    Text,
+    Dimensions,
+    TouchableOpacity,
+    Modal,
+    ScrollView,
+    Share,
+    Alert
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
 
 type StepPoint = { lat: number; lng: number; title?: string };
 
@@ -87,36 +103,47 @@ export default function QuestFullMap({
     title?: string;
 }) {
     const [mods, setMods] = useState<Mods | null>(null);
+    const [exportMenuVisible, setExportMenuVisible] = useState(false);
+    const [isMapReady, setIsMapReady] = useState(false);
     const mapDivRef = useRef<HTMLDivElement | null>(null);
+    const insets = useSafeAreaInsets();
+    const { width: screenWidth } = Dimensions.get('window');
 
     useEffect(() => {
         (async () => {
-            const L = await import('leaflet');
-            const RL = await import('react-leaflet');
+            try {
+                const L = await import('leaflet');
+                const RL = await import('react-leaflet');
 
-            // default marker images (not used for numberIcon, but keep leaflet happy)
-            // @ts-ignore
-            delete L.Icon.Default.prototype._getIconUrl;
-            L.Icon.Default.mergeOptions({
-                iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-                iconUrl: require('leaflet/dist/images/marker-icon.png'),
-                shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
-            });
+                // default marker images (not used for numberIcon, but keep leaflet happy)
+                // @ts-ignore
+                delete L.Icon.Default.prototype._getIconUrl;
+                L.Icon.Default.mergeOptions({
+                    iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+                    iconUrl: require('leaflet/dist/images/marker-icon.png'),
+                    shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+                });
 
-            if (Platform.OS === 'web') {
-                await import('leaflet/dist/leaflet.css');
+                if (Platform.OS === 'web') {
+                    await import('leaflet/dist/leaflet.css');
+                }
+
+                setMods({
+                    L,
+                    MapContainer: (RL as any).MapContainer,
+                    TileLayer: (RL as any).TileLayer,
+                    Marker: (RL as any).Marker,
+                    Polyline: (RL as any).Polyline,
+                    Popup: (RL as any).Popup,
+                    FeatureGroup: (RL as any).FeatureGroup,
+                    useMap: (RL as any).useMap,
+                });
+
+                // Даем время для инициализации карты
+                setTimeout(() => setIsMapReady(true), 500);
+            } catch (error) {
+                console.error('Error loading map modules:', error);
             }
-
-            setMods({
-                L,
-                MapContainer: (RL as any).MapContainer,
-                TileLayer: (RL as any).TileLayer,
-                Marker: (RL as any).Marker,
-                Polyline: (RL as any).Polyline,
-                Popup: (RL as any).Popup,
-                FeatureGroup: (RL as any).FeatureGroup,
-                useMap: (RL as any).useMap,
-            });
         })();
     }, []);
 
@@ -125,23 +152,73 @@ export default function QuestFullMap({
         [steps]
     );
 
-    if (!mods || points.length === 0) return null;
+    // Mobile-specific export functions
+    const shareAsPNG = async () => {
+        try {
+            if (Platform.OS === 'web') {
+                exportPNG();
+                return;
+            }
 
-    const { L, MapContainer, TileLayer, Marker, Polyline, Popup, FeatureGroup, useMap } = mods;
-    const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng] as [number, number])).pad(0.15);
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Требуется разрешение', 'Разрешите доступ к галерее для сохранения изображения');
+                return;
+            }
 
-    // Inner control: fit bounds on mount/update
-    const FitBounds: React.FC = () => {
-        const map = useMap();
-        useEffect(() => {
-            map.fitBounds(bounds, { animate: false });
-            // small timeout fixes occasional tiles not loaded before fitBounds
-            setTimeout(() => map.invalidateSize(), 100);
-        }, [map]);
-        return null;
+            // Для мобильных используем более простой подход
+            Alert.alert('Экспорт', 'Функция экспорта PNG на мобильных устройствах в разработке');
+        } catch (error) {
+            console.error('Error sharing PNG:', error);
+        }
     };
 
-    // Export PNG using leaflet-easyPrint-like approach (HTML2Canvas-free, simple)
+    const shareAsGPX = async () => {
+        try {
+            if (Platform.OS === 'web') {
+                exportGPX();
+                return;
+            }
+
+            const gpxContent = buildGPX(points);
+            const fileUri = `${FileSystem.cacheDirectory}${title.replace(/\s+/g, '_')}.gpx`;
+
+            await FileSystem.writeAsStringAsync(fileUri, gpxContent);
+
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri, {
+                    mimeType: 'application/gpx+xml',
+                    dialogTitle: 'Поделиться маршрутом',
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing GPX:', error);
+        }
+    };
+
+    const shareAsGeoJSON = async () => {
+        try {
+            if (Platform.OS === 'web') {
+                exportGeoJSON();
+                return;
+            }
+
+            const geoJsonContent = buildGeoJSON(points);
+            const fileUri = `${FileSystem.cacheDirectory}${title.replace(/\s+/g, '_')}.geojson`;
+
+            await FileSystem.writeAsStringAsync(fileUri, geoJsonContent);
+
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri, {
+                    mimeType: 'application/geo+json',
+                    dialogTitle: 'Поделиться маршрутом',
+                });
+            }
+        } catch (error) {
+            console.error('Error sharing GeoJSON:', error);
+        }
+    };
+
     const exportPNG = async () => {
         try {
             // dynamic import to keep bundle small
@@ -154,7 +231,6 @@ export default function QuestFullMap({
             a.download = `${title.replace(/\s+/g, '_')}.png`;
             a.click();
         } catch {
-            // fallback: print
             window.print();
         }
     };
@@ -162,27 +238,133 @@ export default function QuestFullMap({
     const exportGPX = () => downloadText(`${title.replace(/\s+/g, '_')}.gpx`, buildGPX(points), 'application/gpx+xml');
     const exportGeoJSON = () => downloadText(`${title.replace(/\s+/g, '_')}.geojson`, buildGeoJSON(points), 'application/geo+json');
 
+    if (!mods || points.length === 0) {
+        return (
+            <View style={[styles.wrap, { height }]}>
+                <Text style={styles.loadingText}>Загрузка карты...</Text>
+            </View>
+        );
+    }
+
+    const { L, MapContainer, TileLayer, Marker, Polyline, Popup, FeatureGroup, useMap } = mods;
+    const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng] as [number, number])).pad(0.15);
+
+    // Inner control: fit bounds on mount/update
+    const FitBounds: React.FC = () => {
+        const map = useMap();
+        useEffect(() => {
+            if (isMapReady) {
+                map.fitBounds(bounds, { animate: false });
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+        }, [map, isMapReady]);
+        return null;
+    };
+
     return (
         <View style={[styles.wrap, { height }]}>
-            {Platform.OS === 'web' && (
-                <View style={styles.toolbar}>
-                    <Text style={styles.toolbarTitle}>{title}</Text>
-                    <View style={{ flex: 1 }} />
-                    <Pressable style={styles.btn} onPress={exportPNG}><Text style={styles.btnTxt}>PNG</Text></Pressable>
-                    <Pressable style={styles.btn} onPress={exportGPX}><Text style={styles.btnTxt}>GPX</Text></Pressable>
-                    <Pressable style={styles.btn} onPress={exportGeoJSON}><Text style={styles.btnTxt}>GeoJSON</Text></Pressable>
-                    <Pressable style={styles.btn} onPress={() => window.print()}><Text style={styles.btnTxt}>Печать</Text></Pressable>
-                </View>
-            )}
+            {/* Mobile-friendly toolbar */}
+            <View style={[styles.toolbar, { paddingTop: insets.top + 8 }]}>
+                <Text style={styles.toolbarTitle} numberOfLines={1}>
+                    {title}
+                </Text>
+
+                {Platform.OS === 'web' ? (
+                    <View style={styles.webButtons}>
+                        <Pressable style={styles.btn} onPress={exportPNG}>
+                            <Text style={styles.btnTxt}>PNG</Text>
+                        </Pressable>
+                        <Pressable style={styles.btn} onPress={exportGPX}>
+                            <Text style={styles.btnTxt}>GPX</Text>
+                        </Pressable>
+                        <Pressable style={styles.btn} onPress={exportGeoJSON}>
+                            <Text style={styles.btnTxt}>GeoJSON</Text>
+                        </Pressable>
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        style={styles.mobileMenuButton}
+                        onPress={() => setExportMenuVisible(true)}
+                    >
+                        <Text style={styles.mobileMenuText}>⋮</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {/* Mobile export menu modal */}
+            <Modal
+                visible={exportMenuVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setExportMenuVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setExportMenuVisible(false)}
+                >
+                    <View style={[styles.modalContent, { bottom: insets.bottom }]}>
+                        <Text style={styles.modalTitle}>Экспорт маршрута</Text>
+
+                        <TouchableOpacity
+                            style={styles.modalOption}
+                            onPress={() => {
+                                setExportMenuVisible(false);
+                                shareAsPNG();
+                            }}
+                        >
+                            <Text style={styles.modalOptionText}>Сохранить как PNG</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalOption}
+                            onPress={() => {
+                                setExportMenuVisible(false);
+                                shareAsGPX();
+                            }}
+                        >
+                            <Text style={styles.modalOptionText}>Поделиться GPX</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.modalOption}
+                            onPress={() => {
+                                setExportMenuVisible(false);
+                                shareAsGeoJSON();
+                            }}
+                        >
+                            <Text style={styles.modalOptionText}>Поделиться GeoJSON</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.modalOption, styles.cancelOption]}
+                            onPress={() => setExportMenuVisible(false)}
+                        >
+                            <Text style={styles.cancelOptionText}>Отмена</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
 
             <View ref={mapDivRef as any} style={styles.mapBox}>
-                <MapContainer bounds={bounds} style={styles.map} scrollWheelZoom>
+                <MapContainer
+                    bounds={bounds}
+                    style={styles.map}
+                    scrollWheelZoom={false}
+                    zoomControl={Platform.OS === 'web'}
+                    dragging={Platform.OS === 'web'}
+                    touchZoom={true}
+                    doubleClickZoom={false}
+                >
                     <FitBounds />
                     <TileLayer
                         attribution="&copy; OpenStreetMap"
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <Polyline positions={points.map(p => [p.lat, p.lng])} pathOptions={{ color: '#2563eb', weight: 3 }} />
+                    <Polyline
+                        positions={points.map(p => [p.lat, p.lng])}
+                        pathOptions={{ color: '#2563eb', weight: 4 }}
+                    />
                     <FeatureGroup>
                         {points.map((p, i) => (
                             <Marker
@@ -191,16 +373,29 @@ export default function QuestFullMap({
                                 icon={numberIcon(L, i + 1, i === 0)}
                             >
                                 <Popup>
-                                    <div style={{ fontFamily: 'system-ui, sans-serif', fontSize: 13 }}>
-                                        <strong>{i + 1}. {p.title || 'Точка'}</strong>
-                                        <div>{p.lat.toFixed(6)}, {p.lng.toFixed(6)}</div>
-                                    </div>
+                                    <View style={{ minWidth: 150 }}>
+                                        <Text style={styles.popupTitle}>
+                                            {i + 1}. {p.title || 'Точка'}
+                                        </Text>
+                                        <Text style={styles.popupCoords}>
+                                            {p.lat.toFixed(6)}, {p.lng.toFixed(6)}
+                                        </Text>
+                                    </View>
                                 </Popup>
                             </Marker>
                         ))}
                     </FeatureGroup>
                 </MapContainer>
             </View>
+
+            {/* Mobile touch hints */}
+            {Platform.OS !== 'web' && (
+                <View style={styles.touchHints}>
+                    <Text style={styles.hintText}>
+                        ↕️ Двумя пальцами для масштабирования
+                    </Text>
+                </View>
+            )}
         </View>
     );
 }
@@ -215,24 +410,122 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     toolbar: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        justifyContent: 'space-between',
         backgroundColor: '#f8fafc',
+        minHeight: 60,
     },
-    toolbarTitle: { fontWeight: '800', color: '#0f172a' },
+    toolbarTitle: {
+        fontWeight: '800',
+        color: '#0f172a',
+        fontSize: 18,
+        flex: 1,
+        marginRight: 12,
+    },
+    webButtons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     btn: {
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
         backgroundColor: '#0ea5e9',
-        marginLeft: 6,
     },
-    btnTxt: { color: '#fff', fontWeight: '800' },
-    mapBox: { flex: 1 },
-    map: { width: '100%', height: '100%' },
+    btnTxt: {
+        color: '#fff',
+        fontWeight: '600',
+        fontSize: 12,
+    },
+    mobileMenuButton: {
+        padding: 8,
+        borderRadius: 8,
+        backgroundColor: '#0ea5e9',
+    },
+    mobileMenuText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 18,
+    },
+    mapBox: {
+        flex: 1,
+        minHeight: 300,
+    },
+    map: {
+        width: '100%',
+        height: '100%',
+    },
+    loadingText: {
+        textAlign: 'center',
+        padding: 20,
+        color: '#64748b',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 20,
+        paddingBottom: 30,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
+        color: '#0f172a',
+    },
+    modalOption: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    modalOptionText: {
+        fontSize: 16,
+        color: '#0f172a',
+        textAlign: 'center',
+    },
+    cancelOption: {
+        marginTop: 10,
+        backgroundColor: '#f1f5f9',
+        borderRadius: 12,
+        borderBottomWidth: 0,
+    },
+    cancelOptionText: {
+        fontSize: 16,
+        color: '#64748b',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    popupTitle: {
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginBottom: 4,
+        color: '#0f172a',
+    },
+    popupCoords: {
+        fontSize: 12,
+        color: '#64748b',
+    },
+    touchHints: {
+        padding: 12,
+        backgroundColor: '#f8fafc',
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+    },
+    hintText: {
+        fontSize: 12,
+        color: '#64748b',
+        textAlign: 'center',
+    },
 });

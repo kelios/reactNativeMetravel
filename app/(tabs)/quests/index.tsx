@@ -26,8 +26,10 @@ import {
 import { haversineKm } from '@/utils/geo';
 
 const STORAGE_SELECTED_CITY = 'quests_selected_city';
+const STORAGE_NEARBY_RADIUS = 'quests_nearby_radius_km';
+const DEFAULT_NEARBY_RADIUS_KM = 15;
+
 const NEARBY_ID = '__nearby__';
-const NEARBY_RADIUS_KM = 60;
 
 const UI = {
     primary: '#f59e0b',
@@ -43,12 +45,22 @@ const UI = {
     shadow: 'rgba(15, 23, 42, 0.06)',
 };
 
+// helper: безопасно комбинировать стили (без массивов/false/undefined)
+const sx = (...args: Array<object | false | null | undefined>) =>
+    StyleSheet.flatten(args.filter(Boolean));
+
+type NearbyCity = { id: string; name: string; country: 'PL' | 'BY'; isNearby: true };
+
 export default function QuestsScreen() {
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
     const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
-    const { width } = useWindowDimensions();
+    const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number>(DEFAULT_NEARBY_RADIUS_KM);
 
-    const cityColumns = width >= 1200 ? 5 : width >= 900 ? 4 : 3;
+    const { width } = useWindowDimensions();
+    const isSmall = width < 600;
+
+    // Узкие экраны — 2 колонки городов
+    const cityColumns = width >= 1200 ? 5 : width >= 900 ? 4 : width >= 600 ? 3 : 2;
     const questColumns = width >= 1100 ? 3 : width >= 740 ? 2 : 1;
 
     useEffect(() => {
@@ -65,12 +77,21 @@ export default function QuestsScreen() {
     useEffect(() => {
         (async () => {
             try {
+                const saved = await AsyncStorage.getItem(STORAGE_NEARBY_RADIUS);
+                if (saved) setNearbyRadiusKm(Number(saved));
+            } catch {}
+        })();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') return;
                 const pos = await Location.getCurrentPositionAsync({
                     accuracy: Location.LocationAccuracy.Balanced,
                 });
-                setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                setUserLoc({ lat: pos.coords.latitude, lng: pos.longitude ?? pos.coords.longitude });
             } catch {}
         })();
     }, []);
@@ -82,19 +103,25 @@ export default function QuestsScreen() {
         } catch {}
     }, []);
 
-    const citiesWithNearby: (City | { id: string; name: string; country: 'PL' | 'BY'; isNearby: true })[] =
-        useMemo(
-            () => [{ id: NEARBY_ID, name: 'Рядом', country: 'BY', isNearby: true } as any, ...CITIES],
-            []
-        );
+    const handleSetRadius = useCallback(async (km: number) => {
+        setNearbyRadiusKm(km);
+        try {
+            await AsyncStorage.setItem(STORAGE_NEARBY_RADIUS, String(km));
+        } catch {}
+    }, []);
 
-    const selectedCity: City | null = useMemo(
-        () =>
-            selectedCityId && selectedCityId !== NEARBY_ID
-                ? CITIES.find((c) => c.id === selectedCityId) || null
-                : null,
-        [selectedCityId]
+    const citiesWithNearby: (City | NearbyCity)[] = useMemo(
+        () => [{ id: NEARBY_ID, name: 'Рядом', country: 'BY', isNearby: true } as NearbyCity, ...CITIES],
+        []
     );
+
+    const nearbyCount = useMemo(() => {
+        if (!userLoc) return 0;
+        return ALL_QUESTS.reduce((acc, q) => {
+            const d = haversineKm(userLoc.lat, userLoc.lng, q.lat, q.lng);
+            return acc + (d <= nearbyRadiusKm ? 1 : 0);
+        }, 0);
+    }, [userLoc, nearbyRadiusKm]);
 
     const questsAll: (QuestMeta & { _distanceKm?: number })[] = useMemo(() => {
         if (!selectedCityId) return [];
@@ -106,21 +133,18 @@ export default function QuestsScreen() {
                     ...q,
                     _distanceKm: haversineKm(userLoc.lat, userLoc.lng, q.lat, q.lng),
                 }))
-                .filter((q) => (q._distanceKm ?? Infinity) <= NEARBY_RADIUS_KM)
+                .filter((q) => (q._distanceKm ?? Infinity) <= nearbyRadiusKm)
                 .sort((a, b) => a._distanceKm! - b._distanceKm!);
         }
 
         return (CITY_QUESTS[selectedCityId] || []).map((q) => ({ ...q }));
-    }, [selectedCityId, userLoc]);
+    }, [selectedCityId, userLoc, nearbyRadiusKm]);
 
-    // Функция для разбиения массива на строки с определенным количеством колонок
-    const chunkArray = (array: any[], columns: number) => {
-        const result = [];
-        for (let i = 0; i < array.length; i += columns) {
-            result.push(array.slice(i, i + columns));
-        }
+    function chunkArray<T>(array: T[], columns: number): T[][] {
+        const result: T[][] = [];
+        for (let i = 0; i < array.length; i += columns) result.push(array.slice(i, i + columns));
         return result;
-    };
+    }
 
     const chunkedCities = chunkArray(citiesWithNearby, cityColumns);
     const chunkedQuests = chunkArray(questsAll, questColumns);
@@ -144,7 +168,7 @@ export default function QuestsScreen() {
             >
                 <View style={s.wrap}>
                     {/* Hero */}
-                    <View style={s.hero}>
+                    <View style={sx(s.hero, isSmall && s.heroSmall)}>
                         <View style={s.heroIconWrap}>
                             <Ionicons name="compass" size={26} color={UI.primary} />
                         </View>
@@ -156,7 +180,7 @@ export default function QuestsScreen() {
                         </View>
 
                         <Link href="/quests/map" asChild>
-                            <Pressable style={s.mapBtn}>
+                            <Pressable style={sx(s.mapBtn, isSmall && s.mapBtnSmall)}>
                                 <Ionicons name="map" size={16} color="#fff" />
                                 <Text style={s.mapBtnTxt}>Карта</Text>
                             </Pressable>
@@ -170,13 +194,15 @@ export default function QuestsScreen() {
                                 {row.map((item) => {
                                     const active = selectedCityId === item.id;
                                     const questsCount =
-                                        item.id === NEARBY_ID ? ALL_QUESTS.length : CITY_QUESTS[item.id]?.length || 0;
+                                        item.id === NEARBY_ID
+                                            ? (userLoc ? nearbyCount : 0)
+                                            : CITY_QUESTS[item.id]?.length || 0;
 
                                     return (
                                         <Pressable
                                             key={item.id}
                                             onPress={() => handleSelectCity(item.id)}
-                                            style={[s.cityCard, active && s.cityCardActive]}
+                                            style={sx(s.cityCard, active && s.cityCardActive)}
                                         >
                                             <Text style={s.cityName}>
                                                 {item.id === NEARBY_ID ? '🧭 Рядом' : item.name}
@@ -202,19 +228,49 @@ export default function QuestsScreen() {
 
                     {selectedCityId && <View style={s.divider} />}
 
+                    {/* Фильтр радиуса для «Рядом» */}
+                    {selectedCityId === NEARBY_ID && (
+                        <View style={s.filtersRow}>
+                            <Text style={s.filtersLabel}>Радиус:</Text>
+                            {[2, 5, 10, 15, 20, 50].map((km) => (
+                                <Pressable
+                                    key={km}
+                                    onPress={() => handleSetRadius(km)}
+                                    style={sx(s.chip, nearbyRadiusKm === km && s.chipActive)}
+                                >
+                                    <Text style={sx(s.chipText, nearbyRadiusKm === km && s.chipTextActive)}>
+                                        {km} км
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    )}
+
                     {/* Квесты */}
                     {selectedCityId && (
                         <View style={s.questsContainer}>
+                            {questsAll.length === 0 && selectedCityId === NEARBY_ID ? (
+                                <View style={s.emptyState}>
+                                    <Ionicons name="alert-circle" size={18} color={UI.textMuted} />
+                                    <Text style={s.emptyText}>
+                                        Рядом ничего не найдено. Попробуйте увеличить радиус.
+                                    </Text>
+                                </View>
+                            ) : null}
+
                             {chunkedQuests.map((row, rowIndex) => (
                                 <View key={`quest-row-${rowIndex}`} style={s.questsRow}>
                                     {row.map((quest) => (
                                         <QuestCardLink
                                             key={quest.id}
                                             cityId={
-                                                selectedCityId === NEARBY_ID ? (quest.cityId as string) : (selectedCityId as string)
+                                                selectedCityId === NEARBY_ID
+                                                    ? (quest.cityId as string)
+                                                    : (selectedCityId as string)
                                             }
                                             quest={quest}
                                             nearby={selectedCityId === NEARBY_ID}
+                                            isCompact={width < 740}
                                         />
                                     ))}
                                 </View>
@@ -231,10 +287,12 @@ function QuestCardLink({
                            cityId,
                            quest,
                            nearby,
+                           isCompact,
                        }: {
     cityId: string;
     quest: QuestMeta & { _distanceKm?: number };
     nearby?: boolean;
+    isCompact?: boolean;
 }) {
     const durationText = quest.durationMin
         ? `${Math.round((quest.durationMin ?? 60) / 5) * 5} мин`
@@ -242,9 +300,9 @@ function QuestCardLink({
 
     return (
         <Link href={`/quests/${cityId}/${quest.id}`} asChild>
-            <Pressable style={s.questCard}>
+            <Pressable style={sx(s.questCard, isCompact && s.questCardCompact)}>
                 {quest.cover && (
-                    <View style={s.coverWrap}>
+                    <View style={sx(s.coverWrap, isCompact && s.coverWrapCompact)}>
                         <Image source={quest.cover} style={s.questCover} resizeMode="cover" />
                         <View style={s.coverOverlay}>
                             <Text style={s.questTitle} numberOfLines={2}>
@@ -301,6 +359,11 @@ const s = StyleSheet.create({
         borderColor: UI.border,
         marginBottom: 18,
     },
+    heroSmall: {
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: 8,
+    },
     heroIconWrap: {
         width: 40,
         height: 40,
@@ -319,6 +382,11 @@ const s = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 12,
     },
+    mapBtnSmall: {
+        alignSelf: 'stretch',
+        justifyContent: 'center',
+        marginTop: 8,
+    },
     mapBtnTxt: { color: '#fff', fontWeight: '800' },
 
     citiesContainer: { gap: 12 },
@@ -326,7 +394,7 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         gap: 12,
         flexWrap: 'wrap',
-        justifyContent: 'flex-start'
+        justifyContent: 'flex-start',
     },
     cityCard: {
         flex: 1,
@@ -344,13 +412,47 @@ const s = StyleSheet.create({
 
     divider: { height: 1, backgroundColor: UI.divider, marginVertical: 18 },
 
+    filtersRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        flexWrap: 'wrap',
+        marginBottom: 10,
+    },
+    filtersLabel: { color: UI.textLight, fontSize: 13 },
+    chip: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: UI.border,
+        backgroundColor: UI.surface,
+    },
+    chipActive: { borderColor: UI.primary, backgroundColor: UI.cardAlt },
+    chipText: { color: UI.textLight, fontSize: 13, fontWeight: '700' },
+    chipTextActive: { color: UI.text },
+
     questsContainer: { gap: 20 },
     questsRow: {
         flexDirection: 'row',
         gap: 20,
         flexWrap: 'wrap',
-        justifyContent: 'flex-start'
+        justifyContent: 'flex-start',
     },
+
+    emptyState: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: UI.border,
+        marginBottom: 10,
+    },
+    emptyText: { color: UI.textMuted, fontSize: 13 },
 
     questCard: {
         flex: 1,
@@ -363,15 +465,25 @@ const s = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
         borderWidth: 1,
         borderColor: UI.border,
+        ...Platform.select({ android: { elevation: 3 } }),
     },
+    // Компактная карточка на узких экранах
+    questCardCompact: { minWidth: '100%' },
+
     coverWrap: {
         width: '100%',
         ...Platform.select({
-            web: { height: 540 },
+            web: { height: 540 },       // фиксированная высота на web по умолчанию
             default: { aspectRatio: 3 / 4 },
         }),
         position: 'relative',
     },
+    // Компактная обложка: убираем фикс. высоту на web и используем 16:9
+    coverWrapCompact: {
+        aspectRatio: 16 / 9,
+        ...Platform.select({ web: { height: 'auto' } }),
+    },
+
     questCover: { width: '100%', height: '100%' },
     coverOverlay: {
         position: 'absolute',

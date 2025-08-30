@@ -77,7 +77,7 @@ const PROVIDERS: Provider[] = [
             cityId: 'krakow',
             lat: 50.0617,
             lng: 19.9371,
-            durationMin: 60,
+            durationMin: 120,
             difficulty: 'easy',
             tags: ['legend', 'citywalk', 'history'],
             petFriendly: true,
