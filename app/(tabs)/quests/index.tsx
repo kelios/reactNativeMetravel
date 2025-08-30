@@ -58,10 +58,11 @@ export default function QuestsScreen() {
 
     const { width } = useWindowDimensions();
     const isSmall = width < 600;
+    const isMobile = width < 480;
 
-    // Узкие экраны — 2 колонки городов
-    const cityColumns = width >= 1200 ? 5 : width >= 900 ? 4 : width >= 600 ? 3 : 2;
-    const questColumns = width >= 1100 ? 3 : width >= 740 ? 2 : 1;
+    // Адаптивные колонки
+    const cityColumns = isMobile ? 2 : width >= 1200 ? 5 : width >= 900 ? 4 : 3;
+    const questColumns = isMobile ? 1 : width >= 1100 ? 3 : 2;
 
     useEffect(() => {
         (async () => {
@@ -91,7 +92,7 @@ export default function QuestsScreen() {
                 const pos = await Location.getCurrentPositionAsync({
                     accuracy: Location.LocationAccuracy.Balanced,
                 });
-                setUserLoc({ lat: pos.coords.latitude, lng: pos.longitude ?? pos.coords.longitude });
+                setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
             } catch {}
         })();
     }, []);
@@ -166,28 +167,28 @@ export default function QuestsScreen() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                <View style={s.wrap}>
-                    {/* Hero */}
-                    <View style={sx(s.hero, isSmall && s.heroSmall)}>
+                <View style={sx(s.wrap, isMobile && s.wrapMobile)}>
+                    {/* Hero - компактный для мобильных */}
+                    <View style={sx(s.hero, isMobile && s.heroMobile)}>
                         <View style={s.heroIconWrap}>
-                            <Ionicons name="compass" size={26} color={UI.primary} />
+                            <Ionicons name="compass" size={isMobile ? 20 : 26} color={UI.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={s.title}>Квесты</Text>
-                            <Text style={s.subtitle}>
-                                Находи приключения в городах и парках. Смотри на карте — что рядом.
+                            <Text style={sx(s.title, isMobile && s.titleMobile)}>Квесты</Text>
+                            <Text style={sx(s.subtitle, isMobile && s.subtitleMobile)}>
+                                Находи приключения в городах и парках
                             </Text>
                         </View>
 
                         <Link href="/quests/map" asChild>
-                            <Pressable style={sx(s.mapBtn, isSmall && s.mapBtnSmall)}>
-                                <Ionicons name="map" size={16} color="#fff" />
+                            <Pressable style={sx(s.mapBtn, isMobile && s.mapBtnMobile)}>
+                                <Ionicons name="map" size={14} color="#fff" />
                                 <Text style={s.mapBtnTxt}>Карта</Text>
                             </Pressable>
                         </Link>
                     </View>
 
-                    {/* Города */}
+                    {/* Городы - компактные карточки */}
                     <View style={s.citiesContainer}>
                         {chunkedCities.map((row, rowIndex) => (
                             <View key={`row-${rowIndex}`} style={s.citiesRow}>
@@ -202,22 +203,22 @@ export default function QuestsScreen() {
                                         <Pressable
                                             key={item.id}
                                             onPress={() => handleSelectCity(item.id)}
-                                            style={sx(s.cityCard, active && s.cityCardActive)}
+                                            style={sx(s.cityCard, active && s.cityCardActive, isMobile && s.cityCardMobile)}
                                         >
-                                            <Text style={s.cityName}>
+                                            <Text style={sx(s.cityName, isMobile && s.cityNameMobile)}>
                                                 {item.id === NEARBY_ID ? '🧭 Рядом' : item.name}
                                             </Text>
-                                            <Text style={s.cityCountry}>
+                                            <Text style={sx(s.cityCountry, isMobile && s.cityCountryMobile)}>
                                                 {item.id === NEARBY_ID
                                                     ? userLoc
-                                                        ? 'по вашей геолокации'
-                                                        : 'геолокация отключена'
+                                                        ? 'по геолокации'
+                                                        : 'гео отключена'
                                                     : item.country === 'PL'
                                                         ? 'Польша'
                                                         : 'Беларусь'}
                                             </Text>
-                                            <Text style={s.questsCount}>
-                                                {questsCount} квест{getPluralForm(questsCount)}
+                                            <Text style={sx(s.questsCount, isMobile && s.questsCountMobile)}>
+                                                {questsCount} кв.
                                             </Text>
                                         </Pressable>
                                     );
@@ -228,17 +229,17 @@ export default function QuestsScreen() {
 
                     {selectedCityId && <View style={s.divider} />}
 
-                    {/* Фильтр радиуса для «Рядом» */}
+                    {/* Фильтр радиуса для «Рядом» - компактный */}
                     {selectedCityId === NEARBY_ID && (
-                        <View style={s.filtersRow}>
-                            <Text style={s.filtersLabel}>Радиус:</Text>
-                            {[2, 5, 10, 15, 20, 50].map((km) => (
+                        <View style={sx(s.filtersRow, isMobile && s.filtersRowMobile)}>
+                            <Text style={sx(s.filtersLabel, isMobile && s.filtersLabelMobile)}>Радиус:</Text>
+                            {[2, 5, 10, 15, 20].map((km) => (
                                 <Pressable
                                     key={km}
                                     onPress={() => handleSetRadius(km)}
-                                    style={sx(s.chip, nearbyRadiusKm === km && s.chipActive)}
+                                    style={sx(s.chip, nearbyRadiusKm === km && s.chipActive, isMobile && s.chipMobile)}
                                 >
-                                    <Text style={sx(s.chipText, nearbyRadiusKm === km && s.chipTextActive)}>
+                                    <Text style={sx(s.chipText, nearbyRadiusKm === km && s.chipTextActive, isMobile && s.chipTextMobile)}>
                                         {km} км
                                     </Text>
                                 </Pressable>
@@ -246,12 +247,12 @@ export default function QuestsScreen() {
                         </View>
                     )}
 
-                    {/* Квесты */}
+                    {/* Квесты - компактные карточки */}
                     {selectedCityId && (
                         <View style={s.questsContainer}>
                             {questsAll.length === 0 && selectedCityId === NEARBY_ID ? (
                                 <View style={s.emptyState}>
-                                    <Ionicons name="alert-circle" size={18} color={UI.textMuted} />
+                                    <Ionicons name="alert-circle" size={16} color={UI.textMuted} />
                                     <Text style={s.emptyText}>
                                         Рядом ничего не найдено. Попробуйте увеличить радиус.
                                     </Text>
@@ -270,7 +271,7 @@ export default function QuestsScreen() {
                                             }
                                             quest={quest}
                                             nearby={selectedCityId === NEARBY_ID}
-                                            isCompact={width < 740}
+                                            isMobile={isMobile}
                                         />
                                     ))}
                                 </View>
@@ -287,12 +288,12 @@ function QuestCardLink({
                            cityId,
                            quest,
                            nearby,
-                           isCompact,
+                           isMobile,
                        }: {
     cityId: string;
     quest: QuestMeta & { _distanceKm?: number };
     nearby?: boolean;
-    isCompact?: boolean;
+    isMobile?: boolean;
 }) {
     const durationText = quest.durationMin
         ? `${Math.round((quest.durationMin ?? 60) / 5) * 5} мин`
@@ -300,27 +301,27 @@ function QuestCardLink({
 
     return (
         <Link href={`/quests/${cityId}/${quest.id}`} asChild>
-            <Pressable style={sx(s.questCard, isCompact && s.questCardCompact)}>
+            <Pressable style={sx(s.questCard, isMobile && s.questCardMobile)}>
                 {quest.cover && (
-                    <View style={sx(s.coverWrap, isCompact && s.coverWrapCompact)}>
+                    <View style={sx(s.coverWrap, isMobile && s.coverWrapMobile)}>
                         <Image source={quest.cover} style={s.questCover} resizeMode="cover" />
-                        <View style={s.coverOverlay}>
-                            <Text style={s.questTitle} numberOfLines={2}>
+                        <View style={sx(s.coverOverlay, isMobile && s.coverOverlayMobile)}>
+                            <Text style={sx(s.questTitle, isMobile && s.questTitleMobile)} numberOfLines={2}>
                                 {quest.title}
                             </Text>
-                            <View style={s.questMetaRow}>
+                            <View style={sx(s.questMetaRow, isMobile && s.questMetaRowMobile)}>
                                 <View style={s.metaItem}>
-                                    <Ionicons name="navigate" size={14} color="#fff" />
-                                    <Text style={s.metaText}>{quest.points} точек</Text>
+                                    <Ionicons name="navigate" size={12} color="#fff" />
+                                    <Text style={sx(s.metaText, isMobile && s.metaTextMobile)}>{quest.points}</Text>
                                 </View>
                                 <View style={s.metaItem}>
-                                    <Ionicons name="time" size={14} color="#fff" />
-                                    <Text style={s.metaText}>{durationText}</Text>
+                                    <Ionicons name="time" size={12} color="#fff" />
+                                    <Text style={sx(s.metaText, isMobile && s.metaTextMobile)}>{durationText}</Text>
                                 </View>
                                 {nearby && typeof quest._distanceKm === 'number' && (
                                     <View style={s.metaItem}>
-                                        <Ionicons name="walk" size={14} color="#fff" />
-                                        <Text style={s.metaText}>
+                                        <Ionicons name="walk" size={12} color="#fff" />
+                                        <Text style={sx(s.metaText, isMobile && s.metaTextMobile)}>
                                             {quest._distanceKm < 1
                                                 ? `${Math.round(quest._distanceKm * 1000)} м`
                                                 : `${quest._distanceKm.toFixed(1)} км`}
@@ -344,98 +345,126 @@ function getPluralForm(count: number): string {
 
 const s = StyleSheet.create({
     page: { flex: 1, backgroundColor: UI.bg },
-    scrollContent: { flexGrow: 1, paddingBottom: 96 },
+    scrollContent: { flexGrow: 1, paddingBottom: 60 },
 
-    wrap: { width: '100%', maxWidth: 1100, alignSelf: 'center', padding: 16 },
+    wrap: {
+        width: '100%',
+        maxWidth: 1100,
+        alignSelf: 'center',
+        padding: 16
+    },
+    wrapMobile: {
+        padding: 12
+    },
 
     hero: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
         backgroundColor: UI.surface,
-        borderRadius: 16,
+        borderRadius: 12,
         padding: 16,
         borderWidth: 1,
         borderColor: UI.border,
-        marginBottom: 18,
+        marginBottom: 16,
     },
-    heroSmall: {
-        flexDirection: 'column',
-        alignItems: 'stretch',
-        gap: 8,
+    heroMobile: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        marginBottom: 12,
     },
     heroIconWrap: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         backgroundColor: UI.cardAlt,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    title: { color: UI.text, fontSize: 26, fontWeight: '800' },
+    title: { color: UI.text, fontSize: 22, fontWeight: '800' },
+    titleMobile: { fontSize: 18 },
     subtitle: { color: UI.textLight, fontSize: 14, marginTop: 2 },
+    subtitleMobile: { fontSize: 12 },
     mapBtn: {
         flexDirection: 'row',
         gap: 6,
         backgroundColor: UI.primary,
         paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
     },
-    mapBtnSmall: {
-        alignSelf: 'stretch',
-        justifyContent: 'center',
-        marginTop: 8,
+    mapBtnMobile: {
+        paddingHorizontal: 10,
+        paddingVertical: 6,
     },
-    mapBtnTxt: { color: '#fff', fontWeight: '800' },
+    mapBtnTxt: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
-    citiesContainer: { gap: 12 },
+    citiesContainer: { gap: 8 },
     citiesRow: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 8,
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
     },
     cityCard: {
         flex: 1,
-        minWidth: 120,
-        padding: 16,
-        borderRadius: 16,
+        minWidth: 100,
+        padding: 12,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: UI.border,
         backgroundColor: UI.surface,
     },
+    cityCardMobile: {
+        minWidth: 80,
+        padding: 10,
+        borderRadius: 10,
+    },
     cityCardActive: { borderColor: UI.primary, backgroundColor: UI.cardAlt },
-    cityName: { color: UI.text, fontSize: 17, fontWeight: '800' },
-    cityCountry: { color: UI.textLight, fontSize: 13, marginBottom: 10 },
-    questsCount: { color: UI.textLight, fontSize: 13, fontWeight: '700' },
+    cityName: { color: UI.text, fontSize: 15, fontWeight: '800' },
+    cityNameMobile: { fontSize: 13 },
+    cityCountry: { color: UI.textLight, fontSize: 12, marginBottom: 8 },
+    cityCountryMobile: { fontSize: 11, marginBottom: 6 },
+    questsCount: { color: UI.textLight, fontSize: 12, fontWeight: '700' },
+    questsCountMobile: { fontSize: 11 },
 
-    divider: { height: 1, backgroundColor: UI.divider, marginVertical: 18 },
+    divider: { height: 1, backgroundColor: UI.divider, marginVertical: 16 },
 
     filtersRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 6,
         flexWrap: 'wrap',
-        marginBottom: 10,
+        marginBottom: 8,
+    },
+    filtersRowMobile: {
+        gap: 4,
+        marginBottom: 6,
     },
     filtersLabel: { color: UI.textLight, fontSize: 13 },
+    filtersLabelMobile: { fontSize: 12 },
     chip: {
-        paddingHorizontal: 10,
-        paddingVertical: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
         borderRadius: 999,
         borderWidth: 1,
         borderColor: UI.border,
         backgroundColor: UI.surface,
     },
+    chipMobile: {
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+    },
     chipActive: { borderColor: UI.primary, backgroundColor: UI.cardAlt },
-    chipText: { color: UI.textLight, fontSize: 13, fontWeight: '700' },
+    chipText: { color: UI.textLight, fontSize: 12, fontWeight: '700' },
+    chipTextMobile: { fontSize: 11 },
     chipTextActive: { color: UI.text },
 
-    questsContainer: { gap: 20 },
+    questsContainer: { gap: 12 },
     questsRow: {
         flexDirection: 'row',
-        gap: 20,
+        gap: 12,
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
     },
@@ -443,45 +472,42 @@ const s = StyleSheet.create({
     emptyState: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
+        gap: 6,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: UI.border,
-        marginBottom: 10,
+        marginBottom: 8,
     },
-    emptyText: { color: UI.textMuted, fontSize: 13 },
+    emptyText: { color: UI.textMuted, fontSize: 12 },
 
     questCard: {
         flex: 1,
-        minWidth: 300,
-        borderRadius: 20,
+        minWidth: 280,
+        borderRadius: 16,
         overflow: 'hidden',
         shadowColor: UI.shadow,
         shadowOpacity: 1,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
         borderWidth: 1,
         borderColor: UI.border,
-        ...Platform.select({ android: { elevation: 3 } }),
+        ...Platform.select({ android: { elevation: 2 } }),
     },
-    // Компактная карточка на узких экранах
-    questCardCompact: { minWidth: '100%' },
+    questCardMobile: {
+        minWidth: '100%',
+        borderRadius: 14,
+    },
 
     coverWrap: {
         width: '100%',
-        ...Platform.select({
-            web: { height: 540 },       // фиксированная высота на web по умолчанию
-            default: { aspectRatio: 3 / 4 },
-        }),
+        aspectRatio: 16/9,
         position: 'relative',
     },
-    // Компактная обложка: убираем фикс. высоту на web и используем 16:9
-    coverWrapCompact: {
-        aspectRatio: 16 / 9,
-        ...Platform.select({ web: { height: 'auto' } }),
+    coverWrapMobile: {
+        aspectRatio: 16/9,
     },
 
     questCover: { width: '100%', height: '100%' },
@@ -490,11 +516,17 @@ const s = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 16,
+        padding: 12,
         backgroundColor: 'rgba(0,0,0,0.45)',
     },
-    questTitle: { color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 6 },
-    questMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-    metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    metaText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+    coverOverlayMobile: {
+        padding: 10,
+    },
+    questTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 4 },
+    questTitleMobile: { fontSize: 14, marginBottom: 3 },
+    questMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    questMetaRowMobile: { gap: 8 },
+    metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    metaText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+    metaTextMobile: { fontSize: 11 },
 });

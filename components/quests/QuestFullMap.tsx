@@ -9,9 +9,7 @@ import {
     Dimensions,
     TouchableOpacity,
     Modal,
-    ScrollView,
-    Share,
-    Alert
+    Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
@@ -31,7 +29,8 @@ type Mods = {
     useMap: () => any;
 };
 
-function numberIcon(L: any, n: number, active = false) {
+// n теперь может быть числом или строкой "1,2"
+function numberIcon(L: any, n: number | string, active = false) {
     const bg = active ? '#0ea5e9' : '#f59e0b';
     const stroke = active ? '#0369a1' : '#b45309';
     const html = `
@@ -39,8 +38,9 @@ function numberIcon(L: any, n: number, active = false) {
       width:28px;height:28px;border-radius:9999px;
       background:${bg};border:2px solid ${stroke};
       color:#fff;display:flex;align-items:center;justify-content:center;
-      font-weight:800;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.25)
-    ">${n}</div>`;
+      font-weight:800;font-size:12px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.25);
+      padding:0 4px
+    ">${String(n)}</div>`;
     return L.divIcon({ className: 'qmark', html, iconSize: [28, 28], iconAnchor: [14, 14] });
 }
 
@@ -104,7 +104,6 @@ export default function QuestFullMap({
 }) {
     const [mods, setMods] = useState<Mods | null>(null);
     const [exportMenuVisible, setExportMenuVisible] = useState(false);
-    const [isMapReady, setIsMapReady] = useState(false);
     const mapDivRef = useRef<HTMLDivElement | null>(null);
     const insets = useSafeAreaInsets();
     const { width: screenWidth } = Dimensions.get('window');
@@ -138,9 +137,6 @@ export default function QuestFullMap({
                     FeatureGroup: (RL as any).FeatureGroup,
                     useMap: (RL as any).useMap,
                 });
-
-                // Даем время для инициализации карты
-                setTimeout(() => setIsMapReady(true), 500);
             } catch (error) {
                 console.error('Error loading map modules:', error);
             }
@@ -151,6 +147,31 @@ export default function QuestFullMap({
         () => steps.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng)),
         [steps]
     );
+
+    // Группировка совпадающих координат
+    const groupedPoints = useMemo(() => {
+        type GP = { lat: number; lng: number; indexes: number[]; titles: string[] };
+        const map = new Map<string, GP>();
+        points.forEach((p, i) => {
+            const key = `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+            if (!map.has(key)) {
+                map.set(key, {
+                    lat: p.lat,
+                    lng: p.lng,
+                    indexes: [i + 1],
+                    titles: [p.title || `Точка ${i + 1}`],
+                });
+            } else {
+                const gp = map.get(key)!;
+                gp.indexes.push(i + 1);
+                gp.titles.push(p.title || `Точка ${i + 1}`);
+            }
+        });
+        // стабильный порядок для консистентности
+        return Array.from(map.values()).sort(
+            (a, b) => Math.min(...a.indexes) - Math.min(...b.indexes)
+        );
+    }, [points]);
 
     // Mobile-specific export functions
     const shareAsPNG = async () => {
@@ -166,7 +187,6 @@ export default function QuestFullMap({
                 return;
             }
 
-            // Для мобильных используем более простой подход
             Alert.alert('Экспорт', 'Функция экспорта PNG на мобильных устройствах в разработке');
         } catch (error) {
             console.error('Error sharing PNG:', error);
@@ -221,7 +241,6 @@ export default function QuestFullMap({
 
     const exportPNG = async () => {
         try {
-            // dynamic import to keep bundle small
             const domtoimage = await import('dom-to-image');
             const node = mapDivRef.current;
             if (!node) return;
@@ -235,8 +254,10 @@ export default function QuestFullMap({
         }
     };
 
-    const exportGPX = () => downloadText(`${title.replace(/\s+/g, '_')}.gpx`, buildGPX(points), 'application/gpx+xml');
-    const exportGeoJSON = () => downloadText(`${title.replace(/\s+/g, '_')}.geojson`, buildGeoJSON(points), 'application/geo+json');
+    const exportGPX = () =>
+        downloadText(`${title.replace(/\s+/g, '_')}.gpx`, buildGPX(points), 'application/gpx+xml');
+    const exportGeoJSON = () =>
+        downloadText(`${title.replace(/\s+/g, '_')}.geojson`, buildGeoJSON(points), 'application/geo+json');
 
     if (!mods || points.length === 0) {
         return (
@@ -249,15 +270,31 @@ export default function QuestFullMap({
     const { L, MapContainer, TileLayer, Marker, Polyline, Popup, FeatureGroup, useMap } = mods;
     const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng] as [number, number])).pad(0.15);
 
-    // Inner control: fit bounds on mount/update
+    // Безопасное подгоняние границ
     const FitBounds: React.FC = () => {
         const map = useMap();
+
         useEffect(() => {
-            if (isMapReady) {
-                map.fitBounds(bounds, { animate: false });
-                setTimeout(() => map.invalidateSize(), 100);
-            }
-        }, [map, isMapReady]);
+            if (!map) return;
+
+            map.whenReady(() => {
+                const container: HTMLElement | undefined = map.getContainer?.();
+                if (!container) return;
+
+                const { clientWidth, clientHeight } = container;
+                if (!clientWidth || !clientHeight) return;
+
+                const current = map.getBounds?.();
+                const already = current && current.contains(bounds) && bounds.contains(current);
+
+                if (!already) {
+                    map.fitBounds(bounds, { animate: false });
+                }
+
+                requestAnimationFrame(() => map.invalidateSize());
+            });
+        }, [map, bounds]);
+
         return null;
     };
 
@@ -361,24 +398,31 @@ export default function QuestFullMap({
                         attribution="&copy; OpenStreetMap"
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
+
+                    {/* Линия по исходным точкам, чтобы сохранить порядок маршрута */}
                     <Polyline
                         positions={points.map(p => [p.lat, p.lng])}
                         pathOptions={{ color: '#2563eb', weight: 4 }}
                     />
+
+                    {/* Маркеры по сгруппированным координатам */}
                     <FeatureGroup>
-                        {points.map((p, i) => (
+                        {groupedPoints.map((gp, idx) => (
                             <Marker
-                                key={`${p.lat}-${p.lng}-${i}`}
-                                position={[p.lat, p.lng]}
-                                icon={numberIcon(L, i + 1, i === 0)}
+                                key={`${gp.lat}-${gp.lng}-${idx}`}
+                                position={[gp.lat, gp.lng]}
+                                icon={numberIcon(L, gp.indexes.join(','), gp.indexes.includes(1))}
                             >
                                 <Popup>
-                                    <View style={{ minWidth: 150 }}>
+                                    <View style={{ minWidth: 180 }}>
                                         <Text style={styles.popupTitle}>
-                                            {i + 1}. {p.title || 'Точка'}
+                                            {gp.indexes.join(', ')}.
                                         </Text>
                                         <Text style={styles.popupCoords}>
-                                            {p.lat.toFixed(6)}, {p.lng.toFixed(6)}
+                                            {gp.lat.toFixed(6)}, {gp.lng.toFixed(6)}
+                                        </Text>
+                                        <Text style={[styles.popupCoords, { marginTop: 6 }]}>
+                                            {gp.titles.join(', ')}
                                         </Text>
                                     </View>
                                 </Popup>
@@ -391,9 +435,7 @@ export default function QuestFullMap({
             {/* Mobile touch hints */}
             {Platform.OS !== 'web' && (
                 <View style={styles.touchHints}>
-                    <Text style={styles.hintText}>
-                        ↕️ Двумя пальцами для масштабирования
-                    </Text>
+                    <Text style={styles.hintText}>↕️ Двумя пальцами для масштабирования</Text>
                 </View>
             )}
         </View>
