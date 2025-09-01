@@ -28,6 +28,13 @@ import {
     MINSK_DRAGON_STORAGE_KEY,
 } from '@/components/quests/data/minsk/minskDragon';
 
+import {
+    PAKOCIM_INTRO,
+    PAKOCIM_STEPS,
+    PAKOCIM_CAFE_BONUS,
+    PAKOCIM_FINALE,
+} from '@/components/quests/data/krakow/pakocim';
+
 // ===================== ТИПЫ =====================
 export type QuestBundle = {
     title: string;
@@ -82,6 +89,27 @@ const PROVIDERS: Provider[] = [
             tags: ['legend', 'citywalk', 'history'],
             petFriendly: true,
             cover: require('@/assets/quests/krakowDragon/cover.png'),
+        },
+    },
+    {
+        id: 'pakocim-voices',
+        bundle: {
+            title: 'Голоса Прокоцина',
+            steps: [...PAKOCIM_STEPS], // бонус в конце
+            finale: PAKOCIM_FINALE,
+            intro: PAKOCIM_INTRO,
+            storageKey: 'quest_pakocim_v2',
+            city: { name: 'Kraków – Prokocim', lat: 50.0185, lng: 19.9941, countryCode: 'PL' },
+        },
+        meta: {
+            cityId: 'krakow',
+            lat: 50.0185,
+            lng: 19.9941,
+            durationMin: 90,
+            difficulty: 'easy',
+            tags: ['park', 'history', 'nature', 'family'],
+            petFriendly: true,
+            cover: require('@/assets/quests/pakocim/cover.png'), // сюда можно положить обложку
         },
     },
     {
