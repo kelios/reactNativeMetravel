@@ -98,7 +98,7 @@ const PROVIDERS: Provider[] = [
             steps: [...PAKOCIM_STEPS], // бонус в конце
             finale: PAKOCIM_FINALE,
             intro: PAKOCIM_INTRO,
-            storageKey: 'quest_pakocim_v2',
+            storageKey: 'quest_pakocim_v1',
             city: { name: 'Kraków – Prokocim', lat: 50.0185, lng: 19.9941, countryCode: 'PL' },
         },
         meta: {
