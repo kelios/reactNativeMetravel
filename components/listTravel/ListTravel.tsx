@@ -36,7 +36,7 @@ import {
 } from "@/src/api/travels";
 import { renderPreviewToBlobURL, saveContainerAsPDF } from "@/src/utils/pdfWeb";
 import BookLayout from "@/components/export/BookLayout";
-import TravelPdfTemplate from '@/components/export/TravelPdfTemplate';
+import TravelPdfTemplate from "@/components/export/TravelPdfTemplate";
 
 const INITIAL_FILTER = { year: "", showModerationPending: false };
 const BELARUS_ID = 3;
@@ -89,6 +89,11 @@ function ListTravel() {
     const [deleteId, setDelete] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
 
+    // На мобиле сразу уменьшаем количество элементов на страницу
+    useEffect(() => {
+        if (isMobile) setPerPage(10);
+    }, [isMobile]);
+
     const [options, setOptions] = useState<Record<string, any>>({});
     useEffect(() => {
         (async () => {
@@ -107,6 +112,7 @@ function ListTravel() {
             if (Array.isArray(v) ? v.length : v) p[k] = v;
         });
 
+        // Публичность/модерация — скрываем черновики, если не запросили явное отображение
         if (!isMeTravel || !isExport) {
             p.publish = filter.showModerationPending ? undefined : 1;
             p.moderation = filter.showModerationPending ? 0 : 1;
@@ -120,7 +126,8 @@ function ListTravel() {
     const { data, status, refetch } = useQuery({
         queryKey: ["travels", page, perPage, debSearch, queryParams],
         queryFn: () => fetchTravels(page, perPage, debSearch, queryParams),
-        enabled: !isMeTravel || !isExport || !!userId,
+        // Важно: на metravel/export ждём userId, иначе двойные/лишние запросы
+        enabled: !(isMeTravel || isExport) || !!userId,
         keepPreviousData: true,
         staleTime: 60 * 1000,
         cacheTime: 5 * 60 * 1000,
@@ -179,7 +186,7 @@ function ListTravel() {
     const makePreview = async () => {
         if (!printRef.current || !selected.length) return;
 
-        let statusEl: HTMLDivElement | null = document.createElement('div');
+        let statusEl: HTMLDivElement | null = document.createElement("div");
         let iframe: HTMLIFrameElement | null = null;
         let closeBtn: HTMLButtonElement | null = null;
 
@@ -193,7 +200,7 @@ function ListTravel() {
             text-align: center;
             z-index: 9999;
         `;
-            statusEl.textContent = 'Генерируем PDF, подождите...';
+            statusEl.textContent = "Генерируем PDF, подождите...";
             document.body.appendChild(statusEl);
 
             const url = await renderPreviewToBlobURL(printRef.current, {
@@ -201,7 +208,7 @@ function ListTravel() {
             });
 
             if (url) {
-                iframe = document.createElement('iframe');
+                iframe = document.createElement("iframe");
                 iframe.style.cssText = `
                 position: fixed;
                 top: 0; left: 0;
@@ -211,7 +218,7 @@ function ListTravel() {
             `;
                 iframe.src = url;
 
-                closeBtn = document.createElement('button');
+                closeBtn = document.createElement("button");
                 closeBtn.style.cssText = `
                 position: fixed;
                 top: 20px; right: 20px;
@@ -223,7 +230,7 @@ function ListTravel() {
                 border-radius: 4px;
                 cursor: pointer;
             `;
-                closeBtn.textContent = 'Закрыть';
+                closeBtn.textContent = "Закрыть";
                 closeBtn.onclick = () => {
                     if (iframe && document.body.contains(iframe)) {
                         document.body.removeChild(iframe);
@@ -247,8 +254,8 @@ function ListTravel() {
         } catch (e) {
             console.error("[PDFExport] preview error:", e);
             if (statusEl) {
-                statusEl.textContent = 'Ошибка при создании превью';
-                statusEl.style.background = '#a00';
+                statusEl.textContent = "Ошибка при создании превью";
+                statusEl.style.background = "#a00";
                 setTimeout(() => {
                     if (statusEl && statusEl.parentNode) {
                         document.body.removeChild(statusEl);
@@ -256,7 +263,6 @@ function ListTravel() {
                 }, 3000);
             }
 
-            // Очищаем все созданные элементы при ошибке
             if (iframe && document.body.contains(iframe)) {
                 document.body.removeChild(iframe);
             }
@@ -268,11 +274,11 @@ function ListTravel() {
 
     const savePdf = async () => {
         if (!printRef.current || !selected.length) {
-            alert('Пожалуйста, выберите хотя бы одно путешествие');
+            alert("Пожалуйста, выберите хотя бы одно путешествие");
             return;
         }
 
-        let loadingEl: HTMLDivElement | null = document.createElement('div');
+        let loadingEl: HTMLDivElement | null = document.createElement("div");
         loadingEl.style.cssText = `
         position: fixed;
         top: 0; left: 0; right: 0;
@@ -282,17 +288,17 @@ function ListTravel() {
         text-align: center;
         z-index: 9999;
     `;
-        loadingEl.textContent = 'Создание PDF...';
+        loadingEl.textContent = "Создание PDF...";
         document.body.appendChild(loadingEl);
 
         try {
             await saveContainerAsPDF(printRef.current, "my-travels.pdf", {
                 margin: [10, 10],
-                image: { type: 'jpeg', quality: 0.95 },
+                image: { type: "jpeg", quality: 0.95 },
             });
         } catch (error) {
-            console.error('PDF generation error:', error);
-            alert('Ошибка при создании PDF');
+            console.error("PDF generation error:", error);
+            alert("Ошибка при создании PDF");
         } finally {
             if (loadingEl && loadingEl.parentNode) {
                 document.body.removeChild(loadingEl);
@@ -383,12 +389,17 @@ function ListTravel() {
                             renderItem={renderItem}
                             numColumns={columns}
                             columnWrapperStyle={columns > 1 ? styles.columnWrapper : undefined}
-                            contentContainerStyle={[styles.list, { minHeight: "100vh" as any }]}
+                            contentContainerStyle={[
+                                styles.list,
+                                { minHeight: "100vh" as any, paddingBottom: isExport ? 76 : 32 },
+                            ]}
                             showsVerticalScrollIndicator={false}
-                            removeClippedSubviews
-                            initialNumToRender={8}
-                            maxToRenderPerBatch={8}
-                            windowSize={9}
+                            removeClippedSubviews={Platform.OS === "android"}
+                            initialNumToRender={isMobile ? 4 : 8}
+                            maxToRenderPerBatch={isMobile ? 4 : 8}
+                            windowSize={isMobile ? 7 : 9}
+                            updateCellsBatchingPeriod={isMobile ? 50 : 0}
+                            extraData={selected}
                             getItemLayout={getItemLayout}
                             accessibilityRole="list"
                         />
@@ -432,26 +443,30 @@ function ListTravel() {
 
             {isExport && (
                 <View style={styles.exportBar}>
-                    <Pressable style={styles.btn} onPress={selectAll}>
-                        <Text style={styles.btnTxt}>
-                            {selected.length === data?.data?.length
-                                ? "Снять выделение"
-                                : "Выбрать все"}
-                        </Text>
-                    </Pressable>
+                    {!isMobile && (
+                        <Pressable style={styles.btn} onPress={selectAll}>
+                            <Text style={styles.btnTxt}>
+                                {selected.length === data?.data?.length
+                                    ? "Снять выделение"
+                                    : "Выбрать все"}
+                            </Text>
+                        </Pressable>
+                    )}
                     <Pressable
                         style={[styles.btn, !selected.length && styles.btnDisabled]}
                         disabled={!selected.length}
                         onPress={makePreview}
                     >
-                        <Text style={styles.btnTxt}>Превью ({selected.length})</Text>
+                        <Text style={styles.btnTxt}>
+                            {isMobile ? `Превью (${selected.length})` : `Превью (${selected.length})`}
+                        </Text>
                     </Pressable>
                     <Pressable
                         style={[styles.btn, !selected.length && styles.btnDisabled]}
                         disabled={!selected.length}
                         onPress={savePdf}
                     >
-                        <Text style={styles.btnTxt}>Сохранить PDF</Text>
+                        <Text style={styles.btnTxt}>{isMobile ? "PDF" : "Сохранить PDF"}</Text>
                     </Pressable>
 
                     <div
@@ -467,7 +482,7 @@ function ListTravel() {
                             zIndex: 0,
                         }}
                     >
-                        {selected.map(travel => (
+                        {selected.map((travel) => (
                             <TravelPdfTemplate key={travel.id} travelId={travel.id} />
                         ))}
                     </div>
@@ -508,8 +523,8 @@ const styles = StyleSheet.create({
     columnWrapper: { gap: 16, justifyContent: "space-between" },
     exportBar: {
         flexDirection: "row",
-        gap: 12,
-        padding: 12,
+        gap: 8,
+        padding: 8,
         borderTopWidth: 1,
         borderColor: "#eee",
         backgroundColor: "#fafafa",
@@ -517,12 +532,13 @@ const styles = StyleSheet.create({
     btn: {
         flex: 1,
         backgroundColor: "#4a7c59",
-        padding: 14,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
         borderRadius: 6,
         alignItems: "center",
     },
     btnDisabled: { backgroundColor: "#aaa" },
-    btnTxt: { color: "#fff", fontWeight: "600" },
+    btnTxt: { color: "#fff", fontWeight: "600", fontSize: 14 },
 });
 
 export default memo(ListTravel);

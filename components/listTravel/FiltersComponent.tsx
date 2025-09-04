@@ -1,3 +1,4 @@
+// src/components/listTravel/FiltersComponent.tsx
 import React, {
     useState,
     useMemo,
@@ -5,7 +6,7 @@ import React, {
     memo,
     useRef,
     useEffect,
-} from 'react';
+} from "react";
 import {
     StyleSheet,
     View,
@@ -16,47 +17,72 @@ import {
     useWindowDimensions,
     Keyboard,
     Platform,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRoute } from '@react-navigation/native';
-import { debounce } from 'lodash';
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRoute } from "@react-navigation/native";
+import { debounce } from "lodash";
 
-const GroupBoxItem = memo(({ id, title, checked, onPress }) => (
-    <Pressable
-        style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
-        onPress={onPress}
-        aria-pressed={checked}
-        role="checkbox"
-        accessibilityLabel={title}
-        accessibilityState={{ checked }}
-    >
-        <Feather
-            name={checked ? 'check-square' : 'square'}
-            size={22}
-            color="#4a7c59"
-        />
-        <Text style={styles.itemText}>{title}</Text>
-    </Pressable>
-));
+/* ===================== */
+/*   Служебные элементы  */
+/* ===================== */
 
-const GroupBox = memo(({ label, field, items, valKey, labelKey, filterValue, handleCheckForField, open, toggle }) => {
+const GroupBoxItem = memo(function GroupBoxItem({
+                                                    id,
+                                                    title,
+                                                    checked,
+                                                    onPress,
+                                                }: {
+    id: number | string;
+    title: string;
+    checked: boolean;
+    onPress: () => void;
+}) {
+    return (
+        <Pressable
+            style={[styles.checkboxRow, Platform.OS === "web" && { cursor: "pointer" }]}
+            onPress={onPress}
+            aria-pressed={checked}
+            role="checkbox"
+            accessibilityLabel={title}
+            accessibilityState={{ checked }}
+            hitSlop={8}
+        >
+            <Feather name={checked ? "check-square" : "square"} size={20} color="#4a7c59" />
+            <Text style={styles.itemText}>{title}</Text>
+        </Pressable>
+    );
+});
+
+const GroupBox = memo(function GroupBox({
+                                            label,
+                                            field,
+                                            items,
+                                            valKey,
+                                            labelKey,
+                                            filterValue,
+                                            handleCheckForField,
+                                            open,
+                                            toggle,
+                                        }: any) {
     const selectedItems = filterValue[field] ?? [];
 
     return (
         <View style={styles.groupBox}>
             <Pressable
-                style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                style={[styles.groupHeader, Platform.OS === "web" && { cursor: "pointer" }]}
                 onPress={() => toggle(field)}
                 aria-expanded={open}
                 accessibilityLabel={label}
+                hitSlop={6}
             >
                 <Text style={styles.groupLabel}>{label}</Text>
-                <Feather name={open ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
+                <Feather name={open ? "chevron-up" : "chevron-down"} size={18} color="#333" />
             </Pressable>
+
             {open && (
                 <View style={styles.itemsBox}>
-                    {items.map((it) => {
+                    {items.map((it: any) => {
                         const id = it[valKey];
                         return (
                             <GroupBoxItem
@@ -74,6 +100,10 @@ const GroupBox = memo(({ label, field, items, valKey, labelKey, filterValue, han
     );
 });
 
+/* ===================== */
+/*     Основной блок     */
+/* ===================== */
+
 const FiltersComponent = ({
                               filters = {},
                               filterValue = {},
@@ -88,52 +118,40 @@ const FiltersComponent = ({
                           }) => {
     const { width } = useWindowDimensions();
     const insets = useSafeAreaInsets();
-    const { name } = useRoute();
+    const { name } = useRoute() as any;
 
     const isMobile = useMemo(() => width <= 768, [width]);
     const isMobileFullScreenMode = useMemo(() => isMobile && !isCompact, [isMobile, isCompact]);
-    const isTravelsByPage = useMemo(() => name === 'travelsby', [name]);
-    const stackFooter = useMemo(() => isMobile && width <= 500, [isMobile, width]);
+    const isTravelsByPage = useMemo(() => name === "travelsby", [name]);
 
-    const [year, setYear] = useState(filterValue.year ?? '');
-    const [open, setOpen] = useState(initialOpenState);
+    const [year, setYear] = useState(filterValue.year ?? "");
+    const [open, setOpen] = useState<Record<string, boolean>>(initialOpenState);
     const [yearOpen, setYearOpen] = useState(false);
     const [allExpanded, setAllExpanded] = useState(false);
 
-    const scrollRef = useRef(null);
-    const yearInputRef = useRef(null);
+    const scrollRef = useRef<ScrollView>(null);
+    const yearInputRef = useRef<TextInput>(null);
 
-    const groups = useMemo(() => [
-        { label: 'Страны', field: 'countries', items: filters.countries ?? [], valKey: 'country_id', labelKey: 'title_ru', hidden: isTravelsByPage },
-        { label: 'Категории', field: 'categories', items: filters.categories ?? [], valKey: 'id', labelKey: 'name' },
-        { label: 'Объекты', field: 'categoryTravelAddress', items: filters.categoryTravelAddress ?? [], valKey: 'id', labelKey: 'name' },
-        { label: 'Транспорт', field: 'transports', items: filters.transports ?? [], valKey: 'id', labelKey: 'name' },
-        { label: 'Спутники', field: 'companions', items: filters.companions ?? [], valKey: 'id', labelKey: 'name' },
-        { label: 'Сложность', field: 'complexity', items: filters.complexity ?? [], valKey: 'id', labelKey: 'name' },
-        { label: 'Месяц', field: 'month', items: filters.month ?? [], valKey: 'id', labelKey: 'name' },
-        { label: 'Ночлег', field: 'over_nights_stay', items: filters.over_nights_stay ?? [], valKey: 'id', labelKey: 'name' },
-    ], [filters, isTravelsByPage]);
-
-    const toggle = useCallback((field) => {
-        setOpen(prev => ({ ...prev, [field]: !prev[field] }));
-    }, []);
-
-    const handleCheckForField = useCallback((field) => (id) => {
-        const selected = filterValue[field] ?? [];
-        const next = selected.includes(id)
-            ? selected.filter(v => v !== id)
-            : [...selected, id];
-        onSelectedItemsChange(field, next);
-    }, [filterValue, onSelectedItemsChange]);
+    const groups = useMemo(
+        () => [
+            { label: "Страны", field: "countries", items: filters.countries ?? [], valKey: "country_id", labelKey: "title_ru", hidden: isTravelsByPage },
+            { label: "Категории", field: "categories", items: filters.categories ?? [], valKey: "id", labelKey: "name" },
+            { label: "Объекты", field: "categoryTravelAddress", items: filters.categoryTravelAddress ?? [], valKey: "id", labelKey: "name" },
+            { label: "Транспорт", field: "transports", items: filters.transports ?? [], valKey: "id", labelKey: "name" },
+            { label: "Спутники", field: "companions", items: filters.companions ?? [], valKey: "id", labelKey: "name" },
+            { label: "Сложность", field: "complexity", items: filters.complexity ?? [], valKey: "id", labelKey: "name" },
+            { label: "Месяц", field: "month", items: filters.month ?? [], valKey: "id", labelKey: "name" },
+            { label: "Ночлег", field: "over_nights_stay", items: filters.over_nights_stay ?? [], valKey: "id", labelKey: "name" },
+        ],
+        [filters, isTravelsByPage]
+    );
 
     const apply = useCallback(() => {
         Keyboard.dismiss();
 
         const cleanedFilterValue = Object.fromEntries(
             Object.entries(filterValue).map(([key, value]) => {
-                if (Array.isArray(value) && value.length === 0) {
-                    return [key, undefined];
-                }
+                if (Array.isArray(value) && value.length === 0) return [key, undefined];
                 return [key, value];
             })
         );
@@ -143,25 +161,51 @@ const FiltersComponent = ({
             year: year || undefined,
         });
 
+        // на мобиле обычно хотим автоприменение и просто закрыть окно
         if (isMobile && !disableApplyOnMobileClose) closeMenu();
     }, [filterValue, year, isMobile, disableApplyOnMobileClose, handleApplyFilters, closeMenu]);
 
+    // единый дебаунс для авто-применения (мобила)
     const debouncedApply = useMemo(() => debounce(apply, 300), [apply]);
 
-    const handleYearChange = useCallback((text) => {
-        const cleaned = text.replace(/[^0-9]/g, '').slice(0, 4);
-        setYear(cleaned);
-        if (cleaned.length === 4) debouncedApply();
-    }, [debouncedApply]);
+    useEffect(() => () => debouncedApply.cancel(), [debouncedApply]);
+
+    const toggle = useCallback((field: string) => {
+        setOpen((prev) => ({ ...prev, [field]: !prev[field] }));
+    }, []);
+
+    // чекбоксы: обновляем и авто-применяем на мобиле (ненавязчиво)
+    const handleCheckForField = useCallback(
+        (field: string) => (id: any) => {
+            const selected = filterValue[field] ?? [];
+            const next = selected.includes(id) ? selected.filter((v: any) => v !== id) : [...selected, id];
+            onSelectedItemsChange(field, next);
+
+            if (isMobile) debouncedApply();
+        },
+        [filterValue, onSelectedItemsChange, debouncedApply, isMobile]
+    );
+
+    const handleYearChange = useCallback(
+        (text: string) => {
+            const cleaned = text.replace(/[^0-9]/g, "").slice(0, 4);
+            setYear(cleaned);
+            if (isMobile) {
+                // авто-применение чуть позже (или сразу при 4 цифрах)
+                if (cleaned.length === 4) debouncedApply();
+            }
+        },
+        [debouncedApply, isMobile]
+    );
 
     const handleReset = useCallback(() => {
-        setYear('');
+        setYear("");
         resetFilters();
         if (isMobile && !disableApplyOnMobileClose) closeMenu();
     }, [isMobile, disableApplyOnMobileClose, resetFilters, closeMenu]);
 
     const handleToggleAll = useCallback(() => {
-        const newState = {};
+        const newState: Record<string, boolean> = {};
         groups.forEach(({ field, hidden }) => {
             if (!hidden) newState[field] = !allExpanded;
         });
@@ -169,104 +213,128 @@ const FiltersComponent = ({
         setAllExpanded(!allExpanded);
     }, [groups, allExpanded]);
 
-    useEffect(() => {
-        return () => debouncedApply.cancel();
-    }, [debouncedApply]);
-
-    const renderModerationCheckbox = useMemo(() => (
-        isSuperuser && (
-            <View style={styles.groupBox}>
-                <Text style={styles.groupLabel}>Модерация</Text>
-                <View style={styles.itemsBox}>
-                    <Pressable
-                        onPress={() => onSelectedItemsChange('showModerationPending', !filterValue.showModerationPending)}
-                        style={[styles.checkboxRow, Platform.OS === 'web' && { cursor: 'pointer' }]}
-                        aria-pressed={filterValue.showModerationPending}
-                        role="checkbox"
-                        accessibilityLabel="Показать статьи на модерации"
-                        accessibilityState={{ checked: filterValue.showModerationPending }}
-                    >
-                        <Feather name={filterValue.showModerationPending ? 'check-square' : 'square'} size={22} color="#4a7c59" />
-                        <Text style={styles.itemText}>Показать статьи на модерации</Text>
-                    </Pressable>
-                </View>
-            </View>
-        )
-    ), [isSuperuser, filterValue, onSelectedItemsChange]);
-
-    const renderFooter = useMemo(() => (
-        <View style={[styles.footer, {
-            paddingBottom: Math.max(insets.bottom, 24),
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            gap: 8,
-        }]}>
-            {isMobile && (
-                <Pressable
-                    style={[styles.btn, { flex: 1 }, styles.close]}
-                    onPress={closeMenu}
-                    accessibilityLabel="Закрыть фильтры"
-                >
-                    <Text style={styles.btnTxt}>Закрыть</Text>
-                </Pressable>
-            )}
-            <Pressable
-                style={[styles.btn, { flex: 1 }, styles.reset]}
-                onPress={handleReset}
-                accessibilityLabel="Сбросить фильтры"
-            >
-                <Text style={[styles.btnTxt, styles.resetTxt]}>Сбросить</Text>
-            </Pressable>
-            <Pressable
-                style={[styles.btn, { flex: 1 }, styles.apply]}
-                onPress={apply}
-                accessibilityLabel="Применить фильтры"
-            >
-                <Text style={styles.btnTxt}>Применить</Text>
-            </Pressable>
-        </View>
-    ), [isMobile, insets.bottom, closeMenu, handleReset, apply]);
-
-    const renderYearInput = useMemo(() => (
-        <View style={styles.groupBox}>
-            <Pressable
-                style={[styles.groupHeader, Platform.OS === 'web' && { cursor: 'pointer' }]}
-                onPress={() => {
-                    setYearOpen(v => !v);
-                    setTimeout(() => yearInputRef.current?.focus(), 100);
-                }}
-                aria-expanded={yearOpen}
-                accessibilityLabel="Фильтр по году"
-            >
-                <Text style={styles.groupLabel}>Год</Text>
-                <Feather name={yearOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#333" />
-            </Pressable>
-            {yearOpen && (
-                <View style={styles.yearBox}>
-                    <View style={styles.yearInputWrapper}>
-                        <TextInput
-                            ref={yearInputRef}
-                            value={year}
-                            onChangeText={handleYearChange}
-                            placeholder="2023"
-                            keyboardType="numeric"
-                            maxLength={4}
-                            style={styles.yearInput}
-                            returnKeyType="done"
-                            onSubmitEditing={apply}
-                            accessibilityLabel="Введите год"
-                        />
-                        {year.length > 0 && (
-                            <Pressable onPress={() => setYear('')} style={styles.clearIcon} accessibilityLabel="Очистить год">
-                                <Feather name="x" size={16} color="#999" />
-                            </Pressable>
-                        )}
+    /* ======= Модерация ======= */
+    const renderModerationCheckbox = useMemo(
+        () =>
+            isSuperuser && (
+                <View style={styles.groupBox}>
+                    <Text style={styles.groupLabel}>Модерация</Text>
+                    <View style={styles.itemsBox}>
+                        <Pressable
+                            onPress={() =>
+                                onSelectedItemsChange("showModerationPending", !filterValue.showModerationPending)
+                            }
+                            style={[styles.checkboxRow, Platform.OS === "web" && { cursor: "pointer" }]}
+                            aria-pressed={filterValue.showModerationPending}
+                            role="checkbox"
+                            accessibilityLabel="Показать статьи на модерации"
+                            accessibilityState={{ checked: filterValue.showModerationPending }}
+                            hitSlop={8}
+                        >
+                            <Feather
+                                name={filterValue.showModerationPending ? "check-square" : "square"}
+                                size={20}
+                                color="#4a7c59"
+                            />
+                            <Text style={styles.itemText}>Показать статьи на модерации</Text>
+                        </Pressable>
                     </View>
                 </View>
-            )}
-        </View>
-    ), [yearOpen, year, handleYearChange, apply]);
+            ),
+        [isSuperuser, filterValue, onSelectedItemsChange]
+    );
+
+    /* ======= Ввод Года ======= */
+    const renderYearInput = useMemo(
+        () => (
+            <View style={styles.groupBox}>
+                <Pressable
+                    style={[styles.groupHeader, Platform.OS === "web" && { cursor: "pointer" }]}
+                    onPress={() => {
+                        setYearOpen((v) => !v);
+                        setTimeout(() => yearInputRef.current?.focus(), 100);
+                    }}
+                    aria-expanded={yearOpen}
+                    accessibilityLabel="Фильтр по году"
+                    hitSlop={6}
+                >
+                    <Text style={styles.groupLabel}>Год</Text>
+                    <Feather name={yearOpen ? "chevron-up" : "chevron-down"} size={18} color="#333" />
+                </Pressable>
+
+                {yearOpen && (
+                    <View style={styles.yearBox}>
+                        <View style={styles.yearInputWrapper}>
+                            <TextInput
+                                ref={yearInputRef}
+                                value={year}
+                                onChangeText={handleYearChange}
+                                placeholder="2023"
+                                keyboardType="numeric"
+                                maxLength={4}
+                                style={styles.yearInput}
+                                returnKeyType="done"
+                                onSubmitEditing={apply}
+                                accessibilityLabel="Введите год"
+                            />
+                            {year.length > 0 && (
+                                <Pressable onPress={() => setYear("")} style={styles.clearIcon} accessibilityLabel="Очистить год" hitSlop={8}>
+                                    <Feather name="x" size={16} color="#999" />
+                                </Pressable>
+                            )}
+                        </View>
+                    </View>
+                )}
+            </View>
+        ),
+        [yearOpen, year, handleYearChange, apply]
+    );
+
+    /* ======= Футер кнопок ======= */
+    const renderFooter = useMemo(
+        () => (
+            <View
+                style={[
+                    styles.footer,
+                    {
+                        paddingBottom: Math.max(insets.bottom, 18),
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        justifyContent: "space-between",
+                        gap: 8,
+                    },
+                ]}
+            >
+                {isMobile && (
+                    <Pressable
+                        style={[styles.btn, { flex: 1 }, styles.close]}
+                        onPress={closeMenu}
+                        accessibilityLabel="Закрыть фильтры"
+                        hitSlop={8}
+                    >
+                        <Text style={styles.btnTxt}>Закрыть</Text>
+                    </Pressable>
+                )}
+                <Pressable
+                    style={[styles.btn, { flex: 1 }, styles.reset]}
+                    onPress={handleReset}
+                    accessibilityLabel="Сбросить фильтры"
+                    hitSlop={8}
+                >
+                    <Text style={[styles.btnTxt, styles.resetTxt]}>Сбросить</Text>
+                </Pressable>
+                <Pressable
+                    style={[styles.btn, { flex: 1 }, styles.apply]}
+                    onPress={apply}
+                    accessibilityLabel="Применить фильтры"
+                    hitSlop={8}
+                >
+                    <Text style={styles.btnTxt}>Применить</Text>
+                </Pressable>
+            </View>
+        ),
+        [isMobile, insets.bottom, closeMenu, handleReset, apply]
+    );
 
     return (
         <View style={[styles.root, isMobileFullScreenMode && styles.fullScreenMobile]}>
@@ -275,19 +343,18 @@ const FiltersComponent = ({
                 style={styles.scroll}
                 contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 8 }]}
                 keyboardShouldPersistTaps="handled"
-                removeClippedSubviews={Platform.OS !== 'web'}
+                removeClippedSubviews={Platform.OS !== "web"}
             >
                 <View style={styles.content}>
                     {renderModerationCheckbox}
 
                     <Pressable
-                        style={[styles.toggleAllBtn, Platform.OS === 'web' && { cursor: 'pointer' }]}
+                        style={[styles.toggleAllBtn, Platform.OS === "web" && { cursor: "pointer" }]}
                         onPress={handleToggleAll}
-                        accessibilityLabel={allExpanded ? 'Свернуть все фильтры' : 'Развернуть все фильтры'}
+                        accessibilityLabel={allExpanded ? "Свернуть все фильтры" : "Развернуть все фильтры"}
+                        hitSlop={8}
                     >
-                        <Text style={styles.toggleAllText}>
-                            {allExpanded ? 'Свернуть все' : 'Развернуть все'}
-                        </Text>
+                        <Text style={styles.toggleAllText}>{allExpanded ? "Свернуть все" : "Развернуть все"}</Text>
                     </Pressable>
 
                     {groups.map(({ label, field, items, valKey, labelKey, hidden }) =>
@@ -318,102 +385,118 @@ const FiltersComponent = ({
 
 export default memo(FiltersComponent);
 
+/* ===================== */
+/*         Стили         */
+/* ===================== */
+
 const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#fff' },
+    root: { flex: 1, backgroundColor: "#fff" },
+
     fullScreenMobile: {
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 999,
-        backgroundColor: '#fff',
+        backgroundColor: "#fff",
     },
+
     scroll: { flex: 1 },
-    scrollContent: { paddingHorizontal: 8, paddingBottom: 16 },
-    content: { paddingHorizontal: 8 },
-    groupBox: { marginBottom: 10, backgroundColor: '#f9f9f9', borderRadius: 10 },
+    scrollContent: { paddingHorizontal: 8, paddingBottom: 12 },
+    content: { paddingHorizontal: 6 },
+
+    groupBox: { marginBottom: 8, backgroundColor: "#f9f9f9", borderRadius: 8 },
+
     groupHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 12,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 10,
+        paddingHorizontal: 12,
     },
     groupLabel: {
         fontSize: 15,
-        fontWeight: '600',
-        color: '#333',
+        fontWeight: "600",
+        color: "#333",
     },
-    itemsBox: { paddingHorizontal: 12, paddingBottom: 8 },
+
+    itemsBox: { paddingHorizontal: 12, paddingBottom: 6 },
+
     checkboxRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        gap: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 6,
+        gap: 8,
     },
     itemText: {
         fontSize: 14,
-        color: '#333',
+        color: "#333",
     },
+
     yearBox: { paddingHorizontal: 12, paddingBottom: 8 },
     yearInputWrapper: {
-        position: 'relative',
+        position: "relative",
     },
     yearInput: {
-        backgroundColor: '#fff',
+        backgroundColor: "#fff",
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: "#ddd",
         borderRadius: 6,
         paddingHorizontal: 10,
         paddingVertical: 8,
         fontSize: 15,
-        color: '#333',
+        color: "#333",
     },
     clearIcon: {
-        position: 'absolute',
+        position: "absolute",
         right: 8,
-        top: '50%',
+        top: "50%",
         marginTop: -8,
         padding: 4,
     },
+
     toggleAllBtn: {
-        alignSelf: 'flex-end',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        marginBottom: 12,
+        alignSelf: "flex-end",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        marginBottom: 10,
     },
     toggleAllText: {
         fontSize: 13,
-        fontWeight: '600',
-        color: '#4a7c59',
+        fontWeight: "600",
+        color: "#4a7c59",
     },
+
     footer: {
         paddingHorizontal: 10,
-        paddingTop: 10,
+        paddingVertical: 10,
         borderTopWidth: 1,
-        borderTopColor: '#eee',
-        backgroundColor: '#fff',
+        borderTopColor: "#eee",
+        backgroundColor: "#fff",
         ...Platform.select({
             ios: {
-                shadowColor: '#000',
+                shadowColor: "#000",
                 shadowOffset: { width: 0, height: -2 },
                 shadowOpacity: 0.06,
-                shadowRadius: 4,
+                shadowRadius: 3,
             },
-            android: { elevation: 8 },
+            android: { elevation: 4 },
+            web: { position: "sticky" as any, bottom: 0, zIndex: 100 },
         }),
     },
+
     btn: {
         flex: 1,
-        minWidth: '30%',
-        paddingVertical: 12,
+        minWidth: "30%",
+        paddingVertical: 11,
         borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: "center",
+        justifyContent: "center",
     },
-    close: { backgroundColor: '#999' },
-    reset: { backgroundColor: '#e0e0e0' },
-    resetTxt: { color: '#333' },
-    apply: { backgroundColor: '#4a7c59' },
-    btnTxt: { fontSize: 15, fontWeight: '600', color: '#fff' },
+    close: { backgroundColor: "#999" },
+    reset: { backgroundColor: "#e0e0e0" },
+    resetTxt: { color: "#333" },
+    apply: { backgroundColor: "#4a7c59" },
+    btnTxt: { fontSize: 15, fontWeight: "600", color: "#fff" },
 });

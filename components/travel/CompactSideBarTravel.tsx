@@ -1,14 +1,7 @@
 import React, {memo, Suspense, useCallback, useMemo, useState} from 'react';
 import {
-    View,
-    StyleSheet,
-    Linking,
-    Pressable,
-    ScrollView,
-    Image,
-    Platform,
-    useWindowDimensions,
-    ActivityIndicator,
+    View, StyleSheet, Linking, Pressable, ScrollView, Image, Platform,
+    useWindowDimensions, ActivityIndicator, DeviceEventEmitter,
 } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import { Text } from 'react-native-paper';
@@ -29,6 +22,16 @@ const openUrl = (url: string) => {
     }
 };
 
+// универсальный эмиттер "открой секцию"
+const emitOpenSection = (key: string) => {
+    if (Platform.OS === 'web') {
+        // @ts-ignore
+        window.dispatchEvent(new CustomEvent('open-section', { detail: { key } }));
+    } else {
+        DeviceEventEmitter.emit('open-section', key);
+    }
+};
+
 type SideBarProps = {
     refs: Record<string, React.RefObject<View>>;
     travel: Travel;
@@ -40,25 +43,24 @@ type SideBarProps = {
 };
 
 function CompactSideBarTravel({
-                                  refs,
-                                  travel,
-                                  isMobile,
-                                  onNavigate,
-                                  closeMenu,
-                                  isSuperuser,
-                                  storedUserId,
+                                  refs, travel, isMobile, onNavigate, closeMenu, isSuperuser, storedUserId,
                               }: SideBarProps) {
     const { width } = useWindowDimensions();
     const isTablet = width >= 768 && width < 1024;
     const [active, setActive] = useState<string>('');
-    const setActiveAndNavigate = useCallback(
+
+    const setActiveNavigateAndOpen = useCallback(
         (key: keyof typeof refs) => {
-            setActive(key);
-            onNavigate(key);
+            setActive(String(key));
+            onNavigate(key);              // скролл
+            emitOpenSection(String(key)); // раскрыть секцию
+            if (isMobile) closeMenu();
         },
-        [onNavigate],
+        [onNavigate, isMobile, closeMenu]
     );
+
     const canEdit = isSuperuser || storedUserId === String(travel.userIds);
+
     const links = useMemo(() => [
         travel.gallery?.length ? { k: 'gallery', icon: 'photo-library', label: 'Галерея' } : null,
         travel.youtube_link ? { k: 'video', icon: 'ondemand-video', label: 'Видео' } : null,
@@ -71,7 +73,8 @@ function CompactSideBarTravel({
         travel.travelAddress ? { k: 'points', icon: 'list', label: 'Координаты' } : null,
         { k: 'near', icon: 'location-on', label: 'Рядом (~60км)' },
         { k: 'popular', icon: 'star', label: 'Популярное' },
-    ].filter(Boolean), [travel]);
+    ].filter(Boolean) as Array<{k:string;icon:string;label:string}>, [travel]);
+
     const handleUserTravels = () => openUrl(`/?user_id=${travel.userIds}`);
     const handleEdit = () => canEdit && openUrl(`/travel/${travel.id}`);
 
@@ -113,23 +116,28 @@ function CompactSideBarTravel({
                         </View>
                     </View>
                 </View>
+
                 {links.map(({ k, icon, label }) => (
                     <Pressable
                         key={k}
                         style={({ pressed }) => [styles.link, (active === k) && styles.linkActive, pressed && styles.linkPressed]}
-                        onPress={() => setActiveAndNavigate(k as keyof typeof refs)}
+                        onPress={() => setActiveNavigateAndOpen(k as keyof typeof refs)}
+                        android_ripple={{ color: '#E7DAC6' }}
                     >
                         <MaterialIcons name={icon as any} size={isTablet ? 22 : 20} color="#2F332E" />
                         <Text style={[styles.linkTxt, isTablet && { fontSize: 15 }]}>{label}</Text>
                     </Pressable>
                 ))}
+
                 <Pressable onPress={handleUserTravels}>
                     <Text style={styles.allTravels}>Путешествия {travel.userName}</Text>
                 </Pressable>
+
                 <Suspense fallback={<Fallback />}>
                     <WeatherWidget points={travel.travelAddress} />
                 </Suspense>
             </ScrollView>
+
             {isMobile && (
                 <View style={styles.closeBar}>
                     <Pressable onPress={closeMenu} style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}>

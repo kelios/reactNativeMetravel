@@ -3,7 +3,7 @@ import React, {
 } from 'react';
 import {
     ActivityIndicator, Animated, Easing, InteractionManager, Platform, SafeAreaView, ScrollView,
-    StyleSheet, Text, TouchableOpacity, View, useWindowDimensions,
+    StyleSheet, Text, TouchableOpacity, View, useWindowDimensions, Pressable, DeviceEventEmitter,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
@@ -12,11 +12,10 @@ import { useQuery, keepPreviousData, useQueryClient } from '@tanstack/react-quer
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInView } from 'react-intersection-observer';
+import { Image as ExpoImage } from 'expo-image';
+
 import { fetchTravel, fetchTravelBySlug, fetchNearTravels } from '@/src/api/travels';
 import type { Travel } from '@/src/types/types';
-import FlightWidget from '@/components/aviosales/FlightWidget';
-import HotelWidget from '@/components/HotelWidget/HotelWidget';
-import TripsterWidget from '@/components/Tripster/TripsterWidget';
 import Slider from '@/components/travel/Slider';
 
 function lazyImport<T>(factory: () => Promise<{ default: T }>) {
@@ -44,14 +43,9 @@ const SList: React.FC<any> = (props) => {
     return Experimental ? <Experimental {...props} /> : <>{props.children}</>;
 };
 
-const convertYouTubeLink = (url: string): string | null => {
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
-    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
-};
-
 const Fallback = () => (
     <View style={styles.fallback}>
-        <ActivityIndicator size="small" color="#6B4F4F" />
+        <ActivityIndicator size="small" />
     </View>
 );
 
@@ -59,6 +53,80 @@ const MENU_WIDTH = 280;
 const HEADER_OFFSET_DESKTOP = 72;
 const HEADER_OFFSET_MOBILE = 56;
 const MAX_CONTENT_WIDTH = 1200;
+
+/** Utils */
+const getYoutubeId = (url?: string | null) => {
+    if (!url) return null;
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*v%3D))([^?&]+)/);
+    return m?.[1] ?? null;
+};
+
+/** Collapsible section (управляемая, с forceOpen) */
+const CollapsibleSection: React.FC<{
+    title: string;
+    initiallyOpen?: boolean;
+    forceOpen?: boolean;
+    children: React.ReactNode;
+}> = ({ title, initiallyOpen = false, forceOpen = false, children }) => {
+    const [open, setOpen] = useState(initiallyOpen);
+
+    useEffect(() => {
+        if (forceOpen) setOpen(true);
+    }, [forceOpen]);
+
+    return (
+        <View style={styles.sectionContainer}>
+            <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => setOpen(o => !o)}
+                style={styles.sectionHeaderBtn}
+                hitSlop={10}
+            >
+                <Text style={styles.sectionHeaderText}>{title}</Text>
+                <MaterialIcons name={open ? 'expand-less' : 'expand-more'} size={22} />
+            </TouchableOpacity>
+            {open ? <View style={{ marginTop: 12 }}>{children}</View> : null}
+        </View>
+    );
+};
+
+/** Lazy YouTube с постером */
+const LazyYouTube: React.FC<{ url: string }> = ({ url }) => {
+    const id = getYoutubeId(url);
+    const [mounted, setMounted] = useState(false);
+    if (!id) return null;
+
+    if (!mounted) {
+        return (
+            <Pressable onPress={() => setMounted(true)} style={styles.videoContainer} accessibilityRole="button">
+                <ExpoImage
+                    source={{ uri: `https://img.youtube.com/vi/${id}/hqdefault.jpg` }}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                />
+                <View style={styles.playOverlay}>
+                    <MaterialIcons name="play-circle-fill" size={64} color="#ffffff" />
+                </View>
+            </Pressable>
+        );
+    }
+
+    return Platform.OS === 'web' ? (
+        <div style={{ width: '100%', height: '100%' }}>
+            <iframe
+                src={`https://www.youtube.com/embed/${id}`}
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+                loading="lazy"
+                allowFullScreen
+            />
+        </div>
+    ) : (
+        <WebView source={{ uri: `https://www.youtube.com/embed/${id}` }} style={{ flex: 1 }} />
+    );
+};
 
 export default function TravelDetails() {
     const { width } = useWindowDimensions();
@@ -70,6 +138,25 @@ export default function TravelDetails() {
     const slug = Array.isArray(param) ? param[0] : param ?? '';
     const id = Number(slug);
     const isId = !Number.isNaN(id);
+
+    /** ключ секции, которую нужно раскрыть по событию от сайдбара */
+    const [forceOpenKey, setForceOpenKey] = useState<string | null>(null);
+    useEffect(() => {
+        const onWeb = (e: any) => setForceOpenKey(e?.detail?.key ?? null);
+        const onNative = (key: string) => setForceOpenKey(key);
+
+        if (Platform.OS === 'web') {
+            // @ts-ignore
+            window.addEventListener('open-section', onWeb);
+            return () => {
+                // @ts-ignore
+                window.removeEventListener('open-section', onWeb);
+            };
+        } else {
+            const sub = DeviceEventEmitter.addListener('open-section', onNative);
+            return () => sub.remove();
+        }
+    }, []);
 
     const { data: travel, isLoading, isError } = useQuery<Travel>({
         queryKey: ['travel', slug],
@@ -109,8 +196,10 @@ export default function TravelDetails() {
     const scrollTo = useCallback((k: keyof typeof anchor) => {
         const node = anchor[k]?.current;
         if (!node || !scrollRef.current) return;
+        // @ts-ignore
         node.measureLayout(
-            scrollRef.current!.getInnerViewNode(),
+            // @ts-ignore
+            scrollRef.current.getInnerViewNode(),
             (_x, y) => scrollRef.current!.scrollTo({ y: Math.max(0, y - headerOffset), animated: true }),
             () => {}
         );
@@ -147,28 +236,18 @@ export default function TravelDetails() {
         }
     }, [isMobile, animateMenu]);
 
-    const [mapVisible, setMapVisible] = useState(Platform.OS !== 'web');
-    const [pointsVisible, setPointsVisible] = useState(Platform.OS !== 'web');
+    // лениво — только near/popular
     const [nearVisible, setNearVisible] = useState(Platform.OS !== 'web');
     const [popularVisible, setPopularVisible] = useState(Platform.OS !== 'web');
-    const [refVideo, inVideo] = useInView({ rootMargin: '200px', triggerOnce: true });
-    const [refTripster, inTripster] = useInView({ rootMargin: '200px', triggerOnce: true });
-    const [refFlight, inFlight] = useInView({ rootMargin: '200px', triggerOnce: true });
-    const [refHotel, inHotel] = useInView({ rootMargin: '200px', triggerOnce: true });
-    const [refMap, inMap] = useInView({ rootMargin: '200px', triggerOnce: true });
-    const [refPts, inPts] = useInView({ rootMargin: '200px', triggerOnce: true });
     const [refNear, inNear] = useInView({ rootMargin: '200px', triggerOnce: true });
     const [refPop, inPop] = useInView({ rootMargin: '200px', triggerOnce: true });
-    const [refBelkraj, inBelkraj] = useInView({ rootMargin: '200px', triggerOnce: true });
 
     useEffect(() => {
         if (Platform.OS === 'web') {
-            if (inMap) setMapVisible(true);
-            if (inPts) setPointsVisible(true);
             if (inNear) setNearVisible(true);
             if (inPop) setPopularVisible(true);
         }
-    }, [inMap, inPts, inNear, inPop]);
+    }, [inNear, inPop]);
 
     const [canRenderHeavy, setCanRenderHeavy] = useState(Platform.OS === 'web');
     useEffect(() => {
@@ -188,7 +267,7 @@ export default function TravelDetails() {
     if (isLoading) {
         return (
             <View style={styles.center}>
-                <ActivityIndicator size="large" color="#6B4F4F" />
+                <ActivityIndicator size="large" />
             </View>
         );
     }
@@ -225,6 +304,10 @@ export default function TravelDetails() {
             <View style={styles.wrapper}>
                 <SafeAreaView style={styles.safeArea}>
                     <View style={styles.mainContainer}>
+                        {isMobile && menuOpen && (
+                            <TouchableOpacity style={styles.backdrop} onPress={closeMenu} activeOpacity={1} />
+                        )}
+
                         <Animated.View
                             style={[styles.sideMenu, { transform: [{ translateX: animatedX }], width: MENU_WIDTH, zIndex: 1000 }]}
                         >
@@ -244,10 +327,10 @@ export default function TravelDetails() {
                         {isMobile && (
                             <TouchableOpacity
                                 onPress={toggleMenu}
-                                style={[styles.fab, { top: insets.top + 8 }]}
+                                style={[styles.fab, { top: insets.top + 10 }]}
                                 hitSlop={12}
                             >
-                                <MaterialIcons name={menuOpen ? 'close' : 'menu'} size={20} color="#fff" />
+                                <MaterialIcons name={menuOpen ? 'close' : 'menu'} size={24} color="#fff" />
                             </TouchableOpacity>
                         )}
 
@@ -275,125 +358,108 @@ export default function TravelDetails() {
                                             </Suspense>
                                         )}
 
-                                        <View ref={anchor.video} />
-                                        {travel.youtube_link && (
-                                            <Suspense fallback={<Fallback />}>
-                                                <View style={styles.sectionContainer}>
-                                                    <View ref={refVideo} style={styles.videoContainer}>
-                                                        {Platform.OS === 'web' ? (
-                                                            <div style={{ width: '100%', height: '100%' }}>
-                                                                <iframe
-                                                                    src={convertYouTubeLink(travel.youtube_link) ?? ''}
-                                                                    width="100%"
-                                                                    height="100%"
-                                                                    style={{ border: 'none' }}
-                                                                    loading="lazy"
-                                                                    allowFullScreen
-                                                                />
-                                                            </div>
-                                                        ) : (
-                                                            <WebView source={{ uri: convertYouTubeLink(travel.youtube_link) ?? '' }} style={{ flex: 1 }} />
-                                                        )}
-                                                    </View>
-                                                </View>
-                                            </Suspense>
-                                        )}
-
+                                        {/* Текстовые секции — управляем через forceOpenKey */}
                                         {[
-                                            { ref: anchor.description, html: travel.description, title: travel.name },
-                                            { ref: anchor.recommendation, html: travel.recommendation, title: 'Рекомендации' },
-                                            { ref: anchor.plus, html: travel.plus, title: 'Плюсы' },
-                                            { ref: anchor.minus, html: travel.minus, title: 'Минусы' },
-                                        ].map(({ ref, html, title }) =>
+                                            { key: 'description', ref: anchor.description, html: travel.description, title: travel.name },
+                                            { key: 'recommendation', ref: anchor.recommendation, html: travel.recommendation, title: 'Рекомендации' },
+                                            { key: 'plus', ref: anchor.plus, html: travel.plus, title: 'Плюсы' },
+                                            { key: 'minus', ref: anchor.minus, html: travel.minus, title: 'Минусы' },
+                                        ].map(({ key, ref, html, title }) =>
                                             html ? (
                                                 <Suspense key={title} fallback={<Fallback />}>
-                                                    <View ref={ref} style={styles.sectionContainer}>
-                                                        <View style={styles.descriptionContainer}>
-                                                            <TravelDescription title={title} htmlContent={html} noBox />
-                                                        </View>
+                                                    <View ref={ref}>
+                                                        <CollapsibleSection
+                                                            title={title}
+                                                            initiallyOpen={!isMobile}
+                                                            forceOpen={forceOpenKey === key}
+                                                        >
+                                                            <View style={styles.descriptionContainer}>
+                                                                <TravelDescription title={title} htmlContent={html} noBox />
+                                                            </View>
+                                                        </CollapsibleSection>
                                                     </View>
                                                 </Suspense>
                                             ) : null
                                         )}
 
-                                        <View ref={refBelkraj} style={styles.mapObserver} />
-                                        {inBelkraj && Platform.OS === 'web' && travel.travelAddress?.length > 0 && (
+                                        {/* Видео */}
+                                        {travel.youtube_link && (
+                                            <View ref={anchor.video} style={styles.sectionContainer}>
+                                                <Text style={styles.sectionHeaderText}>Видео</Text>
+                                                <View style={{ marginTop: 12 }}>
+                                                    <LazyYouTube url={travel.youtube_link} />
+                                                </View>
+                                            </View>
+                                        )}
+
+                                        {/* Экскурсии — всегда показывать (web) */}
+                                        {Platform.OS === 'web' && travel.travelAddress?.length > 0 && (
                                             <Suspense fallback={<Fallback />}>
                                                 <View ref={anchor.excursions} style={styles.sectionContainer}>
-                                                    <BelkrajWidget
-                                                        countryCode={travel.countryCode}
-                                                        points={travel.travelAddress}
-                                                        collapsedHeight={600}   // видимая высота по умолчанию
-                                                        expandedHeight={1000}   // какая нравится при «Показать ещё»
-                                                    />
+                                                    <Text style={styles.sectionHeaderText}>Экскурсии</Text>
+                                                    <View style={{ marginTop: 12 }}>
+                                                        <BelkrajWidget
+                                                            countryCode={travel.countryCode}
+                                                            points={travel.travelAddress}
+                                                            collapsedHeight={600}
+                                                            expandedHeight={1000}
+                                                        />
+                                                    </View>
                                                 </View>
                                             </Suspense>
                                         )}
 
-                                        <View ref={refMap} style={styles.mapObserver} />
+                                        {/* Карта — всегда показывать */}
                                         <View ref={anchor.map} style={styles.sectionContainer}>
-                                            {canRenderHeavy && mapVisible && travel.coordsMeTravel?.length > 0 && (
-                                                <Suspense fallback={<Fallback />}>
-                                                    <ToggleableMap>
-                                                        <MapClientSide travel={{ data: travel.travelAddress }} />
-                                                    </ToggleableMap>
-                                                </Suspense>
-                                            )}
+                                            <Text style={styles.sectionHeaderText}></Text>
+                                            <View style={{ marginTop: 12 }}>
+                                                {canRenderHeavy && travel.coordsMeTravel?.length > 0 && (
+                                                    <Suspense fallback={<Fallback />}>
+                                                        <ToggleableMap>
+                                                            <MapClientSide travel={{ data: travel.travelAddress }} />
+                                                        </ToggleableMap>
+                                                    </Suspense>
+                                                )}
+                                            </View>
                                         </View>
 
-                                        <View ref={refPts} style={styles.mapObserver} />
+                                        {/* Точки — всегда показывать */}
                                         <View ref={anchor.points} style={styles.sectionContainer}>
-                                            {pointsVisible && travel.travelAddress && (
-                                                <Suspense fallback={<Fallback />}>
-                                                    <PointList points={travel.travelAddress} />
-                                                </Suspense>
-                                            )}
+                                            <Text style={styles.sectionHeaderText}></Text>
+                                            <View style={{ marginTop: 12 }}>
+                                                {travel.travelAddress && (
+                                                    <Suspense fallback={<Fallback />}>
+                                                        <PointList points={travel.travelAddress} />
+                                                    </Suspense>
+                                                )}
+                                            </View>
                                         </View>
 
-                                        <View ref={refFlight} style={styles.mapObserver} />
-                                        {inFlight && (
-                                            <Suspense fallback={<Fallback />}>
-                                                <View style={styles.sectionContainer}>
-                                                    <FlightWidget country={travel.countryName} />
-                                                </View>
-                                            </Suspense>
-                                        )}
-
-                                        <View ref={refNear} style={styles.mapObserver} />
+                                        {/* Рядом — лениво */}
+                                        <View ref={refNear} style={{ height: 1 }} />
                                         <View ref={anchor.near} style={styles.sectionContainer}>
-                                            {nearVisible && travel.travelAddress && (
-                                                <Suspense fallback={<Fallback />}>
-                                                    <NearTravelList travel={travel} />
-                                                </Suspense>
-                                            )}
+                                            <Text style={styles.sectionHeaderText}></Text>
+                                            <View style={{ marginTop: 12 }}>
+                                                {nearVisible && travel.travelAddress && (
+                                                    <Suspense fallback={<Fallback />}>
+                                                        <NearTravelList travel={travel} />
+                                                    </Suspense>
+                                                )}
+                                            </View>
                                         </View>
 
-                                        <View ref={refPop} style={styles.mapObserver} />
+                                        {/* Популярное — лениво */}
+                                        <View ref={refPop} style={{ height: 1 }} />
                                         <View ref={anchor.popular} style={styles.sectionContainer}>
-                                            {popularVisible && (
-                                                <Suspense fallback={<Fallback />}>
-                                                    <PopularTravelList />
-                                                </Suspense>
-                                            )}
+                                            <Text style={styles.sectionHeaderText}></Text>
+                                            <View style={{ marginTop: 12 }}>
+                                                {popularVisible && (
+                                                    <Suspense fallback={<Fallback />}>
+                                                        <PopularTravelList />
+                                                    </Suspense>
+                                                )}
+                                            </View>
                                         </View>
-
-                                        <View ref={refTripster} style={styles.mapObserver} />
-                                        {inTripster && (
-                                            <Suspense fallback={<Fallback />}>
-                                                <View style={styles.sectionContainer}>
-                                                    <TripsterWidget points={travel.travelAddress} />
-                                                </View>
-                                            </Suspense>
-                                        )}
-
-                                        <View ref={refHotel} style={styles.mapObserver} />
-                                        {inHotel && (
-                                            <Suspense fallback={<Fallback />}>
-                                                <View style={styles.sectionContainer}>
-                                                    <HotelWidget points={travel.travelAddress} />
-                                                </View>
-                                            </Suspense>
-                                        )}
                                     </SList>
                                 </View>
                             </View>
@@ -405,32 +471,108 @@ export default function TravelDetails() {
     );
 }
 
+const ANDROID_ELEVATION_CARD = Platform.select({ android: 2, default: 0 });
+const ANDROID_ELEVATION_MENU = Platform.select({ android: 5, default: 0 });
+
 const styles = StyleSheet.create({
     wrapper: { flex: 1, backgroundColor: '#f9f8f2' },
     safeArea: { flex: 1 },
     mainContainer: { flex: 1, flexDirection: 'row' },
+
+    backdrop: {
+        position: 'absolute',
+        top: 0, bottom: 0, left: 0, right: 0,
+        backgroundColor: 'rgba(0,0,0,0.25)',
+        zIndex: 999,
+    },
+
     sideMenu: {
         position: 'absolute',
         top: 0, bottom: 0, left: 0,
         backgroundColor: '#fff',
-        shadowColor: '#000', shadowOffset: { width: 2, height: 0 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 5,
+        shadowColor: Platform.OS === 'ios' ? '#000' : 'transparent',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: Platform.OS === 'ios' ? 0.1 : 0,
+        shadowRadius: Platform.OS === 'ios' ? 4 : 0,
+        elevation: ANDROID_ELEVATION_MENU,
     },
+
     fab: {
-        position: 'absolute', right: 14, width: 40, height: 40, borderRadius: 20,
-        backgroundColor: 'rgba(47,51,46,0.65)', justifyContent: 'center', alignItems: 'center', zIndex: 1001,
+        position: 'absolute',
+        right: 14,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(47,51,46,0.72)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1001,
     },
+
     scrollView: { flex: 1, backgroundColor: '#f9f8f2' },
-    scrollContent: { paddingBottom: 40, minHeight: '100vh' },
+    scrollContent: { paddingBottom: 40, minHeight: Platform.OS === 'web' ? '100vh' as any : undefined },
     contentOuter: { width: '100%', alignItems: 'center' },
     contentWrapper: { flex: 1, width: '100%', maxWidth: MAX_CONTENT_WIDTH, paddingHorizontal: 16 },
-    sectionContainer: { width: '100%', maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center', marginBottom: 24 },
-    sliderContainer: { width: '100%' },
-    videoContainer: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' },
-    descriptionContainer: {
-        width: '100%', backgroundColor: '#fff', borderRadius: 12, padding: 16,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1,
+
+    sectionContainer: {
+        width: '100%',
+        maxWidth: MAX_CONTENT_WIDTH,
+        alignSelf: 'center',
+        marginBottom: 16,
     },
-    mapObserver: { height: 1 },
-    fallback: { paddingVertical: 40, alignItems: 'center' },
+
+    sectionHeaderBtn: {
+        width: '100%',
+        minHeight: 44,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
+        borderRadius: 10,
+        backgroundColor: '#ffffff',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+
+        shadowColor: Platform.OS === 'ios' ? '#000' : 'transparent',
+        shadowOpacity: Platform.OS === 'ios' ? 0.06 : 0,
+        shadowRadius: Platform.OS === 'ios' ? 2 : 0,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: ANDROID_ELEVATION_CARD,
+    },
+
+    sectionHeaderText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+
+    sliderContainer: { width: '100%' },
+
+    videoContainer: {
+        width: '100%',
+        aspectRatio: 16 / 9,
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: '#000',
+    },
+
+    playOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    descriptionContainer: {
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 12,
+
+        shadowColor: Platform.OS === 'ios' ? '#000' : 'transparent',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: Platform.OS === 'ios' ? 0.05 : 0,
+        shadowRadius: Platform.OS === 'ios' ? 2 : 0,
+        elevation: ANDROID_ELEVATION_CARD,
+    },
+
+    fallback: { paddingVertical: 24, alignItems: 'center' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9f8f2' },
 });

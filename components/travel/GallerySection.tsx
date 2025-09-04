@@ -23,6 +23,7 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
         );
     }
 
+    // Без ID нельзя загрузить файлы (нужен travelId на бэке)
     if (!formData.id) {
         return (
             <View style={[styles.galleryContainer, isDarkMode && styles.darkBackground]}>
@@ -33,21 +34,16 @@ const GallerySection: React.FC<GallerySectionProps> = ({ formData }) => {
         );
     }
 
-    const isGalleryEmpty = !formData.gallery || formData.gallery.length === 0;
+    // ✅ Всегда показываем компонент галереи, даже если изображений ещё нет
+    const images = Array.isArray(formData.gallery) ? formData.gallery : [];
 
     return (
         <View style={[styles.galleryContainer, isDarkMode && styles.darkBackground]}>
-            {isGalleryEmpty ? (
-                <Text style={[styles.emptyText, isDarkMode && styles.darkText]}>
-                    Пока нет изображений в галерее.
-                </Text>
-            ) : (
-                <ImageGalleryComponent
-                    collection="gallery"
-                    idTravel={formData.id}
-                    initialImages={formData.gallery}
-                />
-            )}
+            <ImageGalleryComponent
+                collection="gallery"
+                idTravel={formData.id}
+                initialImages={images}
+            />
         </View>
     );
 };
@@ -65,30 +61,11 @@ const styles = StyleSheet.create({
         elevation: 3,
         alignItems: 'center',
     },
-    darkBackground: {
-        backgroundColor: '#222',
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: 16,
-        color: '#555',
-        textAlign: 'center',
-    },
-    infoText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#666',
-        textAlign: 'center',
-    },
-    emptyText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#888',
-        textAlign: 'center',
-    },
-    darkText: {
-        color: '#ddd',
-    },
+    darkBackground: { backgroundColor: '#222' },
+    loadingText: { marginTop: 10, fontSize: 16, color: '#555', textAlign: 'center' },
+    infoText: { fontSize: 16, fontWeight: '500', color: '#666', textAlign: 'center' },
+    emptyText: { fontSize: 16, fontWeight: '500', color: '#888', textAlign: 'center', marginBottom: 8 },
+    darkText: { color: '#ddd' },
 });
 
 export default GallerySection;
