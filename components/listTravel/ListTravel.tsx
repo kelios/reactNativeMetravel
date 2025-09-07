@@ -120,6 +120,10 @@ function ListTravel() {
         if (isMeTravel || isExport) p.user_id = userId;
         else if (user_id) p.user_id = user_id;
         if (isTravelBy) p.countries = [BELARUS_ID];
+        if (isMeTravel) {
+            p.publish = undefined;
+            p.moderation = undefined;
+        }
         return p;
     }, [filter, isMeTravel, isExport, isTravelBy, userId, user_id]);
 
