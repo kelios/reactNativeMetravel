@@ -40,7 +40,7 @@ import TravelPdfTemplate from "@/components/export/TravelPdfTemplate";
 
 const INITIAL_FILTER = { year: "", showModerationPending: false };
 const BELARUS_ID = 3;
-const PER_PAGE_OPTS = [10, 20, 30, 50];
+const PER_PAGE_OPTS = [9, 18, 30,60];
 const ITEM_HEIGHT = 320;
 
 function useDebounce<T>(val: T, delay = 400) {
@@ -196,14 +196,14 @@ function ListTravel() {
 
         try {
             statusEl.style.cssText = `
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            padding: 20px;
-            background: #4a7c59;
-            color: white;
-            text-align: center;
-            z-index: 9999;
-        `;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        padding: 20px;
+        background: #4a7c59;
+        color: white;
+        text-align: center;
+        z-index: 9999;
+      `;
             statusEl.textContent = "Генерируем PDF, подождите...";
             document.body.appendChild(statusEl);
 
@@ -214,26 +214,26 @@ function ListTravel() {
             if (url) {
                 iframe = document.createElement("iframe");
                 iframe.style.cssText = `
-                position: fixed;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                border: none;
-                z-index: 9998;
-            `;
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          border: none;
+          z-index: 9998;
+        `;
                 iframe.src = url;
 
                 closeBtn = document.createElement("button");
                 closeBtn.style.cssText = `
-                position: fixed;
-                top: 20px; right: 20px;
-                z-index: 9999;
-                padding: 10px 20px;
-                background: white;
-                color: #4a7c59;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-            `;
+          position: fixed;
+          top: 20px; right: 20px;
+          z-index: 9999;
+          padding: 10px 20px;
+          background: white;
+          color: #4a7c59;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+        `;
                 closeBtn.textContent = "Закрыть";
                 closeBtn.onclick = () => {
                     if (iframe && document.body.contains(iframe)) {
@@ -284,13 +284,13 @@ function ListTravel() {
 
         let loadingEl: HTMLDivElement | null = document.createElement("div");
         loadingEl.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        padding: 20px;
-        background: #4a7c59;
-        color: white;
-        text-align: center;
-        z-index: 9999;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 20px;
+      background: #4a7c59;
+      color: white;
+      text-align: center;
+      z-index: 9999;
     `;
         loadingEl.textContent = "Создание PDF...";
         document.body.appendChild(loadingEl);

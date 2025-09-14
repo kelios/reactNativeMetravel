@@ -6,51 +6,73 @@ import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
-/**
- * Небольшой blurhash-плейсхолдер, чтобы не мигало чёрным.
- * Можно заменить на реальный, если у вас есть per-image blurhash.
- */
-const PLACEHOLDER_BLURHASH =
-    "LEHL6nWB2yk8pyo0adR*.7kCMdnj"; // короткий универсальный
+/** LQIP-плейсхолдер — чтобы не мигало чёрным */
+const PLACEHOLDER_BLURHASH = "LEHL6nWB2yk8pyo0adR*.7kCMdnj";
+const ICON_COLOR = "#111827"; // тёмные иконки под светлое стекло
 
-const WebImage = memo(function WebImage({
-                                            src,
-                                            alt,
-                                            isPriority = false,
-                                        }: {
+const WebImageOptimized = memo(function WebImageOptimized({
+                                                              src,
+                                                              alt,
+                                                          }: {
     src: string;
     alt: string;
-    isPriority?: boolean;
 }) {
     return (
         <img
             src={src}
             alt={alt}
-            width={800}
-            height={600}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            decoding="async"
-            loading={isPriority ? "eager" : "lazy"}
-            fetchpriority={isPriority ? ("high" as any) : ("low" as any)}
-            crossOrigin="anonymous"
+            style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+                loading: 'lazy',
+                decoding: 'async'
+            }}
         />
     );
 });
 
-const NativeImage = memo(function NativeImage({ uri, priority }: { uri: string; priority?: "low" | "high" }) {
+const NativeImageOptimized = memo(function NativeImageOptimized({
+                                                                    uri,
+                                                                }: {
+    uri: string;
+}) {
     return (
         <ExpoImage
             source={{ uri }}
             style={styles.img}
             contentFit="cover"
-            transition={200}
-            // memory-disk: быстрее на последующих заходах; избегаем «чёрного» при ререндере
+            transition={180}
             cachePolicy="memory-disk"
             placeholder={{ blurhash: PLACEHOLDER_BLURHASH }}
-            // приоритет загрузки: первая карточка может быть «high»
-            priority={priority}
-            recyclingKey={uri} // снижает перерасход памяти при рециклинге
+            priority="low"
+            recyclingKey={uri}
         />
+    );
+});
+
+const CountriesList = memo(function CountriesList({
+                                                      countries
+                                                  }: {
+    countries: string[]
+}) {
+    if (countries.length === 0) return null;
+
+    return (
+        <View style={styles.tags}>
+            {countries.slice(0, 2).map((c) => (
+                <View key={c} style={styles.tag}>
+                    <Feather name="map-pin" size={11} color={ICON_COLOR} />
+                    <Text style={styles.tagTxt}>{c}</Text>
+                </View>
+            ))}
+            {countries.length > 2 && (
+                <View style={styles.tag}>
+                    <Text style={styles.tagTxt}>+{countries.length - 2}</Text>
+                </View>
+            )}
+        </View>
     );
 });
 
@@ -71,7 +93,6 @@ function TravelListItem({
                             isSuperuser,
                             isMetravel,
                             onDeletePress,
-                            isFirst,
                             isSingle = false,
                             selectable = false,
                             isSelected = false,
@@ -87,100 +108,100 @@ function TravelListItem({
         countryName = "",
         userName,
         countUnicIpView = 0,
-        updated_at,
     } = travel;
-
-    const canEdit = isSuperuser || isMetravel;
 
     const imgUrl = useMemo(() => {
         if (!travel_image_thumb_url) return null;
-        const v = updated_at ? Date.parse(updated_at) : id;
-        // На мобиле делаем поменьше дефолт, чтобы быстрее грузилось
-        const targetW = isSingle ? 800 : 480;
-        return `${travel_image_thumb_url}?v=${v}&w=${targetW}&q=80&fit=crop&auto=format`;
-    }, [travel_image_thumb_url, updated_at, id, isSingle]);
+        const targetW = isSingle ? 600 : 400;
+        const targetH = Math.floor(targetW * 0.75);
+        return `${travel_image_thumb_url}?w=${targetW}&h=${targetH}&q=75&fit=crop&auto=format`;
+    }, [travel_image_thumb_url, isSingle]);
 
-    const countries = useMemo(
-        () => countryName.split(",").map((c: string) => c.trim()).filter(Boolean),
+    const countries = useMemo(() =>
+            countryName.split(',').map((c: string) => c.trim()).filter(Boolean),
         [countryName]
     );
 
-    const open = useCallback(() => router.push(`/travels/${slug}`), [slug]);
-    const edit = useCallback(() => router.push(`/travel/${id}`), [id]);
-    const remove = useCallback(() => onDeletePress && onDeletePress(id), [id, onDeletePress]);
+    const canEdit = isSuperuser || isMetravel;
 
     const handlePress = useCallback(() => {
         if (selectable) {
-            onToggle && onToggle();
+            onToggle?.();
         } else {
-            open();
+            router.push(`/travels/${slug}`);
         }
-    }, [selectable, onToggle, open]);
+    }, [selectable, onToggle, slug]);
+
+    const handleEdit = useCallback(() => {
+        router.push(`/travel/${id}`);
+    }, [id]);
+
+    const handleDelete = useCallback(() => {
+        onDeletePress?.(id);
+    }, [id, onDeletePress]);
 
     return (
         <View style={styles.wrap}>
             <Pressable
                 onPress={handlePress}
-                android_ripple={Platform.OS === "android" ? { color: "rgba(255,255,255,0.08)" } : undefined}
+                android_ripple={Platform.OS === "android" ? { color: "rgba(17,24,39,0.06)" } : undefined}
                 style={[
                     styles.card,
+                    Platform.OS === 'android' && styles.androidOptimized,
                     isSingle && styles.single,
                     selectable && isSelected && styles.selected,
-                    // Android: избегаем overflow:hidden+radius артефактов («чёрные» картинки)
-                    Platform.OS === "android" ? styles.cardAndroid : styles.cardNonAndroid,
                 ]}
                 accessibilityLabel={`Путешествие: ${name}`}
                 accessibilityRole="button"
             >
+                {/* Изображение */}
                 {imgUrl ? (
                     Platform.OS === "web" ? (
-                        <WebImage src={imgUrl} alt={name} isPriority={!!isFirst} />
+                        <WebImageOptimized src={imgUrl} alt={name} />
                     ) : (
-                        <NativeImage uri={imgUrl} priority={isFirst ? "high" : "low"} />
+                        <NativeImageOptimized uri={imgUrl} />
                     )
                 ) : (
                     <View style={styles.imgStub}>
-                        <Feather name="image" size={40} color="#666" />
+                        <Feather name="image" size={40} color="#94a3b8" />
                     </View>
                 )}
 
-                {/* Лёгкий градиент, не перекрываем всё — меньше овердроу */}
+                {/* Градиент */}
                 <LinearGradient
-                    colors={["transparent", "rgba(0,0,0,0.85)"]}
-                    locations={[0.55, 1]}
+                    colors={["transparent", "rgba(255,255,255,0.6)", "rgba(255,255,255,0.78)"]}
+                    locations={[0.55, 0.85, 1]}
                     style={styles.grad}
                     pointerEvents="none"
                 />
 
+                {/* Контент поверх изображения */}
                 <View style={styles.overlay} pointerEvents="none">
-                    {countries.length > 0 && (
-                        <View style={styles.tags}>
-                            {countries.map((c) => (
-                                <View key={c} style={styles.tag}>
-                                    <Text style={styles.tagTxt}>{c}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    )}
+                    <CountriesList countries={countries} />
 
-                    <Text style={styles.title} numberOfLines={2}>
-                        {name}
-                    </Text>
+                    <View style={styles.titleBox}>
+                        <Text style={styles.title} numberOfLines={2}>
+                            {name}
+                        </Text>
+                    </View>
 
                     <View style={styles.metaRow}>
                         {!!userName && (
                             <View style={styles.metaBox}>
-                                <Feather name="user" size={14} color="#eee" />
-                                <Text style={styles.metaTxt}>{userName}</Text>
+                                <Feather name="user" size={12} color={ICON_COLOR} />
+                                <Text style={styles.metaTxt} numberOfLines={1}>
+                                    {userName}
+                                </Text>
                             </View>
                         )}
                         <View style={styles.metaBox}>
-                            <Feather name="eye" size={14} color="#eee" />
+                            <Feather name="eye" size={12} color={ICON_COLOR} />
                             <Text style={styles.metaTxt}>{countUnicIpView}</Text>
                         </View>
                     </View>
                 </View>
 
+                {/* Индикатор выбора */}
                 {selectable && (
                     <View style={styles.checkWrap} pointerEvents="none">
                         <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
@@ -189,13 +210,14 @@ function TravelListItem({
                     </View>
                 )}
 
+                {/* Кнопки действий */}
                 {canEdit && !selectable && (
                     <View style={styles.actions} pointerEvents="box-none">
-                        <Pressable onPress={edit} hitSlop={10} style={styles.btn} android_ripple={{ color: "rgba(255,255,255,0.12)" }}>
-                            <Feather name="edit" size={18} color="#fff" />
+                        <Pressable onPress={handleEdit} hitSlop={10} style={styles.btn}>
+                            <Feather name="edit-2" size={16} color={ICON_COLOR} />
                         </Pressable>
-                        <Pressable onPress={remove} hitSlop={10} style={styles.btn} android_ripple={{ color: "rgba(255,255,255,0.12)" }}>
-                            <Feather name="trash-2" size={18} color="#fff" />
+                        <Pressable onPress={handleDelete} hitSlop={10} style={styles.btn}>
+                            <Feather name="trash-2" size={16} color={ICON_COLOR} />
                         </Pressable>
                     </View>
                 )}
@@ -205,123 +227,193 @@ function TravelListItem({
 }
 
 const styles = StyleSheet.create({
-    wrap: { padding: 8, width: "100%" },
+    wrap: {
+        padding: 8,
+        width: "100%"
+    },
 
     card: {
         position: "relative",
         width: "100%",
-        aspectRatio: 1, // квадратная карточка экономнее по высоте на мобиле
-        borderRadius: 14,
-        backgroundColor: "#111", // тёмный фон, если картинка не прогрузилась
-        // Лёгкие тени без тяжёлых эффектов (экономим overdraw)
+        aspectRatio: 1,
+        borderRadius: 16,
+        backgroundColor: "#ffffff",
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-        elevation: 1.5,
-    },
-    cardAndroid: {
-        overflow: "visible" as const, // критично для Android: иначе бывает «чёрный» прямоугольник
-    },
-    cardNonAndroid: {
-        overflow: "hidden" as const,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.06,
+        shadowRadius: 16,
+        elevation: 2,
+        overflow: "hidden",
     },
 
-    selected: { borderWidth: 3, borderColor: "#4a7c59" },
-    single: { maxWidth: 600, alignSelf: "center" },
+    androidOptimized: {
+        shadowColor: undefined,
+        shadowOffset: undefined,
+        shadowOpacity: undefined,
+        shadowRadius: undefined,
+    },
 
-    img: { width: "100%", height: "100%", backgroundColor: "#161616" },
+    selected: {
+        borderWidth: 2,
+        borderColor: "#60a5fa"
+    },
+
+    single: {
+        maxWidth: 600,
+        alignSelf: "center"
+    },
+
+    img: {
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#f3f4f6"
+    },
+
     imgStub: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#202020",
+        backgroundColor: "#f1f5f9",
     },
 
-    grad: { position: "absolute", left: 0, right: 0, bottom: 0, height: "62%" },
+    grad: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: "58%"
+    },
 
     overlay: {
         position: "absolute",
         left: 0,
         right: 0,
         bottom: 0,
-        padding: 14, // компактнее на мобиле
+        padding: 14,
+        gap: 8,
     },
 
-    tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+    tags: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 6,
+    },
+
     tag: {
-        backgroundColor: "rgba(255,255,255,0.16)",
-        borderRadius: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-    },
-    tagTxt: { fontSize: 12, color: "#fff", fontWeight: "500" },
-
-    title: { fontSize: 16, fontWeight: "600", color: "#fff", marginBottom: 8 },
-
-    metaRow: { flexDirection: "row", gap: 10 },
-    metaBox: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.3)",
+        gap: 4,
+        backgroundColor: "rgba(255,255,255,0.55)",
         borderRadius: 12,
         paddingHorizontal: 8,
         paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: "rgba(17,24,39,0.06)",
     },
-    metaTxt: { fontSize: 13, color: "#eee", marginLeft: 6 },
 
-    actions: { position: "absolute", top: 10, right: 10, flexDirection: "row", gap: 8 },
+    tagTxt: {
+        fontSize: 12,
+        color: "#111827",
+        fontWeight: "600"
+    },
+
+    titleBox: {
+        backgroundColor: "rgba(255,255,255,0.65)",
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: "rgba(17,24,39,0.06)",
+    },
+
+    title: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#111827"
+    },
+
+    metaRow: {
+        flexDirection: "row",
+        gap: 8,
+        flexWrap: "wrap"
+    },
+
+    metaBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        backgroundColor: "rgba(255,255,255,0.5)",
+        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: "rgba(17,24,39,0.06)",
+    },
+
+    metaTxt: {
+        fontSize: 13,
+        color: "#111827",
+        fontWeight: "500"
+    },
+
+    actions: {
+        position: "absolute",
+        top: 10,
+        right: 10,
+        flexDirection: "row",
+        gap: 6,
+        backgroundColor: "rgba(255,255,255,0.75)",
+        borderRadius: 20,
+        padding: 5,
+        borderWidth: 1,
+        borderColor: "rgba(17,24,39,0.08)",
+    },
+
     btn: {
-        backgroundColor: "rgba(0,0,0,0.5)",
-        borderRadius: 18,
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.9)",
     },
 
-    checkWrap: { position: "absolute", top: 10, left: 10 },
+    checkWrap: {
+        position: "absolute",
+        top: 10,
+        left: 10
+    },
+
     checkbox: {
         width: 22,
         height: 22,
-        borderRadius: 4,
+        borderRadius: 6,
         borderWidth: 2,
-        borderColor: "#fff",
+        borderColor: "#60a5fa",
+        backgroundColor: "rgba(96,165,250,0.15)",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.3)",
     },
-    checkboxChecked: { backgroundColor: "#4a7c59", borderColor: "#4a7c59" },
+
+    checkboxChecked: {
+        backgroundColor: "#60a5fa",
+        borderColor: "#60a5fa"
+    },
 });
 
-/**
- * Мемо-компаратор: перерисовываем карточку только когда это реально нужно.
- */
+/** Упрощённый компаратор для лучшей производительности */
 function areEqual(prev: Props, next: Props) {
-    const prevT = prev.travel;
-    const nextT = next.travel;
-    const sameId = prevT?.id === nextT?.id;
+    // Быстрая проверка по ID
+    if (prev.travel?.id !== next.travel?.id) return false;
 
-    // Важные поля, влияющие на вёрстку/изображение:
-    const sameImg =
-        prevT?.travel_image_thumb_url === nextT?.travel_image_thumb_url &&
-        prevT?.updated_at === nextT?.updated_at;
+    // Проверяем только критически важные пропсы для перерисовки
+    const criticalPropsChanged =
+        prev.travel?.travel_image_thumb_url !== next.travel?.travel_image_thumb_url ||
+        prev.travel?.name !== next.travel?.name ||
+        prev.selectable !== next.selectable ||
+        prev.isSelected !== next.isSelected;
 
-    const sameMeta =
-        prevT?.name === nextT?.name &&
-        prevT?.countryName === nextT?.countryName &&
-        prevT?.userName === nextT?.userName &&
-        prevT?.countUnicIpView === nextT?.countUnicIpView;
-
-    const sameFlags =
-        prev.isSuperuser === next.isSuperuser &&
-        prev.isMetravel === next.isMetravel &&
-        prev.isFirst === next.isFirst &&
-        prev.isSingle === next.isSingle &&
-        prev.selectable === next.selectable &&
-        prev.isSelected === next.isSelected;
-
-    return sameId && sameImg && sameMeta && sameFlags;
+    return !criticalPropsChanged;
 }
 
 export default memo(TravelListItem, areEqual);
