@@ -26,7 +26,7 @@ const TravelDescription: React.FC<TravelDescriptionProps> = ({
     const content = (
         <>
             <Image
-                source={require("@/assets/travel-stamp.png")}
+                source={require("@/assets/travel-stamp.webp")}
                 style={styles.stamp}
             />
             <StableContent

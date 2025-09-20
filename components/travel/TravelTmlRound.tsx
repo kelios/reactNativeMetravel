@@ -30,7 +30,7 @@ const TravelTmlRound = ({ travel }: TravelTmlRoundProps) => {
                   source={
                     travel_image_thumb_small_url
                         ? { uri: travel_image_thumb_small_url }
-                        : require('@/assets/placeholder.png')
+                        : require('@/assets/placeholder.webp')
                   }
                   style={[styles.image, { width: imageSize, height: imageSize }]}
                   resizeMode="cover"

@@ -91,7 +91,7 @@ function CompactSideBarTravel({
                                 <Image
                                     source={{ uri: travel.travel_image_thumb_small_url }}
                                     style={styles.avatar}
-                                    defaultSource={require('@/assets/placeholder.png')}
+                                    defaultSource={require('@/assets/placeholder.webp')}
                                     {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})}
                                 />
                             ) : (

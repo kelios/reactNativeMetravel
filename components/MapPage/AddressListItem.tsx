@@ -98,7 +98,7 @@ const AddressListItem: React.FC<Props> = ({
                     source={
                         travelImageThumbUrl
                             ? { uri: addVersion(travelImageThumbUrl, updated_at) }
-                            : require('@/assets/no-data.png')
+                            : require('@/assets/no-data.webp')
                     }
                     style={styles.image}
                     imageStyle={{ borderRadius: 12 }}
