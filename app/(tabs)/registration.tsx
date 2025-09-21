@@ -1,3 +1,4 @@
+// app/register.tsx (или соответствующий путь)
 import React, { useState } from 'react';
 import {
     Dimensions,
@@ -15,9 +16,12 @@ import { Card } from 'react-native-paper';
 import { Button, Icon } from 'react-native-elements';
 import { Formik, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
+import { useIsFocused } from '@react-navigation/native';
+import { usePathname } from 'expo-router';
+
+import InstantSEO from '@/components/seo/InstantSEO';
 import { registration } from '@/src/api/travels';
 import type { FormValues } from '@/src/types/types';
-import Head from 'expo-router/head';
 
 const { height } = Dimensions.get('window');
 
@@ -42,6 +46,11 @@ export default function RegisterForm() {
     const [showPass, setShowPass] = useState(false);
     const [generalMsg, setMsg] = useState<{ text: string; error: boolean }>({ text: '', error: false });
 
+    const isFocused = useIsFocused();
+    const pathname = usePathname();
+    const SITE = process.env.EXPO_PUBLIC_SITE_URL || 'https://metravel.by';
+    const canonical = `${SITE}${pathname || '/register'}`;
+
     const onSubmit = async (
         values: FormValues,
         { setSubmitting, resetForm }: FormikHelpers<FormValues>,
@@ -58,158 +67,161 @@ export default function RegisterForm() {
         }
     };
 
+    const title = 'Регистрация | Metravel';
+    const description =
+        'Создайте аккаунт на Metravel, чтобы делиться своими путешествиями, маршрутами и впечатлениями.';
+
     return (
         <>
-        <Head>
-            <title key="title">Регистрация | Metravel</title>
-            <meta key="description" name="description" content="Создайте аккаунт на Metravel, чтобы делиться своими путешествиями, маршрутами и впечатлениями." />
-            <meta key="og:title" property="og:title" content="Регистрация | Metravel" />
-            <meta key="og:description" property="og:description" content="Создайте аккаунт на Metravel, чтобы делиться своими путешествиями." />
-            <meta key="og:url" property="og:url" content="https://metravel.by/register" />
-            <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg" />
-            <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
-            <meta key="twitter:title" name="twitter:title" content="Регистрация | Metravel" />
-            <meta key="twitter:description" name="twitter:description" content="Создайте аккаунт на Metravel, чтобы делиться своими путешествиями." />
-            <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg" />
-        </Head>
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-                <ImageBackground
-                    source={require('@/assets/images/media/slider/about.jpg')}
-                    style={styles.bg}
-                    resizeMode="cover"
-                    blurRadius={3}
-                >
-                    <Formik<FormValues>
-                        initialValues={{ username: '', email: '', password: '', confirmPassword: '' }}
-                        validationSchema={RegisterSchema}
-                        onSubmit={onSubmit}
+            {isFocused && (
+                <InstantSEO
+                    headKey="register"
+                    title={title}
+                    description={description}
+                    canonical={canonical}
+                    image={`${SITE}/og-preview.jpg`}
+                    ogType="website"
+                />
+            )}
+
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+                <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                    <ImageBackground
+                        source={require('@/assets/images/media/slider/about.jpg')}
+                        style={styles.bg}
+                        resizeMode="cover"
+                        blurRadius={3}
                     >
-                        {({
-                              handleChange,
-                              handleBlur,
-                              handleSubmit,
-                              values,
-                              errors,
-                              touched,
-                              isSubmitting,
-                          }) => (
-                            <View style={styles.center}>
-                                <Card style={styles.card}>
-                                    <Card.Content>
-                                        {generalMsg.text !== '' && (
-                                            <Text
-                                                style={[
-                                                    styles.msg,
-                                                    generalMsg.error ? styles.err : styles.ok,
-                                                ]}
-                                            >
-                                                {generalMsg.text}
-                                            </Text>
-                                        )}
+                        <Formik<FormValues>
+                            initialValues={{ username: '', email: '', password: '', confirmPassword: '' }}
+                            validationSchema={RegisterSchema}
+                            onSubmit={onSubmit}
+                        >
+                            {({
+                                  handleChange,
+                                  handleBlur,
+                                  handleSubmit,
+                                  values,
+                                  errors,
+                                  touched,
+                                  isSubmitting,
+                              }) => (
+                                <View style={styles.center}>
+                                    <Card style={styles.card}>
+                                        <Card.Content>
+                                            {generalMsg.text !== '' && (
+                                                <Text
+                                                    style={[
+                                                        styles.msg,
+                                                        generalMsg.error ? styles.err : styles.ok,
+                                                    ]}
+                                                >
+                                                    {generalMsg.text}
+                                                </Text>
+                                            )}
 
-                                        {/* ---------- username ---------- */}
-                                        <View style={styles.inputWrap}>
-                                            <Icon name="account" type="material-community" size={20} color="#888" />
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder="Имя пользователя"
-                                                placeholderTextColor="#888"
-                                                value={values.username}
-                                                onChangeText={handleChange('username')}
-                                                onBlur={handleBlur('username')}
-                                                autoCapitalize="none"
-                                                returnKeyType="next"
-                                            />
-                                        </View>
-                                        {touched.username && errors.username && (
-                                            <Text style={styles.err}>{errors.username}</Text>
-                                        )}
-
-                                        {/* ---------- email ---------- */}
-                                        <View style={styles.inputWrap}>
-                                            <Icon name="email" type="material-community" size={20} color="#888" />
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder="Email"
-                                                placeholderTextColor="#888"
-                                                value={values.email}
-                                                onChangeText={handleChange('email')}
-                                                onBlur={handleBlur('email')}
-                                                keyboardType="email-address"
-                                                autoCapitalize="none"
-                                                returnKeyType="next"
-                                            />
-                                        </View>
-                                        {touched.email && errors.email && (
-                                            <Text style={styles.err}>{errors.email}</Text>
-                                        )}
-
-                                        {/* ---------- password ---------- */}
-                                        <View style={styles.inputWrap}>
-                                            <Icon name="lock" type="material-community" size={20} color="#888" />
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder="Пароль"
-                                                placeholderTextColor="#888"
-                                                value={values.password}
-                                                onChangeText={handleChange('password')}
-                                                onBlur={handleBlur('password')}
-                                                secureTextEntry={!showPass}
-                                                returnKeyType="next"
-                                            />
-                                            <TouchableOpacity onPress={() => setShowPass(v => !v)}>
-                                                <Icon
-                                                    name={showPass ? 'eye-off' : 'eye'}
-                                                    type="material-community"
-                                                    size={20}
-                                                    color="#888"
+                                            {/* ---------- username ---------- */}
+                                            <View style={styles.inputWrap}>
+                                                <Icon name="account" type="material-community" size={20} color="#888" />
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder="Имя пользователя"
+                                                    placeholderTextColor="#888"
+                                                    value={values.username}
+                                                    onChangeText={handleChange('username')}
+                                                    onBlur={handleBlur('username')}
+                                                    autoCapitalize="none"
+                                                    returnKeyType="next"
                                                 />
-                                            </TouchableOpacity>
-                                        </View>
-                                        {touched.password && errors.password && (
-                                            <Text style={styles.err}>{errors.password}</Text>
-                                        )}
+                                            </View>
+                                            {touched.username && errors.username && (
+                                                <Text style={styles.err}>{errors.username}</Text>
+                                            )}
 
-                                        {/* ---------- confirm ---------- */}
-                                        <View style={styles.inputWrap}>
-                                            <Icon name="lock-check" type="material-community" size={20} color="#888" />
-                                            <TextInput
-                                                style={styles.input}
-                                                placeholder="Повторите пароль"
-                                                placeholderTextColor="#888"
-                                                value={values.confirmPassword}
-                                                onChangeText={handleChange('confirmPassword')}
-                                                onBlur={handleBlur('confirmPassword')}
-                                                secureTextEntry={!showPass}
-                                                returnKeyType="done"
-                                                onSubmitEditing={() => handleSubmit()}
+                                            {/* ---------- email ---------- */}
+                                            <View style={styles.inputWrap}>
+                                                <Icon name="email" type="material-community" size={20} color="#888" />
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder="Email"
+                                                    placeholderTextColor="#888"
+                                                    value={values.email}
+                                                    onChangeText={handleChange('email')}
+                                                    onBlur={handleBlur('email')}
+                                                    keyboardType="email-address"
+                                                    autoCapitalize="none"
+                                                    returnKeyType="next"
+                                                />
+                                            </View>
+                                            {touched.email && errors.email && (
+                                                <Text style={styles.err}>{errors.email}</Text>
+                                            )}
+
+                                            {/* ---------- password ---------- */}
+                                            <View style={styles.inputWrap}>
+                                                <Icon name="lock" type="material-community" size={20} color="#888" />
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder="Пароль"
+                                                    placeholderTextColor="#888"
+                                                    value={values.password}
+                                                    onChangeText={handleChange('password')}
+                                                    onBlur={handleBlur('password')}
+                                                    secureTextEntry={!showPass}
+                                                    returnKeyType="next"
+                                                />
+                                                <TouchableOpacity onPress={() => setShowPass(v => !v)}>
+                                                    <Icon
+                                                        name={showPass ? 'eye-off' : 'eye'}
+                                                        type="material-community"
+                                                        size={20}
+                                                        color="#888"
+                                                    />
+                                                </TouchableOpacity>
+                                            </View>
+                                            {touched.password && errors.password && (
+                                                <Text style={styles.err}>{errors.password}</Text>
+                                            )}
+
+                                            {/* ---------- confirm ---------- */}
+                                            <View style={styles.inputWrap}>
+                                                <Icon name="lock-check" type="material-community" size={20} color="#888" />
+                                                <TextInput
+                                                    style={styles.input}
+                                                    placeholder="Повторите пароль"
+                                                    placeholderTextColor="#888"
+                                                    value={values.confirmPassword}
+                                                    onChangeText={handleChange('confirmPassword')}
+                                                    onBlur={handleBlur('confirmPassword')}
+                                                    secureTextEntry={!showPass}
+                                                    returnKeyType="done"
+                                                    onSubmitEditing={() => handleSubmit()}
+                                                />
+                                            </View>
+                                            {touched.confirmPassword && errors.confirmPassword && (
+                                                <Text style={styles.err}>{errors.confirmPassword}</Text>
+                                            )}
+
+                                            {/* ---------- button ---------- */}
+                                            <Button
+                                                title={isSubmitting ? 'Отправка…' : 'Зарегистрироваться'}
+                                                buttonStyle={styles.btn}
+                                                onPress={handleSubmit as any}
+                                                disabled={isSubmitting}
+                                                loading={isSubmitting}
                                             />
-                                        </View>
-                                        {touched.confirmPassword && errors.confirmPassword && (
-                                            <Text style={styles.err}>{errors.confirmPassword}</Text>
-                                        )}
-
-                                        {/* ---------- button ---------- */}
-                                        <Button
-                                            title={isSubmitting ? 'Отправка…' : 'Зарегистрироваться'}
-                                            buttonStyle={styles.btn}
-                                            onPress={handleSubmit as any}
-                                            disabled={isSubmitting}
-                                            loading={isSubmitting}
-                                        />
-                                    </Card.Content>
-                                </Card>
-                            </View>
-                        )}
-                    </Formik>
-                </ImageBackground>
-            </ScrollView>
-        </KeyboardAvoidingView>
-   </>
+                                        </Card.Content>
+                                    </Card>
+                                </View>
+                            )}
+                        </Formik>
+                    </ImageBackground>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </>
     );
 }
 

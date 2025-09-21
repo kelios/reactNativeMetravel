@@ -2,10 +2,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useLocalSearchParams, Link } from 'expo-router';
-import Head from 'expo-router/head';
 import { Ionicons } from '@expo/vector-icons';
+
+import InstantSEO from '@/components/seo/InstantSEO';
 import { QuestWizard } from '@/components/quests/QuestWizard';
 import { getQuestById } from '@/components/quests/registry';
+import {useIsFocused} from "@react-navigation/native/src";
 
 const UI = {
     text: '#0f172a',
@@ -19,14 +21,25 @@ const UI = {
 export default function QuestByIdScreen() {
     const { questId, city } = useLocalSearchParams<{ questId: string; city: string }>();
     const bundle = questId ? getQuestById(questId) : null;
+    const isFocused = useIsFocused();
 
     if (!bundle) {
+        const title = 'Квест не найден';
+        const description = 'Проверьте адрес страницы или выберите квест из общего списка.';
+
         return (
             <View style={[styles.page, { alignItems: 'center', justifyContent: 'center' }]}>
-                <Head><title>Квест не найден</title></Head>
+                {isFocused && (
+                <InstantSEO
+                    headKey="quest-not-found"
+                    title={title}
+                    description={description}
+                    ogType="website"
+                />
+                )}
                 <View style={styles.notFound}>
                     <Ionicons name="alert-circle" size={28} color={UI.sub} />
-                    <Text style={styles.notFoundTitle}>Квест не найден</Text>
+                    <Text style={styles.notFoundTitle}>{title}</Text>
                     <Text style={styles.notFoundText}>
                         Проверь адрес или выбери квест из списка.
                     </Text>
@@ -41,9 +54,22 @@ export default function QuestByIdScreen() {
         );
     }
 
+    const title = bundle.title;
+    const description = `${bundle.title} — офлайн-квест: маршрут, задания и финал.`;
+
     return (
         <View style={styles.page}>
-            <Head><title>{bundle.title}</title></Head>
+            {isFocused && (
+            <InstantSEO
+                headKey={`quest-${bundle.storageKey ?? questId}`}
+                title={title}
+                description={description}
+                ogType="article"
+                // при желании можно прокинуть:
+                // canonical={`https://your.site/quests/${city}/${questId}`}
+                // image={bundle.coverUrl}
+            />
+            )}
             <QuestWizard
                 title={bundle.title}
                 steps={bundle.steps}

@@ -1,32 +1,37 @@
-import React from 'react';
+// app/travelsby/index.tsx
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Head from 'expo-router/head';
+import { usePathname } from 'expo-router';
 import ListTravel from '@/components/listTravel/ListTravel';
+import InstantSEO from '@/components/seo/InstantSEO';
+import {useIsFocused} from "@react-navigation/native/src";
 
-export default function TravelScreen() {
+export default function TravelsByScreen() {
+    const pathname = usePathname();
+    const isFocused = useIsFocused();
+    const SITE = process.env.EXPO_PUBLIC_SITE_URL || 'https://metravel.by';
+
+    const canonical = useMemo(
+        () => `${SITE}${pathname || '/travelsby'}`,
+        [SITE, pathname]
+    );
+
+    const title = 'Путешествия по Беларуси | Metravel';
+    const description =
+        'Подборка маршрутов и мест по Беларуси: идеи для выходных и больших поездок. Фото, точки на карте и советы путешественников.';
+
     return (
         <>
-            <Head>
-                <title key="title">Маршруты, идеи и вдохновение для путешествий по Беларуси | Metravel</title>
-                <meta
-                    key="description"
-                    name="description"
-                    content="Авторские маршруты, советы и впечатления от путешественников по всему миру. Присоединяйся к сообществу Metravel и вдохновляйся на новые открытия!"
-                />
-
-                {/* OG meta */}
-                <meta key="og:title" property="og:title" content="Маршруты, идеи и вдохновение для путешествий по Беларуси | Metravel" />
-                <meta key="og:description" property="og:description" content="Авторские маршруты, советы и впечатления от путешественников по всему миру." />
-                <meta key="og:url" property="og:url" content="https://metravel.by/" />
-                <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg" />
-
-                {/* Twitter Card */}
-                <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
-                <meta key="twitter:title" name="twitter:title" content="Маршруты, идеи и вдохновение для путешествий по Беларуси | Metravel" />
-                <meta key="twitter:description" name="twitter:description" content="Авторские маршруты, советы и впечатления от путешественников по всему миру." />
-                <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg" />
-            </Head>
-
+            {isFocused && (
+            <InstantSEO
+                headKey="travelsby" // Упрощенный стабильный ключ
+                title={title}
+                description={description}
+                canonical={canonical}
+                image={`${SITE}/og-preview.jpg`}
+                ogType="website"
+            />
+            )}
             <View style={styles.container}>
                 <ListTravel />
             </View>
@@ -35,7 +40,5 @@ export default function TravelScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
+    container: { flex: 1 },
 });

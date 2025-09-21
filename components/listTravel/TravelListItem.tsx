@@ -5,8 +5,9 @@ import { Image as ExpoImage } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import type { Travel } from "@/src/types/types";
 
-/** LQIP-плейсхолдер — чтобы не мигало чёрным */
+/** LQIP-плейсхолдер — чтобы не мигало чёрным на native */
 const PLACEHOLDER_BLURHASH = "LEHL6nWB2yk8pyo0adR*.7kCMdnj";
 const ICON_COLOR = "#111827"; // тёмные иконки под светлое стекло
 
@@ -17,18 +18,21 @@ const WebImageOptimized = memo(function WebImageOptimized({
     src: string;
     alt: string;
 }) {
+    // RN Web допускает нативный <img>, TS может ругаться в некоторых конфигурациях — это безопасно.
+    // eslint-disable-next-line jsx-a11y/alt-text
     return (
+        // @ts-expect-error — допустимо для RN Web
         <img
             src={src}
             alt={alt}
             style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-                loading: 'lazy',
-                decoding: 'async'
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
             }}
+            loading="lazy"
+            decoding="async"
         />
     );
 });
@@ -48,17 +52,13 @@ const NativeImageOptimized = memo(function NativeImageOptimized({
             placeholder={{ blurhash: PLACEHOLDER_BLURHASH }}
             priority="low"
             recyclingKey={uri}
+            accessibilityIgnoresInvertColors
         />
     );
 });
 
-const CountriesList = memo(function CountriesList({
-                                                      countries
-                                                  }: {
-    countries: string[]
-}) {
-    if (countries.length === 0) return null;
-
+const CountriesList = memo(function CountriesList({ countries }: { countries: string[] }) {
+    if (!countries.length) return null;
     return (
         <View style={styles.tags}>
             {countries.slice(0, 2).map((c) => (
@@ -77,7 +77,7 @@ const CountriesList = memo(function CountriesList({
 });
 
 type Props = {
-    travel: any;
+    travel: Travel;
     isSuperuser?: boolean;
     isMetravel?: boolean;
     onDeletePress?: (id: number) => void;
@@ -110,6 +110,7 @@ function TravelListItem({
         countUnicIpView = 0,
     } = travel;
 
+    // Оптимизируем превью под карточку
     const imgUrl = useMemo(() => {
         if (!travel_image_thumb_url) return null;
         const targetW = isSingle ? 600 : 400;
@@ -117,20 +118,21 @@ function TravelListItem({
         return `${travel_image_thumb_url}?w=${targetW}&h=${targetH}&q=75&fit=crop&auto=format`;
     }, [travel_image_thumb_url, isSingle]);
 
-    const countries = useMemo(() =>
-            countryName.split(',').map((c: string) => c.trim()).filter(Boolean),
+    const countries = useMemo(
+        () => (countryName || "").split(",").map((c) => c.trim()).filter(Boolean),
         [countryName]
     );
 
-    const canEdit = isSuperuser || isMetravel;
+    const canEdit = !!(isSuperuser || isMetravel);
 
     const handlePress = useCallback(() => {
         if (selectable) {
             onToggle?.();
         } else {
-            router.push(`/travels/${slug}`);
+            // На всякий: если слуг нет — откроем по ID
+            router.push(`/travels/${slug ?? id}`);
         }
-    }, [selectable, onToggle, slug]);
+    }, [selectable, onToggle, slug, id]);
 
     const handleEdit = useCallback(() => {
         router.push(`/travel/${id}`);
@@ -144,10 +146,12 @@ function TravelListItem({
         <View style={styles.wrap}>
             <Pressable
                 onPress={handlePress}
-                android_ripple={Platform.OS === "android" ? { color: "rgba(17,24,39,0.06)" } : undefined}
+                android_ripple={
+                    Platform.OS === "android" ? { color: "rgba(17,24,39,0.06)" } : undefined
+                }
                 style={[
                     styles.card,
-                    Platform.OS === 'android' && styles.androidOptimized,
+                    Platform.OS === "android" && styles.androidOptimized,
                     isSingle && styles.single,
                     selectable && isSelected && styles.selected,
                 ]}
@@ -167,7 +171,7 @@ function TravelListItem({
                     </View>
                 )}
 
-                {/* Градиент */}
+                {/* Градиент для читаемости текста */}
                 <LinearGradient
                     colors={["transparent", "rgba(255,255,255,0.6)", "rgba(255,255,255,0.78)"]}
                     locations={[0.55, 0.85, 1]}
@@ -210,13 +214,13 @@ function TravelListItem({
                     </View>
                 )}
 
-                {/* Кнопки действий */}
+                {/* Кнопки действий (редактирование/удаление) */}
                 {canEdit && !selectable && (
                     <View style={styles.actions} pointerEvents="box-none">
-                        <Pressable onPress={handleEdit} hitSlop={10} style={styles.btn}>
+                        <Pressable onPress={handleEdit} hitSlop={10} style={styles.btn} accessibilityLabel="Редактировать">
                             <Feather name="edit-2" size={16} color={ICON_COLOR} />
                         </Pressable>
-                        <Pressable onPress={handleDelete} hitSlop={10} style={styles.btn}>
+                        <Pressable onPress={handleDelete} hitSlop={10} style={styles.btn} accessibilityLabel="Удалить">
                             <Feather name="trash-2" size={16} color={ICON_COLOR} />
                         </Pressable>
                     </View>
@@ -227,10 +231,7 @@ function TravelListItem({
 }
 
 const styles = StyleSheet.create({
-    wrap: {
-        padding: 8,
-        width: "100%"
-    },
+    wrap: { padding: 8, width: "100%" },
 
     card: {
         position: "relative",
@@ -255,18 +256,18 @@ const styles = StyleSheet.create({
 
     selected: {
         borderWidth: 2,
-        borderColor: "#60a5fa"
+        borderColor: "#60a5fa",
     },
 
     single: {
         maxWidth: 600,
-        alignSelf: "center"
+        alignSelf: "center",
     },
 
     img: {
         width: "100%",
         height: "100%",
-        backgroundColor: "#f3f4f6"
+        backgroundColor: "#f3f4f6",
     },
 
     imgStub: {
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: "58%"
+        height: "58%",
     },
 
     overlay: {
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
     tagTxt: {
         fontSize: 12,
         color: "#111827",
-        fontWeight: "600"
+        fontWeight: "600",
     },
 
     titleBox: {
@@ -329,13 +330,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#111827"
+        color: "#111827",
     },
 
     metaRow: {
         flexDirection: "row",
         gap: 8,
-        flexWrap: "wrap"
+        flexWrap: "wrap",
     },
 
     metaBox: {
@@ -353,7 +354,7 @@ const styles = StyleSheet.create({
     metaTxt: {
         fontSize: 13,
         color: "#111827",
-        fontWeight: "500"
+        fontWeight: "500",
     },
 
     actions: {
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
     checkWrap: {
         position: "absolute",
         top: 10,
-        left: 10
+        left: 10,
     },
 
     checkbox: {
@@ -397,23 +398,39 @@ const styles = StyleSheet.create({
 
     checkboxChecked: {
         backgroundColor: "#60a5fa",
-        borderColor: "#60a5fa"
+        borderColor: "#60a5fa",
     },
 });
 
-/** Упрощённый компаратор для лучшей производительности */
+/** Компаратор: учитываем все поля, влияющие на рендер */
 function areEqual(prev: Props, next: Props) {
-    // Быстрая проверка по ID
-    if (prev.travel?.id !== next.travel?.id) return false;
+    // Если объект поменялся по ссылке — почти всегда есть смысл перерендерить.
+    if (prev.travel !== next.travel) {
+        // Но можно быстро отсечь, если не изменились критичные поля (частый кейс)
+        const a = prev.travel;
+        const b = next.travel;
+        const sameCore =
+            a.id === b.id &&
+            a.travel_image_thumb_url === b.travel_image_thumb_url &&
+            a.name === b.name &&
+            a.countryName === b.countryName &&
+            a.userName === b.userName &&
+            a.countUnicIpView === b.countUnicIpView;
+        if (!sameCore) return false;
+    }
 
-    // Проверяем только критически важные пропсы для перерисовки
-    const criticalPropsChanged =
-        prev.travel?.travel_image_thumb_url !== next.travel?.travel_image_thumb_url ||
-        prev.travel?.name !== next.travel?.name ||
+    // Флаги, влияющие на оформление/обработчики
+    if (
+        prev.isSuperuser !== next.isSuperuser ||
+        prev.isMetravel !== next.isMetravel ||
+        prev.isSingle !== next.isSingle ||
         prev.selectable !== next.selectable ||
-        prev.isSelected !== next.isSelected;
+        prev.isSelected !== next.isSelected
+    ) {
+        return false;
+    }
 
-    return !criticalPropsChanged;
+    return true;
 }
 
 export default memo(TravelListItem, areEqual);

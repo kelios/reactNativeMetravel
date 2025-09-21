@@ -2,19 +2,25 @@
   "name": "metravel",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "private": true,
+  "packageManager": "npm@10",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "web:prod": "NODE_ENV=production expo start --web",
     "test": "jest --watchAll",
     "format": "npx prettier --write .",
-    "build:web": "expo export --web"
+    "build:web": "expo export --web",
+    "clean": "expo start --clear",
+    "reset": "EXPO_RESET_CACHE=true expo start --clear",
+    "prod:web": "NODE_ENV=production expo export --web"
   },
-  "jest": {
-    "preset": "jest-expo"
-  },
+  "jest": { "preset": "jest-expo" },
   "dependencies": {
+    "expo": "^52.0.35",
+    "expo-router": "^4.0.17",
     "@expo/metro-runtime": "~4.0.1",
     "@expo/vector-icons": "^14.0.4",
     "@native-html/iframe-plugin": "^2.6.1",
@@ -22,19 +28,19 @@
     "@react-native-seoul/masonry-list": "^1.4.2",
     "@react-native/community-cli-plugin": "^0.77.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
-    "@react-navigation/material-top-tabs": "^7.1",
+    "@react-navigation/material-top-tabs": "^7.3.7",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/native-stack": "^7.2.0",
     "@react-navigation/stack": "^7.1.1",
     "@react-pdf/renderer": "^3",
     "@tanstack/react-query": "^5.76.2",
     "@teovilla/react-native-web-maps": "^0.9.5",
+    "@babel/runtime": "^7.25.0",
     "canvas-confetti": "^1.9.3",
     "date-fns": "^4.1.0",
     "deprecated-react-native-prop-types": "^5.0.0",
     "escape-string-regexp": "^5.0.0",
-    "eslint-config-prettier": "^10.0.1",
-    "expo": "^52.0.35",
+    "eslint-config-prettier": "^10.1.8",
     "expo-av": "~15.0.2",
     "expo-blur": "~14.0.3",
     "expo-clipboard": "^7.0.1",
@@ -51,7 +57,6 @@
     "expo-maps": "^0.11.0",
     "expo-media-library": "^17.1.7",
     "expo-print": "~14.0.3",
-    "expo-router": "^4.0.17",
     "expo-screen-orientation": "~8.0.4",
     "expo-sharing": "~13.0.1",
     "expo-splash-screen": "~0.29.21",
@@ -61,7 +66,6 @@
     "formik": "^2.4.5",
     "html2pdf.js": "^0.10.3",
     "leaflet": "^1.9.4",
-    "leaflet-routing-machine": "^3.2.12",
     "lint": "^1.1.2",
     "lucide-react-native": "^0.487.0",
     "metro": "^0.81.0",
@@ -78,8 +82,8 @@
     "react-intersection-observer": "^9.16.0",
     "react-leaflet": "^4.2.1",
     "react-native": "0.76.7",
-    "react-native-document-picker": "^9.3.0",
-    "react-native-dotenv": "^3.4.9",
+    "react-native-document-picker": "^9.3.1",
+    "react-native-dotenv": "^3.4.11",
     "react-native-element-dropdown": "^2.12.0",
     "react-native-elements": "^3.4.3",
     "react-native-fast-image": "^8.6.3",
@@ -90,19 +94,16 @@
     "react-native-maps": "1.18.0",
     "react-native-multiple-select": "^0.5.12",
     "react-native-paper": "^5.13.1",
-    "react-native-pell-rich-editor": "^1.9.0",
+    "react-native-pager-view": "^6.3.0",
     "react-native-reanimated": "^3.17.5",
     "react-native-reanimated-carousel": "^4.0.2",
     "react-native-render-html": "^6.3.4",
     "react-native-responsive-screen": "^1.4.2",
-    "react-native-rich-editor": "^0.1.1",
     "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
     "react-native-svg": "^15.11.2",
     "react-native-toast-message": "^2.2.1",
-    "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
-    "react-native-web-maps": "^0.3.0",
     "react-native-webview": "13.12.5",
     "react-quill": "^2.0.0",
     "yup": "^1.4.0"
@@ -122,27 +123,23 @@
     "jest-expo": "~52.0.3",
     "prettier": "^3.0.1",
     "react-test-renderer": "18.3.1",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "eslint": "^9.11.1"
   },
   "resolutions": {
     "@types/react": "18.3.18",
     "@types/react-native": "0.73.0"
   },
-  "prettier": {
-    "jsxBracketSameLine": true,
-    "semi": false,
-    "singleQuote": true
-  },
+  "prettier": { "jsxBracketSameLine": true, "semi": false, "singleQuote": true },
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": [
-          "react-native-vector-icons",
-          "react-native-reanimated",
-          "react-native-gesture-handler"
-        ]
+        "exclude": ["react-native-vector-icons", "react-native-reanimated", "react-native-gesture-handler"]
       }
     }
   },
-  "private": true
+  "browserslist": {
+    "production": ["defaults and not ie <= 11 and not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  }
 }

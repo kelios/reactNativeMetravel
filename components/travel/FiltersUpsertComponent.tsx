@@ -8,6 +8,8 @@ import {
     Dimensions,
     ActivityIndicator,
     TouchableOpacity,
+    Platform,
+    Linking,
 } from 'react-native';
 import { Button } from 'react-native-paper';
 
@@ -48,9 +50,12 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
     }
 
     useEffect(() => {
-        if (!formData.id && formData.publish === false) {
+        // если новая запись — явно фиксируем publish=false,
+        // чтобы избежать случайной публикации до модерации
+        if (!formData.id && formData.publish !== false) {
             setFormData({ ...formData, publish: false });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData.id]);
 
     const handleResetFilters = () => {
@@ -70,20 +75,28 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
             number_peoples: '',
             number_days: '',
             budget: '',
-            travel_image_thumb_small_url: '', // ВАЖНО! очищаем картинку
+            travel_image_thumb_small_url: '', // очищаем картинку
         });
+    };
+
+    const openPreview = () => {
+        if (!formData.slug) return;
+        const url = `/travels/${formData.slug}`;
+        if (Platform.OS === 'web') {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+            Linking.openURL(`https://metravel.by${url}`).catch(() => {});
+        }
     };
 
     return (
         <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
             style={[styles.container, isMobile && { minHeight: '100%' }]}
+            keyboardShouldPersistTaps="handled"
         >
             {onClose && isMobile && (
-                <TouchableOpacity
-                    onPress={() => onClose()}
-                    style={styles.closeIcon}
-                >
+                <TouchableOpacity onPress={() => onClose()} style={styles.closeIcon} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                     <Text style={styles.closeButtonText}>✖</Text>
                 </TouchableOpacity>
             )}
@@ -93,20 +106,24 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                 icon="content-save"
                 onPress={onSave}
                 style={styles.saveButton}
+                accessibilityRole="button"
+                accessibilityLabel="Сохранить изменения"
             >
                 Сохранить сейчас
             </Button>
 
-            {formData.slug && (
+            {formData.slug ? (
                 <Button
                     mode="outlined"
                     icon="open-in-new"
-                    onPress={() => window.open(`/travels/${formData.slug}`, '_blank')}
+                    onPress={openPreview}
                     style={styles.floatingIconButton}
+                    accessibilityRole="link"
+                    accessibilityLabel="Открыть предпросмотр маршрута"
                 >
                     Предпросмотр
                 </Button>
-            )}
+            ) : null}
 
             <CheckboxComponent
                 label="Сохранить как черновик"
@@ -199,34 +216,38 @@ const FiltersUpsertComponent: React.FC<FiltersComponentProps> = ({
                 valueField="id"
             />
 
-            {renderInput('Год путешествия', 'year')}
-
+            {renderNumericInput('Год путешествия', 'year')}
             <CheckboxComponent
                 label="Требуется виза"
                 value={formData.visa ?? false}
                 onChange={(visa) => setFormData({ ...formData, visa })}
             />
+            {renderNumericInput('Количество участников', 'number_peoples')}
+            {renderNumericInput('Длительность (дней)', 'number_days')}
+            {renderNumericInput('Бюджет (руб.)', 'budget')}
 
-            {renderInput('Количество участников', 'number_peoples')}
-            {renderInput('Длительность (дней)', 'number_days')}
-            {renderInput('Бюджет (руб.)', 'budget')}
-
-            <Button mode="outlined" onPress={handleResetFilters} style={styles.resetButton}>
+            <Button mode="outlined" onPress={handleResetFilters} style={styles.resetButton} accessibilityRole="button">
                 Очистить
             </Button>
         </ScrollView>
     );
 
-    function renderInput(label: string, field: keyof TravelFormData) {
+    // Поле, принимающее только цифры
+    function renderNumericInput(label: string, field: keyof TravelFormData) {
         return (
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>{label}</Text>
                 <TextInput
                     style={styles.input}
-                    value={formData[field]?.toString() ?? ''}
-                    onChangeText={(value) => setFormData({ ...formData, [field]: value })}
+                    value={(formData[field] as any)?.toString?.() ?? ''}
+                    onChangeText={(value) => {
+                        // только цифры (чтобы не разъезжались типы на бэке)
+                        const digits = value.replace(/[^\d]/g, '');
+                        setFormData({ ...formData, [field]: digits } as TravelFormData);
+                    }}
                     placeholder={`Введите ${label.toLowerCase()}`}
-                    keyboardType="numeric"
+                    keyboardType={Platform.select({ ios: 'number-pad', android: 'numeric', default: 'numeric' })}
+                    inputMode="numeric"
                 />
             </View>
         );
@@ -241,10 +262,13 @@ const styles = StyleSheet.create({
     },
     loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
     imageUploadWrapper: { alignItems: 'center', marginVertical: 12 },
+
     inputGroup: { marginBottom: 12 },
     input: { borderWidth: 1, borderColor: '#d1d1d1', padding: 8, borderRadius: 6 },
     label: { fontWeight: 'bold', marginBottom: 4 },
+
     resetButton: { marginTop: 16, borderColor: '#f57c00' },
+
     closeIcon: {
         position: 'absolute',
         top: -16,
@@ -255,11 +279,14 @@ const styles = StyleSheet.create({
         height: 20,
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1,
     },
     closeButtonText: {
         color: '#fff',
         fontSize: 12,
+        lineHeight: 12,
     },
+
     saveButton: {
         backgroundColor: '#f5a623',
         borderRadius: 12,

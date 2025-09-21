@@ -1,8 +1,9 @@
+// components/MapPage/Map.web.tsx
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import RoutingMachine from '@/components/MapPage/RoutingMachine';
-import PopupContentComponent from "@/components/MapPage/PopupContentComponent";
+import PopupContentComponent from '@/components/MapPage/PopupContentComponent';
 
 type Point = {
   id?: number;
@@ -23,7 +24,7 @@ type TransportMode = 'car' | 'bike' | 'foot';
 type MapMode = 'radius' | 'route';
 
 interface LeafletModules {
-  L: typeof import('leaflet');
+  L: typeof import('leaflet').default; // <-- default export type
   MapContainer: React.ComponentType<any>;
   TileLayer: React.ComponentType<any>;
   Marker: React.ComponentType<any>;
@@ -49,7 +50,11 @@ const strToLatLng = (s: string): [number, number] | null => {
   return Number.isFinite(lat) && Number.isFinite(lng) ? [lng, lat] : null;
 };
 
-const generateUniqueKey = (point: Point, index: number, coords: [number, number] | null): string => {
+const generateUniqueKey = (
+    point: Point,
+    index: number,
+    coords: [number, number] | null
+): string => {
   if (point.id) return `point-${point.id}`;
   if (coords) return `point-${index}-${coords.join('-')}`;
   return `point-${index}-${Date.now()}`;
@@ -68,7 +73,11 @@ const MapPageComponent: React.FC<Props> = ({
                                            }) => {
   const [leafletModules, setLeafletModules] = useState<LeafletModules | null>(null);
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
-  const [errors, setErrors] = useState({ location: false, loadingModules: false, routing: false });
+  const [errors, setErrors] = useState({
+    location: false,
+    loadingModules: false,
+    routing: false,
+  });
   const [loading, setLoading] = useState(true);
   const [routingLoading, setRoutingLoading] = useState(false);
   const [disableFitBounds, setDisableFitBounds] = useState(false);
@@ -107,29 +116,39 @@ const MapPageComponent: React.FC<Props> = ({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
     const loadLeaflet = async () => {
       try {
-        const L = await import('leaflet');
+        // ВАЖНО: брать default, иначе объект L будет модулем
+        const { default: L } = await import('leaflet');
+
         (window as any).L = L;
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+        // Настройка дефолтных иконок
+        // @ts-expect-error приватное поле в типах
+        delete L.Icon.Default.prototype._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
           iconUrl: require('leaflet/dist/images/marker-icon.png'),
           shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
         });
+
+        // CSS только для web
         if (Platform.OS === 'web') {
           await import('leaflet/dist/leaflet.css');
-          await import('leaflet-routing-machine/dist/leaflet-routing-machine.css');
+          // ❌ Больше не импортируем leaflet-routing-machine и его CSS
         }
-        await import('leaflet-routing-machine');
+
+        // Динамически грузим react-leaflet
         const RL = await import('react-leaflet');
-        setLeafletModules({ L, ...RL });
+        setLeafletModules({ L, ...RL } as unknown as LeafletModules);
       } catch {
-        setErrors(prev => ({ ...prev, loadingModules: true }));
+        setErrors((prev) => ({ ...prev, loadingModules: true }));
       } finally {
         setLoading(false);
       }
     };
+
     loadLeaflet();
   }, []);
 
@@ -138,22 +157,30 @@ const MapPageComponent: React.FC<Props> = ({
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') throw new Error();
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation });
-        setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.BestForNavigation,
+        });
+        setUserLocation({
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+        });
       } catch {
-        setErrors(prev => ({ ...prev, location: true }));
+        setErrors((prev) => ({ ...prev, location: true }));
       }
     };
     requestLocation();
   }, []);
 
-  const handleMapClick = useCallback((e: any) => {
-    if (mode !== 'route' || routePoints.length >= 2) return;
-    const newPoint: [number, number] = [e.latlng.lng, e.latlng.lat];
-    setRoutePoints([...routePoints, newPoint]);
-    setDisableFitBounds(true);
-    onMapClick(e.latlng.lng, e.latlng.lat);
-  }, [mode, routePoints, setRoutePoints, onMapClick]);
+  const handleMapClick = useCallback(
+      (e: any) => {
+        if (mode !== 'route' || routePoints.length >= 2) return;
+        const newPoint: [number, number] = [e.latlng.lng, e.latlng.lat];
+        setRoutePoints([...routePoints, newPoint]);
+        setDisableFitBounds(true);
+        onMapClick(e.latlng.lng, e.latlng.lat);
+      },
+      [mode, routePoints, setRoutePoints, onMapClick]
+  );
 
   if (loading || !leafletModules) return <Loader message="Loading map..." />;
   if (errors.loadingModules) return <Error message="Map loading failed" />;
@@ -163,34 +190,54 @@ const MapPageComponent: React.FC<Props> = ({
   const MapLogic = () => {
     const map = useMap();
     useMapEvents({ click: handleMapClick });
+
     useEffect(() => {
       if (disableFitBounds || !map || !leafletModules.L) return;
-      const points: [number, number][] = mode === 'route' && routePoints.length
-          ? routePoints
-          : (travel.data || []).map(p => strToLatLng(p.coord)).filter(Boolean) as [number, number][];
+
+      const points: [number, number][] =
+          mode === 'route' && routePoints.length
+              ? routePoints
+              : ((travel.data || [])
+                  .map((p) => strToLatLng(p.coord))
+                  .filter(Boolean) as [number, number][]);
+
       if (points.length) {
-        const bounds = leafletModules.L.latLngBounds(points.map(([lng, lat]) => leafletModules.L.latLng(lat, lng)));
+        const bounds = leafletModules.L.latLngBounds(
+            points.map(([lng, lat]) => leafletModules.L.latLng(lat, lng))
+        );
         map.fitBounds(bounds.pad(0.2));
       }
     }, [disableFitBounds, mode, routePoints, travel.data, map, leafletModules.L]);
+
     return null;
   };
 
   return (
       <View style={styles.wrapper}>
-        <MapContainer center={[coordinates.latitude, coordinates.longitude]} zoom={13} style={styles.map}>
-          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
+        <MapContainer
+            center={[coordinates.latitude, coordinates.longitude]}
+            zoom={13}
+            style={styles.map}
+        >
+          <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          />
+
           <MapLogic />
+
           {routePoints.length >= 1 && customIcons && (
               <Marker position={[routePoints[0][1], routePoints[0][0]]} icon={customIcons.start}>
                 <Popup>Start</Popup>
               </Marker>
           )}
+
           {routePoints.length === 2 && customIcons && (
               <Marker position={[routePoints[1][1], routePoints[1][0]]} icon={customIcons.end}>
                 <Popup>End</Popup>
               </Marker>
           )}
+
           {mode === 'route' && routePoints.length >= 2 && ORS_API_KEY && (
               <RoutingMachine
                   routePoints={routePoints}
@@ -202,26 +249,40 @@ const MapPageComponent: React.FC<Props> = ({
                   ORS_API_KEY={ORS_API_KEY}
               />
           )}
+
           {userLocation && customIcons && (
-              <Marker position={[userLocation.latitude, userLocation.longitude]} icon={customIcons.userLocation}>
+              <Marker
+                  position={[userLocation.latitude, userLocation.longitude]}
+                  icon={customIcons.userLocation}
+              >
                 <Popup>Your location</Popup>
               </Marker>
           )}
-          {customIcons && (travel.data || []).map((point, index) => {
-            const coords = strToLatLng(point.coord);
-            if (!coords) return null;
-            return (
-                <Marker key={generateUniqueKey(point, index, coords)} position={[coords[1], coords[0]]} icon={customIcons.meTravel}>
-                  <Popup><PopupContentComponent travel={point} /></Popup>
-                </Marker>
-            );
-          })}
+
+          {customIcons &&
+              (travel.data || []).map((point, index) => {
+                const coords = strToLatLng(point.coord);
+                if (!coords) return null;
+                return (
+                    <Marker
+                        key={generateUniqueKey(point, index, coords)}
+                        position={[coords[1], coords[0]]}
+                        icon={customIcons.meTravel}
+                    >
+                      <Popup>
+                        <PopupContentComponent travel={point} />
+                      </Popup>
+                    </Marker>
+                );
+              })}
+
           {routingLoading && (
               <View style={styles.routingProgress}>
                 <ActivityIndicator size="small" color="#fff" />
                 <Text style={styles.routingProgressText}>Building route...</Text>
               </View>
           )}
+
           {errors.routing && (
               <View style={styles.routingError}>
                 <Text style={styles.routingErrorText}>Routing error</Text>

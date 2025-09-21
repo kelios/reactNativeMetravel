@@ -22,6 +22,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useRoute } from "@react-navigation/native";
 import { useQuery } from "@tanstack/react-query";
+import Head from "expo-router/head";
 
 import FiltersComponent from "./FiltersComponent";
 import RenderTravelItem from "./RenderTravelItem";
@@ -35,12 +36,11 @@ import {
     fetchTravels,
 } from "@/src/api/travels";
 import { renderPreviewToBlobURL, saveContainerAsPDF } from "@/src/utils/pdfWeb";
-import BookLayout from "@/components/export/BookLayout";
 import TravelPdfTemplate from "@/components/export/TravelPdfTemplate";
 
 const INITIAL_FILTER = { year: "", showModerationPending: false };
 const BELARUS_ID = 3;
-const PER_PAGE_OPTS = [9, 18, 30,60];
+const PER_PAGE_OPTS = [9, 18, 30, 60];
 const ITEM_HEIGHT = 320;
 
 function useDebounce<T>(val: T, delay = 400) {
@@ -73,12 +73,10 @@ function ListTravel() {
     const [userId, setUserId] = useState<string | null>(null);
     const [isSuper, setSuper] = useState(false);
     useEffect(() => {
-        AsyncStorage.multiGet(["userId", "isSuperuser"]).then(
-            ([[, id], [, su]]) => {
-                setUserId(id);
-                setSuper(su === "true");
-            }
-        );
+        AsyncStorage.multiGet(["userId", "isSuperuser"]).then(([[, id], [, su]]) => {
+            setUserId(id);
+            setSuper(su === "true");
+        });
     }, []);
 
     const [search, setSearch] = useState("");
@@ -89,7 +87,6 @@ function ListTravel() {
     const [deleteId, setDelete] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
 
-    // На мобиле сразу уменьшаем количество элементов на страницу
     useEffect(() => {
         if (isMobile) setPerPage(10);
     }, [isMobile]);
@@ -97,10 +94,7 @@ function ListTravel() {
     const [options, setOptions] = useState<Record<string, any>>({});
     useEffect(() => {
         (async () => {
-            const [base, countries] = await Promise.all([
-                fetchFilters(),
-                fetchFiltersCountry(),
-            ]);
+            const [base, countries] = await Promise.all([fetchFilters(), fetchFiltersCountry()]);
             setOptions({ ...base, countries });
         })();
     }, []);
@@ -112,7 +106,6 @@ function ListTravel() {
             if (Array.isArray(v) ? v.length : v) p[k] = v;
         });
 
-        // Публичность/модерация — скрываем черновики, если не запросили явное отображение
         if (!isMeTravel || !isExport) {
             p.publish = filter.showModerationPending ? undefined : 1;
             p.moderation = filter.showModerationPending ? 0 : 1;
@@ -130,7 +123,6 @@ function ListTravel() {
     const { data, status, refetch } = useQuery({
         queryKey: ["travels", page, perPage, debSearch, queryParams],
         queryFn: () => fetchTravels(page, perPage, debSearch, queryParams),
-        // Важно: на metravel/export ждём userId, иначе двойные/лишние запросы
         enabled: !(isMeTravel || isExport) || !!userId,
         keepPreviousData: true,
         staleTime: 60 * 1000,
@@ -174,17 +166,13 @@ function ListTravel() {
 
     const toggleSelect = useCallback((t: any) => {
         setSelected((prev) =>
-            prev.find((x) => x.id === t.id)
-                ? prev.filter((x) => x.id !== t.id)
-                : [...prev, t]
+            prev.find((x) => x.id === t.id) ? prev.filter((x) => x.id !== t.id) : [...prev, t]
         );
     }, []);
 
     const selectAll = useCallback(() => {
         if (!data?.data) return;
-        setSelected((prev) =>
-            prev.length === data.data.length ? [] : data.data
-        );
+        setSelected((prev) => (prev.length === data.data.length ? [] : data.data));
     }, [data]);
 
     const makePreview = async () => {
@@ -196,63 +184,37 @@ function ListTravel() {
 
         try {
             statusEl.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; right: 0;
-        padding: 20px;
-        background: #4a7c59;
-        color: white;
-        text-align: center;
-        z-index: 9999;
-      `;
+        position: fixed; top: 0; left: 0; right: 0;
+        padding: 20px; background: #4a7c59; color: white;
+        text-align: center; z-index: 9999;`;
             statusEl.textContent = "Генерируем PDF, подождите...";
             document.body.appendChild(statusEl);
 
-            const url = await renderPreviewToBlobURL(printRef.current, {
-                filename: "metravel.pdf",
-            });
+            const url = await renderPreviewToBlobURL(printRef.current, { filename: "metravel.pdf" });
 
             if (url) {
                 iframe = document.createElement("iframe");
                 iframe.style.cssText = `
-          position: fixed;
-          top: 0; left: 0;
-          width: 100%; height: 100%;
-          border: none;
-          z-index: 9998;
-        `;
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          border: none; z-index: 9998;`;
                 iframe.src = url;
 
                 closeBtn = document.createElement("button");
                 closeBtn.style.cssText = `
-          position: fixed;
-          top: 20px; right: 20px;
-          z-index: 9999;
-          padding: 10px 20px;
-          background: white;
-          color: #4a7c59;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        `;
+          position: fixed; top: 20px; right: 20px; z-index: 9999;
+          padding: 10px 20px; background: white; color: #4a7c59;
+          border: none; border-radius: 4px; cursor: pointer;`;
                 closeBtn.textContent = "Закрыть";
                 closeBtn.onclick = () => {
-                    if (iframe && document.body.contains(iframe)) {
-                        document.body.removeChild(iframe);
-                    }
-                    if (closeBtn && document.body.contains(closeBtn)) {
-                        document.body.removeChild(closeBtn);
-                    }
-                    if (statusEl && document.body.contains(statusEl)) {
-                        document.body.removeChild(statusEl);
-                    }
+                    if (iframe && document.body.contains(iframe)) document.body.removeChild(iframe);
+                    if (closeBtn && document.body.contains(closeBtn)) document.body.removeChild(closeBtn);
+                    if (statusEl && document.body.contains(statusEl)) document.body.removeChild(statusEl);
                     URL.revokeObjectURL(url);
                 };
 
                 document.body.appendChild(iframe);
                 document.body.appendChild(closeBtn);
-                if (statusEl && document.body.contains(statusEl)) {
-                    document.body.removeChild(statusEl);
-                }
+                if (statusEl && document.body.contains(statusEl)) document.body.removeChild(statusEl);
                 statusEl = null;
             }
         } catch (e) {
@@ -261,18 +223,11 @@ function ListTravel() {
                 statusEl.textContent = "Ошибка при создании превью";
                 statusEl.style.background = "#a00";
                 setTimeout(() => {
-                    if (statusEl && statusEl.parentNode) {
-                        document.body.removeChild(statusEl);
-                    }
+                    if (statusEl && statusEl.parentNode) document.body.removeChild(statusEl);
                 }, 3000);
             }
-
-            if (iframe && document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-            if (closeBtn && document.body.contains(closeBtn)) {
-                document.body.removeChild(closeBtn);
-            }
+            if (iframe && document.body.contains(iframe)) document.body.removeChild(iframe);
+            if (closeBtn && document.body.contains(closeBtn)) document.body.removeChild(closeBtn);
         }
     };
 
@@ -284,14 +239,8 @@ function ListTravel() {
 
         let loadingEl: HTMLDivElement | null = document.createElement("div");
         loadingEl.style.cssText = `
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      padding: 20px;
-      background: #4a7c59;
-      color: white;
-      text-align: center;
-      z-index: 9999;
-    `;
+      position: fixed; top: 0; left: 0; right: 0; padding: 20px;
+      background: #4a7c59; color: white; text-align: center; z-index: 9999;`;
         loadingEl.textContent = "Создание PDF...";
         document.body.appendChild(loadingEl);
 
@@ -304,9 +253,7 @@ function ListTravel() {
             console.error("PDF generation error:", error);
             alert("Ошибка при создании PDF");
         } finally {
-            if (loadingEl && loadingEl.parentNode) {
-                document.body.removeChild(loadingEl);
-            }
+            if (loadingEl && loadingEl.parentNode) document.body.removeChild(loadingEl);
             loadingEl = null;
         }
     };
@@ -347,11 +294,11 @@ function ListTravel() {
 
     const keyExtractor = useCallback((item: any) => String(item.id), []);
 
+
     return (
         <SafeAreaView style={styles.root}>
-            <View
-                style={[styles.container, { flexDirection: isMobile ? "column" : "row" }]}
-            >
+
+            <View style={[styles.container, { flexDirection: isMobile ? "column" : "row" }]}>
                 {!isMobile && (
                     <View style={styles.sidebar} aria-label="Фильтры">
                         <MemoizedFilters
@@ -450,9 +397,7 @@ function ListTravel() {
                     {!isMobile && (
                         <Pressable style={styles.btn} onPress={selectAll}>
                             <Text style={styles.btnTxt}>
-                                {selected.length === data?.data?.length
-                                    ? "Снять выделение"
-                                    : "Выбрать все"}
+                                {selected.length === data?.data?.length ? "Снять выделение" : "Выбрать все"}
                             </Text>
                         </Pressable>
                     )}

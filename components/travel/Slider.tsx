@@ -1,3 +1,4 @@
+// components/common/Slider.tsx
 import React, {
     memo,
     useCallback,
@@ -34,12 +35,12 @@ interface SliderProps {
     showArrows?: boolean;
     showDots?: boolean;
     hideArrowsOnMobile?: boolean;
-    aspectRatio?: number;
+    aspectRatio?: number; // fallback если у изображений нет размеров
     autoPlay?: boolean;
     autoPlayInterval?: number;
     onIndexChanged?: (index: number) => void;
     imageProps?: Partial<React.ComponentProps<typeof ExpoImage>>;
-    preloadCount?: number;
+    preloadCount?: number; // сколько слайдов вокруг активного держать в памяти
 }
 
 const DEFAULT_ASPECT_RATIO = 16 / 9;
@@ -48,87 +49,107 @@ const MOBILE_BREAKPOINT = 768;
 const SWIPE_THRESHOLD = 50;
 
 const buildUri = (img: SliderImage) => {
-    const ts = img.updated_at ? Date.parse(img.updated_at) : img.id;
-    return `${img.url}${ts ? `?v=${ts}` : ""}`;
+    const ts = img.updated_at ? Date.parse(img.updated_at) : Number(img.id);
+    return ts && Number.isFinite(ts) ? `${img.url}?v=${ts}` : img.url;
 };
 
-const NavButton = memo(({ direction, onPress, offset }: {
-    direction: "left" | "right";
-    onPress: () => void;
-    offset: number;
-}) => (
-    <TouchableOpacity
-        onPress={onPress}
-        style={[
-            styles.navBtn,
-            direction === "left" ? { left: offset } : { right: offset },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={direction === "left" ? "Previous slide" : "Next slide"}
-        hitSlop={10}
-    >
-        <AntDesign
-            name={direction === "left" ? "left" : "right"}
-            size={20}
-            color="#fff"
-        />
-    </TouchableOpacity>
-));
+const NavButton = memo(
+    ({
+         direction,
+         onPress,
+         offset,
+     }: {
+        direction: "left" | "right";
+        onPress: () => void;
+        offset: number;
+    }) => (
+        <TouchableOpacity
+            onPress={onPress}
+            style={[
+                styles.navBtn,
+                direction === "left" ? { left: offset } : { right: offset },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={direction === "left" ? "Previous slide" : "Next slide"}
+            hitSlop={10}
+        >
+            <AntDesign
+                name={direction === "left" ? "left" : "right"}
+                size={20}
+                color="#fff"
+            />
+        </TouchableOpacity>
+    )
+);
 
-const Slide = memo(({ uri, isVisible, imageProps, isPriorityImage, dimensions }: {
-    uri: string;
-    isVisible: boolean;
-    imageProps?: Partial<React.ComponentProps<typeof ExpoImage>>;
-    isPriorityImage?: boolean;
-    dimensions?: { width?: number; height?: number };
-}) => (
-    <View style={styles.slide} collapsable={false}>
-        {isVisible && (
-            <>
-                <ExpoImage
-                    source={{ uri }}
-                    contentFit="cover"
-                    cachePolicy="disk"
-                    priority={isPriorityImage ? "high" : "low"}
-                    recyclingKey={`bg-${uri}`}
-                    {...Platform.select({
-                        web: {
-                            style: [styles.bg, { filter: 'blur(6px)', willChange: 'filter' }],
-                        },
-                        default: {
-                            style: styles.bg,
-                            blurRadius: 20,
-                        },
-                    })}
-                    {...imageProps}
-                />
-                <ExpoImage
-                    style={styles.img}
-                    source={{ uri }}
-                    contentFit="contain"
-                    cachePolicy="disk"
-                    priority="high"
-                    transition={150}
-                    recyclingKey={`img-${uri}`}
-                    contentPosition="center"
-                    accessibilityIgnoresInvertColors
-                    fetchPriority={isPriorityImage ? "high" : undefined}
-                    {...(dimensions?.width && dimensions?.height
-                        ? {
-                            style: [
-                                styles.img,
-                                {
-                                    aspectRatio: dimensions.width / dimensions.height,
+const Slide = memo(
+    ({
+         uri,
+         isVisible,
+         imageProps,
+         isPriorityImage,
+         dimensions,
+     }: {
+        uri: string;
+        isVisible: boolean;
+        imageProps?: Partial<React.ComponentProps<typeof ExpoImage>>;
+        isPriorityImage?: boolean;
+        dimensions?: { width?: number; height?: number };
+    }) => {
+        // итоговый стиль основного изображения
+        const mainStyle =
+            dimensions?.width && dimensions?.height
+                ? [styles.img, { aspectRatio: dimensions.width / dimensions.height }]
+                : styles.img;
+
+        return (
+            <View style={styles.slide} collapsable={false}>
+                {isVisible && (
+                    <>
+                        {/* фон с блюром (не влияет на layout) */}
+                        <ExpoImage
+                            source={{ uri }}
+                            contentFit="cover"
+                            cachePolicy="disk"
+                            priority={isPriorityImage ? "high" : "low"}
+                            recyclingKey={`bg-${uri}`}
+                            {...Platform.select({
+                                web: {
+                                    style: [styles.bg, { filter: "blur(6px)", willChange: "filter" }],
                                 },
-                            ],
-                        }
-                        : {})}
-                    {...imageProps}
-                />
-            </>
-        )}
-    </View>
-), (p, n) => p.uri === n.uri && p.isVisible === n.isVisible && p.isPriorityImage === n.isPriorityImage);
+                                default: {
+                                    style: styles.bg,
+                                    blurRadius: 20,
+                                },
+                            })}
+                        />
+                        {/* основное изображение */}
+                        <ExpoImage
+                            source={{ uri }}
+                            contentFit="contain"
+                            cachePolicy="disk"
+                            priority="high"
+                            transition={150}
+                            recyclingKey={`img-${uri}`}
+                            contentPosition="center"
+                            accessibilityIgnoresInvertColors
+                            // RN Web поддерживает нативный fetchpriority – прокидываем как prop
+                            {...(Platform.OS === "web" && isPriorityImage
+                                ? { fetchpriority: "high" as any }
+                                : {})}
+                            style={mainStyle as any}
+                            {...imageProps}
+                        />
+                    </>
+                )}
+            </View>
+        );
+    },
+    (p, n) =>
+        p.uri === n.uri &&
+        p.isVisible === n.isVisible &&
+        p.isPriorityImage === n.isPriorityImage
+);
 
 const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
     (
@@ -162,6 +183,15 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
 
         React.useImperativeHandle(externalRef, () => carouselRef.current as any, []);
 
+        // если у первого изображения есть размеры – используем их для высоты,
+        // чтобы уменьшить CLS
+        const firstAR = useMemo(() => {
+            const first = images[0];
+            return first?.width && first?.height
+                ? first.width / first.height
+                : aspectRatio;
+        }, [images, aspectRatio]);
+
         const carouselKey = useMemo(
             () => images.map((i) => `${i.id}_${i.updated_at ?? ""}`).join("-"),
             [images]
@@ -173,14 +203,17 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
         useEffect(() => {
             const safeHeight = isMobile
                 ? (windowHeight - insets.top - insets.bottom) * 0.75
-                : containerWidth / aspectRatio;
-            setContainerHeight(safeHeight);
-        }, [isMobile, containerWidth, aspectRatio, windowHeight, insets]);
+                : containerWidth / firstAR;
+            setContainerHeight(Math.max(160, safeHeight)); // минимальная высота для стабильности
+        }, [isMobile, containerWidth, firstAR, windowHeight, insets]);
 
+        // при смене набора изображений сбрасываем индекс и окно предзагрузки
         useEffect(() => {
             setCurrentIndex(0);
             carouselRef.current?.scrollTo?.({ index: 0, animated: false });
-            setLoadedIndices(new Set([...Array(Math.min(preloadCount + 1, images.length)).keys()]));
+            setLoadedIndices(
+                new Set([...Array(Math.min(preloadCount + 1, images.length)).keys()])
+            );
         }, [carouselKey, preloadCount, images.length]);
 
         const handleIndexChanged = useCallback(
@@ -244,9 +277,7 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
             [navPrev, navNext]
         );
 
-        if (!images.length) {
-            return null;
-        }
+        if (!images.length) return null;
 
         return (
             <View
@@ -304,12 +335,7 @@ const Slider = forwardRef<Carousel<SliderImage>, SliderProps>(
                                             }
                                             hitSlop={12}
                                         >
-                                            <View
-                                                style={[
-                                                    styles.dot,
-                                                    active && styles.active,
-                                                ]}
-                                            />
+                                            <View style={[styles.dot, active && styles.active]} />
                                         </TouchableOpacity>
                                     );
                                 })}

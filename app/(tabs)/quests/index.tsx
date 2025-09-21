@@ -10,11 +10,12 @@ import {
     Image,
     ScrollView,
 } from 'react-native';
-import Head from 'expo-router/head';
 import { Link } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+
+import InstantSEO from '@/components/seo/InstantSEO';
 
 import {
     CITIES,
@@ -24,6 +25,7 @@ import {
     ALL_QUESTS,
 } from '@/components/quests/cityQuests';
 import { haversineKm } from '@/utils/geo';
+import {useIsFocused} from "@react-navigation/native/src";
 
 const STORAGE_SELECTED_CITY = 'quests_selected_city';
 const STORAGE_NEARBY_RADIUS = 'quests_nearby_radius_km';
@@ -55,15 +57,15 @@ export default function QuestsScreen() {
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
     const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
     const [nearbyRadiusKm, setNearbyRadiusKm] = useState<number>(DEFAULT_NEARBY_RADIUS_KM);
-
+    const isFocused = useIsFocused();
     const { width } = useWindowDimensions();
-    const isSmall = width < 600;
     const isMobile = width < 480;
 
     // Адаптивные колонки
     const cityColumns = isMobile ? 2 : width >= 1200 ? 5 : width >= 900 ? 4 : 3;
     const questColumns = isMobile ? 1 : width >= 1100 ? 3 : 2;
 
+    // Инициализация выбранного города
     useEffect(() => {
         (async () => {
             try {
@@ -75,6 +77,7 @@ export default function QuestsScreen() {
         })();
     }, []);
 
+    // Инициализация радиуса "Рядом"
     useEffect(() => {
         (async () => {
             try {
@@ -84,6 +87,7 @@ export default function QuestsScreen() {
         })();
     }, []);
 
+    // Геолокация
     useEffect(() => {
         (async () => {
             try {
@@ -150,17 +154,48 @@ export default function QuestsScreen() {
     const chunkedCities = chunkArray(citiesWithNearby, cityColumns);
     const chunkedQuests = chunkArray(questsAll, questColumns);
 
+    // ---------- ДИНАМИЧЕСКИЙ <title> и <meta description> ----------
+    const selectedCityName =
+        selectedCityId === NEARBY_ID
+            ? 'Рядом'
+            : CITIES.find((c) => c.id === selectedCityId)?.name ?? null;
+
+    const titleText = useMemo(() => {
+        if (!selectedCityId) return 'Квесты | MeTravel';
+        if (selectedCityId === NEARBY_ID) {
+            const suffix = userLoc
+                ? nearbyCount > 0
+                    ? ` — ${nearbyCount} поблизости • радиус ${nearbyRadiusKm} км`
+                    : ' — рядом ничего не найдено'
+                : ' — геолокация отключена';
+            return `Квесты: Рядом${suffix} | MeTravel`;
+        }
+        return `Квесты: ${selectedCityName || 'Город'} | MeTravel`;
+    }, [selectedCityId, selectedCityName, nearbyCount, nearbyRadiusKm, userLoc]);
+
+    const descText = useMemo(() => {
+        if (selectedCityId === NEARBY_ID) {
+            return 'Офлайн-квесты рядом с вами. Выбирайте радиус и исследуйте парки и улицы поблизости.';
+        }
+        if (selectedCityName) {
+            return `Офлайн-квесты в городе ${selectedCityName}. Прогулки по точкам, задания и маршруты.`;
+        }
+        return 'Исследуйте города и парки с офлайн-квестами — приключения на карте рядом с вами.';
+    }, [selectedCityId, selectedCityName]);
+
     return (
         <>
-            <Head>
-                <title key="title">Квесты | MeTravel</title>
-                <meta
-                    key="description"
-                    name="description"
-                    content="Исследуйте города и парки с офлайн-квестами — приключения на карте рядом с вами"
-                />
-            </Head>
-
+            {isFocused && (
+            <InstantSEO
+                headKey="quests-index"
+                title={titleText}
+                description={descText}
+                ogType="website"
+                // canonical и image можно добавить позже:
+                // canonical={canonicalUrl}
+                // image={ogImageUrl}
+            />
+            )}
             <ScrollView
                 style={s.page}
                 contentContainerStyle={s.scrollContent}
@@ -168,7 +203,7 @@ export default function QuestsScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={sx(s.wrap, isMobile && s.wrapMobile)}>
-                    {/* Hero - компактный для мобильных */}
+                    {/* Hero */}
                     <View style={sx(s.hero, isMobile && s.heroMobile)}>
                         <View style={s.heroIconWrap}>
                             <Ionicons name="compass" size={isMobile ? 20 : 26} color={UI.primary} />
@@ -188,7 +223,7 @@ export default function QuestsScreen() {
                         </Link>
                     </View>
 
-                    {/* Городы - компактные карточки */}
+                    {/* Города */}
                     <View style={s.citiesContainer}>
                         {chunkedCities.map((row, rowIndex) => (
                             <View key={`row-${rowIndex}`} style={s.citiesRow}>
@@ -196,7 +231,9 @@ export default function QuestsScreen() {
                                     const active = selectedCityId === item.id;
                                     const questsCount =
                                         item.id === NEARBY_ID
-                                            ? (userLoc ? nearbyCount : 0)
+                                            ? userLoc
+                                                ? nearbyCount
+                                                : 0
                                             : CITY_QUESTS[item.id]?.length || 0;
 
                                     return (
@@ -229,7 +266,7 @@ export default function QuestsScreen() {
 
                     {selectedCityId && <View style={s.divider} />}
 
-                    {/* Фильтр радиуса для «Рядом» - компактный */}
+                    {/* Радиус для «Рядом» */}
                     {selectedCityId === NEARBY_ID && (
                         <View style={sx(s.filtersRow, isMobile && s.filtersRowMobile)}>
                             <Text style={sx(s.filtersLabel, isMobile && s.filtersLabelMobile)}>Радиус:</Text>
@@ -239,7 +276,13 @@ export default function QuestsScreen() {
                                     onPress={() => handleSetRadius(km)}
                                     style={sx(s.chip, nearbyRadiusKm === km && s.chipActive, isMobile && s.chipMobile)}
                                 >
-                                    <Text style={sx(s.chipText, nearbyRadiusKm === km && s.chipTextActive, isMobile && s.chipTextMobile)}>
+                                    <Text
+                                        style={sx(
+                                            s.chipText,
+                                            nearbyRadiusKm === km && s.chipTextActive,
+                                            isMobile && s.chipTextMobile
+                                        )}
+                                    >
                                         {km} км
                                     </Text>
                                 </Pressable>
@@ -247,15 +290,13 @@ export default function QuestsScreen() {
                         </View>
                     )}
 
-                    {/* Квесты - компактные карточки */}
+                    {/* Квесты */}
                     {selectedCityId && (
                         <View style={s.questsContainer}>
                             {questsAll.length === 0 && selectedCityId === NEARBY_ID ? (
                                 <View style={s.emptyState}>
                                     <Ionicons name="alert-circle" size={16} color={UI.textMuted} />
-                                    <Text style={s.emptyText}>
-                                        Рядом ничего не найдено. Попробуйте увеличить радиус.
-                                    </Text>
+                                    <Text style={s.emptyText}>Рядом ничего не найдено. Попробуйте увеличить радиус.</Text>
                                 </View>
                             ) : null}
 
@@ -265,9 +306,7 @@ export default function QuestsScreen() {
                                         <QuestCardLink
                                             key={quest.id}
                                             cityId={
-                                                selectedCityId === NEARBY_ID
-                                                    ? (quest.cityId as string)
-                                                    : (selectedCityId as string)
+                                                selectedCityId === NEARBY_ID ? (quest.cityId as string) : (selectedCityId as string)
                                             }
                                             quest={quest}
                                             nearby={selectedCityId === NEARBY_ID}
@@ -337,6 +376,7 @@ function QuestCardLink({
     );
 }
 
+// оставил на будущее (если где-то понадобится)
 function getPluralForm(count: number): string {
     if (count % 10 === 1 && count % 100 !== 11) return '';
     if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'а';
@@ -351,10 +391,10 @@ const s = StyleSheet.create({
         width: '100%',
         maxWidth: 1100,
         alignSelf: 'center',
-        padding: 16
+        padding: 16,
     },
     wrapMobile: {
-        padding: 12
+        padding: 12,
     },
 
     hero: {
@@ -503,11 +543,11 @@ const s = StyleSheet.create({
 
     coverWrap: {
         width: '100%',
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
         position: 'relative',
     },
     coverWrapMobile: {
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
     },
 
     questCover: { width: '100%', height: '100%' },

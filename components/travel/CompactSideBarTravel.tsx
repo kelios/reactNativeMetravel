@@ -1,82 +1,119 @@
-import React, {memo, Suspense, useCallback, useMemo, useState} from 'react';
+// components/travel/CompactSideBarTravel.tsx
+import React, { memo, Suspense, useCallback, useMemo, useState, lazy } from 'react'
 import {
-    View, StyleSheet, Linking, Pressable, ScrollView, Image, Platform,
-    useWindowDimensions, ActivityIndicator, DeviceEventEmitter,
-} from 'react-native';
-import { MaterialIcons, Feather } from '@expo/vector-icons';
-import { Text } from 'react-native-paper';
-import type { Travel } from '@/src/types/types';
-import WeatherWidget from "@/components/WeatherWidget";
+    View,
+    StyleSheet,
+    Linking,
+    Pressable,
+    ScrollView,
+    Image,
+    Platform,
+    useWindowDimensions,
+    ActivityIndicator,
+    DeviceEventEmitter,
+} from 'react-native'
+import { MaterialIcons, Feather } from '@expo/vector-icons'
+import { Text } from 'react-native-paper'
+import type { Travel } from '@/src/types/types'
+
+// Ленивая загрузка виджета погоды (особенно полезно на мобильных)
+const WeatherWidget = lazy(() => import('@/components/WeatherWidget'))
 
 const Fallback = () => (
     <View style={styles.fallback}>
         <ActivityIndicator size="small" color="#6B4F4F" />
     </View>
-);
+)
 
 const openUrl = (url: string) => {
     if (Platform.OS === 'web') {
-        window.open(url, '_blank', 'noopener');
+        window.open(url, '_blank', 'noopener')
     } else {
-        Linking.openURL(url);
+        Linking.openURL(url)
     }
-};
+}
 
 // универсальный эмиттер "открой секцию"
 const emitOpenSection = (key: string) => {
     if (Platform.OS === 'web') {
         // @ts-ignore
-        window.dispatchEvent(new CustomEvent('open-section', { detail: { key } }));
+        window.dispatchEvent(new CustomEvent('open-section', { detail: { key } }))
     } else {
-        DeviceEventEmitter.emit('open-section', key);
+        DeviceEventEmitter.emit('open-section', key)
     }
-};
+}
 
 type SideBarProps = {
-    refs: Record<string, React.RefObject<View>>;
-    travel: Travel;
-    isMobile: boolean;
-    onNavigate: (key: keyof SideBarProps['refs']) => void;
-    closeMenu: () => void;
-    isSuperuser: boolean;
-    storedUserId?: string | null;
-};
+    refs: Record<string, React.RefObject<View>>
+    travel: Travel
+    isMobile: boolean
+    onNavigate: (key: keyof SideBarProps['refs']) => void
+    closeMenu: () => void
+    isSuperuser: boolean
+    storedUserId?: string | null
+}
 
 function CompactSideBarTravel({
-                                  refs, travel, isMobile, onNavigate, closeMenu, isSuperuser, storedUserId,
+                                  refs,
+                                  travel,
+                                  isMobile,
+                                  onNavigate,
+                                  closeMenu,
+                                  isSuperuser,
+                                  storedUserId,
                               }: SideBarProps) {
-    const { width } = useWindowDimensions();
-    const isTablet = width >= 768 && width < 1024;
-    const [active, setActive] = useState<string>('');
+    const { width } = useWindowDimensions()
+    const isTablet = width >= 768 && width < 1024
+    const [active, setActive] = useState<string>('')
 
     const setActiveNavigateAndOpen = useCallback(
         (key: keyof typeof refs) => {
-            setActive(String(key));
-            onNavigate(key);              // скролл
-            emitOpenSection(String(key)); // раскрыть секцию
-            if (isMobile) closeMenu();
+            const k = String(key)
+            setActive(k)
+            onNavigate(key) // скролл
+            emitOpenSection(k) // раскрыть секцию
+            if (isMobile) closeMenu()
         },
         [onNavigate, isMobile, closeMenu]
-    );
+    )
 
-    const canEdit = isSuperuser || storedUserId === String(travel.userIds);
+    // Надёжная проверка права редактирования (типы могут отличаться)
+    const canEdit = useMemo(() => {
+        const a = String(storedUserId ?? '')
+        const b = String((travel as any).userIds ?? (travel as any).userId ?? '')
+        return isSuperuser || (a && b && a === b)
+    }, [isSuperuser, storedUserId, travel])
 
-    const links = useMemo(() => [
-        travel.gallery?.length ? { k: 'gallery', icon: 'photo-library', label: 'Галерея' } : null,
-        travel.youtube_link ? { k: 'video', icon: 'ondemand-video', label: 'Видео' } : null,
-        travel.description ? { k: 'description', icon: 'description', label: 'Описание' } : null,
-        travel.recommendation ? { k: 'recommendation', icon: 'recommend', label: 'Рекомендации' } : null,
-        travel.plus ? { k: 'plus', icon: 'add', label: 'Плюсы' } : null,
-        travel.minus ? { k: 'minus', icon: 'remove', label: 'Минусы' } : null,
-        travel.travelAddress ? { k: 'excursions', icon: 'explore', label: 'Экскурсии' } : null,
-        { k: 'map', icon: 'map', label: 'Карта' },
-        travel.travelAddress ? { k: 'points', icon: 'list', label: 'Координаты' } : null,
-        { k: 'near', icon: 'location-on', label: 'Рядом (~60км)' },
-        { k: 'popular', icon: 'star', label: 'Популярное' },
-    ].filter(Boolean) as Array<{k:string;icon:string;label:string}>, [travel]);
+    const links = useMemo(
+        () =>
+            (
+                [
+                    travel.gallery?.length ? { k: 'gallery', icon: 'photo-library', label: 'Галерея' } : null,
+                    travel.youtube_link ? { k: 'video', icon: 'ondemand-video', label: 'Видео' } : null,
+                    travel.description ? { k: 'description', icon: 'description', label: 'Описание' } : null,
+                    travel.recommendation ? { k: 'recommend', icon: 'recommend', label: 'Рекомендации' } : null,
+                    travel.plus ? { k: 'plus', icon: 'add', label: 'Плюсы' } : null,
+                    travel.minus ? { k: 'minus', icon: 'remove', label: 'Минусы' } : null,
+                    travel.travelAddress?.length ? { k: 'excursions', icon: 'explore', label: 'Экскурсии' } : null,
+                    { k: 'map', icon: 'map', label: 'Карта' },
+                    travel.travelAddress?.length ? { k: 'points', icon: 'list', label: 'Координаты' } : null,
+                    { k: 'near', icon: 'location-on', label: 'Рядом (~60км)' },
+                    { k: 'popular', icon: 'star', label: 'Популярное' },
+                ] as Array<{ k: string; icon: string; label: string } | null>
+            ).filter(Boolean) as Array<{ k: string; icon: string; label: string }>,
+        [
+            travel.gallery?.length,
+            travel.youtube_link,
+            travel.description,
+            travel.recommendation,
+            travel.plus,
+            travel.minus,
+            travel.travelAddress?.length,
+        ]
+    )
 
-    const handleUserTravels = () => openUrl(`/?user_id=${travel.userIds}`);
-    const handleEdit = () => canEdit && openUrl(`/travel/${travel.id}`);
+    const handleUserTravels = () => openUrl(`/?user_id=${(travel as any).userIds ?? (travel as any).userId}`)
+    const handleEdit = () => canEdit && openUrl(`/travel/${travel.id}`)
 
     return (
         <View style={styles.root}>
@@ -91,8 +128,9 @@ function CompactSideBarTravel({
                                 <Image
                                     source={{ uri: travel.travel_image_thumb_small_url }}
                                     style={styles.avatar}
-                                    defaultSource={require('@/assets/placeholder.webp')}
-                                    {...(Platform.OS === 'web' ? { loading: 'lazy' } : {})}
+                                    // defaultSource не поддерживается Web — добавляем безопасно
+                                    {...(Platform.OS !== 'web' ? { defaultSource: require('@/assets/placeholder.webp') } : {})}
+                                    {...(Platform.OS === 'web' ? { loading: 'lazy' as any } : {})}
                                 />
                             ) : (
                                 <MaterialIcons name="image" size={60} color="#ccc" />
@@ -104,9 +142,11 @@ function CompactSideBarTravel({
                         </View>
                         <View style={{ flex: 1 }}>
                             <View style={styles.userRow}>
-                                <Text style={styles.userName} numberOfLines={1}>{`${travel.userName} | ${travel.countryName}`}</Text>
+                                <Text style={styles.userName} numberOfLines={1}>
+                                    {`${travel.userName} | ${travel.countryName}`}
+                                </Text>
                                 {canEdit && (
-                                    <Pressable onPress={handleEdit} hitSlop={6}>
+                                    <Pressable onPress={handleEdit} hitSlop={6} accessibilityRole="button" accessibilityLabel="Редактировать путешествие">
                                         <MaterialIcons name="edit" size={18} color="#2F332E" />
                                     </Pressable>
                                 )}
@@ -120,16 +160,18 @@ function CompactSideBarTravel({
                 {links.map(({ k, icon, label }) => (
                     <Pressable
                         key={k}
-                        style={({ pressed }) => [styles.link, (active === k) && styles.linkActive, pressed && styles.linkPressed]}
+                        style={({ pressed }) => [styles.link, active === k && styles.linkActive, pressed && styles.linkPressed]}
                         onPress={() => setActiveNavigateAndOpen(k as keyof typeof refs)}
                         android_ripple={{ color: '#E7DAC6' }}
+                        accessibilityRole="button"
+                        accessibilityLabel={label}
                     >
                         <MaterialIcons name={icon as any} size={isTablet ? 22 : 20} color="#2F332E" />
                         <Text style={[styles.linkTxt, isTablet && { fontSize: 15 }]}>{label}</Text>
                     </Pressable>
                 ))}
 
-                <Pressable onPress={handleUserTravels}>
+                <Pressable onPress={handleUserTravels} accessibilityRole="link" accessibilityLabel={`Путешествия автора ${travel.userName}`}>
                     <Text style={styles.allTravels}>Путешествия {travel.userName}</Text>
                 </Pressable>
 
@@ -140,21 +182,27 @@ function CompactSideBarTravel({
 
             {isMobile && (
                 <View style={styles.closeBar}>
-                    <Pressable onPress={closeMenu} style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}>
+                    <Pressable
+                        onPress={closeMenu}
+                        style={({ pressed }) => [styles.closeBtn, pressed && styles.closeBtnPressed]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Закрыть меню"
+                    >
                         <MaterialIcons name="close" size={20} color="#fff" />
                         <Text style={styles.closeTxt}>Закрыть</Text>
                     </Pressable>
                 </View>
             )}
         </View>
-    );
+    )
 }
 
-export default memo(CompactSideBarTravel);
+export default memo(CompactSideBarTravel)
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#fff' },
     menu: { paddingTop: 16, alignSelf: 'center', paddingHorizontal: 16, maxWidth: 320 },
+
     card: {
         backgroundColor: '#c9d0bc',
         borderRadius: 16,
@@ -171,18 +219,43 @@ const styles = StyleSheet.create({
     avatar: { width: 60, height: 60, borderRadius: 30 },
     viewsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
     viewsTxt: { marginLeft: 4, fontSize: 12, color: '#2F332E', fontFamily: 'Georgia' },
+
     userRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     userName: { fontSize: 15, fontWeight: 'bold', color: '#2F332E', fontFamily: 'Georgia', flexShrink: 1 },
     userYear: { fontSize: 15, fontWeight: 'bold', color: '#2F332E', fontFamily: 'Georgia', marginTop: 2 },
     userDays: { fontSize: 13, color: '#677069', marginTop: 4, fontFamily: 'Georgia' },
-    link: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 6, borderRadius: 8, marginBottom: 6 },
+
+    link: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 6,
+        borderRadius: 8,
+        marginBottom: 6,
+    },
     linkPressed: { backgroundColor: '#F4E1C7' },
     linkActive: { backgroundColor: '#F4E1C7' },
     linkTxt: { marginLeft: 10, fontSize: 14, fontFamily: 'Georgia', color: '#2F332E' },
-    allTravels: { marginTop: 20, fontSize: 14, textAlign: 'center', fontWeight: '500', color: '#B87034', fontFamily: 'Georgia' },
-    closeBar: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#2F332E', paddingVertical: 16, alignItems: 'center' },
+
+    allTravels: {
+        marginTop: 20,
+        fontSize: 14,
+        textAlign: 'center',
+        fontWeight: '500',
+        color: '#B87034',
+        fontFamily: 'Georgia',
+    },
+
+    closeBar: {
+        position: 'absolute',
+        bottom: 0, left: 0, right: 0,
+        backgroundColor: '#2F332E',
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
     closeBtn: { flexDirection: 'row', alignItems: 'center' },
     closeBtnPressed: { opacity: 0.7 },
     closeTxt: { color: '#fff', fontSize: 16, fontFamily: 'Georgia', marginLeft: 8 },
+
     fallback: { paddingVertical: 40, alignItems: 'center' },
-});
+})

@@ -2,9 +2,10 @@
 import React, { memo, useMemo } from "react";
 import { Platform, View, useWindowDimensions } from "react-native";
 import TravelListItem from "./TravelListItem";
+import type { Travel } from "@/src/types/types";
 
 type RenderTravelItemProps = {
-    item: any;
+    item: Travel;
     isMobile?: boolean;
     isSuperuser?: boolean;
     isMetravel?: boolean;
@@ -38,7 +39,10 @@ function RenderTravelItem({
     const containerStyle = useMemo(() => {
         const base = {
             borderRadius: 12,
-            overflow: Platform.OS === "android" ? ("visible" as const) : ("hidden" as const),
+            overflow:
+                Platform.OS === "android"
+                    ? ("visible" as const)
+                    : ("hidden" as const),
             marginBottom: isMobile ? 12 : 16,
         };
 
@@ -87,7 +91,10 @@ function RenderTravelItem({
 }
 
 function areEqual(prev: RenderTravelItemProps, next: RenderTravelItemProps) {
-    const sameId = prev.item?.id === next.item?.id;
+    // Важно: сравниваем ссылку на объект, чтобы компонент обновлялся,
+    // когда react-query приносит новый объект с тем же id.
+    const sameItemRef = prev.item === next.item;
+
     const sameFlags =
         prev.isSuperuser === next.isSuperuser &&
         prev.isMetravel === next.isMetravel &&
@@ -97,7 +104,7 @@ function areEqual(prev: RenderTravelItemProps, next: RenderTravelItemProps) {
         prev.isSelected === next.isSelected &&
         prev.isMobile === next.isMobile;
 
-    return sameId && sameFlags;
+    return sameItemRef && sameFlags;
 }
 
 export default memo(RenderTravelItem, areEqual);

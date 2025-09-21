@@ -1,33 +1,37 @@
-import React from 'react';
+// app/travel/index.tsx
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Head from 'expo-router/head';
+import { usePathname } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
+
 import ListTravel from '@/components/listTravel/ListTravel';
+import InstantSEO from '@/components/seo/InstantSEO';
 
 export default function TravelScreen() {
+    const pathname = usePathname();
+    const isFocused = useIsFocused();
+
+    const SITE = process.env.EXPO_PUBLIC_SITE_URL || 'https://metravel.by';
+
+    // стабильный canonical без промежуточных значений при навигации
+    const canonical = useMemo(() => `${SITE}${pathname || ''}`, [SITE, pathname]);
+
+    const title = 'Маршруты, идеи и вдохновение для путешествий | Metravel';
+    const description =
+        'Авторские маршруты, советы и впечатления от путешественников по всему миру. Присоединяйся к сообществу Metravel и вдохновляйся на новые открытия!';
+
     return (
         <>
-            <Head>
-                <title key="title">Маршруты, идеи и вдохновение для путешествий | Metravel</title>
-                <meta
-                    key="description"
-                    name="description"
-                    content="Авторские маршруты, советы и впечатления от путешественников по всему миру. Присоединяйся к сообществу Metravel и вдохновляйся на новые открытия!"
+            {isFocused && (
+                <InstantSEO
+                    headKey="travel-list"
+                    title={title}
+                    description={description}
+                    canonical={canonical}
+                    image={`${SITE}/og-preview.jpg`}
+                    ogType="website"
                 />
-
-                {/* OG meta */}
-                <meta key="og:type" property="og:type" content="website" />
-                <meta key="og:title" property="og:title" content="Маршруты, идеи и вдохновение для путешествий | Metravel" />
-                <meta key="og:description" property="og:description" content="Авторские маршруты, советы и впечатления от путешественников по всему миру." />
-                <meta key="og:url" property="og:url" content="https://metravel.by/" />
-                <meta key="og:image" property="og:image" content="https://metravel.by/og-preview.jpg" />
-
-                {/* Twitter Card */}
-                <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
-                <meta key="twitter:title" name="twitter:title" content="Маршруты, идеи и вдохновение для путешествий | Metravel" />
-                <meta key="twitter:description" name="twitter:description" content="Авторские маршруты, советы и впечатления от путешественников по всему миру." />
-                <meta key="twitter:image" name="twitter:image" content="https://metravel.by/og-preview.jpg" />
-            </Head>
-
+            )}
             <View style={styles.container}>
                 <ListTravel />
             </View>
@@ -36,7 +40,5 @@ export default function TravelScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
+    container: { flex: 1 },
 });

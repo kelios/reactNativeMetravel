@@ -16,9 +16,10 @@ import {
     LayoutAnimation,
     Platform,
     UIManager,
+    Pressable,
 } from 'react-native';
 import MultiSelectField from '../MultiSelectField';
-import { Button } from 'react-native-elements';
+// ⛔️ Убрано: import { Button } from 'react-native-elements';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import RadiusSelect from '@/components/MapPage/RadiusSelect';
 
@@ -35,10 +36,7 @@ const TRANSPORT_MODES = [
     { key: 'bike' as const, icon: 'directions-bike', label: 'Вело' },
 ];
 
-if (
-    Platform.OS === 'android' &&
-    UIManager.setLayoutAnimationEnabledExperimental
-) {
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -56,9 +54,7 @@ interface FiltersPanelProps {
     onFilterChange: (field: string, value: any) => void;
     onTextFilterChange: (value: string) => void;
     resetFilters: () => void;
-    travelsData: {
-        categoryName?: string;
-    }[];
+    travelsData: { categoryName?: string }[];
     isMobile: boolean;
     closeMenu: () => void;
     mode: 'radius' | 'route';
@@ -69,6 +65,43 @@ interface FiltersPanelProps {
     endAddress: string;
     routeDistance: number | null;
 }
+
+/** Лёгкие кнопки без <button> на web */
+const ResetButton = ({ onPress, styles }: { onPress: () => void; styles: ReturnType<typeof getStyles> }) => (
+    <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.smallResetButton, pressed && { opacity: 0.9 }]}
+    >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="refresh" size={16} color="#fff" />
+            <Text style={styles.smallResetButtonText}>Сбросить</Text>
+        </View>
+    </Pressable>
+);
+
+const PrimaryButton = ({
+                           title,
+                           onPress,
+                           styles,
+                           icon,
+                       }: {
+    title: string;
+    onPress: () => void;
+    styles: ReturnType<typeof getStyles>;
+    icon?: React.ReactNode;
+}) => (
+    <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.92 }]}
+    >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+            {icon}
+            <Text style={styles.closeButtonText}>{title}</Text>
+        </View>
+    </Pressable>
+);
 
 const FiltersPanel: React.FC<FiltersPanelProps> = ({
                                                        filters,
@@ -97,7 +130,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                 .map((s) => s.trim())
                 .forEach((cat) => {
                     count[cat] = (count[cat] || 0) + 1;
-                })
+                }),
         );
         return count;
     }, [travelsData]);
@@ -115,7 +148,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                     };
                 })
                 .filter(Boolean) as { id: number; label: string; value: string }[],
-        [filters.categories, travelCategoriesCount]
+        [filters.categories, travelCategoriesCount],
     );
 
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -123,19 +156,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
     const handleAddressChange = useCallback(
         (val: string) => {
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
-            debounceTimer.current = setTimeout(
-                () => onTextFilterChange(val),
-                DEBOUNCE_MS
-            );
+            debounceTimer.current = setTimeout(() => onTextFilterChange(val), DEBOUNCE_MS);
         },
-        [onTextFilterChange]
+        [onTextFilterChange],
     );
 
     useEffect(
         () => () => {
             if (debounceTimer.current) clearTimeout(debounceTimer.current);
         },
-        []
+        [],
     );
 
     const handleSetMode = useCallback(
@@ -143,7 +173,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setMode(m);
         },
-        [setMode]
+        [setMode],
     );
 
     return (
@@ -153,40 +183,19 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                     {SEARCH_MODES.map(({ key, icon, label }) => (
                         <TouchableOpacity
                             key={key}
-                            style={[
-                                styles.tabButton,
-                                mode === key && styles.tabButtonActive,
-                            ]}
+                            style={[styles.tabButton, mode === key && styles.tabButtonActive]}
                             onPress={() => handleSetMode(key)}
                             activeOpacity={0.7}
                         >
-                            <Icon
-                                name={icon}
-                                size={20}
-                                color={mode === key ? '#fff' : '#555'}
-                                style={styles.tabIcon}
-                            />
-                            <Text
-                                adjustsFontSizeToFit
-                                style={[
-                                    styles.tabText,
-                                    mode === key && styles.tabTextActive,
-                                ]}
-                            >
+                            <Icon name={icon} size={20} color={mode === key ? '#fff' : '#555'} style={styles.tabIcon} />
+                            <Text adjustsFontSizeToFit style={[styles.tabText, mode === key && styles.tabTextActive]}>
                                 {label}
                             </Text>
                         </TouchableOpacity>
                     ))}
                 </View>
 
-                <Button
-                    title="Сбросить"
-                    onPress={resetFilters}
-                    buttonStyle={styles.smallResetButton}
-                    titleStyle={styles.smallResetButtonText}
-                    icon={<Icon name="refresh" size={16} color="#fff" />}
-                    iconRight
-                />
+                <ResetButton onPress={resetFilters} styles={styles} />
             </View>
 
             {mode === 'radius' ? (
@@ -205,11 +214,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                                 renderSelectedItem={() => <View />}
                             />
                             {!!filterValue.categories.length && (
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    style={styles.chipsContainer}
-                                >
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsContainer}>
                                     {filterValue.categories.map((cat) => (
                                         <View key={cat} style={styles.categoryChip}>
                                             <Text style={styles.categoryChipText}>{cat}</Text>
@@ -217,7 +222,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                                                 onPress={() =>
                                                     onFilterChange(
                                                         'categories',
-                                                        filterValue.categories.filter((c) => c !== cat)
+                                                        filterValue.categories.filter((c) => c !== cat),
                                                     )
                                                 }
                                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -236,11 +241,7 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                     {!!filters.radius.length && (
                         <View style={styles.filterField}>
                             <Text style={styles.label}>Радиус</Text>
-                            <RadiusSelect
-                                value={filterValue.radius}
-                                options={filters.radius}
-                                onChange={(v) => onFilterChange('radius', v)}
-                            />
+                            <RadiusSelect value={filterValue.radius} options={filters.radius} onChange={(v) => onFilterChange('radius', v)} />
                         </View>
                     )}
 
@@ -263,25 +264,14 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
                             {TRANSPORT_MODES.map(({ key, icon, label }) => (
                                 <TouchableOpacity
                                     key={key}
-                                    style={[
-                                        styles.transportButton,
-                                        transportMode === key && styles.transportButtonActive,
-                                    ]}
+                                    style={[styles.transportButton, transportMode === key && styles.transportButtonActive]}
                                     onPress={() => setTransportMode(key)}
                                     activeOpacity={0.7}
                                 >
-                                    <Icon
-                                        name={icon}
-                                        size={18}
-                                        color={transportMode === key ? '#fff' : '#555'}
-                                        style={styles.tabIcon}
-                                    />
+                                    <Icon name={icon} size={18} color={transportMode === key ? '#fff' : '#555'} style={styles.tabIcon} />
                                     <Text
                                         numberOfLines={1}
-                                        style={[
-                                            styles.transportButtonText,
-                                            transportMode === key && styles.transportButtonTextActive,
-                                        ]}
+                                        style={[styles.transportButtonText, transportMode === key && styles.transportButtonTextActive]}
                                     >
                                         {label}
                                     </Text>
@@ -292,32 +282,16 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
                     <View style={styles.filterField}>
                         <Text style={styles.label}>Точка старта</Text>
-                        <Text
-                            style={startAddress ? styles.infoText : styles.infoPlaceholder}
-                        >
-                            {startAddress || 'Не выбрано'}
-                        </Text>
+                        <Text style={startAddress ? styles.infoText : styles.infoPlaceholder}>{startAddress || 'Не выбрано'}</Text>
                     </View>
                     <View style={styles.filterField}>
                         <Text style={styles.label}>Точка финиша</Text>
-                        <Text
-                            style={endAddress ? styles.infoText : styles.infoPlaceholder}
-                        >
-                            {endAddress || 'Не выбрано'}
-                        </Text>
+                        <Text style={endAddress ? styles.infoText : styles.infoPlaceholder}>{endAddress || 'Не выбрано'}</Text>
                     </View>
                     <View style={styles.filterField}>
                         <Text style={styles.label}>Дистанция</Text>
-                        <Text
-                            style={
-                                routeDistance != null
-                                    ? styles.infoText
-                                    : styles.infoPlaceholder
-                            }
-                        >
-                            {routeDistance != null
-                                ? `${(routeDistance / 1000).toFixed(1)} км`
-                                : '—'}
+                        <Text style={routeDistance != null ? styles.infoText : styles.infoPlaceholder}>
+                            {routeDistance != null ? `${(routeDistance / 1000).toFixed(1)} км` : '—'}
                         </Text>
                     </View>
                 </View>
@@ -325,11 +299,10 @@ const FiltersPanel: React.FC<FiltersPanelProps> = ({
 
             {isMobile && (
                 <View style={styles.actions}>
-                    <Button
+                    <PrimaryButton
                         title="Закрыть"
                         onPress={closeMenu}
-                        buttonStyle={styles.closeButton}
-                        titleStyle={styles.closeButtonText}
+                        styles={styles}
                         icon={<Icon name="close" size={18} color="#fff" />}
                     />
                 </View>
@@ -373,45 +346,31 @@ const getStyles = (isMobile: boolean) =>
             justifyContent: 'center',
             paddingVertical: 12,
         },
-        tabButtonActive: {
-            backgroundColor: '#4a8c8c',
-        },
-        tabText: {
-            fontSize: 15,
-            color: '#555',
-            fontWeight: '600',
-        },
-        tabTextActive: {
-            color: '#fff',
-        },
-        tabIcon: {
-            marginRight: 6,
-        },
+        tabButtonActive: { backgroundColor: '#4a8c8c' },
+        tabText: { fontSize: 15, color: '#555', fontWeight: '600' },
+        tabTextActive: { color: '#fff' },
+        tabIcon: { marginRight: 6 },
+
+        /* бывшая кнопка reset */
         smallResetButton: {
             backgroundColor: '#ef5350',
             borderRadius: 12,
             height: 42,
             paddingHorizontal: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: 12,
+            minWidth: 110,
         },
-        smallResetButtonText: {
-            fontSize: 14,
-            fontWeight: '600',
-        },
+        smallResetButtonText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+
         filtersRow: {
             flexDirection: isMobile ? 'column' : 'row',
             flexWrap: 'wrap',
             gap: isMobile ? 16 : 24,
         },
-        filterField: {
-            flex: 1,
-            minWidth: isMobile ? '100%' : 220,
-        },
-        label: {
-            fontSize: 14,
-            fontWeight: '700',
-            marginBottom: 6,
-            color: '#333',
-        },
+        filterField: { flex: 1, minWidth: isMobile ? '100%' : 220 },
+        label: { fontSize: 14, fontWeight: '700', marginBottom: 6, color: '#333' },
         input: {
             height: 46,
             borderWidth: 1,
@@ -422,17 +381,9 @@ const getStyles = (isMobile: boolean) =>
             backgroundColor: '#fff',
             color: '#333',
         },
-        infoText: {
-            fontSize: 15,
-            fontWeight: '600',
-            color: '#333',
-            marginTop: 6,
-        },
-        infoPlaceholder: {
-            fontSize: 15,
-            color: '#bbb',
-            marginTop: 6,
-        },
+        infoText: { fontSize: 15, fontWeight: '600', color: '#333', marginTop: 6 },
+        infoPlaceholder: { fontSize: 15, color: '#bbb', marginTop: 6 },
+
         chipsContainer: {
             flexDirection: 'row',
             flexWrap: 'wrap',
@@ -448,12 +399,8 @@ const getStyles = (isMobile: boolean) =>
             paddingVertical: 8,
             borderRadius: 20,
         },
-        categoryChipText: {
-            color: '#4a8c8c',
-            marginRight: 6,
-            fontSize: 13,
-            fontWeight: '600',
-        },
+        categoryChipText: { color: '#4a8c8c', marginRight: 6, fontSize: 13, fontWeight: '600' },
+
         transportTabs: {
             flexDirection: 'row',
             borderRadius: 12,
@@ -467,35 +414,23 @@ const getStyles = (isMobile: boolean) =>
             justifyContent: 'center',
             height: 46,
         },
-        transportButtonActive: {
-            backgroundColor: '#4a8c8c',
-        },
-        transportButtonText: {
-            fontSize: 14,
-            color: '#555',
-            fontWeight: '600',
-        },
-        transportButtonTextActive: {
-            color: '#fff',
-        },
-        emptyState: {
-            fontSize: 15,
-            color: '#999',
-            marginVertical: 20,
-            textAlign: 'center',
-        },
-        actions: {
-            marginTop: 24,
-        },
+        transportButtonActive: { backgroundColor: '#4a8c8c' },
+        transportButtonText: { fontSize: 14, color: '#555', fontWeight: '600' },
+        transportButtonTextActive: { color: '#fff' },
+
+        emptyState: { fontSize: 15, color: '#999', marginVertical: 20, textAlign: 'center' },
+
+        actions: { marginTop: 24 },
+
+        /* бывшая "Закрыть" */
         closeButton: {
             backgroundColor: '#4a8c8c',
             borderRadius: 12,
             height: 50,
+            alignItems: 'center',
+            justifyContent: 'center',
         },
-        closeButtonText: {
-            fontSize: 15,
-            fontWeight: '700',
-        },
+        closeButtonText: { fontSize: 15, fontWeight: '700', color: '#fff' },
     });
 
 export default React.memo(FiltersPanel);
