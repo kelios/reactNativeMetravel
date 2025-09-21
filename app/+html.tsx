@@ -43,8 +43,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
                 rel="preload"
                 as="image"
                 href="/images/hero.avif"
-                imagesrcset="/images/hero.avif 1x, /images/hero@2x.avif 2x"
-                imagesizes="(min-width: 1024px) 60vw, 100vw"
+                imageSrcSet="/images/hero.avif 1x, /images/hero@2x.avif 2x"
+                imageSizes="(min-width: 1024px) 60vw, 100vw"
             />
 
             {/* Глобальные стили и сброс прокрутки RNW */}
