@@ -1,39 +1,51 @@
-// TabLayout.tsx — кастомный header с полным отключением встроенного
-import React, { useMemo } from 'react';
+// TabLayout.tsx — кастомный header + полный офф таббара
+import React, {useMemo} from 'react';
 import { Tabs } from 'expo-router';
 import CustomHeader from '@/components/CustomHeader';
 
+const Header = React.memo(function Header() {
+    return <CustomHeader />;
+});
+
+// Поведение href:
+// - null      -> экран исключён из линкинга (скрыт полностью)
+// - undefined -> экран адресуем, но скрыт из таббара
+const HIDDEN = { title: '', href: undefined, lazy: true } as const;
+const HIDDEN_NOHREF = { title: '', href: null, lazy: true } as const;
+
 export default function TabLayout() {
     const tabBarHiddenStyle = useMemo(() => ({ display: 'none' }), []);
-    const headerComponent = useMemo(() => () => <CustomHeader />, []);
-
-    const hiddenOptions = useMemo(() => ({ title: '', href: undefined, lazy: true }), []);
-    const hiddenHrefOptions = useMemo(() => ({ title: '', href: null, lazy: true }), []);
-
     return (
         <Tabs
             initialRouteName="index"
             screenOptions={{
+                tabBar: () => null,       // убираем таббар полностью
                 tabBarStyle: tabBarHiddenStyle,
-                header: headerComponent,
+                header: () => <Header />, // кастомный заголовок
+                lazy: true,               // экраны создаются по первому фокусу
+                freezeOnBlur: true,       // заморозка внефокусных экранов
             }}
         >
             <Tabs.Screen name="index" />
-            <Tabs.Screen name="travelsby" options={hiddenOptions} />
-            <Tabs.Screen name="map" options={hiddenOptions} />
-            <Tabs.Screen name="about" options={hiddenHrefOptions} />
-            <Tabs.Screen name="articles" options={hiddenHrefOptions} />
-            <Tabs.Screen name="contact" options={hiddenHrefOptions} />
-            <Tabs.Screen name="article/[id]" options={hiddenHrefOptions} />
-            <Tabs.Screen name="login" options={hiddenHrefOptions} />
-            <Tabs.Screen name="registration" options={hiddenHrefOptions} />
-            <Tabs.Screen name="set-password" options={hiddenHrefOptions} />
-            <Tabs.Screen name="travel/new" options={hiddenHrefOptions} />
-            <Tabs.Screen name="travel/[id]" options={hiddenHrefOptions} />
-            <Tabs.Screen name="travels/[param]" options={hiddenOptions} />
-            <Tabs.Screen name="metravel" options={hiddenHrefOptions} />
-            <Tabs.Screen name="chat" options={hiddenHrefOptions} />
-            <Tabs.Screen name="accountconfirmation" options={hiddenHrefOptions} />
+
+            {/* адресуемые, но скрытые в таббаре */}
+            <Tabs.Screen name="travelsby" options={HIDDEN} />
+            <Tabs.Screen name="map" options={HIDDEN} />
+            <Tabs.Screen name="travels/[param]" options={HIDDEN} />
+
+            {/* полностью скрытые из линкинга */}
+            <Tabs.Screen name="about" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="articles" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="contact" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="article/[id]" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="login" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="registration" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="set-password" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="travel/new" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="travel/[id]" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="metravel" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="chat" options={HIDDEN_NOHREF} />
+            <Tabs.Screen name="accountconfirmation" options={HIDDEN_NOHREF} />
         </Tabs>
     );
 }

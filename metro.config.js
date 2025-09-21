@@ -1,27 +1,34 @@
 // metro.config.js
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
+const os = require('os');
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname, {
   isCSSEnabled: true,
 });
 
-// Определяем окружение для оптимизаций
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Оптимизация resolver
+// ---------- Resolver ----------
 config.resolver = {
   ...config.resolver,
-  sourceExts: [
-    ...config.resolver.sourceExts,
-    'svg', // Добавляем SVG в sourceExts
-    'mjs',
-    'cjs'
-  ],
-  assetExts: config.resolver.assetExts.filter(ext => ext !== 'svg'),
 
-  // Критически важные алиасы для web-сборки
+  // Расширения исходников
+  sourceExts: Array.from(new Set([
+    ...(config.resolver.sourceExts || []),
+    'svg', 'mjs', 'cjs'
+  ])),
+
+  // Отдаём web-friendly сборки раньше
+  /** Для web даём приоритет ESM/браузерным полям,
+   * чтобы лучше работало деревоотряхивание/минификация */
+  resolverMainFields: ['browser', 'module', 'react-native', 'main'],
+
+  // SVG как исходник, не ассет
+  assetExts: (config.resolver.assetExts || []).filter(ext => ext !== 'svg'),
+
+  // Критические алиасы для web
   extraNodeModules: {
     ...config.resolver.extraNodeModules,
     'react-native': require.resolve('react-native-web'),
@@ -29,14 +36,21 @@ config.resolver = {
     'react-native-vector-icons': require.resolve('@expo/vector-icons'),
   },
 
-  resolverMainFields: ['react-native', 'browser', 'main'],
   unstable_enablePackageExports: true,
 };
 
-// Оптимизация transformer (без react-native-svg-transformer)
+// Полный список ассетов (без дублей)
+config.resolver.assetExts = Array.from(new Set([
+  ...(config.resolver.assetExts || []),
+  'db','sqlite','png','jpg','jpeg','gif','ico','webp',
+  'ttf','otf','woff','woff2','pdf','mp4','mp3','wav'
+]));
+
+// ---------- Transformer ----------
 config.transformer = {
   ...config.transformer,
-  // Убрали babelTransformerPath для SVG
+
+  // Важен для старта: ленивые requires на web снижают TBT
   getTransformOptions: async () => ({
     transform: {
       experimentalImportSupport: false,
@@ -44,19 +58,23 @@ config.transformer = {
     },
   }),
 
-  // Агрессивная оптимизация только для production
+  // Более агрессивная минификация в проде
   minifierConfig: isProduction ? {
+    ecma: 2020,
+    module: true,     // позволяем toplevel оптимизации в ESM
+    toplevel: true,   // выкидываем неиспользуемое из верхнего уровня
     compress: {
+      passes: 3,
       drop_console: true,
       drop_debugger: true,
-      reduce_funcs: false,
-      passes: 2,
+      reduce_funcs: true,
       pure_funcs: ['console.log', 'console.info', 'console.debug'],
     },
     mangle: {
       safari10: true,
-      keep_classnames: true,
-      keep_fnames: true,
+      // ДАЁМ манглить имена для лучшего сжатия/быстрее парсинга
+      keep_classnames: false,
+      keep_fnames: false,
     },
     output: {
       comments: false,
@@ -66,35 +84,34 @@ config.transformer = {
   } : undefined,
 };
 
-// Оптимизация производительности
-config.maxWorkers = process.env.CI ? 2 : Math.max(1, Math.floor(require('os').cpus().length / 2));
-config.cacheVersion = `v1-${isProduction ? 'prod' : 'dev'}`;
-
-// Оптимизация сервера
+// ---------- Server ----------
 config.server = {
   ...config.server,
   enhanceMiddleware: (middleware) => {
     return (req, res, next) => {
-      // Кэширование статических ресурсов
-      const staticExtensions = ['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp', '.woff', '.woff2', '.ttf', '.eot'];
+      // Кэшируем статические ресурсы
+      const staticExtensions = [
+        '.js','.css','.png','.jpg','.jpeg','.gif','.svg',
+        '.ico','.webp','.woff','.woff2','.ttf','.eot'
+      ];
       if (staticExtensions.some(ext => req.url.endsWith(ext))) {
-        res.setHeader('Cache-Control', isProduction ? 'public, max-age=31536000, immutable' : 'no-cache');
+        res.setHeader(
+            'Cache-Control',
+            isProduction ? 'public, max-age=31536000, immutable' : 'no-cache'
+        );
       }
       return middleware(req, res, next);
     };
   },
 };
 
-// Игнорируем ненужные папки для наблюдения
-config.watchFolders = [__dirname];
+// ---------- Misc ----------
+config.maxWorkers = process.env.CI
+    ? 2
+    : Math.max(1, Math.floor(os.cpus().length * 0.75)); // чуть агрессивнее для сборки
 
-// Полный список ассетов
-config.resolver.assetExts = [
-  ...new Set([
-    ...config.resolver.assetExts,
-    'db', 'sqlite', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'webp',
-    'ttf', 'otf', 'woff', 'woff2', 'pdf', 'mp4', 'mp3', 'wav'
-  ])
-];
+config.cacheVersion = `v1-${isProduction ? 'prod' : 'dev'}`;
+
+config.watchFolders = [__dirname];
 
 module.exports = config;

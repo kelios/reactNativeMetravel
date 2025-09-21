@@ -9,18 +9,22 @@ import { MD3LightTheme as DefaultTheme, PaperProvider } from "react-native-paper
 import { FiltersProvider } from "@/providers/FiltersProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const Footer = lazy(() => import("@/components/Footer"));
 
+/** ===== Helpers ===== */
+const isWeb = Platform.OS === "web";
+
+// На web шрифты не подгружаем через useFonts, чтобы не блокировать старт
 const fontMap =
-    Platform.OS === "web"
-        ? {}
-        : {
+    isWeb
+        ? ({} as const)
+        : ({
             FontAwesome:
                 require("@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf"),
-        } as const;
+        } as const);
 
+// Тема — стабильная ссылка
 const theme = {
     ...DefaultTheme,
     colors: {
@@ -38,10 +42,9 @@ const theme = {
     },
     fonts: {
         ...DefaultTheme.fonts,
-        bodyLarge:
-            Platform.OS === "web"
-                ? { ...DefaultTheme.fonts.bodyLarge, fontFamily: 'ui-serif, "Times New Roman", Georgia, serif' }
-                : { ...DefaultTheme.fonts.bodyLarge, fontFamily: '"Playfair Display", serif' },
+        bodyLarge: isWeb
+            ? { ...DefaultTheme.fonts.bodyLarge, fontFamily: 'ui-serif, "Times New Roman", Georgia, serif' }
+            : { ...DefaultTheme.fonts.bodyLarge, fontFamily: '"Playfair Display", serif' },
     },
 } as const;
 
@@ -56,20 +59,57 @@ const queryClient = new QueryClient({
     },
 });
 
-SplashScreen.preventAutoHideAsync();
+// SplashScreen только для native
+if (!isWeb) {
+    SplashScreen.preventAutoHideAsync().catch(() => {});
+}
+
+// Неблокирующий idle-хук для монтирования второстепенных виджетов
+function useIdleFlag(timeout = 2000) {
+    const [ready, setReady] = useState(false);
+    useEffect(() => {
+        let armed = false;
+        const arm = () => {
+            if (armed) return;
+            armed = true;
+            setReady(true);
+            cleanup();
+        };
+        const cleanup = () => {
+            ["scroll", "mousemove", "touchstart", "keydown", "click"].forEach((e) =>
+                window.removeEventListener(e, arm, { passive: true } as any)
+            );
+        };
+        if (typeof window !== "undefined") {
+            if ("requestIdleCallback" in window) {
+                (window as any).requestIdleCallback(arm, { timeout });
+            } else {
+                const t = setTimeout(arm, timeout);
+                return () => clearTimeout(t);
+            }
+            ["scroll", "mousemove", "touchstart", "keydown", "click"].forEach((e) =>
+                window.addEventListener(e, arm, { passive: true, once: true } as any)
+            );
+        }
+        return cleanup;
+    }, [timeout]);
+    return ready;
+}
 
 export default function RootLayout() {
+    const [appReady, setAppReady] = useState(isWeb); // на web стартуем сразу
     const [loaded, error] = useFonts(fontMap);
-    const [appReady, setAppReady] = useState(false);
 
+    // ошибки шрифтов пробрасываем (только native)
     useEffect(() => {
-        if (error) throw error;
+        if (!isWeb && error) throw error;
     }, [error]);
 
     useEffect(() => {
+        if (isWeb) return; // web не ждём
         if (loaded) {
             setAppReady(true);
-            SplashScreen.hideAsync();
+            SplashScreen.hideAsync().catch(() => {});
         }
     }, [loaded]);
 
@@ -82,8 +122,14 @@ function RootLayoutNav() {
     const SITE = process.env.EXPO_PUBLIC_SITE_URL || "https://metravel.by";
     const canonical = `${SITE}${pathname || "/"}`;
 
-    // страницы, где не показываем футер
-    const showFooter = useMemo(() => !["/login", "/onboarding"].includes(pathname || ""), [pathname]);
+    // страницы без футера
+    const showFooter = useMemo(
+        () => !["/login", "/onboarding"].includes(pathname || ""),
+        [pathname]
+    );
+
+    // Монтируем тяжёлые «украшения» (Footer/Devtools) на idle, чтобы не трогать TBT
+    const idleReady = useIdleFlag(2500);
 
     const defaultTitle = "MeTravel — путешествия и маршруты";
     const defaultDescription = "Маршруты, места и впечатления от путешественников.";
@@ -92,18 +138,18 @@ function RootLayoutNav() {
         <PaperProvider theme={theme}>
             <AuthProvider>
                 <QueryClientProvider client={queryClient}>
-                    {__DEV__ && Platform.OS !== "web" && <ReactQueryDevtools initialIsOpen={false} />}
+                    {/* Devtools: динамический импорт, только dev, только native, и после idle */}
+                    {__DEV__ && !isWeb && idleReady && <DevtoolsLazy />}
+
                     <FiltersProvider>
                         <View style={styles.wrapper}>
-                            {/* Базовые head-теги. Страницы будут переопределять их через InstantSEO. */}
+                            {/* Базовые head-теги. Страницы переопределяют через InstantSEO. */}
                             <Head>
-                                {/* Только базовые неизменяемые теги */}
                                 <link rel="icon" href="/favicon.ico" />
                                 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
                                 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
                                 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 
-                                {/* Fallback значения - будут использоваться только если страница не предоставит свои */}
                                 <title key="fallback-title">{defaultTitle}</title>
                                 <meta key="fallback-description" name="description" content={defaultDescription} />
                                 <link key="fallback-canonical" rel="canonical" href={canonical} />
@@ -115,8 +161,10 @@ function RootLayoutNav() {
                                 </Stack>
                             </View>
 
-                            {showFooter && (
-                                <Suspense fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}>
+                            {showFooter && idleReady && (
+                                <Suspense
+                                    fallback={<ActivityIndicator size="small" color="#6B4F4F" style={styles.loading} />}
+                                >
                                     <Footer />
                                 </Suspense>
                             )}
@@ -126,6 +174,24 @@ function RootLayoutNav() {
             </AuthProvider>
         </PaperProvider>
     );
+}
+
+/** Ленивый Devtools: не попадают в главный бандл */
+function DevtoolsLazy() {
+    const [Comp, setComp] = useState<React.ComponentType<any> | null>(null);
+    useEffect(() => {
+        let mounted = true;
+        import("@tanstack/react-query-devtools")
+            .then((m) => {
+                if (mounted) setComp(() => (m as any).ReactQueryDevtools);
+            })
+            .catch(() => {});
+        return () => {
+            mounted = false;
+        };
+    }, []);
+    if (!Comp) return null;
+    return <Comp initialIsOpen={false} />;
 }
 
 const styles = StyleSheet.create({
