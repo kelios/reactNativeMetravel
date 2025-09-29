@@ -17,6 +17,7 @@ import {
     useWindowDimensions,
     Platform,
     Pressable,
+    RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -42,6 +43,10 @@ const INITIAL_FILTER = { year: "", showModerationPending: false };
 const BELARUS_ID = 3;
 const PER_PAGE_OPTS = [9, 18, 30, 60];
 const ITEM_HEIGHT = 320;
+// Константы для бесконечного скролла
+const INITIAL_PAGE = 0;
+const MOBILE_PAGE_SIZE = 10;
+const DESKTOP_PAGE_SIZE = 30;
 
 function useDebounce<T>(val: T, delay = 400) {
     const [debouncedVal, setDebouncedVal] = useState(val);
@@ -82,13 +87,27 @@ function ListTravel() {
     const [search, setSearch] = useState("");
     const debSearch = useDebounce(search);
     const [filter, setFilter] = useState(INITIAL_FILTER);
-    const [page, setPage] = useState(0);
-    const [perPage, setPerPage] = useState(30);
+
+    // Состояния для пагинации и бесконечного скролла
+    const [page, setPage] = useState(INITIAL_PAGE);
+    const [perPage, setPerPage] = useState(isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE);
+    const [allData, setAllData] = useState<any[]>([]); // Все загруженные данные
+    const [hasMore, setHasMore] = useState(true);
+
     const [deleteId, setDelete] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
+    // Сброс данных при изменении фильтров или поиска
     useEffect(() => {
-        if (isMobile) setPerPage(10);
+        setPage(INITIAL_PAGE);
+        setAllData([]);
+        setHasMore(true);
+    }, [debSearch, filter, isMeTravel, isExport, userId, user_id]);
+
+    // Обновление perPage при изменении размера экрана
+    useEffect(() => {
+        setPerPage(isMobile ? MOBILE_PAGE_SIZE : DESKTOP_PAGE_SIZE);
     }, [isMobile]);
 
     const [options, setOptions] = useState<Record<string, any>>({});
@@ -120,36 +139,84 @@ function ListTravel() {
         return p;
     }, [filter, isMeTravel, isExport, isTravelBy, userId, user_id]);
 
-    const { data, status, refetch } = useQuery({
+    // Запрос для загрузки данных с пагинацией
+    const { data, status, refetch, isFetching, isFetchingNextPage } = useQuery({
         queryKey: ["travels", page, perPage, debSearch, queryParams],
         queryFn: () => fetchTravels(page, perPage, debSearch, queryParams),
-        enabled: !(isMeTravel || isExport) || !!userId,
+        enabled: (!(isMeTravel || isExport) || !!userId) && Object.keys(options).length > 0 && hasMore,
         keepPreviousData: true,
         staleTime: 60 * 1000,
         cacheTime: 5 * 60 * 1000,
     });
 
+    // Обновление всех данных при получении новой страницы
+    useEffect(() => {
+        if (data?.data) {
+            if (page === INITIAL_PAGE) {
+                // Первая загрузка
+                setAllData(data.data);
+            } else {
+                // Добавление новых данных
+                setAllData(prev => {
+                    const existingIds = new Set(prev.map(item => item.id));
+                    const newItems = data.data.filter(item => !existingIds.has(item.id));
+                    return [...prev, ...newItems];
+                });
+            }
+
+            // Проверка, есть ли еще данные
+            setHasMore(data.data.length === perPage);
+        }
+    }, [data, page, perPage]);
+
     const handleDelete = useCallback(async () => {
         if (!deleteId) return;
         await deleteTravel(deleteId);
         setDelete(null);
+        // Полный сброс и перезагрузка
+        setPage(INITIAL_PAGE);
+        setAllData([]);
+        setHasMore(true);
         refetch();
     }, [deleteId, refetch]);
 
     const resetFilters = useCallback(() => {
         setFilter(INITIAL_FILTER);
-        setPage(0);
+        setPage(INITIAL_PAGE);
+        setAllData([]);
+        setHasMore(true);
     }, []);
 
     const onSelect = useCallback((field: string, v: any) => {
         setFilter((p) => ({ ...p, [field]: v }));
-        setPage(0);
+        setPage(INITIAL_PAGE);
+        setAllData([]);
+        setHasMore(true);
     }, []);
 
     const applyFilter = useCallback((v: any) => {
         setFilter(v);
-        setPage(0);
+        setPage(INITIAL_PAGE);
+        setAllData([]);
+        setHasMore(true);
     }, []);
+
+    // Функция для загрузки следующей страницы
+    const loadMore = useCallback(() => {
+        if (!isFetching && hasMore && !isFetchingNextPage) {
+            setPage(prev => prev + 1);
+        }
+    }, [isFetching, hasMore, isFetchingNextPage]);
+
+    // Функция для pull-to-refresh
+    const onRefresh = useCallback(async () => {
+        setIsRefreshing(true);
+        setPage(INITIAL_PAGE);
+        setAllData([]);
+        setHasMore(true);
+        await refetch();
+        setIsRefreshing(false);
+    }, [refetch]);
 
     const getItemLayout = useCallback(
         (_: any, index: number) => ({
@@ -163,6 +230,12 @@ function ListTravel() {
     const [selected, setSelected] = useState<any[]>([]);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const printRef = useRef<HTMLDivElement>(null);
+    const flatListRef = useRef<FlatList>(null);
+
+    // Сброс выбора при изменении данных
+    useEffect(() => {
+        setSelected([]);
+    }, [allData]);
 
     const toggleSelect = useCallback((t: any) => {
         setSelected((prev) =>
@@ -171,9 +244,9 @@ function ListTravel() {
     }, []);
 
     const selectAll = useCallback(() => {
-        if (!data?.data) return;
-        setSelected((prev) => (prev.length === data.data.length ? [] : data.data));
-    }, [data]);
+        if (!allData.length) return;
+        setSelected((prev) => (prev.length === allData.length ? [] : allData));
+    }, [allData]);
 
     const makePreview = async () => {
         if (!printRef.current || !selected.length) return;
@@ -286,7 +359,7 @@ function ListTravel() {
             isSuper,
             isMeTravel,
             isExport,
-            (router as any).push,
+            router.push,
             selected,
             toggleSelect,
         ]
@@ -294,10 +367,34 @@ function ListTravel() {
 
     const keyExtractor = useCallback((item: any) => String(item.id), []);
 
+    // Компонент для индикатора загрузки следующей страницы
+    const renderFooter = useCallback(() => {
+        if (!isFetchingNextPage) return null;
+        return (
+            <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color="#4a7c59" />
+                <Text style={styles.footerText}>Загрузка...</Text>
+            </View>
+        );
+    }, [isFetchingNextPage]);
+
+    // Компонент для пустого состояния
+    const renderEmpty = useCallback(() => {
+        if (status === "pending" || isFetching) return null;
+
+        return (
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>
+                    {data?.total === 0 ? "Нет данных" : "Не удалось загрузить данные"}
+                </Text>
+            </View>
+        );
+    }, [status, isFetching, data?.total]);
+
+    const showInitialLoading = status === "pending" && page === INITIAL_PAGE;
 
     return (
         <SafeAreaView style={styles.root}>
-
             <View style={[styles.container, { flexDirection: isMobile ? "column" : "row" }]}>
                 {!isMobile && (
                     <View style={styles.sidebar} aria-label="Фильтры">
@@ -322,41 +419,62 @@ function ListTravel() {
                         onToggleFilters={() => setShowFilters((v) => !v)}
                     />
 
-                    {status === "pending" && (
+                    {showInitialLoading && (
                         <View style={styles.loader} accessibilityRole="alert" aria-live="polite">
                             <ActivityIndicator size="large" color="#4a7c59" />
                         </View>
                     )}
-                    {status === "error" && <Text style={styles.status}>Ошибка загрузки</Text>}
-                    {status === "success" && !data?.data?.length && (
-                        <Text style={styles.status}>Нет данных</Text>
+
+                    {status === "error" && page === INITIAL_PAGE && (
+                        <Text style={styles.status}>Ошибка загрузки</Text>
                     )}
 
-                    {status === "success" && !!data?.data?.length && (
+                    {!showInitialLoading && (
                         <FlatList
+                            ref={flatListRef}
                             key={listKey}
-                            data={data.data}
+                            data={allData}
                             keyExtractor={keyExtractor}
                             renderItem={renderItem}
                             numColumns={columns}
                             columnWrapperStyle={columns > 1 ? styles.columnWrapper : undefined}
                             contentContainerStyle={[
                                 styles.list,
-                                { minHeight: "100vh" as any, paddingBottom: isExport ? 76 : 32 },
+                                {
+                                    minHeight: "100vh" as any,
+                                    paddingBottom: isExport ? 76 : 32,
+                                    flexGrow: 1,
+                                },
                             ]}
                             showsVerticalScrollIndicator={false}
                             removeClippedSubviews={Platform.OS === "android"}
-                            initialNumToRender={isMobile ? 4 : 8}
-                            maxToRenderPerBatch={isMobile ? 4 : 8}
-                            windowSize={isMobile ? 7 : 9}
+                            initialNumToRender={isMobile ? MOBILE_PAGE_SIZE : 8}
+                            maxToRenderPerBatch={isMobile ? MOBILE_PAGE_SIZE : 8}
+                            windowSize={isMobile ? 5 : 9}
                             updateCellsBatchingPeriod={isMobile ? 50 : 0}
                             extraData={selected}
                             getItemLayout={getItemLayout}
                             accessibilityRole="list"
+                            // Бесконечный скролл для мобильных
+                            onEndReached={isMobile ? loadMore : undefined}
+                            onEndReachedThreshold={isMobile ? 0.5 : undefined}
+                            ListFooterComponent={isMobile ? renderFooter : undefined}
+                            ListEmptyComponent={renderEmpty}
+                            refreshControl={
+                                isMobile ? (
+                                    <RefreshControl
+                                        refreshing={isRefreshing}
+                                        onRefresh={onRefresh}
+                                        colors={["#4a7c59"]}
+                                        tintColor="#4a7c59"
+                                    />
+                                ) : undefined
+                            }
                         />
                     )}
 
-                    {data?.total > perPage && (
+                    {/* Пагинация для десктопа */}
+                    {!isMobile && data?.total > perPage && (
                         <PaginationComponent
                             currentPage={page}
                             itemsPerPage={perPage}
@@ -397,7 +515,7 @@ function ListTravel() {
                     {!isMobile && (
                         <Pressable style={styles.btn} onPress={selectAll}>
                             <Text style={styles.btnTxt}>
-                                {selected.length === data?.data?.length ? "Снять выделение" : "Выбрать все"}
+                                {selected.length === allData.length ? "Снять выделение" : "Выбрать все"}
                             </Text>
                         </Pressable>
                     )}
@@ -467,9 +585,20 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 40,
     },
-    status: { marginTop: 40, textAlign: "center", fontSize: 16, color: "#888" },
-    list: { gap: 16, paddingBottom: 32 },
-    columnWrapper: { gap: 16, justifyContent: "space-between" },
+    status: {
+        marginTop: 40,
+        textAlign: "center",
+        fontSize: 16,
+        color: "#888"
+    },
+    list: {
+        gap: 16,
+        paddingBottom: 32
+    },
+    columnWrapper: {
+        gap: 16,
+        justifyContent: "space-between"
+    },
     exportBar: {
         flexDirection: "row",
         gap: 8,
@@ -486,8 +615,36 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         alignItems: "center",
     },
-    btnDisabled: { backgroundColor: "#aaa" },
-    btnTxt: { color: "#fff", fontWeight: "600", fontSize: 14 },
+    btnDisabled: {
+        backgroundColor: "#aaa"
+    },
+    btnTxt: {
+        color: "#fff",
+        fontWeight: "600",
+        fontSize: 14
+    },
+    footerLoader: {
+        padding: 20,
+        alignItems: "center",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 10,
+    },
+    footerText: {
+        fontSize: 14,
+        color: "#666",
+    },
+    emptyState: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingVertical: 60,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: "#888",
+        textAlign: "center",
+    },
 });
 
 export default memo(ListTravel);

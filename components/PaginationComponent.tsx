@@ -10,6 +10,7 @@ type Props = {
     onPageChange: (page: number) => void; // 0-based
     onItemsPerPageChange: (n: number) => void;
     totalItems: number;
+    isMobile?: boolean;
 };
 
 function PaginationComponent({
@@ -19,9 +20,9 @@ function PaginationComponent({
                                  onPageChange,
                                  onItemsPerPageChange,
                                  totalItems,
+                                 isMobile = false,
                              }: Props) {
     const { width } = useWindowDimensions();
-    const isMobile = width < 480;
     const isVerySmall = width < 380;
 
     const totalPages = useMemo(
@@ -32,6 +33,7 @@ function PaginationComponent({
     const [pageInput, setPageInput] = useState(String(currentPage + 1));
     const [menuVisible, setMenuVisible] = useState(false);
 
+    // Исправление: синхронизация состояния при изменении currentPage
     useEffect(() => {
         setPageInput(String(currentPage + 1));
     }, [currentPage]);
@@ -39,7 +41,7 @@ function PaginationComponent({
     const goToPage1Based = useCallback(
         (val: string | number) => {
             const n = typeof val === "number" ? val : parseInt(val as string, 10);
-            if (!Number.isFinite(n)) {
+            if (!Number.isFinite(n) || n < 1) {
                 setPageInput(String(currentPage + 1));
                 return;
             }
@@ -60,6 +62,19 @@ function PaginationComponent({
         if (currentPage + 1 >= totalPages) return;
         onPageChange(currentPage + 1);
     }, [currentPage, totalPages, onPageChange]);
+
+    const handleItemsPerPageChange = useCallback((option: number) => {
+        setMenuVisible(false);
+        if (option !== itemsPerPage) {
+            onItemsPerPageChange(option);
+            onPageChange(0); // Сброс на первую страницу при изменении количества элементов
+        }
+    }, [itemsPerPage, onItemsPerPageChange, onPageChange]);
+
+    // Исправление: обработка blur для TextInput
+    const handleInputBlur = useCallback(() => {
+        goToPage1Based(pageInput);
+    }, [pageInput, goToPage1Based]);
 
     // Минималистичный вариант для очень маленьких экранов
     if (isVerySmall) {
@@ -105,10 +120,7 @@ function PaginationComponent({
                             {itemsPerPageOptions.map((option) => (
                                 <Menu.Item
                                     key={option}
-                                    onPress={() => {
-                                        setMenuVisible(false);
-                                        if (option !== itemsPerPage) onItemsPerPageChange(option);
-                                    }}
+                                    onPress={() => handleItemsPerPageChange(option)}
                                     title={`${option}`}
                                 />
                             ))}
@@ -142,6 +154,7 @@ function PaginationComponent({
                                 maxLength={4}
                                 onChangeText={(t) => setPageInput(t.replace(/[^0-9]/g, ""))}
                                 onSubmitEditing={() => goToPage1Based(pageInput)}
+                                onBlur={handleInputBlur}
                                 returnKeyType="done"
                                 accessibilityLabel="Текущая страница"
                             />
@@ -166,17 +179,14 @@ function PaginationComponent({
                                     onPress={() => setMenuVisible(true)}
                                     accessibilityLabel="Элементов на странице"
                                 >
-                                    <Text style={styles.mobileItemsText}>{itemsPerPage}</Text>
+                                    <Text style={styles.mobileItemsText}>{itemsPerpage}</Text>
                                 </TouchableOpacity>
                             }
                         >
                             {itemsPerPageOptions.map((option) => (
                                 <Menu.Item
                                     key={option}
-                                    onPress={() => {
-                                        setMenuVisible(false);
-                                        if (option !== itemsPerPage) onItemsPerPageChange(option);
-                                    }}
+                                    onPress={() => handleItemsPerPageChange(option)}
                                     title={`${option} на стр.`}
                                 />
                             ))}
@@ -210,7 +220,9 @@ function PaginationComponent({
                             maxLength={4}
                             onChangeText={(t) => setPageInput(t.replace(/[^0-9]/g, ""))}
                             onSubmitEditing={() => goToPage1Based(pageInput)}
+                            onBlur={handleInputBlur}
                             returnKeyType="done"
+                            accessibilityLabel="Текущая страница"
                         />
                         <Text style={styles.desktopTotal}>из {totalPages}</Text>
                     </View>
@@ -241,10 +253,7 @@ function PaginationComponent({
                         {itemsPerPageOptions.map((option) => (
                             <Menu.Item
                                 key={option}
-                                onPress={() => {
-                                    setMenuVisible(false);
-                                    if (option !== itemsPerPage) onItemsPerPageChange(option);
-                                }}
+                                onPress={() => handleItemsPerPageChange(option)}
                                 title={`${option} на странице`}
                             />
                         ))}
